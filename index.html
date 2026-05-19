@@ -625,7 +625,9 @@
       <section class="rule-card">
         <p class="legend-title">Regras de mercado</p>
         <ul>
-          <li>Orçamento fixo por jogador: <strong>65 milhões</strong>.</li>
+          <li>Orçamento base por jogador: <strong>65 milhões</strong>.</li>
+          <li>Bônus por mando de campo humano: <strong>+1,25M</strong> a cada partida em casa registrada.</li>
+          <li>Bônus por vitória humana: <strong>+500 mil</strong> por vitória, independente de ser mandante ou visitante.</li>
           <li>Valor base: valor de mercado informado manualmente com base no Transfermarkt.</li>
           <li>Cálculo: <strong>valor final = valor Transfermarkt + percentual por overall</strong>.</li>
           <li>Exemplo: jogador OVR 75 com valor de mercado de 10M custa <strong>10M + 5% = 10,5M</strong>.</li>
@@ -656,7 +658,7 @@
           <table>
             <thead>
               <tr>
-                <th>Jogador</th><th>Comprador</th><th>Clube origem</th><th>OVR</th><th>Valor Transfermarkt</th><th>% Overall</th><th>Valor final</th><th>Saldo comprador</th><th>Status</th>
+                <th>Jogador</th><th>Comprador</th><th>Clube origem</th><th>OVR</th><th>Valor Transfermarkt</th><th>% Overall</th><th>Valor final</th><th>Saldo atual</th><th>Status</th>
               </tr>
             </thead>
             <tbody id="transferTable"></tbody>
@@ -666,7 +668,7 @@
 
       <section class="transfer-mobile" id="transferMobile"></section>
 
-      <p class="footer-note">As transferências enviadas pelo formulário aparecem aqui automaticamente. O app calcula <strong>valor Transfermarkt + percentual do overall</strong>, saldo restante e alerta duplicidade automaticamente.</p>
+      <p class="footer-note">As transferências enviadas pelo formulário aparecem aqui automaticamente. O app calcula <strong>valor Transfermarkt + percentual do overall</strong>, saldo com bônus de jogos/vitórias e alerta duplicidade automaticamente.</p>
     </section>
 
     <section id="submitView" class="view">
@@ -812,6 +814,8 @@
     // Exemplo: OVR 75 e marketValue 10000000 => 10000000 + 5% = 10500000.
     // O orçamento é fixo e igual para todos.
     const transferBudget = 65000000;
+    const homeMatchBonus = 1250000;
+    const winBonus = 500000;
     const API_URL = "https://script.google.com/macros/s/AKfycbyZvNK5I8lm1mdytysuW8nd-dMwFaUlR6oCMgIZDENXJvMNKr5QxBV5DHpefYpHas6V/exec";
     const API_PIN = "eafc26";
     let apiResults = [];
@@ -1032,6 +1036,58 @@
 
     function getApprovedApiResults() {
       return apiResults.filter(row => row.Status === "Aprovado");
+    }
+
+    function getHumanBuyers() {
+      return [...new Set(teams.filter(team => team.status === "Nosso").map(team => team.owner))];
+    }
+
+    function getBudgetInfoByBuyer() {
+      const buyers = getHumanBuyers();
+      const info = buyers.reduce((acc, buyer) => {
+        acc[buyer] = {
+          buyer,
+          baseBudget: transferBudget,
+          homeMatches: 0,
+          wins: 0,
+          homeBonus: 0,
+          winBonusValue: 0,
+          totalBudget: transferBudget
+        };
+        return acc;
+      }, {});
+
+      getApprovedApiResults().forEach(result => {
+        const homeTeam = getTeamByName(result.Mandante);
+        const awayTeam = getTeamByName(result.Visitante);
+        const homeScore = Number(result.GolsMandante);
+        const awayScore = Number(result.GolsVisitante);
+
+        if (homeTeam && homeTeam.status === "Nosso" && info[homeTeam.owner]) {
+          info[homeTeam.owner].homeMatches += 1;
+        }
+
+        if (homeScore > awayScore && homeTeam && homeTeam.status === "Nosso" && info[homeTeam.owner]) {
+          info[homeTeam.owner].wins += 1;
+        }
+
+        if (awayScore > homeScore && awayTeam && awayTeam.status === "Nosso" && info[awayTeam.owner]) {
+          info[awayTeam.owner].wins += 1;
+        }
+      });
+
+      Object.values(info).forEach(item => {
+        item.homeBonus = item.homeMatches * homeMatchBonus;
+        item.winBonusValue = item.wins * winBonus;
+        item.totalBudget = item.baseBudget + item.homeBonus + item.winBonusValue;
+      });
+
+      return info;
+    }
+
+    function getTransferBudgetForBuyer(buyer) {
+      const info = getBudgetInfoByBuyer();
+      return info[buyer]?.totalBudget || transferBudget;
     }
 
     function getChampionshipResult(roundNumber, home, away) {
@@ -1331,7 +1387,7 @@
 
     function getTransferStatusClass(transfer) {
       if (transfer.isBlockedDuplicate) return "duplicate";
-      if (transfer.runningSpent > transferBudget) return "overbudget";
+      if (transfer.runningSpent > transfer.currentBudget) return "overbudget";
       return "valid";
     }
 
@@ -1380,7 +1436,8 @@
 
         spentByBuyer[transfer.buyer] = (spentByBuyer[transfer.buyer] || 0) + countedCost;
         const runningSpent = spentByBuyer[transfer.buyer];
-        const remainingBudget = transferBudget - runningSpent;
+        const currentBudget = getTransferBudgetForBuyer(transfer.buyer);
+        const remainingBudget = currentBudget - runningSpent;
 
         return {
           ...transfer,
@@ -1391,6 +1448,7 @@
           countedCost,
           hasDuplicate,
           isBlockedDuplicate,
+          currentBudget,
           runningSpent,
           remainingBudget
         };
@@ -1420,15 +1478,20 @@
       const data = getTransfersWithStats();
       const validTransfers = data.filter(item => !item.isBlockedDuplicate);
       const duplicates = data.filter(item => item.hasDuplicate).length;
-      const totalSpent = validTransfers.reduce((sum, item) => sum + item.totalCost, 0);
-      const buyers = ["Henrique", "Willian", "Rafael", "Renato"];
-      const remainingValues = buyers.map(buyer => transferBudget - validTransfers.filter(item => item.buyer === buyer).reduce((sum, item) => sum + item.totalCost, 0));
+      const buyers = getHumanBuyers();
+      const budgetInfo = getBudgetInfoByBuyer();
+      const totalBonus = buyers.reduce((sum, buyer) => sum + (budgetInfo[buyer]?.homeBonus || 0) + (budgetInfo[buyer]?.winBonusValue || 0), 0);
+      const remainingValues = buyers.map(buyer => {
+        const currentBudget = budgetInfo[buyer]?.totalBudget || transferBudget;
+        const spent = validTransfers.filter(item => item.buyer === buyer).reduce((sum, item) => sum + item.totalCost, 0);
+        return currentBudget - spent;
+      });
       const bestRemaining = remainingValues.length ? Math.max(...remainingValues) : transferBudget;
 
       transferSummary.innerHTML = `
-        <article class="summary-card"><span>Orçamento por jogador</span><strong>${formatCurrency(transferBudget)}</strong></article>
+        <article class="summary-card"><span>Orçamento base</span><strong>${formatCurrency(transferBudget)}</strong></article>
+        <article class="summary-card"><span>Bônus acumulado</span><strong>${formatCurrency(totalBonus)}</strong></article>
         <article class="summary-card"><span>Contratações válidas</span><strong>${validTransfers.length}</strong></article>
-        <article class="summary-card"><span>Duplicidades</span><strong>${duplicates}</strong></article>
         <article class="summary-card"><span>Maior saldo</span><strong>${formatCurrency(bestRemaining)}</strong></article>
       `;
     }
@@ -1474,6 +1537,7 @@
               <div class="calendar-meta-item"><span>Transfermarkt</span><strong>${formatCurrency(item.marketValue)}</strong></div>
               <div class="calendar-meta-item"><span>% Overall</span><strong>${Math.round(item.feeRate * 100)}%</strong></div>
               <div class="calendar-meta-item"><span>Valor final</span><strong>${formatCurrency(item.totalCost)}</strong></div>
+              <div class="calendar-meta-item"><span>Orçamento atual</span><strong>${formatCurrency(item.currentBudget)}</strong></div>
               <div class="calendar-meta-item"><span>Saldo</span><strong>${formatCurrency(item.remainingBudget)}</strong></div>
             </div>
           </article>`;
