@@ -306,6 +306,79 @@
       line-height: 1.6;
     }
 
+    .form-card {
+      background: rgba(17, 28, 51, 0.88);
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      padding: 16px;
+      margin-bottom: 18px;
+      box-shadow: 0 16px 45px rgba(0, 0, 0, 0.18);
+    }
+
+    .form-card h2 {
+      margin: 0 0 8px;
+      font-size: 22px;
+    }
+
+    .form-card p {
+      color: var(--muted);
+      margin: 0 0 14px;
+      line-height: 1.5;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .form-grid label {
+      display: grid;
+      gap: 6px;
+      color: var(--muted);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-weight: 900;
+    }
+
+    .form-grid .full {
+      grid-column: 1 / -1;
+    }
+
+    .form-actions {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      margin-top: 12px;
+      flex-wrap: wrap;
+    }
+
+    .primary-button {
+      border: 0;
+      color: #fff;
+      background: linear-gradient(135deg, #2563eb, #7c3aed);
+      padding: 12px 16px;
+      border-radius: 12px;
+      font-weight: 900;
+      cursor: pointer;
+    }
+
+    .primary-button:disabled {
+      cursor: not-allowed;
+      opacity: 0.6;
+    }
+
+    .app-message {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .app-message.success { color: #bbf7d0; }
+    .app-message.error { color: #fecaca; }
+    .app-message.warning { color: #fef3c7; }
+
     .classification-border { box-shadow: inset 4px 0 0 var(--zone-color, transparent); }
     .numeric { font-weight: 800; text-align: center; }
     .points { font-size: 18px; font-weight: 900; color: #f8fafc; }
@@ -392,7 +465,8 @@
       header { margin-bottom: 18px; }
       h1 { font-size: 28px; line-height: 1.05; }
       .subtitle { font-size: 14px; }
-      .tabs { display: grid; grid-template-columns: repeat(3, 1fr); width: 100%; margin-bottom: 18px; }
+      .tabs { display: grid; grid-template-columns: repeat(2, 1fr); width: 100%; margin-bottom: 18px; }
+      .form-grid { grid-template-columns: 1fr; }
       .tab-button { width: 100%; padding: 12px; }
       .summary { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-bottom: 18px; }
       .summary-card { padding: 12px; border-radius: 16px; }
@@ -423,6 +497,7 @@
       <button class="tab-button active" data-view="standingsView">Classificação</button>
       <button class="tab-button" data-view="calendarView">Calendário</button>
       <button class="tab-button" data-view="transfersView">Transferências</button>
+      <button class="tab-button" data-view="submitView">Enviar dados</button>
     </nav>
 
     <section id="standingsView" class="view active">
@@ -585,7 +660,94 @@
 
       <section class="transfer-mobile" id="transferMobile"></section>
 
-      <p class="footer-note">Para registrar uma contratação, adicione um item no array <strong>transfers</strong>. O app calcula <strong>valor Transfermarkt + percentual do overall</strong>, saldo restante e alerta duplicidade automaticamente.</p>
+      <p class="footer-note">As transferências enviadas pelo formulário aparecem aqui automaticamente. O app calcula <strong>valor Transfermarkt + percentual do overall</strong>, saldo restante e alerta duplicidade automaticamente.</p>
+    </section>
+
+    <section id="submitView" class="view">
+      <section class="summary" id="apiSummary"></section>
+
+      <section class="form-card">
+        <h2>Enviar resultado</h2>
+        <p>Use este formulário para registrar placares. O resultado vai para a planilha e o calendário lê automaticamente.</p>
+        <form id="resultForm">
+          <div class="form-grid">
+            <label>Competição
+              <select name="competition" required>
+                <option value="Championship">Championship</option>
+                <option value="Copa da Liga">Copa da Liga</option>
+                <option value="FA Cup">FA Cup</option>
+              </select>
+            </label>
+            <label>Semana
+              <input name="week" type="number" min="1" placeholder="Ex: 1" required />
+            </label>
+            <label>Rodada/Fase
+              <input name="phase" type="text" placeholder="Ex: Rodada 1" required />
+            </label>
+            <label>Enviado por
+              <select name="submittedBy" required>
+                <option value="Henrique">Henrique</option>
+                <option value="Willian">Willian</option>
+                <option value="Rafael">Rafael</option>
+                <option value="Renato">Renato</option>
+              </select>
+            </label>
+            <label>Mandante
+              <input name="home" list="teamOptions" type="text" placeholder="Ex: Coventry City" required />
+            </label>
+            <label>Visitante
+              <input name="away" list="teamOptions" type="text" placeholder="Ex: Birmingham City" required />
+            </label>
+            <label>Gols mandante
+              <input name="homeScore" type="number" min="0" required />
+            </label>
+            <label>Gols visitante
+              <input name="awayScore" type="number" min="0" required />
+            </label>
+          </div>
+          <div class="form-actions">
+            <button class="primary-button" type="submit">Enviar resultado</button>
+            <span class="app-message" id="resultMessage"></span>
+          </div>
+        </form>
+      </section>
+
+      <section class="form-card">
+        <h2>Enviar transferência</h2>
+        <p>Informe o valor do Transfermarkt em número cheio. Exemplo: 10 milhões = 10000000.</p>
+        <form id="transferForm">
+          <div class="form-grid">
+            <label>Comprador
+              <select name="buyer" required>
+                <option value="Henrique">Henrique</option>
+                <option value="Willian">Willian</option>
+                <option value="Rafael">Rafael</option>
+                <option value="Renato">Renato</option>
+              </select>
+            </label>
+            <label>Jogador
+              <input name="player" type="text" placeholder="Nome do jogador" required />
+            </label>
+            <label>Clube origem
+              <input name="fromClub" type="text" placeholder="Clube atual" required />
+            </label>
+            <label>Overall FIFA
+              <input name="overall" type="number" min="1" max="99" placeholder="Ex: 82" required />
+            </label>
+            <label class="full">Valor Transfermarkt
+              <input name="marketValue" type="number" min="0" step="100000" placeholder="Ex: 32000000" required />
+            </label>
+          </div>
+          <div class="form-actions">
+            <button class="primary-button" type="submit">Enviar transferência</button>
+            <span class="app-message" id="transferMessage"></span>
+          </div>
+        </form>
+      </section>
+
+      <datalist id="teamOptions"></datalist>
+
+      <p class="footer-note">A planilha conectada é usada como banco gratuito. A aprovação/rejeição por duplicidade e orçamento acontece no Google Apps Script.</p>
     </section>
   </main>
 
@@ -638,6 +800,11 @@
     // Exemplo: OVR 75 e marketValue 10000000 => 10000000 + 5% = 10500000.
     // O orçamento é fixo e igual para todos.
     const transferBudget = 65000000;
+    const API_URL = "https://script.google.com/macros/s/AKfycbyZvNK5I8lm1mdytysuW8nd-dMwFaUlR6oCMgIZDENXJvMNKr5QxBV5DHpefYpHas6V/exec";
+    const API_PIN = "eafc26";
+    let apiResults = [];
+    let apiTransfers = [];
+    let apiLoaded = false;
 
     const transfers = [
       // Exemplos para você substituir/remover:
@@ -783,6 +950,12 @@
     const transferStatusFilter = document.getElementById("transferStatusFilter");
     const transferTable = document.getElementById("transferTable");
     const transferMobile = document.getElementById("transferMobile");
+    const apiSummary = document.getElementById("apiSummary");
+    const resultForm = document.getElementById("resultForm");
+    const transferForm = document.getElementById("transferForm");
+    const resultMessage = document.getElementById("resultMessage");
+    const transferMessage = document.getElementById("transferMessage");
+    const teamOptions = document.getElementById("teamOptions");
 
     const calendarConfig = { championshipRoundsPerWeek: 3 };
 
@@ -844,6 +1017,26 @@
     }
 
     function getTeamByName(teamName) { return teams.find(team => team.team === teamName); }
+
+    function getApprovedApiResults() {
+      return apiResults.filter(row => row.Status === "Aprovado");
+    }
+
+    function getChampionshipResult(roundNumber, home, away) {
+      const staticResult = championshipResults[`${roundNumber}|${home}|${away}`];
+      if (staticResult) return staticResult;
+
+      const phase = `Rodada ${roundNumber}`;
+      const row = getApprovedApiResults().find(result =>
+        result.Competicao === "Championship" &&
+        result.RodadaFase === phase &&
+        result.Mandante === home &&
+        result.Visitante === away
+      );
+
+      if (!row) return null;
+      return [Number(row.GolsMandante), Number(row.GolsVisitante)];
+    }
     function getOwnerByTeamName(teamName) { const team = getTeamByName(teamName); return team ? team.owner : "A definir"; }
     function isOurTeamName(teamName) { const team = getTeamByName(teamName); return team ? team.status === "Nosso" : false; }
 
@@ -896,8 +1089,7 @@
         const roundNumber = roundIndex + 1;
         const week = Math.ceil(roundNumber / calendarConfig.championshipRoundsPerWeek);
         return round.map((match, matchIndex) => {
-          const resultKey = `${roundNumber}|${match.home}|${match.away}`;
-          const result = championshipResults[resultKey];
+          const result = getChampionshipResult(roundNumber, match.home, match.away);
           return {
             id: `champ-${roundNumber}-${matchIndex + 1}`,
             week,
@@ -1138,8 +1330,23 @@
       return "Válido";
     }
 
+    function getAllTransfers() {
+      const approvedApiTransfers = apiTransfers
+        .filter(row => row.Status === "Aprovado")
+        .map(row => ({
+          player: row.Jogador,
+          buyer: row.Comprador,
+          fromClub: row.ClubeOrigem,
+          overall: Number(row.Overall),
+          marketValue: Number(row.ValorTransfermarkt)
+        }));
+
+      return [...transfers, ...approvedApiTransfers];
+    }
+
     function getTransfersWithStats() {
-      const nameCounts = transfers.reduce((acc, transfer) => {
+      const allTransfers = getAllTransfers();
+      const nameCounts = allTransfers.reduce((acc, transfer) => {
         const key = normalizeText(transfer.player);
         acc[key] = (acc[key] || 0) + 1;
         return acc;
@@ -1148,7 +1355,7 @@
       const seenNames = {};
       const spentByBuyer = {};
 
-      return transfers.map((transfer, index) => {
+      return allTransfers.map((transfer, index) => {
         const nameKey = normalizeText(transfer.player);
         seenNames[nameKey] = (seenNames[nameKey] || 0) + 1;
 
@@ -1218,9 +1425,9 @@
       const data = getFilteredTransfers();
 
       if (!data.length) {
-        const emptyMessage = `<tr><td colspan="9" class="calendar-muted">Nenhuma transferência cadastrada ainda. Adicione jogadores no array transfers.</td></tr>`;
+        const emptyMessage = `<tr><td colspan="9" class="calendar-muted">Nenhuma transferência cadastrada ainda. Use a aba Enviar dados.</td></tr>`;
         transferTable.innerHTML = emptyMessage;
-        transferMobile.innerHTML = `<article class="calendar-card"><h3>Nenhuma transferência cadastrada</h3><p class="calendar-muted">Adicione jogadores no array transfers para validar orçamento e duplicidade.</p></article>`;
+        transferMobile.innerHTML = `<article class="calendar-card"><h3>Nenhuma transferência cadastrada</h3><p class="calendar-muted">Use a aba Enviar dados para cadastrar contratações.</p></article>`;
         return;
       }
 
@@ -1261,6 +1468,114 @@
       }).join("");
     }
 
+    function renderApiSummary() {
+      const approvedResults = getApprovedApiResults().length;
+      const approvedTransfers = apiTransfers.filter(row => row.Status === "Aprovado").length;
+      const rejectedTransfers = apiTransfers.filter(row => row.Status === "Rejeitado").length;
+      apiSummary.innerHTML = `
+        <article class="summary-card"><span>Status planilha</span><strong>${apiLoaded ? "Conectada" : "Carregando"}</strong></article>
+        <article class="summary-card"><span>Resultados enviados</span><strong>${approvedResults}</strong></article>
+        <article class="summary-card"><span>Transfers aprovadas</span><strong>${approvedTransfers}</strong></article>
+        <article class="summary-card"><span>Transfers rejeitadas</span><strong>${rejectedTransfers}</strong></article>
+      `;
+    }
+
+    function setMessage(element, text, type = "") {
+      element.textContent = text;
+      element.className = `app-message ${type}`.trim();
+    }
+
+    async function loadApiData() {
+      try {
+        const response = await fetch(`${API_URL}?t=${Date.now()}`);
+        const data = await response.json();
+        if (!data.ok) throw new Error(data.error || "Erro ao carregar planilha.");
+
+        apiResults = data.results || [];
+        apiTransfers = data.transfers || [];
+        apiLoaded = true;
+        update();
+      } catch (error) {
+        apiLoaded = false;
+        renderApiSummary();
+        setMessage(resultMessage, `Não consegui carregar a planilha: ${error.message}`, "error");
+      }
+    }
+
+    async function postToApi(payload) {
+      const response = await fetch(API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify({ ...payload, pin: API_PIN })
+      });
+      return response.json();
+    }
+
+    async function handleResultSubmit(event) {
+      event.preventDefault();
+      const formData = new FormData(resultForm);
+      const button = resultForm.querySelector("button");
+      button.disabled = true;
+      setMessage(resultMessage, "Enviando resultado...", "warning");
+
+      try {
+        const payload = Object.fromEntries(formData.entries());
+        const data = await postToApi({
+          action: "addResult",
+          ...payload,
+          homeScore: Number(payload.homeScore),
+          awayScore: Number(payload.awayScore),
+          week: Number(payload.week)
+        });
+
+        if (!data.ok) throw new Error(data.message || data.error || "Resultado rejeitado.");
+        setMessage(resultMessage, data.message || "Resultado enviado com sucesso.", "success");
+        resultForm.reset();
+        await loadApiData();
+      } catch (error) {
+        setMessage(resultMessage, error.message, "error");
+      } finally {
+        button.disabled = false;
+      }
+    }
+
+    async function handleTransferSubmit(event) {
+      event.preventDefault();
+      const formData = new FormData(transferForm);
+      const button = transferForm.querySelector("button");
+      button.disabled = true;
+      setMessage(transferMessage, "Enviando transferência...", "warning");
+
+      try {
+        const payload = Object.fromEntries(formData.entries());
+        const data = await postToApi({
+          action: "addTransfer",
+          ...payload,
+          overall: Number(payload.overall),
+          marketValue: Number(payload.marketValue)
+        });
+
+        if (!data.ok) throw new Error(data.message || data.error || "Transferência rejeitada.");
+        setMessage(transferMessage, data.message || "Transferência enviada com sucesso.", "success");
+        transferForm.reset();
+        await loadApiData();
+      } catch (error) {
+        setMessage(transferMessage, error.message, "error");
+      } finally {
+        button.disabled = false;
+      }
+    }
+
+    function populateTeamOptions() {
+      const knownTeams = [...new Set([
+        ...teams.map(team => team.team),
+        ...premierLeagueTeams,
+        ...faCupLowerLeagueQualifiers
+      ])].sort((a, b) => a.localeCompare(b));
+
+      teamOptions.innerHTML = knownTeams.map(team => `<option value="${team}"></option>`).join("");
+    }
+
     function update() {
       renderSummary();
       renderTable();
@@ -1268,6 +1583,7 @@
       renderCalendar();
       renderTransferSummary();
       renderTransfers();
+      renderApiSummary();
     }
 
     document.querySelectorAll(".tab-button").forEach(button => {
@@ -1289,9 +1605,13 @@
     transferSearchInput.addEventListener("input", update);
     transferOwnerFilter.addEventListener("change", update);
     transferStatusFilter.addEventListener("change", update);
+    resultForm.addEventListener("submit", handleResultSubmit);
+    transferForm.addEventListener("submit", handleTransferSubmit);
 
+    populateTeamOptions();
     populateCalendarWeeks();
     update();
+    loadApiData();
   </script>
 </body>
 </html>
