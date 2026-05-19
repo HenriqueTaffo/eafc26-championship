@@ -172,6 +172,82 @@
       overflow-x: auto;
     }
 
+    .mobile-standings {
+      display: none;
+    }
+
+    .mobile-card {
+      background: rgba(17, 28, 51, 0.94);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 14px;
+      box-shadow: 0 14px 34px rgba(0, 0, 0, 0.22);
+    }
+
+    .mobile-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+
+    .mobile-team-info {
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+      min-width: 0;
+    }
+
+    .mobile-position {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 42px;
+      height: 42px;
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.08);
+      font-size: 16px;
+      font-weight: 900;
+    }
+
+    .mobile-card h3 {
+      margin: 0 0 6px;
+      font-size: 17px;
+      line-height: 1.2;
+    }
+
+    .mobile-stats {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+    }
+
+    .mobile-stat {
+      background: rgba(15, 23, 42, 0.62);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 12px;
+      padding: 8px 6px;
+      text-align: center;
+    }
+
+    .mobile-stat span {
+      display: block;
+      color: var(--muted);
+      font-size: 10px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 4px;
+    }
+
+    .mobile-stat strong {
+      font-size: 16px;
+    }
+
+    .mobile-stat.points-stat {
+      background: rgba(255, 255, 255, 0.1);
+    }
+
     table {
       width: 100%;
       border-collapse: collapse;
@@ -290,24 +366,108 @@
 
     @media (max-width: 760px) {
       body {
-        padding: 16px;
+        padding: 14px;
+        background: linear-gradient(180deg, #1e3a8a 0, var(--bg) 360px);
+      }
+
+      .app {
+        max-width: 100%;
       }
 
       header {
         flex-direction: column;
+        margin-bottom: 18px;
+      }
+
+      h1 {
+        font-size: 28px;
+        line-height: 1.05;
+      }
+
+      .subtitle {
+        font-size: 14px;
       }
 
       .summary {
-        grid-template-columns: repeat(2, minmax(120px, 1fr));
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+        margin-bottom: 18px;
+      }
+
+      .summary-card {
+        padding: 12px;
+        border-radius: 16px;
+      }
+
+      .summary-card span {
+        font-size: 10px;
+      }
+
+      .summary-card strong {
+        font-size: 20px;
+        line-height: 1.15;
       }
 
       .controls {
         flex-direction: column;
+        gap: 8px;
+        padding: 10px;
+        border-radius: 16px;
+        margin-bottom: 18px;
       }
 
       input,
       select {
         width: 100%;
+        flex: 0 0 auto;
+        min-height: 48px;
+        font-size: 14px;
+        border-radius: 12px;
+      }
+
+      .legend-block {
+        margin-bottom: 16px;
+      }
+
+      .legend-title {
+        font-size: 11px;
+      }
+
+      .legend {
+        gap: 7px;
+        margin-bottom: 0;
+      }
+
+      .badge {
+        font-size: 12px;
+        padding: 6px 9px;
+      }
+
+      .table-card {
+        display: none;
+      }
+
+      .mobile-standings {
+        display: grid;
+        gap: 10px;
+      }
+
+      .owner {
+        min-width: auto;
+        max-width: 96px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        flex-shrink: 0;
+      }
+
+      .classification {
+        font-size: 11px;
+        padding: 6px 9px;
+      }
+
+      .footer-note {
+        font-size: 12px;
       }
     }
   </style>
@@ -389,6 +549,8 @@
       </div>
     </section>
 
+    <section class="mobile-standings" id="mobileStandings"></section>
+
     <p class="footer-note">
       Para editar a tabela: altere vitórias, empates, derrotas, gols pró e gols contra dentro do array <strong>teams</strong>. Os campos de jogos, saldo, pontos, posição e faixa são calculados automaticamente.
     </p>
@@ -433,6 +595,7 @@
     ];
 
     const table = document.getElementById("teamsTable");
+    const mobileStandings = document.getElementById("mobileStandings");
     const searchInput = document.getElementById("searchInput");
     const ownerFilter = document.getElementById("ownerFilter");
     const sortSelect = document.getElementById("sortSelect");
@@ -563,6 +726,38 @@
             <td class="numeric points">${item.points}</td>
             <td><span class="classification ${zone.className}">${zone.label}</span></td>
           </tr>
+        `;
+      }).join("");
+
+      mobileStandings.innerHTML = data.map((item) => {
+        const color = ownerColors[item.owner] || ownerColors["Livre / CPU"];
+        const isOurs = item.status === "Nosso";
+        const ownerClass = item.owner === "Livre / CPU" ? "owner free" : "owner";
+        const zone = getClassificationZone(item.position);
+
+        return `
+          <article class="mobile-card ${isOurs ? "ours-row" : ""} classification-border" style="--zone-color: ${zone.color}">
+            <div class="mobile-card-header">
+              <div class="mobile-team-info">
+                <span class="mobile-position">${item.position}º</span>
+                <div>
+                  <h3>${item.team}</h3>
+                  <span class="classification ${zone.className}">${zone.label}</span>
+                </div>
+              </div>
+              <span class="${ownerClass}" style="${item.owner !== "Livre / CPU" ? `background: ${color}` : ""}">${item.owner}</span>
+            </div>
+            <div class="mobile-stats">
+              <div class="mobile-stat"><span>J</span><strong>${item.played}</strong></div>
+              <div class="mobile-stat"><span>V</span><strong>${item.wins}</strong></div>
+              <div class="mobile-stat"><span>E</span><strong>${item.draws}</strong></div>
+              <div class="mobile-stat"><span>D</span><strong>${item.losses}</strong></div>
+              <div class="mobile-stat"><span>GP</span><strong>${item.goalsFor}</strong></div>
+              <div class="mobile-stat"><span>GC</span><strong>${item.goalsAgainst}</strong></div>
+              <div class="mobile-stat"><span>SG</span><strong>${formatGoalDifference(item.goalDifference)}</strong></div>
+              <div class="mobile-stat points-stat"><span>PTS</span><strong>${item.points}</strong></div>
+            </div>
+          </article>
         `;
       }).join("");
     }
