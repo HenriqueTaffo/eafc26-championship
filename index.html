@@ -232,6 +232,33 @@
     .status-pill.done { background: rgba(34, 197, 94, 0.22); color: #bbf7d0; }
     .status-pill.waiting { background: rgba(234, 179, 8, 0.22); color: #fef3c7; }
 
+    .match-type {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 900;
+      white-space: nowrap;
+    }
+
+    .match-type.human-vs-human {
+      background: linear-gradient(135deg, rgba(249, 115, 22, 0.95), rgba(239, 68, 68, 0.95));
+      color: #fff;
+      box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.16), 0 10px 24px rgba(239, 68, 68, 0.2);
+    }
+
+    .match-type.human-vs-cpu {
+      background: rgba(59, 130, 246, 0.24);
+      color: #bfdbfe;
+    }
+
+    .match-type.cpu-vs-cpu {
+      background: rgba(100, 116, 139, 0.28);
+      color: #e2e8f0;
+    }
+
     .classification-border { box-shadow: inset 4px 0 0 var(--zone-color, transparent); }
     .numeric { font-weight: 800; text-align: center; }
     .points { font-size: 18px; font-weight: 900; color: #f8fafc; }
@@ -426,6 +453,7 @@
         </select>
         <select id="calendarTeamFilter">
           <option value="all">Todos os jogos</option>
+          <option value="humanVsHuman">🔥 Humano x humano</option>
           <option value="ours">Somente nossos times</option>
           <option value="Henrique">Henrique</option>
           <option value="Willian">Willian</option>
@@ -449,7 +477,7 @@
           <table>
             <thead>
               <tr>
-                <th>Semana</th><th>Competição</th><th>Rodada/Fase</th><th>Jogo</th><th>Envolvidos</th><th>Status/Placar</th>
+                <th>Semana</th><th>Competição</th><th>Rodada/Fase</th><th>Jogo</th><th>Envolvidos</th><th>Tipo</th><th>Status/Placar</th>
               </tr>
             </thead>
             <tbody id="calendarTable"></tbody>
@@ -654,6 +682,19 @@
 
     function involvesOwner(match, owner) { return [match.home, match.away].some(teamName => getOwnerByTeamName(teamName) === owner); }
     function involvesOurTeam(match) { return [match.home, match.away].some(teamName => isOurTeamName(teamName)); }
+    function isHumanVsHuman(match) { return isOurTeamName(match.home) && isOurTeamName(match.away); }
+
+    function getMatchType(match) {
+      if (isHumanVsHuman(match)) {
+        return { label: "🔥 Humano x humano", className: "human-vs-human" };
+      }
+
+      if (involvesOurTeam(match)) {
+        return { label: "Humano x CPU", className: "human-vs-cpu" };
+      }
+
+      return { label: "CPU x CPU", className: "cpu-vs-cpu" };
+    }
 
     function generateChampionshipCalendar() {
       const teamNames = teams.map(team => team.team);
@@ -794,7 +835,8 @@
       let events = getCalendarEvents();
 
       if (competition !== "all") events = events.filter(event => event.competition === competition);
-      if (teamFilter === "ours") events = events.filter(event => involvesOurTeam(event));
+      if (teamFilter === "humanVsHuman") events = events.filter(event => isHumanVsHuman(event));
+      else if (teamFilter === "ours") events = events.filter(event => involvesOurTeam(event));
       else if (teamFilter !== "all") events = events.filter(event => involvesOwner(event, teamFilter));
       if (week !== "all") events = events.filter(event => String(event.week) === week);
       if (search) events = events.filter(event => event.home.toLowerCase().includes(search) || event.away.toLowerCase().includes(search) || event.phase.toLowerCase().includes(search) || event.competition.toLowerCase().includes(search) || getMatchOwners(event).toLowerCase().includes(search));
@@ -867,6 +909,7 @@
       calendarTable.innerHTML = events.map(event => {
         const owners = getMatchOwners(event);
         const rowClass = involvesOurTeam(event) ? "ours-row" : "";
+        const matchType = getMatchType(event);
         return `
           <tr class="${rowClass}">
             <td class="numeric">${event.week}</td>
@@ -874,6 +917,7 @@
             <td>${event.phase}</td>
             <td class="calendar-match">${event.home} x ${event.away}</td>
             <td>${owners}</td>
+            <td><span class="match-type ${matchType.className}">${matchType.label}</span></td>
             <td><span class="status-pill ${getStatusClass(event)}">${formatMatchResult(event)}</span></td>
           </tr>`;
       }).join("");
@@ -881,11 +925,12 @@
       calendarMobile.innerHTML = events.map(event => {
         const owners = getMatchOwners(event);
         const rowClass = involvesOurTeam(event) ? "ours-row" : "";
+        const matchType = getMatchType(event);
         return `
           <article class="calendar-card ${rowClass}">
             <div class="calendar-card-header"><span class="competition-badge ${event.className}">${event.competition}</span><span class="calendar-muted">Semana ${event.week}</span></div>
             <h3>${event.home} x ${event.away}</h3>
-            <div class="calendar-card-meta"><div class="calendar-meta-item"><span>Rodada/Fase</span><strong>${event.phase}</strong></div><div class="calendar-meta-item"><span>Envolvidos</span><strong>${owners}</strong></div><div class="calendar-meta-item"><span>Status/Placar</span><strong>${formatMatchResult(event)}</strong></div><div class="calendar-meta-item"><span>Semana</span><strong>${event.week}</strong></div></div>
+            <div class="calendar-card-meta"><div class="calendar-meta-item"><span>Rodada/Fase</span><strong>${event.phase}</strong></div><div class="calendar-meta-item"><span>Envolvidos</span><strong>${owners}</strong></div><div class="calendar-meta-item"><span>Tipo</span><strong><span class="match-type ${matchType.className}">${matchType.label}</span></strong></div><div class="calendar-meta-item"><span>Status/Placar</span><strong>${formatMatchResult(event)}</strong></div><div class="calendar-meta-item"><span>Semana</span><strong>${event.week}</strong></div></div>
           </article>`;
       }).join("");
     }
