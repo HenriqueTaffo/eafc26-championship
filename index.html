@@ -12,19 +12,20 @@
       --muted: #94a3b8;
       --line: rgba(255, 255, 255, 0.1);
       --free: #64748b;
-      --you: #2563eb;
+      --henrique: #2563eb;
       --willian: #16a34a;
       --rafael: #dc2626;
-      --pai: #eab308;
+      --renato: #eab308;
       --promotion: #22c55e;
       --playoff: #38bdf8;
       --safe: #64748b;
       --relegation: #ef4444;
+      --championship: #3b82f6;
+      --league-cup: #a855f7;
+      --fa-cup: #f43f5e;
     }
 
-    * {
-      box-sizing: border-box;
-    }
+    * { box-sizing: border-box; }
 
     body {
       margin: 0;
@@ -35,18 +36,9 @@
       padding: 24px;
     }
 
-    .app {
-      max-width: 1220px;
-      margin: 0 auto;
-    }
+    .app { max-width: 1240px; margin: 0 auto; }
 
-    header {
-      display: flex;
-      justify-content: space-between;
-      gap: 18px;
-      align-items: flex-start;
-      margin-bottom: 24px;
-    }
+    header { margin-bottom: 20px; }
 
     h1 {
       margin: 0 0 8px;
@@ -54,11 +46,37 @@
       letter-spacing: -0.04em;
     }
 
-    .subtitle {
-      color: var(--muted);
-      margin: 0;
-      line-height: 1.5;
+    .subtitle { color: var(--muted); margin: 0; line-height: 1.5; }
+
+    .tabs {
+      display: inline-flex;
+      gap: 8px;
+      padding: 8px;
+      margin-bottom: 20px;
+      background: rgba(17, 28, 51, 0.78);
+      border: 1px solid var(--line);
+      border-radius: 18px;
     }
+
+    .tab-button {
+      border: 0;
+      color: var(--muted);
+      background: transparent;
+      padding: 11px 16px;
+      border-radius: 12px;
+      font-weight: 900;
+      cursor: pointer;
+      letter-spacing: 0.02em;
+    }
+
+    .tab-button.active {
+      color: var(--text);
+      background: rgba(255, 255, 255, 0.12);
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+    }
+
+    .view { display: none; }
+    .view.active { display: block; }
 
     .summary {
       display: grid;
@@ -84,9 +102,7 @@
       margin-bottom: 6px;
     }
 
-    .summary-card strong {
-      font-size: 24px;
-    }
+    .summary-card strong { font-size: 24px; line-height: 1.1; }
 
     .controls {
       display: flex;
@@ -100,8 +116,7 @@
       backdrop-filter: blur(10px);
     }
 
-    input,
-    select {
+    input, select {
       background: #0b1220;
       border: 1px solid var(--line);
       color: var(--text);
@@ -111,24 +126,10 @@
       outline: none;
     }
 
-    input {
-      flex: 1 1 260px;
-    }
+    input { flex: 1 1 260px; }
+    select { flex: 0 1 210px; }
 
-    select {
-      flex: 0 1 190px;
-    }
-
-    .legend {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      margin-bottom: 18px;
-    }
-
-    .legend-block {
-      margin-bottom: 18px;
-    }
+    .legend-block { margin-bottom: 18px; }
 
     .legend-title {
       margin: 0 0 8px;
@@ -138,6 +139,8 @@
       letter-spacing: 0.08em;
       font-weight: 800;
     }
+
+    .legend { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 0; }
 
     .badge {
       display: inline-flex;
@@ -168,98 +171,11 @@
       box-shadow: 0 24px 70px rgba(0, 0, 0, 0.3);
     }
 
-    .table-wrap {
-      overflow-x: auto;
-    }
+    .table-wrap { overflow-x: auto; }
 
-    .mobile-standings {
-      display: none;
-    }
+    table { width: 100%; border-collapse: collapse; min-width: 980px; }
 
-    .mobile-card {
-      background: rgba(17, 28, 51, 0.94);
-      border: 1px solid var(--line);
-      border-radius: 18px;
-      padding: 14px;
-      box-shadow: 0 14px 34px rgba(0, 0, 0, 0.22);
-    }
-
-    .mobile-card-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      gap: 12px;
-      margin-bottom: 10px;
-    }
-
-    .mobile-team-info {
-      display: flex;
-      gap: 10px;
-      align-items: flex-start;
-      min-width: 0;
-    }
-
-    .mobile-position {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      min-width: 42px;
-      height: 42px;
-      border-radius: 14px;
-      background: rgba(255, 255, 255, 0.08);
-      font-size: 16px;
-      font-weight: 900;
-    }
-
-    .mobile-card h3 {
-      margin: 0 0 6px;
-      font-size: 17px;
-      line-height: 1.2;
-    }
-
-    .mobile-zone {
-      margin-bottom: 12px;
-    }
-
-    .mobile-stats {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 8px;
-    }
-
-    .mobile-stat {
-      background: rgba(15, 23, 42, 0.62);
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      border-radius: 12px;
-      padding: 8px 6px;
-      text-align: center;
-    }
-
-    .mobile-stat span {
-      display: block;
-      color: var(--muted);
-      font-size: 10px;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      margin-bottom: 4px;
-    }
-
-    .mobile-stat strong {
-      font-size: 16px;
-    }
-
-    .mobile-stat.points-stat {
-      background: rgba(255, 255, 255, 0.1);
-    }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      min-width: 980px;
-    }
-
-    th,
-    td {
+    th, td {
       padding: 13px 14px;
       text-align: left;
       border-bottom: 1px solid var(--line);
@@ -275,16 +191,9 @@
       top: 0;
     }
 
-    tr:last-child td {
-      border-bottom: 0;
-    }
+    tr:last-child td { border-bottom: 0; }
 
-    .team-cell {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      font-weight: 800;
-    }
+    .team-cell { display: flex; align-items: center; gap: 12px; font-weight: 800; }
 
     .team-color {
       width: 6px;
@@ -294,116 +203,7 @@
       flex: 0 0 auto;
     }
 
-    .owner {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      padding: 6px 10px;
-      border-radius: 999px;
-      font-size: 12px;
-      font-weight: 800;
-      color: #fff;
-      background: var(--free);
-      min-width: 88px;
-    }
-
-    .owner.free {
-      color: #e2e8f0;
-      background: rgba(100, 116, 139, 0.45);
-    }
-
-    .classification {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      padding: 6px 10px;
-      border-radius: 999px;
-      font-size: 12px;
-      font-weight: 800;
-      color: #fff;
-      white-space: nowrap;
-    }
-
-    .classification.promotion {
-      background: rgba(34, 197, 94, 0.9);
-    }
-
-    .classification.playoff {
-      background: rgba(56, 189, 248, 0.9);
-      color: #082f49;
-    }
-
-    .classification.safe {
-      background: rgba(100, 116, 139, 0.55);
-      color: #e2e8f0;
-    }
-
-    .classification.relegation {
-      background: rgba(239, 68, 68, 0.9);
-    }
-
-    .classification-border {
-      box-shadow: inset 4px 0 0 var(--zone-color, transparent);
-    }
-
-    .numeric {
-      font-weight: 800;
-      text-align: center;
-    }
-
-    .points {
-      font-size: 18px;
-      font-weight: 900;
-      color: #f8fafc;
-    }
-
-    .ours-row {
-      background: linear-gradient(90deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.015));
-    }
-
-    .footer-note {
-      color: var(--muted);
-      font-size: 13px;
-      margin-top: 14px;
-      line-height: 1.5;
-    }
-
-    .tabs {
-      display: inline-flex;
-      gap: 8px;
-      padding: 8px;
-      margin-bottom: 20px;
-      background: rgba(17, 28, 51, 0.78);
-      border: 1px solid var(--line);
-      border-radius: 18px;
-    }
-
-    .tab-button {
-      border: 0;
-      color: var(--muted);
-      background: transparent;
-      padding: 11px 16px;
-      border-radius: 12px;
-      font-weight: 900;
-      cursor: pointer;
-      letter-spacing: 0.02em;
-    }
-
-    .tab-button.active {
-      color: var(--text);
-      background: rgba(255, 255, 255, 0.12);
-      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
-    }
-
-    .view {
-      display: none;
-    }
-
-    .view.active {
-      display: block;
-    }
-
-    .competition-badge {
+    .owner, .classification, .competition-badge, .status-pill {
       display: inline-flex;
       align-items: center;
       justify-content: center;
@@ -414,35 +214,34 @@
       white-space: nowrap;
     }
 
-    .competition-badge.championship {
-      background: rgba(59, 130, 246, 0.92);
-      color: #fff;
-    }
+    .owner { color: #fff; background: var(--free); min-width: 88px; }
+    .owner.free { color: #e2e8f0; background: rgba(100, 116, 139, 0.45); }
 
-    .competition-badge.league-cup {
-      background: rgba(168, 85, 247, 0.92);
-      color: #fff;
-    }
+    .classification { color: #fff; }
+    .classification.promotion { background: rgba(34, 197, 94, 0.9); }
+    .classification.playoff { background: rgba(56, 189, 248, 0.9); color: #082f49; }
+    .classification.safe { background: rgba(100, 116, 139, 0.55); color: #e2e8f0; }
+    .classification.relegation { background: rgba(239, 68, 68, 0.9); }
 
-    .competition-badge.fa-cup {
-      background: rgba(244, 63, 94, 0.92);
-      color: #fff;
-    }
+    .competition-badge { color: #fff; }
+    .competition-badge.championship { background: var(--championship); }
+    .competition-badge.league-cup { background: var(--league-cup); }
+    .competition-badge.fa-cup { background: var(--fa-cup); }
 
-    .calendar-match {
-      font-weight: 900;
-    }
+    .status-pill.pending { background: rgba(148, 163, 184, 0.28); color: #e2e8f0; }
+    .status-pill.done { background: rgba(34, 197, 94, 0.22); color: #bbf7d0; }
+    .status-pill.waiting { background: rgba(234, 179, 8, 0.22); color: #fef3c7; }
 
-    .calendar-muted {
-      color: var(--muted);
-      font-size: 12px;
-    }
+    .classification-border { box-shadow: inset 4px 0 0 var(--zone-color, transparent); }
+    .numeric { font-weight: 800; text-align: center; }
+    .points { font-size: 18px; font-weight: 900; color: #f8fafc; }
+    .ours-row { background: linear-gradient(90deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.015)); }
+    .calendar-match { font-weight: 900; }
+    .calendar-muted { color: var(--muted); font-size: 12px; }
 
-    .calendar-mobile {
-      display: none;
-    }
+    .mobile-standings, .calendar-mobile { display: none; }
 
-    .calendar-card {
+    .mobile-card, .calendar-card {
       background: rgba(17, 28, 51, 0.94);
       border: 1px solid var(--line);
       border-radius: 18px;
@@ -450,34 +249,50 @@
       box-shadow: 0 14px 34px rgba(0, 0, 0, 0.22);
     }
 
-    .calendar-card-header {
+    .mobile-card-header, .calendar-card-header {
       display: flex;
       justify-content: space-between;
       align-items: flex-start;
-      gap: 10px;
+      gap: 12px;
       margin-bottom: 10px;
     }
 
-    .calendar-card h3 {
-      margin: 8px 0 10px;
-      font-size: 17px;
-      line-height: 1.25;
+    .mobile-team-info { display: flex; gap: 10px; align-items: flex-start; min-width: 0; }
+
+    .mobile-position {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 42px;
+      height: 42px;
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.08);
+      font-size: 16px;
+      font-weight: 900;
     }
 
-    .calendar-card-meta {
+    .mobile-card h3, .calendar-card h3 { margin: 0 0 8px; font-size: 17px; line-height: 1.25; }
+    .calendar-card h3 { margin-top: 8px; }
+
+    .mobile-stats, .calendar-card-meta {
       display: grid;
-      grid-template-columns: repeat(2, 1fr);
+      grid-template-columns: repeat(4, 1fr);
       gap: 8px;
     }
 
-    .calendar-meta-item {
+    .calendar-card-meta { grid-template-columns: repeat(2, 1fr); }
+
+    .mobile-stat, .calendar-meta-item {
       background: rgba(15, 23, 42, 0.62);
       border: 1px solid rgba(255, 255, 255, 0.08);
       border-radius: 12px;
-      padding: 8px;
+      padding: 8px 6px;
+      text-align: center;
     }
 
-    .calendar-meta-item span {
+    .calendar-meta-item { text-align: left; padding: 8px; }
+
+    .mobile-stat span, .calendar-meta-item span {
       display: block;
       color: var(--muted);
       font-size: 10px;
@@ -486,142 +301,48 @@
       margin-bottom: 4px;
     }
 
-    .calendar-meta-item strong {
+    .mobile-stat strong { font-size: 16px; }
+    .calendar-meta-item strong { font-size: 13px; }
+    .mobile-stat.points-stat { background: rgba(255, 255, 255, 0.1); }
+
+    .footer-note {
+      color: var(--muted);
       font-size: 13px;
+      margin-top: 14px;
+      line-height: 1.5;
     }
 
     @media (max-width: 760px) {
-      body {
-        padding: 14px;
-        background: linear-gradient(180deg, #1e3a8a 0, var(--bg) 360px);
-      }
-
-      .app {
-        max-width: 100%;
-      }
-
-      header {
-        flex-direction: column;
-        margin-bottom: 18px;
-      }
-
-      h1 {
-        font-size: 28px;
-        line-height: 1.05;
-      }
-
-      .subtitle {
-        font-size: 14px;
-      }
-
-      .summary {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 10px;
-        margin-bottom: 18px;
-      }
-
-      .summary-card {
-        padding: 12px;
-        border-radius: 16px;
-      }
-
-      .summary-card span {
-        font-size: 10px;
-      }
-
-      .summary-card strong {
-        font-size: 20px;
-        line-height: 1.15;
-      }
-
-      .controls {
-        flex-direction: column;
-        gap: 8px;
-        padding: 10px;
-        border-radius: 16px;
-        margin-bottom: 18px;
-      }
-
-      input,
-      select {
-        width: 100%;
-        flex: 0 0 auto;
-        min-height: 48px;
-        font-size: 14px;
-        border-radius: 12px;
-      }
-
-      .legend-block {
-        margin-bottom: 16px;
-      }
-
-      .legend-title {
-        font-size: 11px;
-      }
-
-      .legend {
-        gap: 7px;
-        margin-bottom: 0;
-      }
-
-      .badge {
-        font-size: 12px;
-        padding: 6px 9px;
-      }
-
-      .table-card {
-        display: none;
-      }
-
-      .tabs {
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        width: 100%;
-        margin-bottom: 18px;
-      }
-
-      .tab-button {
-        width: 100%;
-        padding: 12px;
-      }
-
-      .mobile-standings,
-      .calendar-mobile {
-        display: grid;
-        gap: 10px;
-      }
-
-      .calendar-card-meta {
-        grid-template-columns: repeat(2, 1fr);
-      }
-
-      .owner {
-        min-width: auto;
-        max-width: 96px;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-        flex-shrink: 0;
-      }
-
-      .classification {
-        font-size: 11px;
-        padding: 6px 9px;
-      }
-
-      .footer-note {
-        font-size: 12px;
-      }
+      body { padding: 14px; background: linear-gradient(180deg, #1e3a8a 0, var(--bg) 360px); }
+      .app { max-width: 100%; }
+      header { margin-bottom: 18px; }
+      h1 { font-size: 28px; line-height: 1.05; }
+      .subtitle { font-size: 14px; }
+      .tabs { display: grid; grid-template-columns: repeat(2, 1fr); width: 100%; margin-bottom: 18px; }
+      .tab-button { width: 100%; padding: 12px; }
+      .summary { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-bottom: 18px; }
+      .summary-card { padding: 12px; border-radius: 16px; }
+      .summary-card span { font-size: 10px; }
+      .summary-card strong { font-size: 20px; line-height: 1.15; }
+      .controls { flex-direction: column; gap: 8px; padding: 10px; border-radius: 16px; margin-bottom: 18px; }
+      input, select { width: 100%; flex: 0 0 auto; min-height: 48px; font-size: 14px; border-radius: 12px; }
+      .legend-block { margin-bottom: 16px; }
+      .legend-title { font-size: 11px; }
+      .legend { gap: 7px; }
+      .badge { font-size: 12px; padding: 6px 9px; }
+      .table-card { display: none; }
+      .mobile-standings, .calendar-mobile { display: grid; gap: 10px; }
+      .owner { min-width: auto; max-width: 96px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex-shrink: 0; }
+      .classification, .competition-badge, .status-pill { font-size: 11px; padding: 6px 9px; }
+      .footer-note { font-size: 12px; }
     }
   </style>
 </head>
 <body>
   <main class="app">
     <header>
-      <div>
-        <h1>EAFC26 Championship</h1>
-        <p class="subtitle">Tabela do campeonato com classificação, estatísticas e times destacados por jogador.</p>
-      </div>
+      <h1>EAFC26 Championship</h1>
+      <p class="subtitle">Classificação, calendário completo da Championship e copas simuladas com avanço por resultado.</p>
     </header>
 
     <nav class="tabs" aria-label="Navegação do campeonato">
@@ -630,111 +351,47 @@
     </nav>
 
     <section id="standingsView" class="view active">
-    <section class="summary" id="summary"></section>
-
-    <section class="controls">
-      <input id="searchInput" type="search" placeholder="Buscar clube ou dono..." />
-      <select id="ownerFilter">
-        <option value="all">Todos os times</option>
-        <option value="ours">Somente nossos times</option>
-        <option value="free">Somente livres/CPU</option>
-        <option value="Henrique">Henrique</option>
-        <option value="Willian">Willian</option>
-        <option value="Rafael">Rafael</option>
-        <option value="Renato">Renato</option>
-      </select>
-      <select id="sortSelect">
-        <option value="standings">Classificação</option>
-        <option value="pointsDesc">Mais pontos</option>
-        <option value="winsDesc">Mais vitórias</option>
-        <option value="goalDifferenceDesc">Maior saldo</option>
-        <option value="goalsForDesc">Mais gols pró</option>
-        <option value="teamAsc">Nome A-Z</option>
-      </select>
-    </section>
-
-    <section class="legend-block">
-      <p class="legend-title">Jogadores</p>
-      <div class="legend">
-        <span class="badge"><span class="dot" style="background: var(--you)"></span>Henrique</span>
-        <span class="badge"><span class="dot" style="background: var(--willian)"></span>Willian</span>
-        <span class="badge"><span class="dot" style="background: var(--rafael)"></span>Rafael</span>
-        <span class="badge"><span class="dot" style="background: var(--pai)"></span>Renato</span>
-        <span class="badge"><span class="dot" style="background: var(--free)"></span>Livre / CPU</span>
-      </div>
-    </section>
-
-    <section class="legend-block">
-      <p class="legend-title">Faixas da Championship</p>
-      <div class="legend">
-        <span class="badge"><span class="dot" style="background: var(--promotion)"></span>1º–2º: acesso direto</span>
-        <span class="badge"><span class="dot" style="background: var(--playoff)"></span>3º–6º: playoffs de acesso</span>
-        <span class="badge"><span class="dot" style="background: var(--safe)"></span>7º–21º: permanece na Championship</span>
-        <span class="badge"><span class="dot" style="background: var(--relegation)"></span>22º–24º: rebaixamento</span>
-      </div>
-    </section>
-
-    <section class="table-card">
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>Pos.</th>
-              <th>Clube</th>
-              <th>Dono</th>
-              <th>J</th>
-              <th>V</th>
-              <th>E</th>
-              <th>D</th>
-              <th>GP</th>
-              <th>GC</th>
-              <th>SG</th>
-              <th>PTS</th>
-              <th>Faixa</th>
-            </tr>
-          </thead>
-          <tbody id="teamsTable"></tbody>
-        </table>
-      </div>
-    </section>
-
-    <section class="mobile-standings" id="mobileStandings"></section>
-
-    <p class="footer-note">
-      Para editar a tabela: altere vitórias, empates, derrotas, gols pró e gols contra dentro do array <strong>teams</strong>. Os campos de jogos, saldo, pontos, posição e faixa são calculados automaticamente.
-    </p>
-    </section>
-
-    <section id="calendarView" class="view">
-      <section class="summary" id="calendarSummary"></section>
+      <section class="summary" id="summary"></section>
 
       <section class="controls">
-        <input id="calendarSearchInput" type="search" placeholder="Buscar clube, rodada ou competição..." />
-        <select id="calendarCompetitionFilter">
-          <option value="all">Todas as competições</option>
-          <option value="Championship">Championship</option>
-          <option value="Copa da Liga">Copa da Liga</option>
-          <option value="FA Cup">FA Cup</option>
-        </select>
-        <select id="calendarTeamFilter">
+        <input id="searchInput" type="search" placeholder="Buscar clube ou dono..." />
+        <select id="ownerFilter">
+          <option value="all">Todos os times</option>
           <option value="ours">Somente nossos times</option>
-          <option value="all">Todos os jogos</option>
+          <option value="free">Somente livres/CPU</option>
           <option value="Henrique">Henrique</option>
           <option value="Willian">Willian</option>
           <option value="Rafael">Rafael</option>
           <option value="Renato">Renato</option>
         </select>
-        <select id="calendarWeekFilter">
-          <option value="all">Todas as semanas</option>
+        <select id="sortSelect">
+          <option value="standings">Classificação</option>
+          <option value="pointsDesc">Mais pontos</option>
+          <option value="winsDesc">Mais vitórias</option>
+          <option value="goalDifferenceDesc">Maior saldo</option>
+          <option value="goalsForDesc">Mais gols pró</option>
+          <option value="teamAsc">Nome A-Z</option>
         </select>
       </section>
 
       <section class="legend-block">
-        <p class="legend-title">Competições no calendário</p>
+        <p class="legend-title">Jogadores</p>
         <div class="legend">
-          <span class="badge"><span class="dot" style="background: #3b82f6"></span>Championship</span>
-          <span class="badge"><span class="dot" style="background: #a855f7"></span>Copa da Liga</span>
-          <span class="badge"><span class="dot" style="background: #f43f5e"></span>FA Cup</span>
+          <span class="badge"><span class="dot" style="background: var(--henrique)"></span>Henrique</span>
+          <span class="badge"><span class="dot" style="background: var(--willian)"></span>Willian</span>
+          <span class="badge"><span class="dot" style="background: var(--rafael)"></span>Rafael</span>
+          <span class="badge"><span class="dot" style="background: var(--renato)"></span>Renato</span>
+          <span class="badge"><span class="dot" style="background: var(--free)"></span>Livre / CPU</span>
+        </div>
+      </section>
+
+      <section class="legend-block">
+        <p class="legend-title">Faixas da Championship</p>
+        <div class="legend">
+          <span class="badge"><span class="dot" style="background: var(--promotion)"></span>1º–2º: acesso direto</span>
+          <span class="badge"><span class="dot" style="background: var(--playoff)"></span>3º–6º: playoffs de acesso</span>
+          <span class="badge"><span class="dot" style="background: var(--safe)"></span>7º–21º: permanece</span>
+          <span class="badge"><span class="dot" style="background: var(--relegation)"></span>22º–24º: rebaixamento</span>
         </div>
       </section>
 
@@ -743,12 +400,56 @@
           <table>
             <thead>
               <tr>
-                <th>Semana</th>
-                <th>Competição</th>
-                <th>Rodada/Fase</th>
-                <th>Jogo</th>
-                <th>Envolvidos</th>
-                <th>Status/Placar</th>
+                <th>Pos.</th><th>Clube</th><th>Dono</th><th>J</th><th>V</th><th>E</th><th>D</th><th>GP</th><th>GC</th><th>SG</th><th>PTS</th><th>Faixa</th>
+              </tr>
+            </thead>
+            <tbody id="teamsTable"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="mobile-standings" id="mobileStandings"></section>
+
+      <p class="footer-note">Para editar a tabela: altere vitórias, empates, derrotas, gols pró e gols contra dentro do array <strong>teams</strong>. Jogos, saldo, pontos, posição e faixa são calculados automaticamente.</p>
+    </section>
+
+    <section id="calendarView" class="view">
+      <section class="summary" id="calendarSummary"></section>
+
+      <section class="controls">
+        <input id="calendarSearchInput" type="search" placeholder="Buscar clube, rodada, fase ou competição..." />
+        <select id="calendarCompetitionFilter">
+          <option value="all">Todas as competições</option>
+          <option value="Championship">Championship</option>
+          <option value="Copa da Liga">Copa da Liga</option>
+          <option value="FA Cup">FA Cup</option>
+        </select>
+        <select id="calendarTeamFilter">
+          <option value="all">Todos os jogos</option>
+          <option value="ours">Somente nossos times</option>
+          <option value="Henrique">Henrique</option>
+          <option value="Willian">Willian</option>
+          <option value="Rafael">Rafael</option>
+          <option value="Renato">Renato</option>
+        </select>
+        <select id="calendarWeekFilter"><option value="all">Todas as semanas</option></select>
+      </section>
+
+      <section class="legend-block">
+        <p class="legend-title">Competições</p>
+        <div class="legend">
+          <span class="badge"><span class="dot" style="background: var(--championship)"></span>Championship</span>
+          <span class="badge"><span class="dot" style="background: var(--league-cup)"></span>Copa da Liga</span>
+          <span class="badge"><span class="dot" style="background: var(--fa-cup)"></span>FA Cup</span>
+        </div>
+      </section>
+
+      <section class="table-card">
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Semana</th><th>Competição</th><th>Rodada/Fase</th><th>Jogo</th><th>Envolvidos</th><th>Status/Placar</th>
               </tr>
             </thead>
             <tbody id="calendarTable"></tbody>
@@ -758,23 +459,16 @@
 
       <section class="calendar-mobile" id="calendarMobile"></section>
 
-      <p class="footer-note">
-        O calendário considera <strong>3 rodadas da Championship por semana</strong>. Copa da Liga e FA Cup entram como datas simuladas; quando houver sorteio ou eliminação, edite o array <strong>cupMatches</strong> no JavaScript.
-      </p>
+      <p class="footer-note">A Championship gera automaticamente as 46 rodadas. Nas copas, a próxima fase usa o vencedor da fase anterior. Se o jogo ainda não tiver resultado, aparece como <strong>Vencedor do Jogo X</strong>, sem colocar todos como classificados até a final.</p>
     </section>
   </main>
 
   <script>
-    // EDITE AQUI QUANDO QUISER ATUALIZAR A CLASSIFICAÇÃO.
-    // Legenda: wins = vitórias, draws = empates, losses = derrotas, goalsFor = gols pró, goalsAgainst = gols contra.
-    const ownerColors = {
-      "Henrique": "var(--you)",
-      "Willian": "var(--willian)",
-      "Rafael": "var(--rafael)",
-      "Renato": "var(--pai)",
-      "Livre / CPU": "var(--free)"
-    };
-
+    // =========================
+    // 1) TABELA DA CHAMPIONSHIP
+    // =========================
+    // Edite aqui a classificação manualmente.
+    // wins = vitórias, draws = empates, losses = derrotas, goalsFor = gols pró, goalsAgainst = gols contra.
     const teams = [
       { team: "Coventry City", owner: "Henrique", wins: 0, draws: 0, losses: 0, goalsFor: 0, goalsAgainst: 0, status: "Nosso" },
       { team: "Ipswich Town", owner: "Livre / CPU", wins: 0, draws: 0, losses: 0, goalsFor: 0, goalsAgainst: 0, status: "Livre" },
@@ -802,6 +496,79 @@
       { team: "Sheffield Wednesday", owner: "Livre / CPU", wins: 0, draws: 0, losses: 0, goalsFor: 0, goalsAgainst: 0, status: "Livre" }
     ];
 
+    const ownerColors = {
+      "Henrique": "var(--henrique)",
+      "Willian": "var(--willian)",
+      "Rafael": "var(--rafael)",
+      "Renato": "var(--renato)",
+      "Livre / CPU": "var(--free)"
+    };
+
+    // ==============================
+    // 2) RESULTADOS DA CHAMPIONSHIP
+    // ==============================
+    // Opcional: se quiser mostrar placar no calendário da Championship, preencha aqui.
+    // Use o formato: "Rodada|Mandante|Visitante": [golsMandante, golsVisitante]
+    const championshipResults = {
+      // Exemplo:
+      // "1|Coventry City|Sheffield Wednesday": [2, 1]
+    };
+
+    // =========================
+    // 3) CONFRONTOS DAS COPAS
+    // =========================
+    // Para atualizar copa: preencha homeScore/awayScore.
+    // Em caso de empate e decisão nos pênaltis, preencha penaltyWinner com o nome exato do classificado.
+    const cupDefinitions = [
+      {
+        name: "Copa da Liga",
+        className: "league-cup",
+        rounds: [
+          {
+            week: 1,
+            phase: "1ª fase",
+            matches: [
+              { home: "Coventry City", away: "Sheffield Wednesday", homeScore: null, awayScore: null, penaltyWinner: "" },
+              { home: "Stoke City", away: "Birmingham City", homeScore: null, awayScore: null, penaltyWinner: "" },
+              { home: "Middlesbrough", away: "Preston North End", homeScore: null, awayScore: null, penaltyWinner: "" },
+              { home: "Portsmouth", away: "Southampton", homeScore: null, awayScore: null, penaltyWinner: "" },
+              { home: "Leicester City", away: "Wrexham", homeScore: null, awayScore: null, penaltyWinner: "" },
+              { home: "Ipswich Town", away: "Oxford United", homeScore: null, awayScore: null, penaltyWinner: "" },
+              { home: "Hull City", away: "Swansea City", homeScore: null, awayScore: null, penaltyWinner: "" },
+              { home: "Watford", away: "Derby County", homeScore: null, awayScore: null, penaltyWinner: "" }
+            ]
+          },
+          { week: 5, phase: "Quartas de final" },
+          { week: 10, phase: "Semifinal" },
+          { week: 16, phase: "Final" }
+        ]
+      },
+      {
+        name: "FA Cup",
+        className: "fa-cup",
+        rounds: [
+          {
+            week: 8,
+            phase: "3ª fase",
+            matches: [
+              { home: "Coventry City", away: "Charlton Athletic", homeScore: null, awayScore: null, penaltyWinner: "" },
+              { home: "Bristol City", away: "Birmingham City", homeScore: null, awayScore: null, penaltyWinner: "" },
+              { home: "Middlesbrough", away: "Norwich City", homeScore: null, awayScore: null, penaltyWinner: "" },
+              { home: "Southampton", away: "Blackburn Rovers", homeScore: null, awayScore: null, penaltyWinner: "" },
+              { home: "West Bromwich Albion", away: "Queens Park Rangers", homeScore: null, awayScore: null, penaltyWinner: "" },
+              { home: "Millwall", away: "Sheffield United", homeScore: null, awayScore: null, penaltyWinner: "" },
+              { home: "Swansea City", away: "Portsmouth", homeScore: null, awayScore: null, penaltyWinner: "" },
+              { home: "Wrexham", away: "Stoke City", homeScore: null, awayScore: null, penaltyWinner: "" }
+            ]
+          },
+          { week: 11, phase: "4ª fase" },
+          { week: 14, phase: "Quartas de final" },
+          { week: 17, phase: "Semifinal" },
+          { week: 18, phase: "Final" }
+        ]
+      }
+    ];
+
     const table = document.getElementById("teamsTable");
     const mobileStandings = document.getElementById("mobileStandings");
     const searchInput = document.getElementById("searchInput");
@@ -816,72 +583,21 @@
     const calendarTable = document.getElementById("calendarTable");
     const calendarMobile = document.getElementById("calendarMobile");
 
-    const calendarConfig = {
-      championshipRoundsPerWeek: 3
-    };
-
-    const competitionClassNames = {
-      "Championship": "championship",
-      "Copa da Liga": "league-cup",
-      "FA Cup": "fa-cup"
-    };
-
-    const cupSlots = [
-      { week: 1, competition: "Copa da Liga", phase: "1ª fase" },
-      { week: 4, competition: "Copa da Liga", phase: "2ª fase" },
-      { week: 7, competition: "Copa da Liga", phase: "3ª fase" },
-      { week: 10, competition: "Copa da Liga", phase: "Oitavas de final" },
-      { week: 13, competition: "Copa da Liga", phase: "Quartas de final" },
-      { week: 15, competition: "Copa da Liga", phase: "Semifinal" },
-      { week: 16, competition: "Copa da Liga", phase: "Final" },
-      { week: 8, competition: "FA Cup", phase: "3ª fase" },
-      { week: 10, competition: "FA Cup", phase: "4ª fase" },
-      { week: 12, competition: "FA Cup", phase: "5ª fase" },
-      { week: 14, competition: "FA Cup", phase: "Quartas de final" },
-      { week: 16, competition: "FA Cup", phase: "Semifinal" },
-      { week: 17, competition: "FA Cup", phase: "Final" }
-    ];
-
-    const cupMatches = cupSlots.flatMap(slot =>
-      teams
-        .filter(team => team.status === "Nosso")
-        .map(team => ({
-          ...slot,
-          home: team.team,
-          away: "A definir",
-          status: "Sorteio a definir",
-          homeScore: null,
-          awayScore: null
-        }))
-    );
+    const calendarConfig = { championshipRoundsPerWeek: 3 };
 
     function withCalculatedStats(team, originalIndex) {
       const played = team.wins + team.draws + team.losses;
       const goalDifference = team.goalsFor - team.goalsAgainst;
       const points = team.wins * 3 + team.draws;
-
-      return {
-        ...team,
-        originalIndex,
-        played,
-        goalDifference,
-        points
-      };
+      return { ...team, originalIndex, played, goalDifference, points };
     }
 
     function compareStandings(a, b) {
-      return b.points - a.points ||
-        b.wins - a.wins ||
-        b.goalDifference - a.goalDifference ||
-        b.goalsFor - a.goalsFor ||
-        a.team.localeCompare(b.team);
+      return b.points - a.points || b.wins - a.wins || b.goalDifference - a.goalDifference || b.goalsFor - a.goalsFor || a.team.localeCompare(b.team);
     }
 
     function getStandings() {
-      return teams
-        .map((team, index) => withCalculatedStats(team, index))
-        .sort(compareStandings)
-        .map((team, index) => ({ ...team, position: index + 1 }));
+      return teams.map((team, index) => withCalculatedStats(team, index)).sort(compareStandings).map((team, index) => ({ ...team, position: index + 1 }));
     }
 
     function getFilteredTeams() {
@@ -890,30 +606,27 @@
       const sort = sortSelect.value;
       let data = getStandings();
 
-      if (search) {
-        data = data.filter(item =>
-          item.team.toLowerCase().includes(search) ||
-          item.owner.toLowerCase().includes(search) ||
-          item.status.toLowerCase().includes(search)
-        );
-      }
-
-      if (filter === "ours") {
-        data = data.filter(item => item.status === "Nosso");
-      } else if (filter === "free") {
-        data = data.filter(item => item.status === "Livre");
-      } else if (filter !== "all") {
-        data = data.filter(item => item.owner === filter);
-      }
+      if (search) data = data.filter(item => item.team.toLowerCase().includes(search) || item.owner.toLowerCase().includes(search) || item.status.toLowerCase().includes(search));
+      if (filter === "ours") data = data.filter(item => item.status === "Nosso");
+      else if (filter === "free") data = data.filter(item => item.status === "Livre");
+      else if (filter !== "all") data = data.filter(item => item.owner === filter);
 
       if (sort === "pointsDesc") data.sort((a, b) => b.points - a.points || compareStandings(a, b));
       if (sort === "winsDesc") data.sort((a, b) => b.wins - a.wins || compareStandings(a, b));
       if (sort === "goalDifferenceDesc") data.sort((a, b) => b.goalDifference - a.goalDifference || compareStandings(a, b));
       if (sort === "goalsForDesc") data.sort((a, b) => b.goalsFor - a.goalsFor || compareStandings(a, b));
       if (sort === "teamAsc") data.sort((a, b) => a.team.localeCompare(b.team));
-
       return data;
     }
+
+    function getClassificationZone(position) {
+      if (position <= 2) return { label: "Acesso direto", className: "promotion", color: "var(--promotion)" };
+      if (position >= 3 && position <= 6) return { label: "Playoffs", className: "playoff", color: "var(--playoff)" };
+      if (position >= 22) return { label: "Rebaixamento", className: "relegation", color: "var(--relegation)" };
+      return { label: "Permanece", className: "safe", color: "var(--safe)" };
+    }
+
+    function formatGoalDifference(value) { return value > 0 ? `+${value}` : String(value); }
 
     function renderSummary() {
       const standings = getStandings();
@@ -921,7 +634,6 @@
       const ours = standings.filter(item => item.status === "Nosso");
       const bestOurTeam = [...ours].sort(compareStandings)[0];
       const totalMatches = Math.round(standings.reduce((sum, item) => sum + item.played, 0) / 2);
-
       summary.innerHTML = `
         <article class="summary-card"><span>Líder</span><strong>${leader.team}</strong></article>
         <article class="summary-card"><span>Melhor nosso</span><strong>${bestOurTeam.team}</strong></article>
@@ -930,57 +642,18 @@
       `;
     }
 
-    function getClassificationZone(position) {
-      if (position <= 2) {
-        return { label: "Acesso direto", className: "promotion", color: "var(--promotion)" };
-      }
-
-      if (position >= 3 && position <= 6) {
-        return { label: "Playoffs", className: "playoff", color: "var(--playoff)" };
-      }
-
-      if (position >= 22) {
-        return { label: "Rebaixamento", className: "relegation", color: "var(--relegation)" };
-      }
-
-      return { label: "Permanece", className: "safe", color: "var(--safe)" };
-    }
-
-    function formatGoalDifference(value) {
-      if (value > 0) return `+${value}`;
-      return String(value);
-    }
-
-    function getTeamByName(teamName) {
-      return teams.find(team => team.team === teamName);
-    }
-
-    function getOwnerByTeamName(teamName) {
-      const team = getTeamByName(teamName);
-      return team ? team.owner : "A definir";
-    }
-
-    function isOurTeamName(teamName) {
-      const team = getTeamByName(teamName);
-      return team ? team.status === "Nosso" : false;
-    }
+    function getTeamByName(teamName) { return teams.find(team => team.team === teamName); }
+    function getOwnerByTeamName(teamName) { const team = getTeamByName(teamName); return team ? team.owner : "A definir"; }
+    function isOurTeamName(teamName) { const team = getTeamByName(teamName); return team ? team.status === "Nosso" : false; }
 
     function getMatchOwners(match) {
-      const owners = [match.home, match.away]
-        .filter(teamName => isOurTeamName(teamName))
-        .map(teamName => getOwnerByTeamName(teamName));
-
+      const owners = [match.home, match.away].filter(teamName => isOurTeamName(teamName)).map(teamName => getOwnerByTeamName(teamName));
       const uniqueOwners = [...new Set(owners)];
       return uniqueOwners.length ? uniqueOwners.join(", ") : "Livre / CPU";
     }
 
-    function involvesOwner(match, owner) {
-      return [match.home, match.away].some(teamName => getOwnerByTeamName(teamName) === owner);
-    }
-
-    function involvesOurTeam(match) {
-      return [match.home, match.away].some(teamName => isOurTeamName(teamName));
-    }
+    function involvesOwner(match, owner) { return [match.home, match.away].some(teamName => getOwnerByTeamName(teamName) === owner); }
+    function involvesOurTeam(match) { return [match.home, match.away].some(teamName => isOurTeamName(teamName)); }
 
     function generateChampionshipCalendar() {
       const teamNames = teams.map(team => team.team);
@@ -995,11 +668,7 @@
         for (let index = 0; index < teamNames.length / 2; index++) {
           let home = arrangedTeams[index];
           let away = arrangedTeams[teamNames.length - 1 - index];
-
-          if (roundIndex % 2 === 1) {
-            [home, away] = [away, home];
-          }
-
+          if (roundIndex % 2 === 1) [home, away] = [away, home];
           matches.push({ home, away });
         }
 
@@ -1007,53 +676,114 @@
         rotation = [rotation[rotation.length - 1], ...rotation.slice(0, -1)];
       }
 
-      const secondLegRounds = firstLegRounds.map(round =>
-        round.map(match => ({ home: match.away, away: match.home }))
-      );
+      const secondLegRounds = firstLegRounds.map(round => round.map(match => ({ home: match.away, away: match.home })));
 
       return [...firstLegRounds, ...secondLegRounds].flatMap((round, roundIndex) => {
         const roundNumber = roundIndex + 1;
         const week = Math.ceil(roundNumber / calendarConfig.championshipRoundsPerWeek);
-
-        return round.map((match, matchIndex) => ({
-          id: `champ-${roundNumber}-${matchIndex + 1}`,
-          week,
-          competition: "Championship",
-          phase: `Rodada ${roundNumber}`,
-          round: roundNumber,
-          home: match.home,
-          away: match.away,
-          status: "Pendente",
-          homeScore: null,
-          awayScore: null
-        }));
+        return round.map((match, matchIndex) => {
+          const resultKey = `${roundNumber}|${match.home}|${match.away}`;
+          const result = championshipResults[resultKey];
+          return {
+            id: `champ-${roundNumber}-${matchIndex + 1}`,
+            week,
+            competition: "Championship",
+            className: "championship",
+            phase: `Rodada ${roundNumber}`,
+            round: roundNumber,
+            home: match.home,
+            away: match.away,
+            homeScore: result ? result[0] : null,
+            awayScore: result ? result[1] : null,
+            status: result ? "Finalizado" : "Pendente"
+          };
+        });
       });
     }
 
+    function getCupWinner(match) {
+      if (typeof match.homeScore === "number" && typeof match.awayScore === "number") {
+        if (match.homeScore > match.awayScore) return match.home;
+        if (match.awayScore > match.homeScore) return match.away;
+        if (match.penaltyWinner) return match.penaltyWinner;
+      }
+      return null;
+    }
+
+    function generateCupCalendar() {
+      const events = [];
+
+      cupDefinitions.forEach(cup => {
+        let previousRoundMatches = [];
+
+        cup.rounds.forEach((round, roundIndex) => {
+          let currentRoundMatches = [];
+
+          if (roundIndex === 0) {
+            currentRoundMatches = round.matches.map((match, index) => ({
+              ...match,
+              id: `${cup.name}-${round.phase}-${index + 1}`,
+              week: round.week,
+              competition: cup.name,
+              className: cup.className,
+              phase: `${round.phase} - Jogo ${index + 1}`,
+              bracketCode: `${round.phase} Jogo ${index + 1}`,
+              status: typeof match.homeScore === "number" && typeof match.awayScore === "number" ? "Finalizado" : "Pendente"
+            }));
+          } else {
+            for (let index = 0; index < previousRoundMatches.length; index += 2) {
+              const sourceA = previousRoundMatches[index];
+              const sourceB = previousRoundMatches[index + 1];
+              const winnerA = getCupWinner(sourceA);
+              const winnerB = sourceB ? getCupWinner(sourceB) : null;
+              const home = winnerA || `Vencedor ${sourceA.bracketCode}`;
+              const away = winnerB || (sourceB ? `Vencedor ${sourceB.bracketCode}` : "A definir");
+
+              currentRoundMatches.push({
+                id: `${cup.name}-${round.phase}-${Math.floor(index / 2) + 1}`,
+                week: round.week,
+                competition: cup.name,
+                className: cup.className,
+                phase: `${round.phase} - Jogo ${Math.floor(index / 2) + 1}`,
+                bracketCode: `${round.phase} Jogo ${Math.floor(index / 2) + 1}`,
+                home,
+                away,
+                homeScore: null,
+                awayScore: null,
+                penaltyWinner: "",
+                status: winnerA && winnerB ? "Pendente" : "Aguardando classificados"
+              });
+            }
+          }
+
+          events.push(...currentRoundMatches);
+          previousRoundMatches = currentRoundMatches;
+        });
+      });
+
+      return events;
+    }
+
     function getCalendarEvents() {
-      const championshipEvents = generateChampionshipCalendar();
-      const allEvents = [...championshipEvents, ...cupMatches];
-
-      const competitionOrder = {
-        "Copa da Liga": 1,
-        "Championship": 2,
-        "FA Cup": 3
-      };
-
-      return allEvents.sort((a, b) =>
-        a.week - b.week ||
-        (competitionOrder[a.competition] || 99) - (competitionOrder[b.competition] || 99) ||
-        a.phase.localeCompare(b.phase) ||
-        a.home.localeCompare(b.home)
-      );
+      const allEvents = [...generateChampionshipCalendar(), ...generateCupCalendar()];
+      const competitionOrder = { "Copa da Liga": 1, "Championship": 2, "FA Cup": 3 };
+      return allEvents.sort((a, b) => a.week - b.week || (competitionOrder[a.competition] || 99) - (competitionOrder[b.competition] || 99) || a.phase.localeCompare(b.phase) || a.home.localeCompare(b.home));
     }
 
     function formatMatchResult(match) {
       if (typeof match.homeScore === "number" && typeof match.awayScore === "number") {
-        return `${match.homeScore} x ${match.awayScore}`;
+        const winner = getCupWinner(match);
+        const penaltyText = match.penaltyWinner ? `, ${match.penaltyWinner} nos pênaltis` : "";
+        const winnerText = match.competition !== "Championship" && winner ? ` - ${winner} classificado${penaltyText}` : "";
+        return `${match.homeScore} x ${match.awayScore}${winnerText}`;
       }
-
       return match.status || "Pendente";
+    }
+
+    function getStatusClass(match) {
+      if (typeof match.homeScore === "number" && typeof match.awayScore === "number") return "done";
+      if ((match.status || "").includes("Aguardando")) return "waiting";
+      return "pending";
     }
 
     function getFilteredCalendarEvents() {
@@ -1063,30 +793,11 @@
       const week = calendarWeekFilter.value;
       let events = getCalendarEvents();
 
-      if (competition !== "all") {
-        events = events.filter(event => event.competition === competition);
-      }
-
-      if (teamFilter === "ours") {
-        events = events.filter(event => involvesOurTeam(event));
-      } else if (teamFilter !== "all") {
-        events = events.filter(event => involvesOwner(event, teamFilter));
-      }
-
-      if (week !== "all") {
-        events = events.filter(event => String(event.week) === week);
-      }
-
-      if (search) {
-        events = events.filter(event =>
-          event.home.toLowerCase().includes(search) ||
-          event.away.toLowerCase().includes(search) ||
-          event.phase.toLowerCase().includes(search) ||
-          event.competition.toLowerCase().includes(search) ||
-          getMatchOwners(event).toLowerCase().includes(search)
-        );
-      }
-
+      if (competition !== "all") events = events.filter(event => event.competition === competition);
+      if (teamFilter === "ours") events = events.filter(event => involvesOurTeam(event));
+      else if (teamFilter !== "all") events = events.filter(event => involvesOwner(event, teamFilter));
+      if (week !== "all") events = events.filter(event => String(event.week) === week);
+      if (search) events = events.filter(event => event.home.toLowerCase().includes(search) || event.away.toLowerCase().includes(search) || event.phase.toLowerCase().includes(search) || event.competition.toLowerCase().includes(search) || getMatchOwners(event).toLowerCase().includes(search));
       return events;
     }
 
@@ -1094,30 +805,60 @@
       const maxWeek = Math.max(...getCalendarEvents().map(event => event.week));
       const currentValue = calendarWeekFilter.value;
       calendarWeekFilter.innerHTML = '<option value="all">Todas as semanas</option>';
-
       for (let week = 1; week <= maxWeek; week++) {
         const option = document.createElement("option");
         option.value = String(week);
         option.textContent = `Semana ${week}`;
         calendarWeekFilter.appendChild(option);
       }
-
       calendarWeekFilter.value = currentValue || "all";
     }
 
     function renderCalendarSummary() {
       const events = getCalendarEvents();
-      const ourEvents = events.filter(event => involvesOurTeam(event));
-      const nextWeek = Math.min(...ourEvents.map(event => event.week));
-      const nextWeekGames = ourEvents.filter(event => event.week === nextWeek).length;
-      const competitions = [...new Set(events.map(event => event.competition))];
-
+      const championshipRounds = 46;
+      const cupEvents = events.filter(event => event.competition !== "Championship");
+      const waitingCupEvents = cupEvents.filter(event => (event.status || "").includes("Aguardando")).length;
       calendarSummary.innerHTML = `
+        <article class="summary-card"><span>Championship</span><strong>${championshipRounds} rodadas</strong></article>
         <article class="summary-card"><span>Ritmo</span><strong>3 rodadas/sem.</strong></article>
-        <article class="summary-card"><span>Próxima semana</span><strong>${nextWeek}</strong></article>
-        <article class="summary-card"><span>Jogos nossos na semana</span><strong>${nextWeekGames}</strong></article>
-        <article class="summary-card"><span>Competições</span><strong>${competitions.length}</strong></article>
+        <article class="summary-card"><span>Jogos totais</span><strong>${events.length}</strong></article>
+        <article class="summary-card"><span>Copas aguardando</span><strong>${waitingCupEvents}</strong></article>
       `;
+    }
+
+    function renderTable() {
+      const data = getFilteredTeams();
+
+      table.innerHTML = data.map(item => {
+        const color = ownerColors[item.owner] || ownerColors["Livre / CPU"];
+        const isOurs = item.status === "Nosso";
+        const ownerClass = item.owner === "Livre / CPU" ? "owner free" : "owner";
+        const zone = getClassificationZone(item.position);
+        return `
+          <tr class="${isOurs ? "ours-row" : ""} classification-border" style="--zone-color: ${zone.color}">
+            <td class="numeric">${item.position}º</td>
+            <td><div class="team-cell"><span class="team-color" style="background: ${color}"></span>${item.team}</div></td>
+            <td><span class="${ownerClass}" style="${item.owner !== "Livre / CPU" ? `background: ${color}` : ""}">${item.owner}</span></td>
+            <td class="numeric">${item.played}</td><td class="numeric">${item.wins}</td><td class="numeric">${item.draws}</td><td class="numeric">${item.losses}</td><td class="numeric">${item.goalsFor}</td><td class="numeric">${item.goalsAgainst}</td><td class="numeric">${formatGoalDifference(item.goalDifference)}</td><td class="numeric points">${item.points}</td>
+            <td><span class="classification ${zone.className}">${zone.label}</span></td>
+          </tr>`;
+      }).join("");
+
+      mobileStandings.innerHTML = data.map(item => {
+        const color = ownerColors[item.owner] || ownerColors["Livre / CPU"];
+        const isOurs = item.status === "Nosso";
+        const ownerClass = item.owner === "Livre / CPU" ? "owner free" : "owner";
+        const zone = getClassificationZone(item.position);
+        return `
+          <article class="mobile-card ${isOurs ? "ours-row" : ""} classification-border" style="--zone-color: ${zone.color}">
+            <div class="mobile-card-header">
+              <div class="mobile-team-info"><span class="mobile-position">${item.position}º</span><div><h3>${item.team}</h3><span class="classification ${zone.className}">${zone.label}</span></div></div>
+              <span class="${ownerClass}" style="${item.owner !== "Livre / CPU" ? `background: ${color}` : ""}">${item.owner}</span>
+            </div>
+            <div class="mobile-stats"><div class="mobile-stat"><span>J</span><strong>${item.played}</strong></div><div class="mobile-stat"><span>V</span><strong>${item.wins}</strong></div><div class="mobile-stat"><span>E</span><strong>${item.draws}</strong></div><div class="mobile-stat"><span>D</span><strong>${item.losses}</strong></div><div class="mobile-stat"><span>GP</span><strong>${item.goalsFor}</strong></div><div class="mobile-stat"><span>GC</span><strong>${item.goalsAgainst}</strong></div><div class="mobile-stat"><span>SG</span><strong>${formatGoalDifference(item.goalDifference)}</strong></div><div class="mobile-stat points-stat"><span>PTS</span><strong>${item.points}</strong></div></div>
+          </article>`;
+      }).join("");
     }
 
     function renderCalendar() {
@@ -1125,106 +866,27 @@
 
       calendarTable.innerHTML = events.map(event => {
         const owners = getMatchOwners(event);
-        const competitionClass = competitionClassNames[event.competition] || "championship";
         const rowClass = involvesOurTeam(event) ? "ours-row" : "";
-
         return `
           <tr class="${rowClass}">
             <td class="numeric">${event.week}</td>
-            <td><span class="competition-badge ${competitionClass}">${event.competition}</span></td>
+            <td><span class="competition-badge ${event.className}">${event.competition}</span></td>
             <td>${event.phase}</td>
             <td class="calendar-match">${event.home} x ${event.away}</td>
             <td>${owners}</td>
-            <td>${formatMatchResult(event)}</td>
-          </tr>
-        `;
+            <td><span class="status-pill ${getStatusClass(event)}">${formatMatchResult(event)}</span></td>
+          </tr>`;
       }).join("");
 
       calendarMobile.innerHTML = events.map(event => {
         const owners = getMatchOwners(event);
-        const competitionClass = competitionClassNames[event.competition] || "championship";
         const rowClass = involvesOurTeam(event) ? "ours-row" : "";
-
         return `
           <article class="calendar-card ${rowClass}">
-            <div class="calendar-card-header">
-              <span class="competition-badge ${competitionClass}">${event.competition}</span>
-              <span class="calendar-muted">Semana ${event.week}</span>
-            </div>
+            <div class="calendar-card-header"><span class="competition-badge ${event.className}">${event.competition}</span><span class="calendar-muted">Semana ${event.week}</span></div>
             <h3>${event.home} x ${event.away}</h3>
-            <div class="calendar-card-meta">
-              <div class="calendar-meta-item"><span>Rodada/Fase</span><strong>${event.phase}</strong></div>
-              <div class="calendar-meta-item"><span>Envolvidos</span><strong>${owners}</strong></div>
-              <div class="calendar-meta-item"><span>Status/Placar</span><strong>${formatMatchResult(event)}</strong></div>
-              <div class="calendar-meta-item"><span>Semana</span><strong>${event.week}</strong></div>
-            </div>
-          </article>
-        `;
-      }).join("");
-    }
-
-    function renderTable() {
-      const data = getFilteredTeams();
-
-      table.innerHTML = data.map((item) => {
-        const color = ownerColors[item.owner] || ownerColors["Livre / CPU"];
-        const isOurs = item.status === "Nosso";
-        const ownerClass = item.owner === "Livre / CPU" ? "owner free" : "owner";
-        const zone = getClassificationZone(item.position);
-
-        return `
-          <tr class="${isOurs ? "ours-row" : ""} classification-border" style="--zone-color: ${zone.color}">
-            <td class="numeric">${item.position}º</td>
-            <td>
-              <div class="team-cell">
-                <span class="team-color" style="background: ${color}"></span>
-                ${item.team}
-              </div>
-            </td>
-            <td><span class="${ownerClass}" style="${item.owner !== "Livre / CPU" ? `background: ${color}` : ""}">${item.owner}</span></td>
-            <td class="numeric">${item.played}</td>
-            <td class="numeric">${item.wins}</td>
-            <td class="numeric">${item.draws}</td>
-            <td class="numeric">${item.losses}</td>
-            <td class="numeric">${item.goalsFor}</td>
-            <td class="numeric">${item.goalsAgainst}</td>
-            <td class="numeric">${formatGoalDifference(item.goalDifference)}</td>
-            <td class="numeric points">${item.points}</td>
-            <td><span class="classification ${zone.className}">${zone.label}</span></td>
-          </tr>
-        `;
-      }).join("");
-
-      mobileStandings.innerHTML = data.map((item) => {
-        const color = ownerColors[item.owner] || ownerColors["Livre / CPU"];
-        const isOurs = item.status === "Nosso";
-        const ownerClass = item.owner === "Livre / CPU" ? "owner free" : "owner";
-        const zone = getClassificationZone(item.position);
-
-        return `
-          <article class="mobile-card ${isOurs ? "ours-row" : ""} classification-border" style="--zone-color: ${zone.color}">
-            <div class="mobile-card-header">
-              <div class="mobile-team-info">
-                <span class="mobile-position">${item.position}º</span>
-                <div>
-                  <h3>${item.team}</h3>
-                  <span class="classification ${zone.className}">${zone.label}</span>
-                </div>
-              </div>
-              <span class="${ownerClass}" style="${item.owner !== "Livre / CPU" ? `background: ${color}` : ""}">${item.owner}</span>
-            </div>
-            <div class="mobile-stats">
-              <div class="mobile-stat"><span>J</span><strong>${item.played}</strong></div>
-              <div class="mobile-stat"><span>V</span><strong>${item.wins}</strong></div>
-              <div class="mobile-stat"><span>E</span><strong>${item.draws}</strong></div>
-              <div class="mobile-stat"><span>D</span><strong>${item.losses}</strong></div>
-              <div class="mobile-stat"><span>GP</span><strong>${item.goalsFor}</strong></div>
-              <div class="mobile-stat"><span>GC</span><strong>${item.goalsAgainst}</strong></div>
-              <div class="mobile-stat"><span>SG</span><strong>${formatGoalDifference(item.goalDifference)}</strong></div>
-              <div class="mobile-stat points-stat"><span>PTS</span><strong>${item.points}</strong></div>
-            </div>
-          </article>
-        `;
+            <div class="calendar-card-meta"><div class="calendar-meta-item"><span>Rodada/Fase</span><strong>${event.phase}</strong></div><div class="calendar-meta-item"><span>Envolvidos</span><strong>${owners}</strong></div><div class="calendar-meta-item"><span>Status/Placar</span><strong>${formatMatchResult(event)}</strong></div><div class="calendar-meta-item"><span>Semana</span><strong>${event.week}</strong></div></div>
+          </article>`;
       }).join("");
     }
 
@@ -1239,7 +901,6 @@
       button.addEventListener("click", () => {
         document.querySelectorAll(".tab-button").forEach(item => item.classList.remove("active"));
         document.querySelectorAll(".view").forEach(item => item.classList.remove("active"));
-
         button.classList.add("active");
         document.getElementById(button.dataset.view).classList.add("active");
       });
