@@ -487,7 +487,7 @@
 
       <section class="calendar-mobile" id="calendarMobile"></section>
 
-      <p class="footer-note">A Championship gera automaticamente as 46 rodadas. Nas copas, a próxima fase usa o vencedor da fase anterior. Se o jogo ainda não tiver resultado, aparece como <strong>Vencedor do Jogo X</strong>, sem colocar todos como classificados até a final.</p>
+      <p class="footer-note">A Championship gera automaticamente as 46 rodadas. Na FA Cup, a 3ª fase já inclui Championship, Premier League e classificados simulados das fases anteriores. Nas copas, a próxima fase usa o vencedor da fase anterior. Se o jogo ainda não tiver resultado, aparece como <strong>Vencedor do Jogo X</strong>, sem colocar todos como classificados até a final.</p>
     </section>
   </main>
 
@@ -547,6 +547,68 @@
     // =========================
     // Para atualizar copa: preencha homeScore/awayScore.
     // Em caso de empate e decisão nos pênaltis, preencha penaltyWinner com o nome exato do classificado.
+
+    const premierLeagueTeams = [
+      "Arsenal", "Aston Villa", "Bournemouth", "Brentford", "Brighton & Hove Albion",
+      "Burnley", "Chelsea", "Crystal Palace", "Everton", "Fulham",
+      "Leeds United", "Liverpool", "Manchester City", "Manchester United", "Newcastle United",
+      "Nottingham Forest", "Sunderland", "Tottenham Hotspur", "West Ham United", "Wolverhampton Wanderers"
+    ];
+
+    const faCupLowerLeagueQualifiers = [
+      "Bolton Wanderers", "Huddersfield Town", "Barnsley", "Reading", "Wigan Athletic",
+      "Peterborough United", "Blackpool", "Leyton Orient", "Stockport County", "Rotherham United",
+      "Wycombe Wanderers", "Lincoln City", "Mansfield Town", "Exeter City", "Stevenage",
+      "Bradford City", "Doncaster Rovers", "Salford City", "MK Dons", "Notts County"
+    ];
+
+    function buildFaCupThirdRoundMatches() {
+      const championshipTeams = teams.map(team => team.team);
+      const entrants = [...championshipTeams, ...premierLeagueTeams, ...faCupLowerLeagueQualifiers];
+      const shuffledByDraw = [
+        "Coventry City", "Manchester United",
+        "Liverpool", "Charlton Athletic",
+        "Birmingham City", "Everton",
+        "Arsenal", "Sheffield Wednesday",
+        "Middlesbrough", "Leeds United",
+        "Chelsea", "Oxford United",
+        "Southampton", "Crystal Palace",
+        "Manchester City", "Portsmouth",
+        "Ipswich Town", "Bolton Wanderers",
+        "Aston Villa", "Stoke City",
+        "Leicester City", "Blackpool",
+        "Tottenham Hotspur", "Queens Park Rangers",
+        "West Bromwich Albion", "Reading",
+        "Newcastle United", "Bristol City",
+        "Hull City", "Wigan Athletic",
+        "Nottingham Forest", "Watford",
+        "Wrexham", "Huddersfield Town",
+        "West Ham United", "Millwall",
+        "Norwich City", "Peterborough United",
+        "Brighton & Hove Albion", "Swansea City",
+        "Burnley", "Derby County",
+        "Fulham", "Preston North End",
+        "Wolverhampton Wanderers", "Blackburn Rovers",
+        "Brentford", "Plymouth Argyle",
+        "Sunderland", "Barnsley",
+        "Bournemouth", "Stockport County",
+        "Sheffield United", "Lincoln City",
+        "Leyton Orient", "Rotherham United",
+        "Wycombe Wanderers", "Mansfield Town",
+        "Exeter City", "Stevenage",
+        "Bradford City", "Doncaster Rovers",
+        "Salford City", "MK Dons"
+      ];
+
+      return Array.from({ length: 32 }, (_, index) => ({
+        home: shuffledByDraw[index * 2],
+        away: shuffledByDraw[index * 2 + 1],
+        homeScore: null,
+        awayScore: null,
+        penaltyWinner: ""
+      }));
+    }
+
     const cupDefinitions = [
       {
         name: "Copa da Liga",
@@ -578,19 +640,11 @@
           {
             week: 8,
             phase: "3ª fase",
-            matches: [
-              { home: "Coventry City", away: "Charlton Athletic", homeScore: null, awayScore: null, penaltyWinner: "" },
-              { home: "Bristol City", away: "Birmingham City", homeScore: null, awayScore: null, penaltyWinner: "" },
-              { home: "Middlesbrough", away: "Norwich City", homeScore: null, awayScore: null, penaltyWinner: "" },
-              { home: "Southampton", away: "Blackburn Rovers", homeScore: null, awayScore: null, penaltyWinner: "" },
-              { home: "West Bromwich Albion", away: "Queens Park Rangers", homeScore: null, awayScore: null, penaltyWinner: "" },
-              { home: "Millwall", away: "Sheffield United", homeScore: null, awayScore: null, penaltyWinner: "" },
-              { home: "Swansea City", away: "Portsmouth", homeScore: null, awayScore: null, penaltyWinner: "" },
-              { home: "Wrexham", away: "Stoke City", homeScore: null, awayScore: null, penaltyWinner: "" }
-            ]
+            matches: buildFaCupThirdRoundMatches()
           },
           { week: 11, phase: "4ª fase" },
-          { week: 14, phase: "Quartas de final" },
+          { week: 13, phase: "5ª fase" },
+          { week: 15, phase: "Quartas de final" },
           { week: 17, phase: "Semifinal" },
           { week: 18, phase: "Final" }
         ]
@@ -861,10 +915,11 @@
       const championshipRounds = 46;
       const cupEvents = events.filter(event => event.competition !== "Championship");
       const waitingCupEvents = cupEvents.filter(event => (event.status || "").includes("Aguardando")).length;
+      const faCupThirdRoundMatches = cupEvents.filter(event => event.competition === "FA Cup" && event.phase.includes("3ª fase")).length;
       calendarSummary.innerHTML = `
         <article class="summary-card"><span>Championship</span><strong>${championshipRounds} rodadas</strong></article>
         <article class="summary-card"><span>Ritmo</span><strong>3 rodadas/sem.</strong></article>
-        <article class="summary-card"><span>Jogos totais</span><strong>${events.length}</strong></article>
+        <article class="summary-card"><span>FA Cup 3ª fase</span><strong>${faCupThirdRoundMatches} jogos</strong></article>
         <article class="summary-card"><span>Copas aguardando</span><strong>${waitingCupEvents}</strong></article>
       `;
     }
