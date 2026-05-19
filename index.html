@@ -217,6 +217,10 @@
       line-height: 1.2;
     }
 
+    .mobile-zone {
+      margin-bottom: 12px;
+    }
+
     .mobile-stats {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
@@ -364,6 +368,128 @@
       line-height: 1.5;
     }
 
+    .tabs {
+      display: inline-flex;
+      gap: 8px;
+      padding: 8px;
+      margin-bottom: 20px;
+      background: rgba(17, 28, 51, 0.78);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+    }
+
+    .tab-button {
+      border: 0;
+      color: var(--muted);
+      background: transparent;
+      padding: 11px 16px;
+      border-radius: 12px;
+      font-weight: 900;
+      cursor: pointer;
+      letter-spacing: 0.02em;
+    }
+
+    .tab-button.active {
+      color: var(--text);
+      background: rgba(255, 255, 255, 0.12);
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+    }
+
+    .view {
+      display: none;
+    }
+
+    .view.active {
+      display: block;
+    }
+
+    .competition-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 900;
+      white-space: nowrap;
+    }
+
+    .competition-badge.championship {
+      background: rgba(59, 130, 246, 0.92);
+      color: #fff;
+    }
+
+    .competition-badge.league-cup {
+      background: rgba(168, 85, 247, 0.92);
+      color: #fff;
+    }
+
+    .competition-badge.fa-cup {
+      background: rgba(244, 63, 94, 0.92);
+      color: #fff;
+    }
+
+    .calendar-match {
+      font-weight: 900;
+    }
+
+    .calendar-muted {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .calendar-mobile {
+      display: none;
+    }
+
+    .calendar-card {
+      background: rgba(17, 28, 51, 0.94);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 14px;
+      box-shadow: 0 14px 34px rgba(0, 0, 0, 0.22);
+    }
+
+    .calendar-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .calendar-card h3 {
+      margin: 8px 0 10px;
+      font-size: 17px;
+      line-height: 1.25;
+    }
+
+    .calendar-card-meta {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+    }
+
+    .calendar-meta-item {
+      background: rgba(15, 23, 42, 0.62);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 12px;
+      padding: 8px;
+    }
+
+    .calendar-meta-item span {
+      display: block;
+      color: var(--muted);
+      font-size: 10px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 4px;
+    }
+
+    .calendar-meta-item strong {
+      font-size: 13px;
+    }
+
     @media (max-width: 760px) {
       body {
         padding: 14px;
@@ -447,9 +573,26 @@
         display: none;
       }
 
-      .mobile-standings {
+      .tabs {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        width: 100%;
+        margin-bottom: 18px;
+      }
+
+      .tab-button {
+        width: 100%;
+        padding: 12px;
+      }
+
+      .mobile-standings,
+      .calendar-mobile {
         display: grid;
         gap: 10px;
+      }
+
+      .calendar-card-meta {
+        grid-template-columns: repeat(2, 1fr);
       }
 
       .owner {
@@ -481,6 +624,12 @@
       </div>
     </header>
 
+    <nav class="tabs" aria-label="Navegação do campeonato">
+      <button class="tab-button active" data-view="standingsView">Classificação</button>
+      <button class="tab-button" data-view="calendarView">Calendário</button>
+    </nav>
+
+    <section id="standingsView" class="view active">
     <section class="summary" id="summary"></section>
 
     <section class="controls">
@@ -554,6 +703,65 @@
     <p class="footer-note">
       Para editar a tabela: altere vitórias, empates, derrotas, gols pró e gols contra dentro do array <strong>teams</strong>. Os campos de jogos, saldo, pontos, posição e faixa são calculados automaticamente.
     </p>
+    </section>
+
+    <section id="calendarView" class="view">
+      <section class="summary" id="calendarSummary"></section>
+
+      <section class="controls">
+        <input id="calendarSearchInput" type="search" placeholder="Buscar clube, rodada ou competição..." />
+        <select id="calendarCompetitionFilter">
+          <option value="all">Todas as competições</option>
+          <option value="Championship">Championship</option>
+          <option value="Copa da Liga">Copa da Liga</option>
+          <option value="FA Cup">FA Cup</option>
+        </select>
+        <select id="calendarTeamFilter">
+          <option value="ours">Somente nossos times</option>
+          <option value="all">Todos os jogos</option>
+          <option value="Henrique">Henrique</option>
+          <option value="Willian">Willian</option>
+          <option value="Rafael">Rafael</option>
+          <option value="Renato">Renato</option>
+        </select>
+        <select id="calendarWeekFilter">
+          <option value="all">Todas as semanas</option>
+        </select>
+      </section>
+
+      <section class="legend-block">
+        <p class="legend-title">Competições no calendário</p>
+        <div class="legend">
+          <span class="badge"><span class="dot" style="background: #3b82f6"></span>Championship</span>
+          <span class="badge"><span class="dot" style="background: #a855f7"></span>Copa da Liga</span>
+          <span class="badge"><span class="dot" style="background: #f43f5e"></span>FA Cup</span>
+        </div>
+      </section>
+
+      <section class="table-card">
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Semana</th>
+                <th>Competição</th>
+                <th>Rodada/Fase</th>
+                <th>Jogo</th>
+                <th>Envolvidos</th>
+                <th>Status/Placar</th>
+              </tr>
+            </thead>
+            <tbody id="calendarTable"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="calendar-mobile" id="calendarMobile"></section>
+
+      <p class="footer-note">
+        O calendário considera <strong>3 rodadas da Championship por semana</strong>. Copa da Liga e FA Cup entram como datas simuladas; quando houver sorteio ou eliminação, edite o array <strong>cupMatches</strong> no JavaScript.
+      </p>
+    </section>
   </main>
 
   <script>
@@ -600,6 +808,52 @@
     const ownerFilter = document.getElementById("ownerFilter");
     const sortSelect = document.getElementById("sortSelect");
     const summary = document.getElementById("summary");
+    const calendarSummary = document.getElementById("calendarSummary");
+    const calendarSearchInput = document.getElementById("calendarSearchInput");
+    const calendarCompetitionFilter = document.getElementById("calendarCompetitionFilter");
+    const calendarTeamFilter = document.getElementById("calendarTeamFilter");
+    const calendarWeekFilter = document.getElementById("calendarWeekFilter");
+    const calendarTable = document.getElementById("calendarTable");
+    const calendarMobile = document.getElementById("calendarMobile");
+
+    const calendarConfig = {
+      championshipRoundsPerWeek: 3
+    };
+
+    const competitionClassNames = {
+      "Championship": "championship",
+      "Copa da Liga": "league-cup",
+      "FA Cup": "fa-cup"
+    };
+
+    const cupSlots = [
+      { week: 1, competition: "Copa da Liga", phase: "1ª fase" },
+      { week: 4, competition: "Copa da Liga", phase: "2ª fase" },
+      { week: 7, competition: "Copa da Liga", phase: "3ª fase" },
+      { week: 10, competition: "Copa da Liga", phase: "Oitavas de final" },
+      { week: 13, competition: "Copa da Liga", phase: "Quartas de final" },
+      { week: 15, competition: "Copa da Liga", phase: "Semifinal" },
+      { week: 16, competition: "Copa da Liga", phase: "Final" },
+      { week: 8, competition: "FA Cup", phase: "3ª fase" },
+      { week: 10, competition: "FA Cup", phase: "4ª fase" },
+      { week: 12, competition: "FA Cup", phase: "5ª fase" },
+      { week: 14, competition: "FA Cup", phase: "Quartas de final" },
+      { week: 16, competition: "FA Cup", phase: "Semifinal" },
+      { week: 17, competition: "FA Cup", phase: "Final" }
+    ];
+
+    const cupMatches = cupSlots.flatMap(slot =>
+      teams
+        .filter(team => team.status === "Nosso")
+        .map(team => ({
+          ...slot,
+          home: team.team,
+          away: "A definir",
+          status: "Sorteio a definir",
+          homeScore: null,
+          awayScore: null
+        }))
+    );
 
     function withCalculatedStats(team, originalIndex) {
       const played = team.wins + team.draws + team.losses;
@@ -697,6 +951,218 @@
       return String(value);
     }
 
+    function getTeamByName(teamName) {
+      return teams.find(team => team.team === teamName);
+    }
+
+    function getOwnerByTeamName(teamName) {
+      const team = getTeamByName(teamName);
+      return team ? team.owner : "A definir";
+    }
+
+    function isOurTeamName(teamName) {
+      const team = getTeamByName(teamName);
+      return team ? team.status === "Nosso" : false;
+    }
+
+    function getMatchOwners(match) {
+      const owners = [match.home, match.away]
+        .filter(teamName => isOurTeamName(teamName))
+        .map(teamName => getOwnerByTeamName(teamName));
+
+      const uniqueOwners = [...new Set(owners)];
+      return uniqueOwners.length ? uniqueOwners.join(", ") : "Livre / CPU";
+    }
+
+    function involvesOwner(match, owner) {
+      return [match.home, match.away].some(teamName => getOwnerByTeamName(teamName) === owner);
+    }
+
+    function involvesOurTeam(match) {
+      return [match.home, match.away].some(teamName => isOurTeamName(teamName));
+    }
+
+    function generateChampionshipCalendar() {
+      const teamNames = teams.map(team => team.team);
+      const fixedTeam = teamNames[0];
+      let rotation = teamNames.slice(1);
+      const firstLegRounds = [];
+
+      for (let roundIndex = 0; roundIndex < teamNames.length - 1; roundIndex++) {
+        const arrangedTeams = [fixedTeam, ...rotation];
+        const matches = [];
+
+        for (let index = 0; index < teamNames.length / 2; index++) {
+          let home = arrangedTeams[index];
+          let away = arrangedTeams[teamNames.length - 1 - index];
+
+          if (roundIndex % 2 === 1) {
+            [home, away] = [away, home];
+          }
+
+          matches.push({ home, away });
+        }
+
+        firstLegRounds.push(matches);
+        rotation = [rotation[rotation.length - 1], ...rotation.slice(0, -1)];
+      }
+
+      const secondLegRounds = firstLegRounds.map(round =>
+        round.map(match => ({ home: match.away, away: match.home }))
+      );
+
+      return [...firstLegRounds, ...secondLegRounds].flatMap((round, roundIndex) => {
+        const roundNumber = roundIndex + 1;
+        const week = Math.ceil(roundNumber / calendarConfig.championshipRoundsPerWeek);
+
+        return round.map((match, matchIndex) => ({
+          id: `champ-${roundNumber}-${matchIndex + 1}`,
+          week,
+          competition: "Championship",
+          phase: `Rodada ${roundNumber}`,
+          round: roundNumber,
+          home: match.home,
+          away: match.away,
+          status: "Pendente",
+          homeScore: null,
+          awayScore: null
+        }));
+      });
+    }
+
+    function getCalendarEvents() {
+      const championshipEvents = generateChampionshipCalendar();
+      const allEvents = [...championshipEvents, ...cupMatches];
+
+      const competitionOrder = {
+        "Copa da Liga": 1,
+        "Championship": 2,
+        "FA Cup": 3
+      };
+
+      return allEvents.sort((a, b) =>
+        a.week - b.week ||
+        (competitionOrder[a.competition] || 99) - (competitionOrder[b.competition] || 99) ||
+        a.phase.localeCompare(b.phase) ||
+        a.home.localeCompare(b.home)
+      );
+    }
+
+    function formatMatchResult(match) {
+      if (typeof match.homeScore === "number" && typeof match.awayScore === "number") {
+        return `${match.homeScore} x ${match.awayScore}`;
+      }
+
+      return match.status || "Pendente";
+    }
+
+    function getFilteredCalendarEvents() {
+      const search = calendarSearchInput.value.trim().toLowerCase();
+      const competition = calendarCompetitionFilter.value;
+      const teamFilter = calendarTeamFilter.value;
+      const week = calendarWeekFilter.value;
+      let events = getCalendarEvents();
+
+      if (competition !== "all") {
+        events = events.filter(event => event.competition === competition);
+      }
+
+      if (teamFilter === "ours") {
+        events = events.filter(event => involvesOurTeam(event));
+      } else if (teamFilter !== "all") {
+        events = events.filter(event => involvesOwner(event, teamFilter));
+      }
+
+      if (week !== "all") {
+        events = events.filter(event => String(event.week) === week);
+      }
+
+      if (search) {
+        events = events.filter(event =>
+          event.home.toLowerCase().includes(search) ||
+          event.away.toLowerCase().includes(search) ||
+          event.phase.toLowerCase().includes(search) ||
+          event.competition.toLowerCase().includes(search) ||
+          getMatchOwners(event).toLowerCase().includes(search)
+        );
+      }
+
+      return events;
+    }
+
+    function populateCalendarWeeks() {
+      const maxWeek = Math.max(...getCalendarEvents().map(event => event.week));
+      const currentValue = calendarWeekFilter.value;
+      calendarWeekFilter.innerHTML = '<option value="all">Todas as semanas</option>';
+
+      for (let week = 1; week <= maxWeek; week++) {
+        const option = document.createElement("option");
+        option.value = String(week);
+        option.textContent = `Semana ${week}`;
+        calendarWeekFilter.appendChild(option);
+      }
+
+      calendarWeekFilter.value = currentValue || "all";
+    }
+
+    function renderCalendarSummary() {
+      const events = getCalendarEvents();
+      const ourEvents = events.filter(event => involvesOurTeam(event));
+      const nextWeek = Math.min(...ourEvents.map(event => event.week));
+      const nextWeekGames = ourEvents.filter(event => event.week === nextWeek).length;
+      const competitions = [...new Set(events.map(event => event.competition))];
+
+      calendarSummary.innerHTML = `
+        <article class="summary-card"><span>Ritmo</span><strong>3 rodadas/sem.</strong></article>
+        <article class="summary-card"><span>Próxima semana</span><strong>${nextWeek}</strong></article>
+        <article class="summary-card"><span>Jogos nossos na semana</span><strong>${nextWeekGames}</strong></article>
+        <article class="summary-card"><span>Competições</span><strong>${competitions.length}</strong></article>
+      `;
+    }
+
+    function renderCalendar() {
+      const events = getFilteredCalendarEvents();
+
+      calendarTable.innerHTML = events.map(event => {
+        const owners = getMatchOwners(event);
+        const competitionClass = competitionClassNames[event.competition] || "championship";
+        const rowClass = involvesOurTeam(event) ? "ours-row" : "";
+
+        return `
+          <tr class="${rowClass}">
+            <td class="numeric">${event.week}</td>
+            <td><span class="competition-badge ${competitionClass}">${event.competition}</span></td>
+            <td>${event.phase}</td>
+            <td class="calendar-match">${event.home} x ${event.away}</td>
+            <td>${owners}</td>
+            <td>${formatMatchResult(event)}</td>
+          </tr>
+        `;
+      }).join("");
+
+      calendarMobile.innerHTML = events.map(event => {
+        const owners = getMatchOwners(event);
+        const competitionClass = competitionClassNames[event.competition] || "championship";
+        const rowClass = involvesOurTeam(event) ? "ours-row" : "";
+
+        return `
+          <article class="calendar-card ${rowClass}">
+            <div class="calendar-card-header">
+              <span class="competition-badge ${competitionClass}">${event.competition}</span>
+              <span class="calendar-muted">Semana ${event.week}</span>
+            </div>
+            <h3>${event.home} x ${event.away}</h3>
+            <div class="calendar-card-meta">
+              <div class="calendar-meta-item"><span>Rodada/Fase</span><strong>${event.phase}</strong></div>
+              <div class="calendar-meta-item"><span>Envolvidos</span><strong>${owners}</strong></div>
+              <div class="calendar-meta-item"><span>Status/Placar</span><strong>${formatMatchResult(event)}</strong></div>
+              <div class="calendar-meta-item"><span>Semana</span><strong>${event.week}</strong></div>
+            </div>
+          </article>
+        `;
+      }).join("");
+    }
+
     function renderTable() {
       const data = getFilteredTeams();
 
@@ -765,12 +1231,29 @@
     function update() {
       renderSummary();
       renderTable();
+      renderCalendarSummary();
+      renderCalendar();
     }
+
+    document.querySelectorAll(".tab-button").forEach(button => {
+      button.addEventListener("click", () => {
+        document.querySelectorAll(".tab-button").forEach(item => item.classList.remove("active"));
+        document.querySelectorAll(".view").forEach(item => item.classList.remove("active"));
+
+        button.classList.add("active");
+        document.getElementById(button.dataset.view).classList.add("active");
+      });
+    });
 
     searchInput.addEventListener("input", update);
     ownerFilter.addEventListener("change", update);
     sortSelect.addEventListener("change", update);
+    calendarSearchInput.addEventListener("input", update);
+    calendarCompetitionFilter.addEventListener("change", update);
+    calendarTeamFilter.addEventListener("change", update);
+    calendarWeekFilter.addEventListener("change", update);
 
+    populateCalendarWeeks();
     update();
   </script>
 </body>
