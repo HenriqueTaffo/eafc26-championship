@@ -750,7 +750,7 @@
               <input name="overall" type="number" min="1" max="99" placeholder="Ex: 82" required />
             </label>
             <label class="full">Valor Transfermarkt
-              <input name="marketValue" type="number" min="0" step="100000" placeholder="Ex: 32000000" required />
+              <input name="marketValue" type="number" min="0" step="1" inputmode="numeric" placeholder="Ex: 250000" required />
             </label>
           </div>
           <div class="form-actions">
@@ -841,7 +841,7 @@
     const transferBudget = 65000000;
     const homeMatchBonus = 1250000;
     const winBonus = 500000;
-    const API_URL = "https://script.google.com/macros/s/AKfycbyYE6mjAgx8bhxkklXftO-FGAZPFY1xVhqL8fbDk_Tzetsg3dW64h6nqAn1R0WcKLR_/exec";
+    const API_URL = "https://script.google.com/macros/s/AKfycbyZvNK5I8lm1mdytysuW8nd-dMwFaUlR6oCMgIZDENXJvMNKr5QxBV5DHpefYpHas6V/exec";
     const API_PIN = "eafc26";
     let apiResults = [];
     let apiTransfers = [];
@@ -1040,11 +1040,75 @@
       return addDays(getBaseStartDate(), offset);
     }
 
+    function normalizeTeamName(value) {
+      const normalized = normalizeText(value);
+      const aliases = {
+        "southampton fc": "southampton"
+      };
+
+      return aliases[normalized] || normalized;
+    }
+
+    function sameTeamName(a, b) {
+      return normalizeTeamName(a) === normalizeTeamName(b);
+    }
+
+    function resolveTeamName(value) {
+      const normalized = normalizeTeamName(value);
+      const found = teams.find(team => normalizeTeamName(team.team) === normalized);
+      return found ? found.team : String(value || "").trim();
+    }
+
+    function getResultStatsForTeam(teamName) {
+      const stats = {
+        wins: 0,
+        draws: 0,
+        losses: 0,
+        goalsFor: 0,
+        goalsAgainst: 0
+      };
+
+      getApprovedApiResults()
+        .filter(row => row.Competicao === "Championship")
+        .forEach(row => {
+          const home = resolveTeamName(row.Mandante);
+          const away = resolveTeamName(row.Visitante);
+          const homeScore = Number(row.GolsMandante);
+          const awayScore = Number(row.GolsVisitante);
+
+          if (Number.isNaN(homeScore) || Number.isNaN(awayScore)) return;
+
+          const isHome = sameTeamName(home, teamName);
+          const isAway = sameTeamName(away, teamName);
+
+          if (!isHome && !isAway) return;
+
+          const goalsFor = isHome ? homeScore : awayScore;
+          const goalsAgainst = isHome ? awayScore : homeScore;
+
+          stats.goalsFor += goalsFor;
+          stats.goalsAgainst += goalsAgainst;
+
+          if (goalsFor > goalsAgainst) stats.wins += 1;
+          else if (goalsFor === goalsAgainst) stats.draws += 1;
+          else stats.losses += 1;
+        });
+
+      return stats;
+    }
+
     function withCalculatedStats(team, originalIndex) {
-      const played = team.wins + team.draws + team.losses;
-      const goalDifference = team.goalsFor - team.goalsAgainst;
-      const points = team.wins * 3 + team.draws;
-      return { ...team, originalIndex, played, goalDifference, points };
+      const resultStats = getResultStatsForTeam(team.team);
+      const wins = Number(team.wins || 0) + resultStats.wins;
+      const draws = Number(team.draws || 0) + resultStats.draws;
+      const losses = Number(team.losses || 0) + resultStats.losses;
+      const goalsFor = Number(team.goalsFor || 0) + resultStats.goalsFor;
+      const goalsAgainst = Number(team.goalsAgainst || 0) + resultStats.goalsAgainst;
+      const played = wins + draws + losses;
+      const goalDifference = goalsFor - goalsAgainst;
+      const points = wins * 3 + draws;
+
+      return { ...team, originalIndex, wins, draws, losses, goalsFor, goalsAgainst, played, goalDifference, points };
     }
 
     function compareStandings(a, b) {
@@ -1097,7 +1161,7 @@
       `;
     }
 
-    function getTeamByName(teamName) { return teams.find(team => team.team === teamName); }
+    function getTeamByName(teamName) { return teams.find(team => sameTeamName(team.team, teamName)); }
 
     function getApprovedApiResults() {
       return apiResults.filter(row => row.Status === "Aprovado");
@@ -1163,8 +1227,8 @@
       const row = getApprovedApiResults().find(result =>
         result.Competicao === "Championship" &&
         result.RodadaFase === phase &&
-        result.Mandante === home &&
-        result.Visitante === away
+        sameTeamName(result.Mandante, home) &&
+        sameTeamName(result.Visitante, away)
       );
 
       if (!row) return null;
