@@ -259,6 +259,53 @@
       color: #e2e8f0;
     }
 
+    .transfer-mobile { display: none; }
+
+    .money-positive { color: #bbf7d0; font-weight: 900; }
+    .money-warning { color: #fef3c7; font-weight: 900; }
+    .money-danger { color: #fecaca; font-weight: 900; }
+
+    .transfer-status {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 900;
+      white-space: nowrap;
+    }
+
+    .transfer-status.valid {
+      background: rgba(34, 197, 94, 0.22);
+      color: #bbf7d0;
+    }
+
+    .transfer-status.duplicate {
+      background: rgba(239, 68, 68, 0.24);
+      color: #fecaca;
+    }
+
+    .transfer-status.overbudget {
+      background: rgba(234, 179, 8, 0.24);
+      color: #fef3c7;
+    }
+
+    .rule-card {
+      background: rgba(17, 28, 51, 0.88);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 14px;
+      margin-bottom: 18px;
+    }
+
+    .rule-card ul {
+      margin: 8px 0 0;
+      padding-left: 18px;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
     .classification-border { box-shadow: inset 4px 0 0 var(--zone-color, transparent); }
     .numeric { font-weight: 800; text-align: center; }
     .points { font-size: 18px; font-weight: 900; color: #f8fafc; }
@@ -345,7 +392,7 @@
       header { margin-bottom: 18px; }
       h1 { font-size: 28px; line-height: 1.05; }
       .subtitle { font-size: 14px; }
-      .tabs { display: grid; grid-template-columns: repeat(2, 1fr); width: 100%; margin-bottom: 18px; }
+      .tabs { display: grid; grid-template-columns: repeat(3, 1fr); width: 100%; margin-bottom: 18px; }
       .tab-button { width: 100%; padding: 12px; }
       .summary { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-bottom: 18px; }
       .summary-card { padding: 12px; border-radius: 16px; }
@@ -358,7 +405,7 @@
       .legend { gap: 7px; }
       .badge { font-size: 12px; padding: 6px 9px; }
       .table-card { display: none; }
-      .mobile-standings, .calendar-mobile { display: grid; gap: 10px; }
+      .mobile-standings, .calendar-mobile, .transfer-mobile { display: grid; gap: 10px; }
       .owner { min-width: auto; max-width: 96px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex-shrink: 0; }
       .classification, .competition-badge, .status-pill { font-size: 11px; padding: 6px 9px; }
       .footer-note { font-size: 12px; }
@@ -375,6 +422,7 @@
     <nav class="tabs" aria-label="Navegação do campeonato">
       <button class="tab-button active" data-view="standingsView">Classificação</button>
       <button class="tab-button" data-view="calendarView">Calendário</button>
+      <button class="tab-button" data-view="transfersView">Transferências</button>
     </nav>
 
     <section id="standingsView" class="view active">
@@ -489,6 +537,56 @@
 
       <p class="footer-note">A Championship gera automaticamente as 46 rodadas. Na FA Cup, a 3ª fase já inclui Championship, Premier League e classificados simulados das fases anteriores. Nas copas, a próxima fase usa o vencedor da fase anterior. Se o jogo ainda não tiver resultado, aparece como <strong>Vencedor do Jogo X</strong>, sem colocar todos como classificados até a final.</p>
     </section>
+
+    <section id="transfersView" class="view">
+      <section class="summary" id="transferSummary"></section>
+
+      <section class="rule-card">
+        <p class="legend-title">Regras de mercado</p>
+        <ul>
+          <li>Orçamento fixo por jogador: <strong>65 milhões</strong>.</li>
+          <li>Valor base: valor de mercado informado manualmente com base no Transfermarkt.</li>
+          <li>Cálculo: <strong>valor final = valor Transfermarkt + percentual por overall</strong>.</li>
+          <li>Exemplo: jogador OVR 75 com valor de mercado de 10M custa <strong>10M + 5% = 10,5M</strong>.</li>
+          <li>Taxa por overall: 75–79 = 5%, 80–83 = 15%, 84–88 = 20%, 89+ = 25%.</li>
+          <li>Jogador repetido é marcado como <strong>duplicado</strong> e não entra no orçamento novamente.</li>
+        </ul>
+      </section>
+
+      <section class="controls">
+        <input id="transferSearchInput" type="search" placeholder="Buscar jogador, clube ou comprador..." />
+        <select id="transferOwnerFilter">
+          <option value="all">Todos os compradores</option>
+          <option value="Henrique">Henrique</option>
+          <option value="Willian">Willian</option>
+          <option value="Rafael">Rafael</option>
+          <option value="Renato">Renato</option>
+        </select>
+        <select id="transferStatusFilter">
+          <option value="all">Todos os status</option>
+          <option value="valid">Válidas</option>
+          <option value="duplicate">Duplicadas</option>
+          <option value="overbudget">Acima do orçamento</option>
+        </select>
+      </section>
+
+      <section class="table-card">
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Jogador</th><th>Comprador</th><th>Clube origem</th><th>OVR</th><th>Valor Transfermarkt</th><th>% Overall</th><th>Valor final</th><th>Saldo comprador</th><th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="transferTable"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="transfer-mobile" id="transferMobile"></section>
+
+      <p class="footer-note">Para registrar uma contratação, adicione um item no array <strong>transfers</strong>. O app calcula <strong>valor Transfermarkt + percentual do overall</strong>, saldo restante e alerta duplicidade automaticamente.</p>
+    </section>
   </main>
 
   <script>
@@ -531,6 +629,21 @@
       "Renato": "var(--renato)",
       "Livre / CPU": "var(--free)"
     };
+
+    // =========================
+    // 1.1) TRANSFERÊNCIAS
+    // =========================
+    // marketValue deve ser informado em valor cheio. Exemplo: 12000000 = 12 milhões.
+    // Fórmula: valor final = marketValue + (marketValue * percentual do overall).
+    // Exemplo: OVR 75 e marketValue 10000000 => 10000000 + 5% = 10500000.
+    // O orçamento é fixo e igual para todos.
+    const transferBudget = 65000000;
+
+    const transfers = [
+      // Exemplos para você substituir/remover:
+      // { player: "Exemplo Jogador", buyer: "Henrique", fromClub: "Clube Origem", overall: 80, marketValue: 12000000 },
+      // { player: "Exemplo Jogador", buyer: "Willian", fromClub: "Clube Origem", overall: 80, marketValue: 12000000 }
+    ];
 
     // ==============================
     // 2) RESULTADOS DA CHAMPIONSHIP
@@ -664,6 +777,12 @@
     const calendarWeekFilter = document.getElementById("calendarWeekFilter");
     const calendarTable = document.getElementById("calendarTable");
     const calendarMobile = document.getElementById("calendarMobile");
+    const transferSummary = document.getElementById("transferSummary");
+    const transferSearchInput = document.getElementById("transferSearchInput");
+    const transferOwnerFilter = document.getElementById("transferOwnerFilter");
+    const transferStatusFilter = document.getElementById("transferStatusFilter");
+    const transferTable = document.getElementById("transferTable");
+    const transferMobile = document.getElementById("transferMobile");
 
     const calendarConfig = { championshipRoundsPerWeek: 3 };
 
@@ -990,11 +1109,165 @@
       }).join("");
     }
 
+    function normalizeText(value) {
+      return String(value || "").trim().toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
+    }
+
+    function formatCurrency(value) {
+      return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(value || 0);
+    }
+
+    function getTransferFeeRate(overall) {
+      if (overall >= 89) return 0.25;
+      if (overall >= 84) return 0.20;
+      if (overall >= 80) return 0.15;
+      if (overall >= 75) return 0.05;
+      return 0;
+    }
+
+    function getTransferStatusClass(transfer) {
+      if (transfer.isBlockedDuplicate) return "duplicate";
+      if (transfer.runningSpent > transferBudget) return "overbudget";
+      return "valid";
+    }
+
+    function getTransferStatusLabel(transfer) {
+      if (transfer.isBlockedDuplicate) return "Duplicado";
+      if (transfer.runningSpent > transferBudget) return "Acima do orçamento";
+      if (transfer.hasDuplicate) return "Válido, mas repetido";
+      return "Válido";
+    }
+
+    function getTransfersWithStats() {
+      const nameCounts = transfers.reduce((acc, transfer) => {
+        const key = normalizeText(transfer.player);
+        acc[key] = (acc[key] || 0) + 1;
+        return acc;
+      }, {});
+
+      const seenNames = {};
+      const spentByBuyer = {};
+
+      return transfers.map((transfer, index) => {
+        const nameKey = normalizeText(transfer.player);
+        seenNames[nameKey] = (seenNames[nameKey] || 0) + 1;
+
+        const feeRate = getTransferFeeRate(Number(transfer.overall));
+        const feeValue = Number(transfer.marketValue || 0) * feeRate;
+        const totalCost = Number(transfer.marketValue || 0) + feeValue;
+        const hasDuplicate = nameCounts[nameKey] > 1;
+        const isBlockedDuplicate = hasDuplicate && seenNames[nameKey] > 1;
+        const countedCost = isBlockedDuplicate ? 0 : totalCost;
+
+        spentByBuyer[transfer.buyer] = (spentByBuyer[transfer.buyer] || 0) + countedCost;
+        const runningSpent = spentByBuyer[transfer.buyer];
+        const remainingBudget = transferBudget - runningSpent;
+
+        return {
+          ...transfer,
+          index,
+          feeRate,
+          feeValue,
+          totalCost,
+          countedCost,
+          hasDuplicate,
+          isBlockedDuplicate,
+          runningSpent,
+          remainingBudget
+        };
+      });
+    }
+
+    function getFilteredTransfers() {
+      const search = normalizeText(transferSearchInput.value);
+      const buyer = transferOwnerFilter.value;
+      const status = transferStatusFilter.value;
+      let data = getTransfersWithStats();
+
+      if (buyer !== "all") data = data.filter(item => item.buyer === buyer);
+      if (status !== "all") data = data.filter(item => getTransferStatusClass(item) === status);
+      if (search) {
+        data = data.filter(item =>
+          normalizeText(item.player).includes(search) ||
+          normalizeText(item.buyer).includes(search) ||
+          normalizeText(item.fromClub).includes(search)
+        );
+      }
+
+      return data;
+    }
+
+    function renderTransferSummary() {
+      const data = getTransfersWithStats();
+      const validTransfers = data.filter(item => !item.isBlockedDuplicate);
+      const duplicates = data.filter(item => item.hasDuplicate).length;
+      const totalSpent = validTransfers.reduce((sum, item) => sum + item.totalCost, 0);
+      const buyers = ["Henrique", "Willian", "Rafael", "Renato"];
+      const remainingValues = buyers.map(buyer => transferBudget - validTransfers.filter(item => item.buyer === buyer).reduce((sum, item) => sum + item.totalCost, 0));
+      const bestRemaining = remainingValues.length ? Math.max(...remainingValues) : transferBudget;
+
+      transferSummary.innerHTML = `
+        <article class="summary-card"><span>Orçamento por jogador</span><strong>${formatCurrency(transferBudget)}</strong></article>
+        <article class="summary-card"><span>Contratações válidas</span><strong>${validTransfers.length}</strong></article>
+        <article class="summary-card"><span>Duplicidades</span><strong>${duplicates}</strong></article>
+        <article class="summary-card"><span>Maior saldo</span><strong>${formatCurrency(bestRemaining)}</strong></article>
+      `;
+    }
+
+    function renderTransfers() {
+      const data = getFilteredTransfers();
+
+      if (!data.length) {
+        const emptyMessage = `<tr><td colspan="9" class="calendar-muted">Nenhuma transferência cadastrada ainda. Adicione jogadores no array transfers.</td></tr>`;
+        transferTable.innerHTML = emptyMessage;
+        transferMobile.innerHTML = `<article class="calendar-card"><h3>Nenhuma transferência cadastrada</h3><p class="calendar-muted">Adicione jogadores no array transfers para validar orçamento e duplicidade.</p></article>`;
+        return;
+      }
+
+      transferTable.innerHTML = data.map(item => {
+        const color = ownerColors[item.buyer] || ownerColors["Livre / CPU"];
+        const statusClass = getTransferStatusClass(item);
+        const remainingClass = item.remainingBudget < 0 ? "money-danger" : item.remainingBudget < 10000000 ? "money-warning" : "money-positive";
+        return `
+          <tr class="${item.isBlockedDuplicate ? "" : "ours-row"}">
+            <td class="calendar-match">${item.player}</td>
+            <td><span class="owner" style="background: ${color}">${item.buyer}</span></td>
+            <td>${item.fromClub || "-"}</td>
+            <td class="numeric">${item.overall}</td>
+            <td>${formatCurrency(item.marketValue)}</td>
+            <td class="numeric">${Math.round(item.feeRate * 100)}%</td>
+            <td>${formatCurrency(item.totalCost)}</td>
+            <td class="${remainingClass}">${formatCurrency(item.remainingBudget)}</td>
+            <td><span class="transfer-status ${statusClass}">${getTransferStatusLabel(item)}</span></td>
+          </tr>`;
+      }).join("");
+
+      transferMobile.innerHTML = data.map(item => {
+        const color = ownerColors[item.buyer] || ownerColors["Livre / CPU"];
+        const statusClass = getTransferStatusClass(item);
+        return `
+          <article class="calendar-card ${item.isBlockedDuplicate ? "" : "ours-row"}">
+            <div class="calendar-card-header"><span class="owner" style="background: ${color}">${item.buyer}</span><span class="transfer-status ${statusClass}">${getTransferStatusLabel(item)}</span></div>
+            <h3>${item.player}</h3>
+            <div class="calendar-card-meta">
+              <div class="calendar-meta-item"><span>Clube origem</span><strong>${item.fromClub || "-"}</strong></div>
+              <div class="calendar-meta-item"><span>Overall</span><strong>${item.overall}</strong></div>
+              <div class="calendar-meta-item"><span>Transfermarkt</span><strong>${formatCurrency(item.marketValue)}</strong></div>
+              <div class="calendar-meta-item"><span>% Overall</span><strong>${Math.round(item.feeRate * 100)}%</strong></div>
+              <div class="calendar-meta-item"><span>Valor final</span><strong>${formatCurrency(item.totalCost)}</strong></div>
+              <div class="calendar-meta-item"><span>Saldo</span><strong>${formatCurrency(item.remainingBudget)}</strong></div>
+            </div>
+          </article>`;
+      }).join("");
+    }
+
     function update() {
       renderSummary();
       renderTable();
       renderCalendarSummary();
       renderCalendar();
+      renderTransferSummary();
+      renderTransfers();
     }
 
     document.querySelectorAll(".tab-button").forEach(button => {
@@ -1013,6 +1286,9 @@
     calendarCompetitionFilter.addEventListener("change", update);
     calendarTeamFilter.addEventListener("change", update);
     calendarWeekFilter.addEventListener("change", update);
+    transferSearchInput.addEventListener("input", update);
+    transferOwnerFilter.addEventListener("change", update);
+    transferStatusFilter.addEventListener("change", update);
 
     populateCalendarWeeks();
     update();
