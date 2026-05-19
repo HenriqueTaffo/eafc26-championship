@@ -606,7 +606,7 @@
           <table>
             <thead>
               <tr>
-                <th>Semana</th><th>Competição</th><th>Rodada/Fase</th><th>Jogo</th><th>Envolvidos</th><th>Tipo</th><th>Status/Placar</th>
+                <th>Data</th><th>Semana</th><th>Competição</th><th>Rodada/Fase</th><th>Jogo</th><th>Envolvidos</th><th>Tipo</th><th>Status/Placar</th>
               </tr>
             </thead>
             <tbody id="calendarTable"></tbody>
@@ -616,7 +616,7 @@
 
       <section class="calendar-mobile" id="calendarMobile"></section>
 
-      <p class="footer-note">A Championship gera automaticamente as 46 rodadas. Na FA Cup, a 3ª fase já inclui Championship, Premier League e classificados simulados das fases anteriores. Nas copas, a próxima fase usa o vencedor da fase anterior. Se o jogo ainda não tiver resultado, aparece como <strong>Vencedor do Jogo X</strong>, sem colocar todos como classificados até a final.</p>
+      <p class="footer-note">Calendário iniciado em <strong>19/05/2026</strong>. A Championship segue terça, quinta e domingo. As copas entram aos sábados das semanas definidas. Na FA Cup, a 3ª fase já inclui Championship, Premier League e classificados simulados das fases anteriores.</p>
     </section>
 
     <section id="transfersView" class="view">
@@ -632,6 +632,7 @@
           <li>Cálculo: <strong>valor final = valor Transfermarkt + percentual por overall</strong>.</li>
           <li>Exemplo: jogador OVR 75 com valor de mercado de 10M custa <strong>10M + 5% = 10,5M</strong>.</li>
           <li>Taxa por overall: 75–79 = 5%, 80–83 = 15%, 84–88 = 20%, 89+ = 25%.</li>
+          <li>Limite diário: cada jogador humano pode fazer no máximo <strong>3 transferências aprovadas por dia</strong>.</li>
           <li>Jogador repetido é marcado como <strong>duplicado</strong> e não entra no orçamento novamente.</li>
         </ul>
       </section>
@@ -668,7 +669,7 @@
 
       <section class="transfer-mobile" id="transferMobile"></section>
 
-      <p class="footer-note">As transferências enviadas pelo formulário aparecem aqui automaticamente. O app calcula <strong>valor Transfermarkt + percentual do overall</strong>, saldo com bônus de jogos/vitórias e alerta duplicidade automaticamente.</p>
+      <p class="footer-note">As transferências enviadas pelo formulário aparecem aqui automaticamente. O app calcula <strong>valor Transfermarkt + percentual do overall</strong>, saldo com bônus de jogos/vitórias, limite de 3 transferências por dia e alerta duplicidade automaticamente.</p>
     </section>
 
     <section id="submitView" class="view">
@@ -728,7 +729,7 @@
 
       <section class="form-card">
         <h2>Enviar transferência</h2>
-        <p>Informe o valor do Transfermarkt em número cheio. Exemplo: 10 milhões = 10000000.</p>
+        <p>Informe o valor do Transfermarkt em número cheio. Exemplo: 10 milhões = 10000000. Cada jogador pode ter no máximo 3 transferências aprovadas por dia.</p>
         <form id="transferForm">
           <div class="form-grid">
             <label>Comprador
@@ -755,6 +756,30 @@
           <div class="form-actions">
             <button class="primary-button" type="submit">Enviar transferência</button>
             <span class="app-message" id="transferMessage"></span>
+          </div>
+        </form>
+      </section>
+
+      <section class="form-card">
+        <h2>Simular CPU x CPU da semana</h2>
+        <p>Depois que os jogos dos 4 humanos da semana forem enviados, use este botão para simular automaticamente os jogos entre CPU.</p>
+        <form id="cpuSimulationForm">
+          <div class="form-grid">
+            <label>Semana
+              <input name="week" type="number" min="1" placeholder="Ex: 1" required />
+            </label>
+            <label>Enviado por
+              <select name="submittedBy" required>
+                <option value="Henrique">Henrique</option>
+                <option value="Willian">Willian</option>
+                <option value="Rafael">Rafael</option>
+                <option value="Renato">Renato</option>
+              </select>
+            </label>
+          </div>
+          <div class="form-actions">
+            <button class="primary-button" type="submit">Simular semana</button>
+            <span class="app-message" id="cpuSimulationMessage"></span>
           </div>
         </form>
       </section>
@@ -969,11 +994,51 @@
     const apiSummary = document.getElementById("apiSummary");
     const resultForm = document.getElementById("resultForm");
     const transferForm = document.getElementById("transferForm");
+    const cpuSimulationForm = document.getElementById("cpuSimulationForm");
     const resultMessage = document.getElementById("resultMessage");
     const transferMessage = document.getElementById("transferMessage");
+    const cpuSimulationMessage = document.getElementById("cpuSimulationMessage");
     const teamOptions = document.getElementById("teamOptions");
 
-    const calendarConfig = { championshipRoundsPerWeek: 3 };
+    const calendarConfig = {
+      championshipRoundsPerWeek: 3,
+      startDate: "2026-05-19",
+      championshipDayOffsets: [0, 2, 5],
+      cupDayOffset: 4
+    };
+
+    function addDays(date, days) {
+      const copy = new Date(date);
+      copy.setDate(copy.getDate() + days);
+      return copy;
+    }
+
+    function getBaseStartDate() {
+      return new Date(`${calendarConfig.startDate}T12:00:00`);
+    }
+
+    function formatDate(value) {
+      if (!value) return "A definir";
+      const date = value instanceof Date ? value : new Date(`${value}T12:00:00`);
+      return new Intl.DateTimeFormat("pt-BR", {
+        weekday: "short",
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric"
+      }).format(date);
+    }
+
+    function getChampionshipDate(roundNumber) {
+      const weekIndex = Math.ceil(roundNumber / calendarConfig.championshipRoundsPerWeek) - 1;
+      const slotIndex = (roundNumber - 1) % calendarConfig.championshipRoundsPerWeek;
+      const offset = (weekIndex * 7) + calendarConfig.championshipDayOffsets[slotIndex];
+      return addDays(getBaseStartDate(), offset);
+    }
+
+    function getCupDate(week) {
+      const offset = ((week - 1) * 7) + calendarConfig.cupDayOffset;
+      return addDays(getBaseStartDate(), offset);
+    }
 
     function withCalculatedStats(team, originalIndex) {
       const played = team.wins + team.draws + team.losses;
@@ -1160,6 +1225,7 @@
           const result = getChampionshipResult(roundNumber, match.home, match.away);
           return {
             id: `champ-${roundNumber}-${matchIndex + 1}`,
+            date: getChampionshipDate(roundNumber),
             week,
             competition: "Championship",
             className: "championship",
@@ -1197,6 +1263,7 @@
             currentRoundMatches = round.matches.map((match, index) => ({
               ...match,
               id: `${cup.name}-${round.phase}-${index + 1}`,
+              date: getCupDate(round.week),
               week: round.week,
               competition: cup.name,
               className: cup.className,
@@ -1215,6 +1282,7 @@
 
               currentRoundMatches.push({
                 id: `${cup.name}-${round.phase}-${Math.floor(index / 2) + 1}`,
+                date: getCupDate(round.week),
                 week: round.week,
                 competition: cup.name,
                 className: cup.className,
@@ -1241,7 +1309,7 @@
     function getCalendarEvents() {
       const allEvents = [...generateChampionshipCalendar(), ...generateCupCalendar()];
       const competitionOrder = { "Copa da Liga": 1, "Championship": 2, "FA Cup": 3 };
-      return allEvents.sort((a, b) => a.week - b.week || (competitionOrder[a.competition] || 99) - (competitionOrder[b.competition] || 99) || a.phase.localeCompare(b.phase) || a.home.localeCompare(b.home));
+      return allEvents.sort((a, b) => a.date - b.date || (competitionOrder[a.competition] || 99) - (competitionOrder[b.competition] || 99) || a.phase.localeCompare(b.phase) || a.home.localeCompare(b.home));
     }
 
     function formatMatchResult(match) {
@@ -1297,7 +1365,7 @@
       const faCupThirdRoundMatches = cupEvents.filter(event => event.competition === "FA Cup" && event.phase.includes("3ª fase")).length;
       calendarSummary.innerHTML = `
         <article class="summary-card"><span>Championship</span><strong>${championshipRounds} rodadas</strong></article>
-        <article class="summary-card"><span>Ritmo</span><strong>3 rodadas/sem.</strong></article>
+        <article class="summary-card"><span>Início</span><strong>19/05/2026</strong></article>
         <article class="summary-card"><span>FA Cup 3ª fase</span><strong>${faCupThirdRoundMatches} jogos</strong></article>
         <article class="summary-card"><span>Copas aguardando</span><strong>${waitingCupEvents}</strong></article>
       `;
@@ -1346,6 +1414,7 @@
         const matchType = getMatchType(event);
         return `
           <tr class="${rowClass}">
+            <td>${formatDate(event.date)}</td>
             <td class="numeric">${event.week}</td>
             <td><span class="competition-badge ${event.className}">${event.competition}</span></td>
             <td>${event.phase}</td>
@@ -1362,9 +1431,9 @@
         const matchType = getMatchType(event);
         return `
           <article class="calendar-card ${rowClass}">
-            <div class="calendar-card-header"><span class="competition-badge ${event.className}">${event.competition}</span><span class="calendar-muted">Semana ${event.week}</span></div>
+            <div class="calendar-card-header"><span class="competition-badge ${event.className}">${event.competition}</span><span class="calendar-muted">${formatDate(event.date)}</span></div>
             <h3>${event.home} x ${event.away}</h3>
-            <div class="calendar-card-meta"><div class="calendar-meta-item"><span>Rodada/Fase</span><strong>${event.phase}</strong></div><div class="calendar-meta-item"><span>Envolvidos</span><strong>${owners}</strong></div><div class="calendar-meta-item"><span>Tipo</span><strong><span class="match-type ${matchType.className}">${matchType.label}</span></strong></div><div class="calendar-meta-item"><span>Status/Placar</span><strong>${formatMatchResult(event)}</strong></div><div class="calendar-meta-item"><span>Semana</span><strong>${event.week}</strong></div></div>
+            <div class="calendar-card-meta"><div class="calendar-meta-item"><span>Rodada/Fase</span><strong>${event.phase}</strong></div><div class="calendar-meta-item"><span>Envolvidos</span><strong>${owners}</strong></div><div class="calendar-meta-item"><span>Tipo</span><strong><span class="match-type ${matchType.className}">${matchType.label}</span></strong></div><div class="calendar-meta-item"><span>Status/Placar</span><strong>${formatMatchResult(event)}</strong></div><div class="calendar-meta-item"><span>Semana</span><strong>${event.week}</strong></div><div class="calendar-meta-item"><span>Data</span><strong>${formatDate(event.date)}</strong></div></div>
           </article>`;
       }).join("");
     }
@@ -1644,6 +1713,32 @@
       }
     }
 
+    async function handleCpuSimulationSubmit(event) {
+      event.preventDefault();
+      const formData = new FormData(cpuSimulationForm);
+      const button = cpuSimulationForm.querySelector("button");
+      button.disabled = true;
+      setMessage(cpuSimulationMessage, "Simulando jogos CPU x CPU...", "warning");
+
+      try {
+        const payload = Object.fromEntries(formData.entries());
+        const data = await postToApi({
+          action: "simulateCpuWeek",
+          week: Number(payload.week),
+          submittedBy: payload.submittedBy
+        });
+
+        if (!data.ok) throw new Error(data.message || data.error || "Simulação rejeitada.");
+        setMessage(cpuSimulationMessage, data.message || "Semana simulada com sucesso.", "success");
+        cpuSimulationForm.reset();
+        await loadApiData();
+      } catch (error) {
+        setMessage(cpuSimulationMessage, error.message, "error");
+      } finally {
+        button.disabled = false;
+      }
+    }
+
     function populateTeamOptions() {
       const knownTeams = [...new Set([
         ...teams.map(team => team.team),
@@ -1685,6 +1780,7 @@
     transferStatusFilter.addEventListener("change", update);
     resultForm.addEventListener("submit", handleResultSubmit);
     transferForm.addEventListener("submit", handleTransferSubmit);
+    cpuSimulationForm.addEventListener("submit", handleCpuSimulationSubmit);
 
     populateTeamOptions();
     populateCalendarWeeks();
