@@ -116,7 +116,7 @@
       backdrop-filter: blur(10px);
     }
 
-    input, select {
+    input, select, textarea {
       background: #0b1220;
       border: 1px solid var(--line);
       color: var(--text);
@@ -124,6 +124,12 @@
       padding: 12px 14px;
       min-height: 44px;
       outline: none;
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 92px;
+      font-family: Arial, Helvetica, sans-serif;
     }
 
     input { flex: 1 1 260px; }
@@ -473,7 +479,7 @@
       .summary-card span { font-size: 10px; }
       .summary-card strong { font-size: 20px; line-height: 1.15; }
       .controls { flex-direction: column; gap: 8px; padding: 10px; border-radius: 16px; margin-bottom: 18px; }
-      input, select { width: 100%; flex: 0 0 auto; min-height: 48px; font-size: 14px; border-radius: 12px; }
+      input, select, textarea { width: 100%; flex: 0 0 auto; min-height: 48px; font-size: 14px; border-radius: 12px; }
       .legend-block { margin-bottom: 16px; }
       .legend-title { font-size: 11px; }
       .legend { gap: 7px; }
@@ -703,6 +709,12 @@
             </label>
             <label>Gols visitante
               <input name="awayScore" type="number" min="0" required />
+            </label>
+            <label class="full">Autores dos gols
+              <textarea name="goalDetails" placeholder="Ex: Coventry City: Simms 2, Wright 1 | Birmingham City: Stansfield 1"></textarea>
+            </label>
+            <label class="full">Assistências
+              <textarea name="assistDetails" placeholder="Ex: Coventry City: Hamer 1, Van Ewijk 1 | Birmingham City: Miyoshi 1"></textarea>
             </label>
           </div>
           <div class="form-actions">
@@ -1525,7 +1537,9 @@
           ...payload,
           homeScore: Number(payload.homeScore),
           awayScore: Number(payload.awayScore),
-          week: Number(payload.week)
+          week: Number(payload.week),
+          goalDetails: payload.goalDetails || "",
+          assistDetails: payload.assistDetails || ""
         });
 
         if (!data.ok) throw new Error(data.message || data.error || "Resultado rejeitado.");
