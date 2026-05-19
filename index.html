@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>EAFC26 - Championship</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card: #111c33;
+      --text: #f8fafc;
+      --muted: #94a3b8;
+      --line: rgba(255, 255, 255, 0.1);
+      --free: #64748b;
+      --you: #2563eb;
+      --willian: #16a34a;
+      --rafael: #dc2626;
+      --pai: #eab308;
+      --promotion: #22c55e;
+      --playoff: #38bdf8;
+      --safe: #64748b;
+      --relegation: #ef4444;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      background: radial-gradient(circle at top, #1e3a8a 0, var(--bg) 42%);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 24px;
+    }
+
+    .app {
+      max-width: 1220px;
+      margin: 0 auto;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      gap: 18px;
+      align-items: flex-start;
+      margin-bottom: 24px;
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: clamp(28px, 4vw, 44px);
+      letter-spacing: -0.04em;
+    }
+
+    .subtitle {
+      color: var(--muted);
+      margin: 0;
+      line-height: 1.5;
+    }
+
+    .summary {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(120px, 1fr));
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .summary-card {
+      background: rgba(17, 28, 51, 0.88);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 14px;
+      box-shadow: 0 16px 45px rgba(0, 0, 0, 0.2);
+    }
+
+    .summary-card span {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 6px;
+    }
+
+    .summary-card strong {
+      font-size: 24px;
+    }
+
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      background: rgba(17, 28, 51, 0.78);
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      padding: 12px;
+      margin-bottom: 20px;
+      backdrop-filter: blur(10px);
+    }
+
+    input,
+    select {
+      background: #0b1220;
+      border: 1px solid var(--line);
+      color: var(--text);
+      border-radius: 12px;
+      padding: 12px 14px;
+      min-height: 44px;
+      outline: none;
+    }
+
+    input {
+      flex: 1 1 260px;
+    }
+
+    select {
+      flex: 0 1 190px;
+    }
+
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 18px;
+    }
+
+    .legend-block {
+      margin-bottom: 18px;
+    }
+
+    .legend-title {
+      margin: 0 0 8px;
+      color: var(--muted);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-weight: 800;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 10px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 700;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid var(--line);
+      white-space: nowrap;
+    }
+
+    .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 999px;
+      display: inline-block;
+      background: var(--free);
+    }
+
+    .table-card {
+      overflow: hidden;
+      background: rgba(17, 28, 51, 0.92);
+      border: 1px solid var(--line);
+      border-radius: 24px;
+      box-shadow: 0 24px 70px rgba(0, 0, 0, 0.3);
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 980px;
+    }
+
+    th,
+    td {
+      padding: 13px 14px;
+      text-align: left;
+      border-bottom: 1px solid var(--line);
+    }
+
+    th {
+      color: var(--muted);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      background: rgba(15, 23, 42, 0.72);
+      position: sticky;
+      top: 0;
+    }
+
+    tr:last-child td {
+      border-bottom: 0;
+    }
+
+    .team-cell {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-weight: 800;
+    }
+
+    .team-color {
+      width: 6px;
+      height: 34px;
+      border-radius: 999px;
+      background: var(--free);
+      flex: 0 0 auto;
+    }
+
+    .owner {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 800;
+      color: #fff;
+      background: var(--free);
+      min-width: 88px;
+    }
+
+    .owner.free {
+      color: #e2e8f0;
+      background: rgba(100, 116, 139, 0.45);
+    }
+
+    .classification {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 800;
+      color: #fff;
+      white-space: nowrap;
+    }
+
+    .classification.promotion {
+      background: rgba(34, 197, 94, 0.9);
+    }
+
+    .classification.playoff {
+      background: rgba(56, 189, 248, 0.9);
+      color: #082f49;
+    }
+
+    .classification.safe {
+      background: rgba(100, 116, 139, 0.55);
+      color: #e2e8f0;
+    }
+
+    .classification.relegation {
+      background: rgba(239, 68, 68, 0.9);
+    }
+
+    .classification-border {
+      box-shadow: inset 4px 0 0 var(--zone-color, transparent);
+    }
+
+    .numeric {
+      font-weight: 800;
+      text-align: center;
+    }
+
+    .points {
+      font-size: 18px;
+      font-weight: 900;
+      color: #f8fafc;
+    }
+
+    .ours-row {
+      background: linear-gradient(90deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.015));
+    }
+
+    .footer-note {
+      color: var(--muted);
+      font-size: 13px;
+      margin-top: 14px;
+      line-height: 1.5;
+    }
+
+    @media (max-width: 760px) {
+      body {
+        padding: 16px;
+      }
+
+      header {
+        flex-direction: column;
+      }
+
+      .summary {
+        grid-template-columns: repeat(2, minmax(120px, 1fr));
+      }
+
+      .controls {
+        flex-direction: column;
+      }
+
+      input,
+      select {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <header>
+      <div>
+        <h1>EAFC26 Championship</h1>
+        <p class="subtitle">Tabela do campeonato com classificação, estatísticas e times destacados por jogador.</p>
+      </div>
+    </header>
+
+    <section class="summary" id="summary"></section>
+
+    <section class="controls">
+      <input id="searchInput" type="search" placeholder="Buscar clube ou dono..." />
+      <select id="ownerFilter">
+        <option value="all">Todos os times</option>
+        <option value="ours">Somente nossos times</option>
+        <option value="free">Somente livres/CPU</option>
+        <option value="Henrique">Henrique</option>
+        <option value="Willian">Willian</option>
+        <option value="Rafael">Rafael</option>
+        <option value="Renato">Renato</option>
+      </select>
+      <select id="sortSelect">
+        <option value="standings">Classificação</option>
+        <option value="pointsDesc">Mais pontos</option>
+        <option value="winsDesc">Mais vitórias</option>
+        <option value="goalDifferenceDesc">Maior saldo</option>
+        <option value="goalsForDesc">Mais gols pró</option>
+        <option value="teamAsc">Nome A-Z</option>
+      </select>
+    </section>
+
+    <section class="legend-block">
+      <p class="legend-title">Jogadores</p>
+      <div class="legend">
+        <span class="badge"><span class="dot" style="background: var(--you)"></span>Henrique</span>
+        <span class="badge"><span class="dot" style="background: var(--willian)"></span>Willian</span>
+        <span class="badge"><span class="dot" style="background: var(--rafael)"></span>Rafael</span>
+        <span class="badge"><span class="dot" style="background: var(--pai)"></span>Renato</span>
+        <span class="badge"><span class="dot" style="background: var(--free)"></span>Livre / CPU</span>
+      </div>
+    </section>
+
+    <section class="legend-block">
+      <p class="legend-title">Faixas da Championship</p>
+      <div class="legend">
+        <span class="badge"><span class="dot" style="background: var(--promotion)"></span>1º–2º: acesso direto</span>
+        <span class="badge"><span class="dot" style="background: var(--playoff)"></span>3º–6º: playoffs de acesso</span>
+        <span class="badge"><span class="dot" style="background: var(--safe)"></span>7º–21º: permanece na Championship</span>
+        <span class="badge"><span class="dot" style="background: var(--relegation)"></span>22º–24º: rebaixamento</span>
+      </div>
+    </section>
+
+    <section class="table-card">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Pos.</th>
+              <th>Clube</th>
+              <th>Dono</th>
+              <th>J</th>
+              <th>V</th>
+              <th>E</th>
+              <th>D</th>
+              <th>GP</th>
+              <th>GC</th>
+              <th>SG</th>
+              <th>PTS</th>
+              <th>Faixa</th>
+            </tr>
+          </thead>
+          <tbody id="teamsTable"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <p class="footer-note">
+      Para editar a tabela: altere vitórias, empates, derrotas, gols pró e gols contra dentro do array <strong>teams</strong>. Os campos de jogos, saldo, pontos, posição e faixa são calculados automaticamente.
+    </p>
+  </main>
+
+  <script>
+    // EDITE AQUI QUANDO QUISER ATUALIZAR A CLASSIFICAÇÃO.
+    // Legenda: wins = vitórias, draws = empates, losses = derrotas, goalsFor = gols pró, goalsAgainst = gols contra.
+    const ownerColors = {
+      "Henrique": "var(--you)",
+      "Willian": "var(--willian)",
+      "Rafael": "var(--rafael)",
+      "Renato": "var(--pai)",
+      "Livre / CPU": "var(--free)"
+    };
+
+    const teams = [
+      { team: "Coventry City", owner: "Henrique", wins: 0, draws: 0, losses: 0, goalsFor: 0, goalsAgainst: 0, status: "Nosso" },
+      { team: "Ipswich Town", owner: "Livre / CPU", wins: 0, draws: 0, losses: 0, goalsFor: 0, goalsAgainst: 0, status: "Livre" },
+      { team: "Birmingham City", owner: "Willian", wins: 0, draws: 0, losses: 0, goalsFor: 0, goalsAgainst: 0, status: "Nosso" },
+      { team: "Middlesbrough", owner: "Rafael", wins: 0, draws: 0, losses: 0, goalsFor: 0, goalsAgainst: 0, status: "Nosso" },
+      { team: "Southampton", owner: "Renato", wins: 0, draws: 0, losses: 0, goalsFor: 0, goalsAgainst: 0, status: "Nosso" },
+      { team: "Bristol City", owner: "Livre / CPU", wins: 0, draws: 0, losses: 0, goalsFor: 0, goalsAgainst: 0, status: "Livre" },
+      { team: "Hull City", owner: "Livre / CPU", wins: 0, draws: 0, losses: 0, goalsFor: 0, goalsAgainst: 0, status: "Livre" },
+      { team: "Leicester City", owner: "Livre / CPU", wins: 0, draws: 0, losses: 0, goalsFor: 0, goalsAgainst: 0, status: "Livre" },
+      { team: "Millwall", owner: "Livre / CPU", wins: 0, draws: 0, losses: 0, goalsFor: 0, goalsAgainst: 0, status: "Livre" },
+      { team: "Sheffield United", owner: "Livre / CPU", wins: 0, draws: 0, losses: 0, goalsFor: 0, goalsAgainst: 0, status: "Livre" },
+      { team: "Swansea City", owner: "Livre / CPU", wins: 0, draws: 0, losses: 0, goalsFor: 0, goalsAgainst: 0, status: "Livre" },
+      { team: "Wrexham", owner: "Livre / CPU", wins: 0, draws: 0, losses: 0, goalsFor: 0, goalsAgainst: 0, status: "Livre" },
+      { team: "Derby County", owner: "Livre / CPU", wins: 0, draws: 0, losses: 0, goalsFor: 0, goalsAgainst: 0, status: "Livre" },
+      { team: "Norwich City", owner: "Livre / CPU", wins: 0, draws: 0, losses: 0, goalsFor: 0, goalsAgainst: 0, status: "Livre" },
+      { team: "Preston North End", owner: "Livre / CPU", wins: 0, draws: 0, losses: 0, goalsFor: 0, goalsAgainst: 0, status: "Livre" },
+      { team: "Queens Park Rangers", owner: "Livre / CPU", wins: 0, draws: 0, losses: 0, goalsFor: 0, goalsAgainst: 0, status: "Livre" },
+      { team: "Stoke City", owner: "Livre / CPU", wins: 0, draws: 0, losses: 0, goalsFor: 0, goalsAgainst: 0, status: "Livre" },
+      { team: "Watford", owner: "Livre / CPU", wins: 0, draws: 0, losses: 0, goalsFor: 0, goalsAgainst: 0, status: "Livre" },
+      { team: "West Bromwich Albion", owner: "Livre / CPU", wins: 0, draws: 0, losses: 0, goalsFor: 0, goalsAgainst: 0, status: "Livre" },
+      { team: "Blackburn Rovers", owner: "Livre / CPU", wins: 0, draws: 0, losses: 0, goalsFor: 0, goalsAgainst: 0, status: "Livre" },
+      { team: "Charlton Athletic", owner: "Livre / CPU", wins: 0, draws: 0, losses: 0, goalsFor: 0, goalsAgainst: 0, status: "Livre" },
+      { team: "Oxford United", owner: "Livre / CPU", wins: 0, draws: 0, losses: 0, goalsFor: 0, goalsAgainst: 0, status: "Livre" },
+      { team: "Portsmouth", owner: "Livre / CPU", wins: 0, draws: 0, losses: 0, goalsFor: 0, goalsAgainst: 0, status: "Livre" },
+      { team: "Sheffield Wednesday", owner: "Livre / CPU", wins: 0, draws: 0, losses: 0, goalsFor: 0, goalsAgainst: 0, status: "Livre" }
+    ];
+
+    const table = document.getElementById("teamsTable");
+    const searchInput = document.getElementById("searchInput");
+    const ownerFilter = document.getElementById("ownerFilter");
+    const sortSelect = document.getElementById("sortSelect");
+    const summary = document.getElementById("summary");
+
+    function withCalculatedStats(team, originalIndex) {
+      const played = team.wins + team.draws + team.losses;
+      const goalDifference = team.goalsFor - team.goalsAgainst;
+      const points = team.wins * 3 + team.draws;
+
+      return {
+        ...team,
+        originalIndex,
+        played,
+        goalDifference,
+        points
+      };
+    }
+
+    function compareStandings(a, b) {
+      return b.points - a.points ||
+        b.wins - a.wins ||
+        b.goalDifference - a.goalDifference ||
+        b.goalsFor - a.goalsFor ||
+        a.team.localeCompare(b.team);
+    }
+
+    function getStandings() {
+      return teams
+        .map((team, index) => withCalculatedStats(team, index))
+        .sort(compareStandings)
+        .map((team, index) => ({ ...team, position: index + 1 }));
+    }
+
+    function getFilteredTeams() {
+      const search = searchInput.value.trim().toLowerCase();
+      const filter = ownerFilter.value;
+      const sort = sortSelect.value;
+      let data = getStandings();
+
+      if (search) {
+        data = data.filter(item =>
+          item.team.toLowerCase().includes(search) ||
+          item.owner.toLowerCase().includes(search) ||
+          item.status.toLowerCase().includes(search)
+        );
+      }
+
+      if (filter === "ours") {
+        data = data.filter(item => item.status === "Nosso");
+      } else if (filter === "free") {
+        data = data.filter(item => item.status === "Livre");
+      } else if (filter !== "all") {
+        data = data.filter(item => item.owner === filter);
+      }
+
+      if (sort === "pointsDesc") data.sort((a, b) => b.points - a.points || compareStandings(a, b));
+      if (sort === "winsDesc") data.sort((a, b) => b.wins - a.wins || compareStandings(a, b));
+      if (sort === "goalDifferenceDesc") data.sort((a, b) => b.goalDifference - a.goalDifference || compareStandings(a, b));
+      if (sort === "goalsForDesc") data.sort((a, b) => b.goalsFor - a.goalsFor || compareStandings(a, b));
+      if (sort === "teamAsc") data.sort((a, b) => a.team.localeCompare(b.team));
+
+      return data;
+    }
+
+    function renderSummary() {
+      const standings = getStandings();
+      const leader = standings[0];
+      const ours = standings.filter(item => item.status === "Nosso");
+      const bestOurTeam = [...ours].sort(compareStandings)[0];
+      const totalMatches = Math.round(standings.reduce((sum, item) => sum + item.played, 0) / 2);
+
+      summary.innerHTML = `
+        <article class="summary-card"><span>Líder</span><strong>${leader.team}</strong></article>
+        <article class="summary-card"><span>Melhor nosso</span><strong>${bestOurTeam.team}</strong></article>
+        <article class="summary-card"><span>Jogos registrados</span><strong>${totalMatches}</strong></article>
+        <article class="summary-card"><span>Times na liga</span><strong>${standings.length}</strong></article>
+      `;
+    }
+
+    function getClassificationZone(position) {
+      if (position <= 2) {
+        return { label: "Acesso direto", className: "promotion", color: "var(--promotion)" };
+      }
+
+      if (position >= 3 && position <= 6) {
+        return { label: "Playoffs", className: "playoff", color: "var(--playoff)" };
+      }
+
+      if (position >= 22) {
+        return { label: "Rebaixamento", className: "relegation", color: "var(--relegation)" };
+      }
+
+      return { label: "Permanece", className: "safe", color: "var(--safe)" };
+    }
+
+    function formatGoalDifference(value) {
+      if (value > 0) return `+${value}`;
+      return String(value);
+    }
+
+    function renderTable() {
+      const data = getFilteredTeams();
+
+      table.innerHTML = data.map((item) => {
+        const color = ownerColors[item.owner] || ownerColors["Livre / CPU"];
+        const isOurs = item.status === "Nosso";
+        const ownerClass = item.owner === "Livre / CPU" ? "owner free" : "owner";
+        const zone = getClassificationZone(item.position);
+
+        return `
+          <tr class="${isOurs ? "ours-row" : ""} classification-border" style="--zone-color: ${zone.color}">
+            <td class="numeric">${item.position}º</td>
+            <td>
+              <div class="team-cell">
+                <span class="team-color" style="background: ${color}"></span>
+                ${item.team}
+              </div>
+            </td>
+            <td><span class="${ownerClass}" style="${item.owner !== "Livre / CPU" ? `background: ${color}` : ""}">${item.owner}</span></td>
+            <td class="numeric">${item.played}</td>
+            <td class="numeric">${item.wins}</td>
+            <td class="numeric">${item.draws}</td>
+            <td class="numeric">${item.losses}</td>
+            <td class="numeric">${item.goalsFor}</td>
+            <td class="numeric">${item.goalsAgainst}</td>
+            <td class="numeric">${formatGoalDifference(item.goalDifference)}</td>
+            <td class="numeric points">${item.points}</td>
+            <td><span class="classification ${zone.className}">${zone.label}</span></td>
+          </tr>
+        `;
+      }).join("");
+    }
+
+    function update() {
+      renderSummary();
+      renderTable();
+    }
+
+    searchInput.addEventListener("input", update);
+    ownerFilter.addEventListener("change", update);
+    sortSelect.addEventListener("change", update);
+
+    update();
+  </script>
+</body>
+</html>
