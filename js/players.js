@@ -40,13 +40,14 @@ App.players = {
   },
 
   getNextMatchForTeam(teamName) {
-    const playedKeys = new Set(App.standings.getApprovedApiResults().map(row =>
-      `${App.utils.normalizeText(row.Competicao)}|${App.utils.normalizeText(row.RodadaFase)}|${App.utils.normalizeTeamName(row.Mandante)}|${App.utils.normalizeTeamName(row.Visitante)}`
-    ));
-
     return App.players.getMatchesForTeam(teamName).find(event => {
-      const key = `${App.utils.normalizeText(event.competition)}|${App.utils.normalizeText(event.phase)}|${App.utils.normalizeTeamName(event.home)}|${App.utils.normalizeTeamName(event.away)}`;
-      return !playedKeys.has(key);
+      if (!event) return false;
+
+      // Regra central:
+      // O painel dos técnicos só pode mostrar jogos realmente pendentes.
+      // Jogos de copa já finalizados/classificados não devem voltar para "Próximo compromisso",
+      // mesmo quando o texto da fase no banco e no calendário tiver pequenas diferenças.
+      return App.calendar.getStatusClass(event) === "pending";
     });
   },
 
