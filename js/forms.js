@@ -285,6 +285,13 @@ App.forms = {
       field.addEventListener("change", () => App.transfers.renderTransferPreview(transferForm));
     });
 
+    const marketSearch = document.getElementById("marketPlayerSearch");
+    if (marketSearch) {
+      marketSearch.addEventListener("input", App.transfers.renderMarketPlayerResults);
+      marketSearch.addEventListener("focus", App.transfers.renderMarketPlayerResults);
+    }
+
+    App.transfers.renderMarketPlayerResults();
     App.transfers.renderTransferPreview(transferForm);
   },
 

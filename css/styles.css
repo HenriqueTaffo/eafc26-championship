@@ -3716,3 +3716,366 @@ body.modal-active {
     flex-direction: column;
   }
 }
+
+/* v37 — escudos sem fundo branco */
+.club-badge.has-logo,
+.metric-icon.leader-club-icon .club-badge.has-logo {
+  background: transparent !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+}
+
+.club-badge.has-logo img,
+.metric-icon.leader-club-icon .club-badge img {
+  width: 96%;
+  height: 96%;
+  object-fit: contain;
+  filter:
+    drop-shadow(0 2px 3px rgba(0,0,0,.45))
+    drop-shadow(0 0 8px rgba(255,255,255,.08));
+}
+
+.club-badge {
+  background: transparent;
+}
+
+/* v37 — novo painel dos técnicos */
+.player-grid {
+  display: block;
+}
+
+.coach-selector {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+
+.coach-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  padding: 9px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(148,163,184,.20);
+  background: rgba(15, 23, 42, .70);
+  color: #f8fafc;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.coach-chip.active {
+  border-color: rgba(139, 92, 246, .65);
+  background: linear-gradient(135deg, rgba(37,99,235,.92), rgba(124,58,237,.92));
+  box-shadow: 0 12px 28px rgba(37, 99, 235, .22);
+}
+
+.coach-dashboard {
+  display: grid;
+  gap: 14px;
+}
+
+.coach-hero-card {
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  align-items: center;
+  padding: 22px;
+  border-radius: 26px;
+  border: 1px solid rgba(148,163,184,.18);
+  background:
+    radial-gradient(circle at 12% 25%, color-mix(in srgb, var(--coach-color), transparent 72%), transparent 34%),
+    linear-gradient(135deg, rgba(15,23,42,.94), rgba(17,28,51,.82));
+  box-shadow: 0 22px 60px rgba(0,0,0,.24);
+}
+
+.coach-hero-main {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  min-width: 0;
+}
+
+.coach-club-mark .club-badge {
+  width: 86px;
+  height: 86px;
+  flex-basis: 86px;
+}
+
+.coach-hero-card h2 {
+  margin: 6px 0 2px;
+  font-size: clamp(36px, 5vw, 62px);
+  line-height: .95;
+  letter-spacing: -.06em;
+}
+
+.coach-hero-card p {
+  margin: 0;
+  color: #cbd5e1;
+  font-size: 16px;
+}
+
+.coach-hero-rank {
+  text-align: right;
+}
+
+.coach-hero-rank strong {
+  display: block;
+  font-size: clamp(42px, 6vw, 72px);
+  line-height: .9;
+}
+
+.coach-hero-rank span {
+  color: #a78bfa;
+  font-weight: 900;
+}
+
+.coach-form-line {
+  margin-top: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  color: #94a3b8;
+  font-size: 12px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+}
+
+.form-dot {
+  width: 28px;
+  height: 28px;
+  display: inline-grid;
+  place-items: center;
+  border-radius: 999px;
+  color: #fff;
+  font-weight: 900;
+  letter-spacing: 0;
+}
+
+.form-dot.v { background: #16a34a; }
+.form-dot.e { background: #64748b; }
+.form-dot.d { background: #dc2626; }
+.form-empty { color: #94a3b8; text-transform: none; letter-spacing: 0; }
+
+.coach-quick-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.coach-quick-grid article,
+.coach-panel-card,
+.coach-comparison {
+  padding: 16px;
+  border-radius: 20px;
+  border: 1px solid rgba(148,163,184,.16);
+  background:
+    radial-gradient(circle at top left, rgba(37,99,235,.08), transparent 35%),
+    rgba(17, 28, 51, .86);
+}
+
+.coach-quick-grid span {
+  display: block;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.coach-quick-grid strong {
+  display: block;
+  margin-top: 6px;
+  font-size: clamp(22px, 3vw, 34px);
+}
+
+.coach-quick-grid small {
+  display: block;
+  margin-top: 4px;
+  color: #a78bfa;
+  font-weight: 800;
+}
+
+.coach-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.coach-match-preview {
+  display: grid;
+  gap: 10px;
+}
+
+.coach-alert-list {
+  margin: 0;
+  padding-left: 18px;
+  color: #e5e7eb;
+}
+
+.coach-alert-list li {
+  margin-bottom: 8px;
+}
+
+.coach-list {
+  display: grid;
+  gap: 9px;
+}
+
+.coach-list div {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px;
+  border-radius: 12px;
+  background: rgba(2,6,23,.22);
+}
+
+.coach-list span {
+  color: #94a3b8;
+  text-align: right;
+}
+
+.coach-ranking-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.coach-ranking-card {
+  display: grid;
+  grid-template-columns: auto auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  padding: 12px;
+  border-radius: 16px;
+  background: rgba(2,6,23,.24);
+  border: 1px solid rgba(148,163,184,.12);
+}
+
+.rank-number {
+  color: #a78bfa;
+  font-size: 18px;
+  font-weight: 900;
+}
+
+.coach-ranking-card strong,
+.coach-ranking-card small {
+  display: block;
+}
+
+.coach-ranking-card small {
+  color: #94a3b8;
+}
+
+/* v37 — seleção de jogadores no mercado */
+.market-player-results {
+  display: grid;
+  gap: 8px;
+  max-height: 330px;
+  overflow-y: auto;
+  padding: 10px;
+  border: 1px solid rgba(148,163,184,.16);
+  border-radius: 16px;
+  background: rgba(2,6,23,.22);
+}
+
+.market-player-option {
+  width: 100%;
+  display: grid;
+  grid-template-columns: minmax(180px, 1.2fr) minmax(140px, .9fr) auto auto;
+  gap: 10px;
+  align-items: center;
+  padding: 11px 12px;
+  border: 1px solid rgba(148,163,184,.12);
+  border-radius: 14px;
+  background: rgba(15,23,42,.68);
+  color: #f8fafc;
+  text-align: left;
+  cursor: pointer;
+}
+
+.market-player-option:hover {
+  border-color: rgba(139, 92, 246, .55);
+  transform: translateY(-1px);
+}
+
+.market-player-option.is-contracted {
+  opacity: .55;
+  cursor: not-allowed;
+}
+
+.market-player-main strong,
+.market-player-main small {
+  display: block;
+}
+
+.market-player-main small,
+.market-player-club {
+  color: #94a3b8;
+}
+
+.market-player-value {
+  font-weight: 900;
+  color: #bbf7d0;
+  white-space: nowrap;
+}
+
+.market-player-status {
+  padding: 5px 8px;
+  border-radius: 999px;
+  background: rgba(239,68,68,.18);
+  color: #fecaca;
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.market-empty {
+  color: #94a3b8;
+  font-size: 13px;
+  line-height: 1.45;
+  padding: 10px;
+}
+
+@media (max-width: 980px) {
+  .coach-quick-grid,
+  .coach-detail-grid,
+  .coach-ranking-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .market-player-option {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .coach-hero-card,
+  .coach-hero-main {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .coach-hero-rank {
+    text-align: left;
+  }
+
+  .coach-quick-grid,
+  .coach-detail-grid,
+  .coach-ranking-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .coach-club-mark .club-badge {
+    width: 72px;
+    height: 72px;
+    flex-basis: 72px;
+  }
+
+  .coach-list div,
+  .coach-ranking-card {
+    align-items: flex-start;
+  }
+}

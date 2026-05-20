@@ -25,6 +25,7 @@ App.state = {
   apiEvents: [],
   apiClubs: [],
   apiBudgets: {},
+  apiMarketPlayers: [],
   apiLoaded: false,
   loadingCount: 0,
   autoEventGenerationRunning: false,

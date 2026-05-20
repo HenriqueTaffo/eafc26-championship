@@ -473,6 +473,106 @@ App.transfers = {
     `;
   },
 
+
+  getMarketPlayers() {
+    return Array.isArray(App.state.apiMarketPlayers) ? App.state.apiMarketPlayers : [];
+  },
+
+  getFilteredMarketPlayers(query = "", limit = 8) {
+    const normalized = App.utils.normalizeText(query);
+    const players = App.transfers.getMarketPlayers();
+
+    if (!players.length) return [];
+
+    let filtered = players;
+
+    if (normalized) {
+      filtered = players.filter(player => App.utils.normalizeText([
+        player.name,
+        player.club,
+        player.league,
+        player.country,
+        player.position
+      ].join(" ")).includes(normalized));
+    }
+
+    const contracted = new Set(
+      App.transfers.getValidTransfers().map(item => App.utils.normalizeText(item.player))
+    );
+
+    return filtered
+      .map(player => ({
+        ...player,
+        alreadyContracted: contracted.has(App.utils.normalizeText(player.name))
+      }))
+      .sort((a, b) => {
+        if (a.alreadyContracted !== b.alreadyContracted) return a.alreadyContracted ? 1 : -1;
+        return Number(b.market_value_eur || 0) - Number(a.market_value_eur || 0) || String(a.name || "").localeCompare(String(b.name || ""));
+      })
+      .slice(0, limit);
+  },
+
+  selectMarketPlayer(playerId) {
+    const form = document.getElementById("transferForm");
+    if (!form) return;
+
+    const player = App.transfers.getMarketPlayers().find(item => String(item.id) === String(playerId));
+    if (!player) return;
+
+    if (form.elements.player) form.elements.player.value = player.name || "";
+    if (form.elements.fromClub) form.elements.fromClub.value = player.club || "";
+    if (form.elements.marketValue) form.elements.marketValue.value = Math.round(Number(player.market_value_eur || 0));
+
+    const search = document.getElementById("marketPlayerSearch");
+    if (search) search.value = `${player.name} • ${player.club}`;
+
+    App.transfers.renderMarketPlayerResults();
+    App.transfers.renderTransferPreview(form);
+  },
+
+  renderMarketPlayerResults() {
+    const target = document.getElementById("marketPlayerResults");
+    const input = document.getElementById("marketPlayerSearch");
+    if (!target) return;
+
+    const players = App.transfers.getMarketPlayers();
+    const query = input?.value || "";
+
+    if (!players.length) {
+      target.innerHTML = `
+        <div class="market-empty">
+          Base de jogadores ainda vazia. Rode o SQL v7 e depois importe um CSV para ` + "`players_market`" + `.
+          Enquanto isso, o preenchimento manual continua funcionando.
+        </div>
+      `;
+      return;
+    }
+
+    const filtered = App.transfers.getFilteredMarketPlayers(query, query ? 10 : 6);
+
+    if (!filtered.length) {
+      target.innerHTML = `<div class="market-empty">Nenhum jogador encontrado. Tente nome, clube, liga ou posição.</div>`;
+      return;
+    }
+
+    target.innerHTML = filtered.map(player => `
+      <button class="market-player-option ${player.alreadyContracted ? "is-contracted" : ""}" type="button" data-market-player="${player.id}" ${player.alreadyContracted ? "disabled" : ""}>
+        <span class="market-player-main">
+          <strong>${App.utils.escapeHtml(player.name || "-")}</strong>
+          <small>${App.utils.escapeHtml([player.position, player.age ? `${player.age} anos` : "", player.league].filter(Boolean).join(" · "))}</small>
+        </span>
+        <span class="market-player-club">${App.utils.escapeHtml(player.club || "Clube não informado")}</span>
+        <span class="market-player-value">${App.utils.formatCurrency(Number(player.market_value_eur || 0))}</span>
+        ${player.alreadyContracted ? `<span class="market-player-status">Já contratado</span>` : ""}
+      </button>
+    `).join("");
+
+    target.querySelectorAll("[data-market-player]").forEach(button => {
+      button.addEventListener("click", () => App.transfers.selectMarketPlayer(button.dataset.marketPlayer));
+    });
+  },
+
+
   renderSummary() {
     const summary = document.getElementById("transferSummary");
     if (!summary) return;
@@ -496,6 +596,7 @@ App.transfers = {
     App.transfers.renderSummary();
     App.transfers.renderBudgetBoard();
     App.transfers.renderInsights();
+    App.transfers.renderMarketPlayerResults();
 
     const table = document.getElementById("transferTable");
     const mobile = document.getElementById("transferMobile");

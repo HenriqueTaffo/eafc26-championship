@@ -411,13 +411,19 @@
                 <option value="Renato">Renato</option>
               </select>
             </label>
+            <label class="full">Buscar jogador no mercado
+              <input id="marketPlayerSearch" type="search" placeholder="Digite nome, clube, liga ou posição..." autocomplete="off" />
+            </label>
+            <div class="market-player-results full" id="marketPlayerResults">
+              <div class="market-empty">Carregue a base `players_market` no Supabase para selecionar jogadores. O preenchimento manual continua disponível.</div>
+            </div>
             <label>Jogador
               <input name="player" type="text" placeholder="Nome do jogador" required />
             </label>
             <label>Clube origem
               <input name="fromClub" type="text" placeholder="Clube atual" required />
             </label>
-            <label>Overall FIFA
+            <label>Overall EAFC
               <input name="overall" type="number" min="1" max="99" placeholder="Ex: 82" required />
             </label>
             <label class="full">Valor Transfermarkt

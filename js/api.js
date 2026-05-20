@@ -51,6 +51,33 @@ App.api = {
     return data;
   },
 
+
+  async loadMarketPlayers() {
+    try {
+      const response = await App.api.fetchWithTimeout(
+        `${App.config.SUPABASE_URL}/rest/v1/players_market?select=id,name,club,league,country,position,age,market_value_eur,transfermarkt_url,source,last_synced_at&order=name.asc&limit=5000`,
+        {
+          method: "GET",
+          headers: App.api.getSupabaseHeaders()
+        },
+        45000
+      );
+
+      if (!response.ok) {
+        App.state.apiMarketPlayers = [];
+        return [];
+      }
+
+      const data = await response.json();
+      App.state.apiMarketPlayers = Array.isArray(data) ? data : [];
+      return App.state.apiMarketPlayers;
+    } catch (error) {
+      console.warn("Não consegui carregar players_market:", error);
+      App.state.apiMarketPlayers = [];
+      return [];
+    }
+  },
+
   async loadApiData(options = {}) {
     const {
       showLoader = true,
@@ -72,6 +99,7 @@ App.api = {
       App.state.apiEvents = data.events || [];
       App.state.apiClubs = data.clubs || [];
       App.state.apiBudgets = data.budgets || {};
+      await App.api.loadMarketPlayers();
 
       if (Array.isArray(data.eventSlots) && data.eventSlots.length) {
         App.config.eventSlots = data.eventSlots.map(Number);
