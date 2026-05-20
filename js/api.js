@@ -54,12 +54,13 @@ App.api = {
   async loadApiData(options = {}) {
     const {
       showLoader = true,
+      variant = App.main?.getDefaultLoaderVariant ? App.main.getDefaultLoaderVariant() : "match",
       title = "Atualizando dados",
       message = "Aguarde enquanto os dados mais recentes são consultados."
     } = options;
 
     if (showLoader && App.main?.showLoader) {
-      App.main.showLoader(title, message);
+      App.main.showLoader({ variant, title, message });
     }
 
     try {

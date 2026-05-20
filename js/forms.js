@@ -10,6 +10,11 @@ App.forms = {
 
     button.disabled = true;
     App.utils.setMessage(message, "Enviando resultado...", "warning");
+    App.main.showLoader({
+      variant: "match",
+      title: "Registrando resultado",
+      message: "Montando a rodada, validando o placar e preparando a atualização da classificação."
+    });
 
     try {
       const data = await App.api.postToApi({
@@ -27,13 +32,18 @@ App.forms = {
       if (!data.ok) throw new Error(data.message || data.error || "Resultado rejeitado.");
       App.utils.setMessage(message, data.message || "Resultado enviado com sucesso.", "success");
       form.reset();
-      await App.api.loadApiData({ title: "Atualizando dados", message: "Resultado salvo. Atualizando classificação, calendário e painel da liga..." });
+      await App.api.loadApiData({
+        variant: "match",
+        title: "Atualizando dados",
+        message: "Resultado salvo. Atualizando classificação, calendário e painel da liga..."
+      });
     } catch (error) {
       const friendlyMessage = error.name === "AbortError"
         ? "A simulação demorou demais para responder. Verifique se os jogos foram criados no Supabase; se não foram, tente novamente."
         : error.message;
       App.utils.setMessage(message, friendlyMessage, "error");
     } finally {
+      App.main.hideLoader();
       button.disabled = false;
     }
   },
@@ -47,6 +57,11 @@ App.forms = {
 
     button.disabled = true;
     App.utils.setMessage(message, "Enviando transferência...", "warning");
+    App.main.showLoader({
+      variant: "market",
+      title: "Processando transferência",
+      message: "Consultando orçamento, limite diário e possíveis travas de mercado."
+    });
 
     try {
       const data = await App.api.postToApi({
@@ -59,13 +74,18 @@ App.forms = {
       if (!data.ok) throw new Error(data.message || data.error || "Transferência rejeitada.");
       App.utils.setMessage(message, data.message || "Transferência enviada com sucesso.", "success");
       form.reset();
-      await App.api.loadApiData({ title: "Atualizando dados", message: "Transferência salva. Atualizando orçamento, lista de transferências e painel..." });
+      await App.api.loadApiData({
+        variant: "market",
+        title: "Atualizando dados",
+        message: "Transferência salva. Atualizando orçamento, lista de transferências e painel..."
+      });
     } catch (error) {
       const friendlyMessage = error.name === "AbortError"
         ? "A operação demorou demais para responder. Verifique o Supabase e tente novamente."
         : error.message;
       App.utils.setMessage(message, friendlyMessage, "error");
     } finally {
+      App.main.hideLoader();
       button.disabled = false;
     }
   },
@@ -79,6 +99,11 @@ App.forms = {
 
     button.disabled = true;
     App.utils.setMessage(message, "Simulando jogos CPU x CPU... Isso deve levar poucos segundos.", "warning");
+    App.main.showLoader({
+      variant: "chaos",
+      title: "Simulando CPU x CPU",
+      message: "Mascote trabalhando pesado para fechar os confrontos, aplicar eventos e atualizar tudo."
+    });
 
     try {
       const data = await App.api.postToApi({
@@ -90,13 +115,18 @@ App.forms = {
       if (!data.ok) throw new Error(data.message || data.error || "Simulação rejeitada.");
       App.utils.setMessage(message, data.message || "Semana simulada com sucesso.", "success");
       form.reset();
-      await App.api.loadApiData({ title: "Atualizando dados", message: "Simulação concluída. Atualizando semana, tabela e calendário..." });
+      await App.api.loadApiData({
+        variant: "chaos",
+        title: "Atualizando dados",
+        message: "Simulação concluída. Atualizando semana, tabela, calendário e eventos..."
+      });
     } catch (error) {
       const friendlyMessage = error.name === "AbortError"
         ? "A operação demorou demais para responder. Verifique o Supabase e tente novamente."
         : error.message;
       App.utils.setMessage(message, friendlyMessage, "error");
     } finally {
+      App.main.hideLoader();
       button.disabled = false;
     }
   },
