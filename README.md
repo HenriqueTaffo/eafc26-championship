@@ -87,3 +87,23 @@ Se você publicar uma nova versão do Apps Script e a URL mudar, altere `js/conf
 - Ajuste visual do logo apenas no desktop.
 - Mobile mantido como estava.
 - Logo desktop ficou menor, sem textos internos cortados, em formato de avatar/selo limpo.
+
+
+## Atualização v26
+
+- Removido `renderAll()` a cada segundo, que deixava o mobile travando.
+- Timers agora atualizam apenas os textos de contagem.
+- Views/filtros renderizam somente a tela ativa quando possível.
+- Histórico completo de eventos/calendário ganhou limite de renderização para manter performance.
+- Em falha temporária da API, o front evita zerar a tela se já havia dados carregados.
+
+
+## Atualização v27 — Supabase
+
+- Frontend deixou de usar Apps Script/Google Sheets.
+- Leitura via RPC `app_get_data`.
+- Envio de resultado via RPC `app_add_result`.
+- Envio de transferência via RPC `app_add_transfer`.
+- Eventos automáticos via RPC `app_generate_due_events`.
+- Simulação CPU x CPU usa o calendário do front e grava os resultados pelo RPC seguro.
+- Antes de subir este ZIP, rode o SQL `supabase-mistura-managers-league-rpc-v3.sql` no Supabase.

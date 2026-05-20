@@ -30,7 +30,7 @@ App.forms = {
       await App.api.loadApiData({ title: "Atualizando dados", message: "Resultado salvo. Atualizando classificação, calendário e painel da liga..." });
     } catch (error) {
       const friendlyMessage = error.name === "AbortError"
-        ? "A simulação demorou demais para responder. Verifique se os jogos foram criados na planilha; se não foram, tente novamente."
+        ? "A simulação demorou demais para responder. Verifique se os jogos foram criados no Supabase; se não foram, tente novamente."
         : error.message;
       App.utils.setMessage(message, friendlyMessage, "error");
     } finally {
@@ -62,7 +62,7 @@ App.forms = {
       await App.api.loadApiData({ title: "Atualizando dados", message: "Transferência salva. Atualizando orçamento, lista de transferências e painel..." });
     } catch (error) {
       const friendlyMessage = error.name === "AbortError"
-        ? "A operação demorou demais para responder. Verifique a planilha e tente novamente."
+        ? "A operação demorou demais para responder. Verifique o Supabase e tente novamente."
         : error.message;
       App.utils.setMessage(message, friendlyMessage, "error");
     } finally {
@@ -93,7 +93,7 @@ App.forms = {
       await App.api.loadApiData({ title: "Atualizando dados", message: "Simulação concluída. Atualizando semana, tabela e calendário..." });
     } catch (error) {
       const friendlyMessage = error.name === "AbortError"
-        ? "A operação demorou demais para responder. Verifique a planilha e tente novamente."
+        ? "A operação demorou demais para responder. Verifique o Supabase e tente novamente."
         : error.message;
       App.utils.setMessage(message, friendlyMessage, "error");
     } finally {
@@ -109,7 +109,7 @@ App.forms = {
     const events = App.state.apiEvents.length;
 
     container.innerHTML = `
-      <article class="summary-card"><span>Status planilha</span><strong>${App.state.apiLoaded ? "Conectada" : "Carregando"}</strong></article>
+      <article class="summary-card"><span>Status Supabase</span><strong>${App.state.apiLoaded ? "Conectado" : "Carregando"}</strong></article>
       <article class="summary-card"><span>Resultados</span><strong>${approvedResults}</strong></article>
       <article class="summary-card"><span>Transfers</span><strong>${approvedTransfers}</strong></article>
       <article class="summary-card"><span>Eventos</span><strong>${events}</strong></article>

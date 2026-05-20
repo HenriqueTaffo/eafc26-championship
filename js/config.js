@@ -1,9 +1,11 @@
-const API_URL = "https://script.google.com/macros/s/AKfycbxQMAUinG-fEpibUq29m_gmXfazoIu6vug35R_SW50xeZlhdibjIkTRjpEAGSusX3Ys/exec";
+const API_URL = "https://fdippspwpugnxwxmjnqf.supabase.co";
 window.App = window.App || {};
 
 App.config = {
-  API_URL: "https://script.google.com/macros/s/AKfycbxQMAUinG-fEpibUq29m_gmXfazoIu6vug35R_SW50xeZlhdibjIkTRjpEAGSusX3Ys/exec",
+  API_URL: "https://fdippspwpugnxwxmjnqf.supabase.co",
   API_PIN: "eafc26",
+  SUPABASE_URL: "https://fdippspwpugnxwxmjnqf.supabase.co",
+  SUPABASE_PUBLISHABLE_KEY: "sb_publishable_9YyrYEk9jH5CuatQK_Ejpg_VfQq6qCK",
   transferBudget: 65000000,
   homeMatchBonus: 1250000,
   winBonus: 500000,

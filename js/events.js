@@ -198,6 +198,10 @@ App.events = {
       events = events.slice(0, 12);
     }
 
+    if (period === "all" && !search) {
+      events = events.slice(0, 120);
+    }
+
     return events;
   },
 
@@ -259,7 +263,7 @@ App.events = {
     grid.innerHTML = events.length ? `
       <div class="compact-info-card">
         <strong>${events.length} evento(s) exibido(s)</strong>
-        <span>${periodLabel}. Use os filtros para consultar eventos antigos quando precisar.</span>
+        <span>${periodLabel}${(document.getElementById("eventsPeriodFilter")?.value === "all" && !document.getElementById("eventsSearchInput")?.value) ? " — exibindo os 120 mais recentes para manter o site leve." : ""}. Use os filtros para consultar eventos antigos quando precisar.</span>
       </div>
     ` + events.map(event => {
       const typeClass = App.events.getEventTypeClass(event);

@@ -150,6 +150,10 @@ App.calendar = {
         .slice(0, 30);
     }
 
+    if (statusFilter === "all" && !search && week === "all") {
+      filteredEvents = filteredEvents.slice(0, 80);
+    }
+
     return filteredEvents;
   },
 
