@@ -363,6 +363,99 @@ tr.calendar-pending-row {
 
 .player-stat strong { font-size: 16px; }
 
+
+
+.budget-panel {
+  margin: 14px 0 16px;
+  padding: 14px;
+  border-radius: 18px;
+  background: rgba(15, 23, 42, 0.62);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.budget-hero {
+  padding: 16px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, rgba(37, 99, 235, 0.22), rgba(16, 185, 129, 0.14));
+  border: 1px solid rgba(147, 197, 253, 0.16);
+  margin-bottom: 12px;
+}
+
+.budget-panel.warning .budget-hero {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.22), rgba(37, 99, 235, 0.12));
+}
+
+.budget-panel.negative .budget-hero {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.24), rgba(37, 99, 235, 0.10));
+}
+
+.budget-hero span {
+  display: block;
+  color: var(--muted);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: .09em;
+  font-weight: 900;
+  margin-bottom: 6px;
+}
+
+.budget-hero strong {
+  display: block;
+  color: #fff;
+  font-size: clamp(24px, 3.5vw, 34px);
+  line-height: 1.1;
+}
+
+.budget-hero small {
+  display: block;
+  color: var(--muted);
+  font-size: 12px;
+  margin-top: 8px;
+  line-height: 1.45;
+}
+
+.budget-breakdown-grid {
+  display: grid;
+  gap: 8px;
+}
+
+.budget-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.035);
+  border: 1px solid rgba(255, 255, 255, 0.055);
+}
+
+.budget-row span {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.budget-row strong {
+  color: #fff;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.budget-row.income strong { color: #bbf7d0; }
+.budget-row.expense strong { color: #fecaca; }
+.budget-row.total {
+  background: rgba(59, 130, 246, 0.12);
+}
+.budget-row.final {
+  background: rgba(34, 197, 94, 0.13);
+  border-color: rgba(134, 239, 172, 0.16);
+}
+.budget-row.final strong {
+  color: #bbf7d0;
+  font-size: 15px;
+}
+
 .player-list {
   margin: 10px 0 0;
   padding: 0;

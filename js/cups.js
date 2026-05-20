@@ -45,21 +45,79 @@ App.cups = {
     ];
   },
 
-  hydrateCupMatchWithApiResult(match, competition, phase) {
-    const cleanPhase = String(phase || "").split(" - Jogo")[0];
-    const result = App.standings.getApprovedApiResults().find(row =>
-      App.utils.normalizeText(row.Competicao) === App.utils.normalizeText(competition) &&
-      App.utils.normalizeText(row.RodadaFase).includes(App.utils.normalizeText(cleanPhase)) &&
-      App.utils.sameTeamName(row.Mandante, match.home) &&
-      App.utils.sameTeamName(row.Visitante, match.away)
+  normalizeCupPhase(value = "") {
+    return App.utils.normalizeText(value)
+      .replace(/1\s*[ªa]?\s*fase/g, "primeira fase")
+      .replace(/primeira\s+fase/g, "primeira fase")
+      .replace(/2\s*[ªa]?\s*fase/g, "segunda fase")
+      .replace(/3\s*[ªa]?\s*fase/g, "terceira fase")
+      .replace(/quartas de final/g, "quartas")
+      .replace(/quarta de final/g, "quartas")
+      .replace(/semi final/g, "semifinal")
+      .replace(/semi-final/g, "semifinal")
+      .replace(/\s+/g, " ")
+      .trim();
+  },
+
+  getGameNumber(value = "") {
+    const match = App.utils.normalizeText(value).match(/jogo\s*(\d+)/);
+    return match ? Number(match[1]) : null;
+  },
+
+  sameCupTeams(aHome, aAway, bHome, bAway) {
+    const ah = App.utils.normalizeTeamName(aHome);
+    const aa = App.utils.normalizeTeamName(aAway);
+    const bh = App.utils.normalizeTeamName(bHome);
+    const ba = App.utils.normalizeTeamName(bAway);
+    return (ah === bh && aa === ba) || (ah === ba && aa === bh);
+  },
+
+  hasPlaceholderTeam(match) {
+    return [match.home, match.away].some(team => App.utils.normalizeText(team).startsWith("vencedor"));
+  },
+
+  findCupResult(competition, phase, home, away) {
+    const wantedPhase = App.cups.normalizeCupPhase(phase);
+    const wantedGame = App.cups.getGameNumber(phase);
+    const approved = App.standings.getApprovedApiResults().filter(row =>
+      App.utils.normalizeText(row.Competicao) === App.utils.normalizeText(competition)
     );
 
+    const sameTeams = approved.find(row => {
+      const rowPhase = App.cups.normalizeCupPhase(row.RodadaFase || "");
+      const rowGame = App.cups.getGameNumber(row.RodadaFase || "");
+      const phaseMatches = rowPhase === wantedPhase || rowPhase.includes(wantedPhase) || wantedPhase.includes(rowPhase);
+      const gameMatches = wantedGame === null || rowGame === null || wantedGame === rowGame;
+      return phaseMatches && gameMatches && App.cups.sameCupTeams(row.Mandante, row.Visitante, home, away);
+    });
+
+    if (sameTeams) return sameTeams;
+
+    return approved.find(row => {
+      const rowPhase = App.cups.normalizeCupPhase(row.RodadaFase || "");
+      const rowGame = App.cups.getGameNumber(row.RodadaFase || "");
+      const phaseMatches = rowPhase === wantedPhase || rowPhase.includes(wantedPhase) || wantedPhase.includes(rowPhase);
+      const gameMatches = wantedGame !== null && rowGame !== null && wantedGame === rowGame;
+      return phaseMatches && gameMatches;
+    }) || null;
+  },
+
+  hydrateCupMatchWithApiResult(match, competition, phase) {
+    const result = App.cups.findCupResult(competition, phase, match.home, match.away);
     if (!result) return match;
+
+    const sameTeams = App.cups.sameCupTeams(result.Mandante, result.Visitante, match.home, match.away);
+    const useResultTeams = App.cups.hasPlaceholderTeam(match) || !sameTeams;
+    const displayHome = useResultTeams ? App.utils.resolveTeamName(result.Mandante) : match.home;
+    const displayAway = useResultTeams ? App.utils.resolveTeamName(result.Visitante) : match.away;
+    const sameOrder = App.utils.normalizeTeamName(result.Mandante) === App.utils.normalizeTeamName(displayHome);
 
     return {
       ...match,
-      homeScore: Number(result.GolsMandante),
-      awayScore: Number(result.GolsVisitante),
+      home: displayHome,
+      away: displayAway,
+      homeScore: sameOrder ? Number(result.GolsMandante) : Number(result.GolsVisitante),
+      awayScore: sameOrder ? Number(result.GolsVisitante) : Number(result.GolsMandante),
       penaltyWinner: result.VencedorPenaltis || "",
       penaltyScore: result.PlacarPenaltis || "",
       status: "Finalizado"

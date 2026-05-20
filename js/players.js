@@ -5,12 +5,36 @@ App.players = {
     return App.data.teams.filter(team => team.status === "Nosso");
   },
 
+  getHumanTeamNames() {
+    return App.players.getPlayerTeams().map(team => team.team);
+  },
+
   getApprovedTransfersForBuyer(buyer) {
     return App.transfers.getTransfersWithStats().filter(item => item.buyer === buyer && !item.isBlockedDuplicate);
   },
 
   getSpentByBuyer(buyer) {
     return App.players.getApprovedTransfersForBuyer(buyer).reduce((sum, item) => sum + item.totalCost, 0);
+  },
+
+  getBudgetBreakdown(budget, spent) {
+    const base = Number(budget.baseBudget ?? App.config.transferBudget);
+    const homeBonus = Number(budget.homeBonus || 0);
+    const winBonus = Number(budget.winBonusValue || budget.winBonus || 0);
+    const eventBonus = Number(budget.eventTotal || budget.eventBonus || 0);
+    const totalAccumulated = base + homeBonus + winBonus + eventBonus;
+    const spentValue = Number(spent || 0);
+    const available = totalAccumulated - spentValue;
+
+    return {
+      base,
+      homeBonus,
+      winBonus,
+      eventBonus,
+      totalAccumulated,
+      spent: spentValue,
+      available
+    };
   },
 
   getMatchesForTeam(teamName) {
@@ -34,49 +58,40 @@ App.players = {
     });
   },
 
-  parsePlayerStatText(text) {
-    const rows = [];
-    const source = String(text || "").trim();
-    if (!source) return rows;
+  getGoalsByHumanTeams() {
+    const humanTeams = App.players.getHumanTeamNames();
+    const goalsMap = {};
 
-    source.split("|").forEach(teamBlock => {
-      const parts = teamBlock.split(":");
-      const teamPart = parts[0];
-      const playersPart = parts.slice(1).join(":");
-      if (!playersPart) return;
-      const teamName = App.utils.resolveTeamName(teamPart);
-
-      playersPart.split(",").forEach(entry => {
-        const clean = entry.trim();
-        if (!clean) return;
-        const match = clean.match(/(.+?)\s+(\d+)$/);
-        const count = match ? Number(match[2]) : 1;
-        rows.push({ team: teamName, count: Number.isNaN(count) ? 1 : count });
-      });
+    humanTeams.forEach(team => {
+      goalsMap[App.utils.normalizeTeamName(team)] = {
+        name: team,
+        detail: App.utils.getTeamByName(team)?.owner || "Jogador humano",
+        count: 0
+      };
     });
-
-    return rows;
-  },
-
-  getTeamLeaderboards() {
-    const goalMap = {};
-    const assistMap = {};
-
-    function addStat(map, teamName, count) {
-      const resolvedTeam = App.utils.resolveTeamName(teamName);
-      const key = App.utils.normalizeTeamName(resolvedTeam);
-      map[key] = map[key] || { name: resolvedTeam, detail: "Total acumulado", count: 0 };
-      map[key].count += Number(count || 0);
-    }
 
     App.standings.getApprovedApiResults().forEach(row => {
-      addStat(goalMap, row.Mandante, Number(row.GolsMandante));
-      addStat(goalMap, row.Visitante, Number(row.GolsVisitante));
-      App.players.parsePlayerStatText(row.AssistenciasDetalhes).forEach(item => addStat(assistMap, item.team, item.count));
+      const homeKey = App.utils.normalizeTeamName(row.Mandante);
+      const awayKey = App.utils.normalizeTeamName(row.Visitante);
+
+      if (goalsMap[homeKey]) goalsMap[homeKey].count += Number(row.GolsMandante || 0);
+      if (goalsMap[awayKey]) goalsMap[awayKey].count += Number(row.GolsVisitante || 0);
     });
 
-    const sortStats = data => Object.values(data).sort((a, b) => b.count - a.count || a.name.localeCompare(b.name)).slice(0, 10);
-    return { goals: sortStats(goalMap), assists: sortStats(assistMap) };
+    return Object.values(goalsMap)
+      .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
+  },
+
+  getTopExpensiveTransfers(limit = 5) {
+    return App.transfers.getTransfersWithStats()
+      .filter(item => !item.isBlockedDuplicate)
+      .sort((a, b) => b.totalCost - a.totalCost || a.player.localeCompare(b.player))
+      .slice(0, limit)
+      .map(item => ({
+        name: item.player,
+        detail: `${item.buyer} • ${item.fromClub || "Clube não informado"}`,
+        count: App.utils.formatCurrency(item.totalCost)
+      }));
   },
 
   renderLeaderboard(container, data, label) {
@@ -92,6 +107,29 @@ App.players = {
         <strong>${item.count}</strong>
       </div>
     `).join("");
+  },
+
+  renderBudgetPanel(breakdown) {
+    const availableClass = breakdown.available < 0 ? "negative" : breakdown.available < 10000000 ? "warning" : "positive";
+
+    return `
+      <section class="budget-panel ${availableClass}">
+        <div class="budget-hero">
+          <span>Disponível para contratar</span>
+          <strong>${App.utils.formatCurrency(breakdown.available)}</strong>
+          <small>Total acumulado ${App.utils.formatCurrency(breakdown.totalAccumulated)} • Gasto ${App.utils.formatCurrency(breakdown.spent)}</small>
+        </div>
+        <div class="budget-breakdown-grid">
+          <div class="budget-row"><span>Orçamento base</span><strong>${App.utils.formatCurrency(breakdown.base)}</strong></div>
+          <div class="budget-row income"><span>+ Bônus por mando</span><strong>${App.utils.formatCurrency(breakdown.homeBonus)}</strong></div>
+          <div class="budget-row income"><span>+ Bônus por vitória</span><strong>${App.utils.formatCurrency(breakdown.winBonus)}</strong></div>
+          <div class="budget-row ${breakdown.eventBonus < 0 ? "expense" : "income"}"><span>+/- Eventos</span><strong>${App.utils.formatCurrency(breakdown.eventBonus)}</strong></div>
+          <div class="budget-row total"><span>= Total acumulado</span><strong>${App.utils.formatCurrency(breakdown.totalAccumulated)}</strong></div>
+          <div class="budget-row expense"><span>- Gasto em transferências</span><strong>${App.utils.formatCurrency(breakdown.spent)}</strong></div>
+          <div class="budget-row final"><span>= Disponível para contratar</span><strong>${App.utils.formatCurrency(breakdown.available)}</strong></div>
+        </div>
+      </section>
+    `;
   },
 
   render() {
@@ -122,9 +160,9 @@ App.players = {
 
     grid.innerHTML = cards.map(team => {
       const standing = standings.find(item => App.utils.sameTeamName(item.team, team.team));
-      const budget = budgetInfo[team.owner] || { totalBudget: App.config.transferBudget, homeMatches: 0, wins: 0, homeBonus: 0, winBonusValue: 0, eventTotal: 0, eventCount: 0, transferLimit: App.config.baseDailyTransferLimit, activeInjuries: 0 };
+      const budget = budgetInfo[team.owner] || { totalBudget: App.config.transferBudget, baseBudget: App.config.transferBudget, homeMatches: 0, wins: 0, homeBonus: 0, winBonusValue: 0, eventTotal: 0, eventCount: 0, transferLimit: App.config.baseDailyTransferLimit, activeInjuries: 0 };
       const spent = App.players.getSpentByBuyer(team.owner);
-      const remaining = budget.totalBudget - spent;
+      const breakdown = App.players.getBudgetBreakdown(budget, spent);
       const transfersList = App.players.getApprovedTransfersForBuyer(team.owner).slice(0, 5);
       const next = App.players.getNextMatchForTeam(team.team);
       const lastResults = App.players.getPlayedResultsForTeam(team.team).slice(-3).reverse();
@@ -137,17 +175,13 @@ App.players = {
             <div><h2>${team.owner}</h2><div class="team-name">${team.team}</div></div>
             <span class="owner" style="background:${color}">${standing?.position || "-"}º</span>
           </div>
-          <div class="player-stats-grid">
+
+          ${App.players.renderBudgetPanel(breakdown)}
+
+          <div class="player-stats-grid compact">
             <div class="player-stat"><span>Campanha</span><strong>${standing?.wins || 0}/${standing?.draws || 0}/${standing?.losses || 0}</strong></div>
             <div class="player-stat"><span>Pontos</span><strong>${standing?.points || 0}</strong></div>
             <div class="player-stat"><span>Saldo gols</span><strong>${App.utils.formatGoalDifference(standing?.goalDifference || 0)}</strong></div>
-            <div class="player-stat"><span>Orçamento base</span><strong>${App.utils.formatCurrency(App.config.transferBudget)}</strong></div>
-            <div class="player-stat"><span>+ Bônus mando</span><strong>${App.utils.formatCurrency(budget.homeBonus || 0)}</strong></div>
-            <div class="player-stat"><span>+ Bônus vitória</span><strong>${App.utils.formatCurrency(budget.winBonusValue || 0)}</strong></div>
-            <div class="player-stat"><span>+ Eventos</span><strong>${App.utils.formatCurrency(budget.eventTotal || 0)}</strong></div>
-            <div class="player-stat"><span>Orçamento atual</span><strong>${App.utils.formatCurrency(budget.totalBudget)}</strong></div>
-            <div class="player-stat"><span>- Gasto</span><strong>${App.utils.formatCurrency(spent)}</strong></div>
-            <div class="player-stat"><span>Saldo livre</span><strong>${App.utils.formatCurrency(remaining)}</strong></div>
             <div class="player-stat"><span>Mandos</span><strong>${budget.homeMatches}</strong></div>
             <div class="player-stat"><span>Vitórias</span><strong>${budget.wins}</strong></div>
             <div class="player-stat"><span>Eventos</span><strong>${budget.eventCount || 0}</strong></div>
@@ -165,8 +199,7 @@ App.players = {
       `;
     }).join("");
 
-    const leaderboards = App.players.getTeamLeaderboards();
-    App.players.renderLeaderboard(document.getElementById("topScorers"), leaderboards.goals, "gols por time");
-    App.players.renderLeaderboard(document.getElementById("topAssists"), leaderboards.assists, "assistências por time");
+    App.players.renderLeaderboard(document.getElementById("topScorers"), App.players.getGoalsByHumanTeams(), "gols por time");
+    App.players.renderLeaderboard(document.getElementById("topAssists"), App.players.getTopExpensiveTransfers(5), "transferências caras");
   }
 };
