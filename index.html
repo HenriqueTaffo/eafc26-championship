@@ -536,6 +536,61 @@
       line-height: 1.5;
     }
 
+    .event-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+      margin-bottom: 18px;
+    }
+
+    .event-card {
+      background: rgba(17, 28, 51, 0.94);
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      padding: 16px;
+      border-left: 5px solid var(--event-color, var(--free));
+      box-shadow: 0 16px 45px rgba(0, 0, 0, 0.18);
+    }
+
+    .event-card-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+
+    .event-card h2 {
+      margin: 0 0 4px;
+      font-size: 19px;
+    }
+
+    .event-card p {
+      color: var(--muted);
+      line-height: 1.45;
+      margin: 6px 0;
+    }
+
+    .event-impact {
+      display: inline-flex;
+      align-items: center;
+      padding: 7px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 900;
+      white-space: nowrap;
+    }
+
+    .event-impact.positive { background: rgba(34, 197, 94, 0.22); color: #bbf7d0; }
+    .event-impact.negative { background: rgba(239, 68, 68, 0.22); color: #fecaca; }
+    .event-impact.neutral { background: rgba(148, 163, 184, 0.24); color: #e2e8f0; }
+
+    .event-meta {
+      color: var(--muted);
+      font-size: 12px;
+      margin-top: 10px;
+    }
+
     .bracket-grid {
       display: grid;
       grid-template-columns: repeat(4, minmax(240px, 1fr));
@@ -673,7 +728,7 @@
       .subtitle { font-size: 14px; }
       .tabs { display: grid; grid-template-columns: repeat(2, 1fr); width: 100%; margin-bottom: 18px; }
       .form-grid { grid-template-columns: 1fr; }
-      .player-grid, .leaderboard-grid { grid-template-columns: 1fr; }
+      .player-grid, .leaderboard-grid, .event-grid { grid-template-columns: 1fr; }
       .player-stats-grid { grid-template-columns: repeat(2, 1fr); }
       .tab-button { width: 100%; padding: 12px; }
       .summary { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-bottom: 18px; }
@@ -706,6 +761,7 @@
       <button class="tab-button" data-view="calendarView">Calendário</button>
       <button class="tab-button" data-view="cupsView">Copas</button>
       <button class="tab-button" data-view="playersView">Painel</button>
+      <button class="tab-button" data-view="eventsView">Eventos</button>
       <button class="tab-button" data-view="transfersView">Transferências</button>
       <button class="tab-button" data-view="submitView">Enviar dados</button>
     </nav>
@@ -847,6 +903,46 @@
       <section id="cupsBracket"></section>
 
       <p class="footer-note">Os vencedores das próximas fases aparecem automaticamente com base nos resultados aprovados da planilha. Em empate de copa, o campo <strong>Vencedor nos pênaltis</strong> define o classificado.</p>
+    </section>
+
+    <section id="eventsView" class="view">
+      <section class="summary" id="eventsSummary"></section>
+
+      <section class="countdown-card">
+        <span>Próxima rodada de eventos</span>
+        <strong id="nextEventCountdown">Calculando...</strong>
+        <p>Eventos são liberados todos os dias às 05h, 08h, 11h, 14h, 17h, 20h e 23h. Cada horário pode gerar 1 evento por jogador.</p>
+      </section>
+
+      <section class="controls">
+        <input id="eventsSearchInput" type="search" placeholder="Buscar evento, jogador ou efeito..." />
+        <select id="eventsOwnerFilter">
+          <option value="all">Todos os jogadores</option>
+          <option value="Henrique">Henrique</option>
+          <option value="Willian">Willian</option>
+          <option value="Rafael">Rafael</option>
+          <option value="Renato">Renato</option>
+        </select>
+        <select id="eventsTypeFilter">
+          <option value="all">Todos os tipos</option>
+          <option value="positive">Positivos</option>
+          <option value="negative">Negativos</option>
+          <option value="neutral">Neutros / mercado</option>
+        </select>
+      </section>
+
+      <section class="form-card">
+        <h2>Gerar eventos disponíveis</h2>
+        <p>Use este botão para criar automaticamente os eventos dos horários que já abriram hoje e ainda não foram gerados.</p>
+        <div class="form-actions">
+          <button class="primary-button" id="generateEventsButton" type="button">Gerar eventos do dia</button>
+          <span class="app-message" id="eventsMessage"></span>
+        </div>
+      </section>
+
+      <section class="event-grid" id="eventsGrid"></section>
+
+      <p class="footer-note">Eventos financeiros entram no orçamento automaticamente. Eventos de mercado/condicionais aparecem como regra manual para vocês aplicarem no campeonato.</p>
     </section>
 
     <section id="playersView" class="view">
@@ -1106,10 +1202,12 @@
     const transferBudget = 65000000;
     const homeMatchBonus = 1250000;
     const winBonus = 500000;
+    const eventSlots = [5, 8, 11, 14, 17, 20, 23];
     const API_URL = "https://script.google.com/macros/s/AKfycbwgxygONVi_pPmX8GEugaTAHfpBZY9V4jMLVtP5WxFJVWhRL5UNthDlVaYaaYXcKxzH/exec";
     const API_PIN = "eafc26";
     let apiResults = [];
     let apiTransfers = [];
+    let apiEvents = [];
     let apiLoaded = false;
 
     const transfers = [
@@ -1250,6 +1348,14 @@
     const calendarWeekFilter = document.getElementById("calendarWeekFilter");
     const calendarTable = document.getElementById("calendarTable");
     const calendarMobile = document.getElementById("calendarMobile");
+    const eventsSummary = document.getElementById("eventsSummary");
+    const eventsSearchInput = document.getElementById("eventsSearchInput");
+    const eventsOwnerFilter = document.getElementById("eventsOwnerFilter");
+    const eventsTypeFilter = document.getElementById("eventsTypeFilter");
+    const generateEventsButton = document.getElementById("generateEventsButton");
+    const eventsMessage = document.getElementById("eventsMessage");
+    const eventsGrid = document.getElementById("eventsGrid");
+    const nextEventCountdown = document.getElementById("nextEventCountdown");
     const cupsSummary = document.getElementById("cupsSummary");
     const cupsSearchInput = document.getElementById("cupsSearchInput");
     const cupsCompetitionFilter = document.getElementById("cupsCompetitionFilter");
@@ -1485,13 +1591,45 @@
           }
         });
 
+      const eventImpact = getEventImpactByBuyer();
+
       Object.values(info).forEach(item => {
         item.homeBonus = item.homeMatches * homeMatchBonus;
         item.winBonusValue = item.wins * winBonus;
-        item.totalBudget = item.baseBudget + item.homeBonus + item.winBonusValue;
+        item.eventBonus = eventImpact[item.buyer]?.positive || 0;
+        item.eventPenalty = eventImpact[item.buyer]?.negative || 0;
+        item.eventTotal = eventImpact[item.buyer]?.total || 0;
+        item.eventCount = eventImpact[item.buyer]?.events || 0;
+        item.totalBudget = item.baseBudget + item.homeBonus + item.winBonusValue + item.eventTotal;
       });
 
       return info;
+    }
+
+    function getEventImpactByBuyer() {
+      const impact = getHumanBuyers().reduce((acc, buyer) => {
+        acc[buyer] = {
+          positive: 0,
+          negative: 0,
+          total: 0,
+          events: 0
+        };
+        return acc;
+      }, {});
+
+      apiEvents
+        .filter(event => event.Status === "Aplicado" || event.Status === "Ativo" || event.Status === "Gerado")
+        .forEach(event => {
+          const owner = event.Jogador;
+          if (!impact[owner]) return;
+          const value = Number(event.ImpactoFinanceiro || 0);
+          impact[owner].events += 1;
+          impact[owner].total += value;
+          if (value >= 0) impact[owner].positive += value;
+          else impact[owner].negative += value;
+        });
+
+      return impact;
     }
 
     function getTransferBudgetForBuyer(buyer) {
@@ -1850,6 +1988,108 @@
       nextTransferCountdown.textContent = `${String(hours).padStart(2, "0")}h ${String(minutes).padStart(2, "0")}m ${String(seconds).padStart(2, "0")}s`;
     }
 
+    function getNextEventSlot() {
+      const now = new Date();
+      const currentHour = now.getHours() + now.getMinutes() / 60 + now.getSeconds() / 3600;
+      const nextHourToday = eventSlots.find(hour => hour > currentHour);
+      const next = new Date(now);
+
+      if (nextHourToday !== undefined) {
+        next.setHours(nextHourToday, 0, 0, 0);
+      } else {
+        next.setDate(next.getDate() + 1);
+        next.setHours(eventSlots[0], 0, 0, 0);
+      }
+
+      return next;
+    }
+
+    function updateEventCountdown() {
+      if (!nextEventCountdown) return;
+      const now = new Date();
+      const next = getNextEventSlot();
+      const diff = Math.max(0, next - now);
+      const hours = Math.floor(diff / 3600000);
+      const minutes = Math.floor((diff % 3600000) / 60000);
+      const seconds = Math.floor((diff % 60000) / 1000);
+      nextEventCountdown.textContent = `${String(hours).padStart(2, "0")}h ${String(minutes).padStart(2, "0")}m ${String(seconds).padStart(2, "0")}s`;
+    }
+
+    function getEventTypeClass(event) {
+      const value = Number(event.ImpactoFinanceiro || 0);
+      if (value > 0) return "positive";
+      if (value < 0) return "negative";
+      return "neutral";
+    }
+
+    function getEventImpactLabel(event) {
+      const value = Number(event.ImpactoFinanceiro || 0);
+      if (value === 0) return event.Efeito || "Sem impacto financeiro";
+      return value > 0 ? `+${formatCurrency(value)}` : `-${formatCurrency(Math.abs(value))}`;
+    }
+
+    function getFilteredEvents() {
+      const search = normalizeText(eventsSearchInput.value);
+      const owner = eventsOwnerFilter.value;
+      const type = eventsTypeFilter.value;
+
+      return [...apiEvents]
+        .filter(event => owner === "all" || event.Jogador === owner)
+        .filter(event => type === "all" || getEventTypeClass(event) === type)
+        .filter(event => {
+          if (!search) return true;
+          return normalizeText(`${event.Jogador} ${event.Titulo} ${event.Descricao} ${event.Efeito} ${event.Tipo}`).includes(search);
+        })
+        .sort((a, b) => new Date(b.Timestamp || 0) - new Date(a.Timestamp || 0));
+    }
+
+    function renderEventsDashboard() {
+      const events = getFilteredEvents();
+      const todayText = new Date().toLocaleDateString("pt-BR");
+      const todayEvents = apiEvents.filter(event => String(event.Data || "") === todayText || new Date(event.Timestamp || 0).toLocaleDateString("pt-BR") === todayText);
+      const totalImpact = apiEvents.reduce((sum, event) => sum + Number(event.ImpactoFinanceiro || 0), 0);
+      const pendingSlots = Math.max(0, (eventSlots.length * getHumanBuyers().length) - todayEvents.length);
+
+      eventsSummary.innerHTML = `
+        <article class="summary-card"><span>Eventos hoje</span><strong>${todayEvents.length}</strong></article>
+        <article class="summary-card"><span>Faltam hoje</span><strong>${pendingSlots}</strong></article>
+        <article class="summary-card"><span>Impacto total</span><strong>${formatCurrency(totalImpact)}</strong></article>
+        <article class="summary-card"><span>Horários</span><strong>05h-23h</strong></article>
+      `;
+
+      eventsGrid.innerHTML = events.length ? events.map(event => {
+        const typeClass = getEventTypeClass(event);
+        const color = ownerColors[event.Jogador] || ownerColors["Livre / CPU"];
+        return `
+          <article class="event-card" style="--event-color: ${color}">
+            <div class="event-card-header">
+              <div><h2>${event.Titulo || "Evento"}</h2><span class="owner" style="background: ${color}">${event.Jogador || "Liga"}</span></div>
+              <span class="event-impact ${typeClass}">${getEventImpactLabel(event)}</span>
+            </div>
+            <p>${event.Descricao || "Sem descrição."}</p>
+            <p><strong>Efeito:</strong> ${event.Efeito || "Sem efeito adicional."}</p>
+            <div class="event-meta">${event.Data || ""} · ${event.Horario || ""} · ${event.Tipo || "Evento"} · ${event.Status || "Gerado"}</div>
+          </article>
+        `;
+      }).join("") : `<article class="event-card"><h2>Nenhum evento encontrado</h2><p>Gere os eventos disponíveis ou ajuste os filtros.</p></article>`;
+    }
+
+    async function handleGenerateEvents() {
+      generateEventsButton.disabled = true;
+      setMessage(eventsMessage, "Gerando eventos disponíveis...", "warning");
+
+      try {
+        const data = await postToApi({ action: "generateDueEvents" });
+        if (!data.ok) throw new Error(data.message || data.error || "Não consegui gerar eventos.");
+        setMessage(eventsMessage, data.message || "Eventos gerados.", "success");
+        await loadApiData();
+      } catch (error) {
+        setMessage(eventsMessage, error.message, "error");
+      } finally {
+        generateEventsButton.disabled = false;
+      }
+    }
+
     function renderCalendar() {
       const events = getFilteredCalendarEvents();
 
@@ -2155,7 +2395,7 @@
 
       playersGrid.innerHTML = cards.map(team => {
         const standing = standings.find(item => sameTeamName(item.team, team.team));
-        const budget = budgetInfo[team.owner] || { totalBudget: transferBudget, homeMatches: 0, wins: 0, homeBonus: 0, winBonusValue: 0 };
+        const budget = budgetInfo[team.owner] || { totalBudget: transferBudget, homeMatches: 0, wins: 0, homeBonus: 0, winBonusValue: 0, eventBonus: 0, eventPenalty: 0, eventTotal: 0, eventCount: 0 };
         const spent = getSpentByBuyer(team.owner);
         const remaining = budget.totalBudget - spent;
         const transfersList = getApprovedTransfersForBuyer(team.owner).slice(0, 5);
@@ -2177,11 +2417,13 @@
               <div class="player-stat"><span>Orçamento base</span><strong>${formatCurrency(transferBudget)}</strong></div>
               <div class="player-stat"><span>+ Bônus mando</span><strong>${formatCurrency(budget.homeBonus || 0)}</strong></div>
               <div class="player-stat"><span>+ Bônus vitória</span><strong>${formatCurrency(budget.winBonusValue || 0)}</strong></div>
+              <div class="player-stat"><span>+ Eventos</span><strong>${formatCurrency(budget.eventTotal || 0)}</strong></div>
               <div class="player-stat"><span>Orçamento atual</span><strong>${formatCurrency(budget.totalBudget)}</strong></div>
               <div class="player-stat"><span>- Gasto</span><strong>${formatCurrency(spent)}</strong></div>
               <div class="player-stat"><span>Saldo livre</span><strong>${formatCurrency(remaining)}</strong></div>
               <div class="player-stat"><span>Mandos computados</span><strong>${budget.homeMatches}</strong></div>
               <div class="player-stat"><span>Vitórias computadas</span><strong>${budget.wins}</strong></div>
+              <div class="player-stat"><span>Eventos</span><strong>${budget.eventCount || 0}</strong></div>
               <div class="player-stat"><span>Transfers hoje</span><strong>${todayCount}/3</strong></div>
             </div>
             <p class="calendar-muted"><strong>Próximo jogo:</strong> ${next ? `${formatDate(next.date)} - ${next.competition} - ${next.home} x ${next.away}` : "A definir"}</p>
@@ -2271,6 +2513,7 @@
 
         apiResults = data.results || [];
         apiTransfers = data.transfers || [];
+        apiEvents = data.events || [];
         apiLoaded = true;
         update();
       } catch (error) {
@@ -2391,6 +2634,7 @@
       renderCalendar();
       renderCupsSummary();
       renderCupBracket();
+      renderEventsDashboard();
       renderPlayersDashboard();
       renderTransferSummary();
       renderTransfers();
@@ -2415,6 +2659,10 @@
     calendarWeekFilter.addEventListener("change", update);
     cupsSearchInput.addEventListener("input", update);
     cupsCompetitionFilter.addEventListener("change", update);
+    eventsSearchInput.addEventListener("input", update);
+    eventsOwnerFilter.addEventListener("change", update);
+    eventsTypeFilter.addEventListener("change", update);
+    generateEventsButton.addEventListener("click", handleGenerateEvents);
     playersSearchInput.addEventListener("input", update);
     playersFilter.addEventListener("change", update);
     transferSearchInput.addEventListener("input", update);
@@ -2428,7 +2676,11 @@
     populateCalendarWeeks();
     update();
     updateTransferCountdown();
-    setInterval(updateTransferCountdown, 1000);
+    updateEventCountdown();
+    setInterval(() => {
+      updateTransferCountdown();
+      updateEventCountdown();
+    }, 1000);
     loadApiData();
   </script>
 </body>
