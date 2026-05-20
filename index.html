@@ -844,12 +844,6 @@
             <label>Gols visitante
               <input name="awayScore" type="number" min="0" required />
             </label>
-            <label class="full">Autores dos gols
-              <textarea name="goalDetails" placeholder="Ex: Coventry City: Simms 2, Wright 1 | Birmingham City: Stansfield 1"></textarea>
-            </label>
-            <label class="full">Assistências
-              <textarea name="assistDetails" placeholder="Ex: Coventry City: Hamer 1, Van Ewijk 1 | Birmingham City: Miyoshi 1"></textarea>
-            </label>
             <label>Vencedor nos pênaltis
               <input name="penaltyWinner" list="teamOptions" type="text" placeholder="Somente se jogo de copa empatar" />
             </label>
@@ -1901,7 +1895,7 @@
 
       playersGrid.innerHTML = cards.map(team => {
         const standing = standings.find(item => sameTeamName(item.team, team.team));
-        const budget = budgetInfo[team.owner] || { totalBudget: transferBudget, homeMatches: 0, wins: 0 };
+        const budget = budgetInfo[team.owner] || { totalBudget: transferBudget, homeMatches: 0, wins: 0, homeBonus: 0, winBonusValue: 0 };
         const spent = getSpentByBuyer(team.owner);
         const remaining = budget.totalBudget - spent;
         const transfersList = getApprovedTransfersForBuyer(team.owner).slice(0, 5);
@@ -1920,11 +1914,14 @@
               <div class="player-stat"><span>Campanha</span><strong>${standing?.wins || 0}/${standing?.draws || 0}/${standing?.losses || 0}</strong></div>
               <div class="player-stat"><span>Pontos</span><strong>${standing?.points || 0}</strong></div>
               <div class="player-stat"><span>Saldo</span><strong>${formatGoalDifference(standing?.goalDifference || 0)}</strong></div>
-              <div class="player-stat"><span>Orçamento</span><strong>${formatCurrency(budget.totalBudget)}</strong></div>
-              <div class="player-stat"><span>Gasto</span><strong>${formatCurrency(spent)}</strong></div>
-              <div class="player-stat"><span>Saldo</span><strong>${formatCurrency(remaining)}</strong></div>
-              <div class="player-stat"><span>Mandos</span><strong>${budget.homeMatches}</strong></div>
-              <div class="player-stat"><span>Vitórias</span><strong>${budget.wins}</strong></div>
+              <div class="player-stat"><span>Orçamento base</span><strong>${formatCurrency(transferBudget)}</strong></div>
+              <div class="player-stat"><span>+ Bônus mando</span><strong>${formatCurrency(budget.homeBonus || 0)}</strong></div>
+              <div class="player-stat"><span>+ Bônus vitória</span><strong>${formatCurrency(budget.winBonusValue || 0)}</strong></div>
+              <div class="player-stat"><span>Orçamento atual</span><strong>${formatCurrency(budget.totalBudget)}</strong></div>
+              <div class="player-stat"><span>- Gasto</span><strong>${formatCurrency(spent)}</strong></div>
+              <div class="player-stat"><span>Saldo livre</span><strong>${formatCurrency(remaining)}</strong></div>
+              <div class="player-stat"><span>Mandos computados</span><strong>${budget.homeMatches}</strong></div>
+              <div class="player-stat"><span>Vitórias computadas</span><strong>${budget.wins}</strong></div>
               <div class="player-stat"><span>Transfers hoje</span><strong>${todayCount}/3</strong></div>
             </div>
             <p class="calendar-muted"><strong>Próximo jogo:</strong> ${next ? `${formatDate(next.date)} - ${next.competition} - ${next.home} x ${next.away}` : "A definir"}</p>
