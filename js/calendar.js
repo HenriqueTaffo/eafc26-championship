@@ -111,8 +111,9 @@ App.calendar = {
     const competition = document.getElementById("calendarCompetitionFilter")?.value || "all";
     const ownerFilter = document.getElementById("calendarOwnerFilter")?.value || "all";
     const week = document.getElementById("calendarWeekFilter")?.value || "all";
+    const statusFilter = document.getElementById("calendarStatusFilter")?.value || "pending";
 
-    return App.calendar.getCalendarEvents().filter(event => {
+    let filteredEvents = App.calendar.getCalendarEvents().filter(event => {
       const owners = App.calendar.getMatchOwners(event);
       const matchType = App.calendar.getMatchType(event);
 
@@ -131,8 +132,25 @@ App.calendar = {
         matchesOwner = owners.includes(ownerFilter);
       }
 
-      return matchesSearch && matchesCompetition && matchesWeek && matchesOwner;
+      const status = App.calendar.getStatusClass(event);
+      let matchesStatus = true;
+
+      if (statusFilter === "pending") {
+        matchesStatus = status === "pending";
+      } else if (statusFilter === "done") {
+        matchesStatus = status === "done";
+      }
+
+      return matchesSearch && matchesCompetition && matchesWeek && matchesOwner && matchesStatus;
     });
+
+    if (statusFilter === "next") {
+      filteredEvents = filteredEvents
+        .filter(event => App.calendar.getStatusClass(event) === "pending")
+        .slice(0, 30);
+    }
+
+    return filteredEvents;
   },
 
   populateWeeks() {
@@ -172,6 +190,23 @@ App.calendar = {
     if (!table || !mobile) return;
 
     const events = App.calendar.getFilteredEvents();
+
+    if (!events.length) {
+      const emptyMessage = `
+        <tr>
+          <td colspan="8">
+            <div class="empty-state">
+              <strong>Nenhum jogo encontrado</strong>
+              <span>Ajuste os filtros para ver partidas realizadas ou o calendário completo.</span>
+            </div>
+          </td>
+        </tr>
+      `;
+
+      table.innerHTML = emptyMessage;
+      mobile.innerHTML = `<article class="calendar-card"><h3>Nenhum jogo encontrado</h3><p class="calendar-muted">Ajuste os filtros para ver partidas realizadas ou o calendário completo.</p></article>`;
+      return;
+    }
 
     table.innerHTML = events.map(event => {
       const owners = App.calendar.getMatchOwners(event);

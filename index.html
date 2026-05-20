@@ -135,6 +135,12 @@
         <select id="calendarWeekFilter">
           <option value="all">Todas as semanas</option>
         </select>
+        <select id="calendarStatusFilter">
+          <option value="pending" selected>Somente pendentes</option>
+          <option value="next">Próximos 30 jogos</option>
+          <option value="done">Somente realizados</option>
+          <option value="all">Todos os jogos</option>
+        </select>
       </section>
       <section class="legend-block">
         <p class="legend-title">Destaques</p>
@@ -226,10 +232,17 @@
           <option value="negative">Negativos</option>
           <option value="neutral">Neutros / mercado</option>
         </select>
+        <select id="eventsPeriodFilter">
+          <option value="latest" selected>Última rodada</option>
+          <option value="active">Ativos / em duração</option>
+          <option value="today">Todos de hoje</option>
+          <option value="last12">Últimos 12</option>
+          <option value="all">Histórico completo</option>
+        </select>
       </section>
       <section class="form-card">
         <h2>Eventos automáticos ativos</h2>
-        <p>O sistema verifica automaticamente os horários liberados e cria os eventos pendentes quando o app estiver aberto. O botão manual foi removido para evitar disparos duplicados.</p>
+        <p>O sistema verifica automaticamente os horários liberados e cria os eventos pendentes quando o app estiver aberto. Por padrão, esta tela mostra só a última rodada de eventos para não virar uma lista gigante.</p>
         <span class="app-message" id="eventsMessage"></span>
       </section>
       <section class="event-grid" id="eventsGrid"></section>

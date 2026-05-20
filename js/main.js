@@ -50,10 +50,10 @@ App.main = {
 
   setupFilters() {
     [
-      "calendarSearchInput", "calendarCompetitionFilter", "calendarOwnerFilter", "calendarWeekFilter",
+      "calendarSearchInput", "calendarCompetitionFilter", "calendarOwnerFilter", "calendarWeekFilter", "calendarStatusFilter",
       "cupsSearchInput", "cupsCompetitionFilter",
       "playersSearchInput", "playersFilter",
-      "eventsSearchInput", "eventsOwnerFilter", "eventsTypeFilter",
+      "eventsSearchInput", "eventsOwnerFilter", "eventsTypeFilter", "eventsPeriodFilter",
       "transferSearchInput", "transferOwnerFilter", "transferStatusFilter"
     ].forEach(id => {
       const element = document.getElementById(id);

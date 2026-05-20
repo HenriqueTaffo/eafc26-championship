@@ -72,3 +72,11 @@ Se você publicar uma nova versão do Apps Script e a URL mudar, altere `js/conf
 - Aba Clubes preenchida manualmente com os 24 clubes.
 - Logos usando favicon do domínio oficial de cada clube.
 - Não execute `syncClubLogos` após preencher manualmente a aba Clubes, para não sobrescrever a tabela.
+
+
+## Atualização v24
+
+- Calendário agora abre mostrando somente jogos pendentes.
+- Adicionado filtro para ver próximos 30, realizados ou todos os jogos.
+- Eventos agora abrem mostrando somente a última rodada de eventos.
+- Adicionado filtro para ver ativos/em duração, eventos de hoje, últimos 12 ou histórico completo.

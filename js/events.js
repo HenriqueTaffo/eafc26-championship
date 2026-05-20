@@ -114,19 +114,91 @@ App.events = {
     `;
   },
 
+
+  getEventDateTime(event) {
+    const dataText = String(event.Data || "").replace(/^'/, "").trim();
+    const horaText = String(event.Horario || "").replace(/^'/, "").trim();
+
+    if (/^\d{2}\/\d{2}\/\d{4}$/.test(dataText)) {
+      const [day, month, year] = dataText.split("/").map(Number);
+      const [hour = 0, minute = 0] = /^\d{2}:\d{2}$/.test(horaText)
+        ? horaText.split(":").map(Number)
+        : [0, 0];
+
+      return new Date(year, month - 1, day, hour, minute, 0, 0);
+    }
+
+    const timestamp = new Date(event.Timestamp || event.ExpiraEm || 0);
+    if (!Number.isNaN(timestamp.getTime())) return timestamp;
+
+    return new Date(0);
+  },
+
+  getEventSlotKey(event) {
+    const date = App.events.getEventDateTime(event);
+
+    if (Number.isNaN(date.getTime())) {
+      return "";
+    }
+
+    const yyyy = date.getFullYear();
+    const mm = String(date.getMonth() + 1).padStart(2, "0");
+    const dd = String(date.getDate()).padStart(2, "0");
+    const hh = String(date.getHours()).padStart(2, "0");
+
+    return `${yyyy}-${mm}-${dd}-${hh}`;
+  },
+
+  isActiveOrDurationEvent(event) {
+    const status = App.utils.normalizeText(event.Status);
+    const hasDuration = Boolean(event.ExpiraEm || event.DuracaoTipo || event.JogadorAfetado);
+    const expiresAt = event.ExpiraEm ? new Date(event.ExpiraEm) : null;
+    const stillInTime = expiresAt && !Number.isNaN(expiresAt.getTime()) ? expiresAt >= new Date() : false;
+    const remainingMatches = Number(event.PartidasRestantes || 0);
+
+    return status === "ativo" || stillInTime || remainingMatches > 0 || (hasDuration && status !== "encerrado");
+  },
+
+  getLatestEventSlotKey(events) {
+    const keys = events
+      .map(event => App.events.getEventSlotKey(event))
+      .filter(Boolean)
+      .sort();
+
+    return keys.length ? keys[keys.length - 1] : "";
+  },
+
   getFilteredEvents() {
     const search = App.utils.normalizeText(document.getElementById("eventsSearchInput")?.value);
     const owner = document.getElementById("eventsOwnerFilter")?.value || "all";
     const type = document.getElementById("eventsTypeFilter")?.value || "all";
+    const period = document.getElementById("eventsPeriodFilter")?.value || "latest";
 
-    return [...App.state.apiEvents]
+    let events = [...App.state.apiEvents];
+    if (period === "latest") {
+      const latestKey = App.events.getLatestEventSlotKey(events);
+      events = latestKey ? events.filter(event => App.events.getEventSlotKey(event) === latestKey) : events;
+    } else if (period === "active") {
+      events = events.filter(event => App.events.isActiveOrDurationEvent(event));
+    } else if (period === "today") {
+      const todayText = new Date().toLocaleDateString("pt-BR");
+      events = events.filter(event => App.events.formatEventDate(event.Data || event.Timestamp) === todayText);
+    }
+
+    events = events
       .filter(event => owner === "all" || event.Jogador === owner)
       .filter(event => type === "all" || App.events.getEventTypeClass(event) === type)
       .filter(event => {
         if (!search) return true;
         return App.utils.normalizeText(`${event.Jogador} ${event.Titulo} ${event.Descricao} ${event.Efeito} ${event.Tipo} ${event.JogadorAfetado}`).includes(search);
       })
-      .sort((a, b) => new Date(b.Timestamp || 0) - new Date(a.Timestamp || 0));
+      .sort((a, b) => App.events.getEventDateTime(b) - App.events.getEventDateTime(a));
+
+    if (period === "last12") {
+      events = events.slice(0, 12);
+    }
+
+    return events;
   },
 
 
@@ -181,7 +253,15 @@ App.events = {
     `;
 
     const events = App.events.getFilteredEvents();
-    grid.innerHTML = events.length ? events.map(event => {
+    const periodSelect = document.getElementById("eventsPeriodFilter");
+    const periodLabel = periodSelect ? periodSelect.options[periodSelect.selectedIndex]?.textContent : "Eventos filtrados";
+
+    grid.innerHTML = events.length ? `
+      <div class="compact-info-card">
+        <strong>${events.length} evento(s) exibido(s)</strong>
+        <span>${periodLabel}. Use os filtros para consultar eventos antigos quando precisar.</span>
+      </div>
+    ` + events.map(event => {
       const typeClass = App.events.getEventTypeClass(event);
       const color = App.data.ownerColors[event.Jogador] || App.data.ownerColors["Livre / CPU"];
       const modifier = Number(event.ModificadorTransferencias || 0);
@@ -199,6 +279,6 @@ App.events = {
           <div class="event-meta">${App.events.formatEventDate(event.Data)} · ${App.events.formatEventTime(event.Horario)} · ${event.Tipo || "Evento"} · ${event.Status || "Gerado"}</div>
         </article>
       `;
-    }).join("") : `<article class="event-card"><h2>Nenhum evento encontrado</h2><p>Os eventos serão gerados automaticamente quando os horários forem abertos.</p></article>`;
+    }).join("") : `<article class="event-card"><h2>Nenhum evento encontrado</h2><p>Troque o filtro de período para ver eventos anteriores ou o histórico completo.</p></article>`;
   }
 };

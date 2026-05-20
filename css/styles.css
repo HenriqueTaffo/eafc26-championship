@@ -2442,3 +2442,55 @@ tr:hover td {
     justify-self: start;
   }
 }
+
+
+/* v24 — listas compactas para calendário e eventos */
+.empty-state,
+.compact-info-card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 14px 16px;
+  border: 1px solid rgba(148, 163, 184, .15);
+  border-radius: 16px;
+  background: rgba(15, 23, 42, .58);
+  color: #cbd5e1;
+}
+
+.empty-state strong,
+.compact-info-card strong {
+  color: #f8fafc;
+  font-size: 15px;
+}
+
+.empty-state span,
+.compact-info-card span {
+  color: #94a3b8;
+  font-size: 13px;
+}
+
+.event-grid {
+  align-items: start;
+}
+
+.event-grid .compact-info-card {
+  grid-column: 1 / -1;
+  margin-bottom: 2px;
+}
+
+#eventsPeriodFilter,
+#calendarStatusFilter {
+  border-color: rgba(139, 92, 246, .36);
+}
+
+tr.calendar-completed-row.is-hidden-by-default,
+.calendar-card.calendar-completed-row.is-hidden-by-default {
+  display: none;
+}
+
+@media (max-width: 760px) {
+  .compact-info-card,
+  .empty-state {
+    padding: 12px;
+  }
+}
