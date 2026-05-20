@@ -153,8 +153,18 @@ App.main = {
     ].forEach(id => {
       const element = document.getElementById(id);
       if (!element) return;
+
+      const storageKey = `mml-filter-${id}`;
+      const savedValue = localStorage.getItem(storageKey);
+      if (savedValue !== null) {
+        element.value = savedValue;
+      }
+
       const eventName = element.tagName === "INPUT" ? "input" : "change";
-      element.addEventListener(eventName, App.main.renderCurrentView);
+      element.addEventListener(eventName, () => {
+        localStorage.setItem(storageKey, element.value);
+        App.main.renderCurrentView();
+      });
     });
   },
 

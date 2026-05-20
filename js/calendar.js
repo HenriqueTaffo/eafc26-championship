@@ -74,6 +74,10 @@ App.calendar = {
     return events.sort((a, b) => a.date - b.date || (order[a.competition] || 99) - (order[b.competition] || 99) || a.phase.localeCompare(b.phase));
   },
 
+  getEventById(eventId) {
+    return App.calendar.getCalendarEvents().find(event => String(event.id) === String(eventId));
+  },
+
   involvesOurTeam(event) {
     return [event.home, event.away].some(teamName => App.utils.getTeamByName(teamName)?.status === "Nosso");
   },
@@ -96,6 +100,13 @@ App.calendar = {
     return typeof event.homeScore === "number" && typeof event.awayScore === "number" ? "done" : "pending";
   },
 
+  canSubmitResult(event) {
+    if (!event) return false;
+    if (App.calendar.getStatusClass(event) === "done") return false;
+    if (String(event.status || "").toLowerCase().includes("aguardando")) return false;
+    return App.calendar.involvesOurTeam(event);
+  },
+
   formatMatchResult(event) {
     if (typeof event.homeScore === "number" && typeof event.awayScore === "number") {
       const winner = event.competition !== "Championship" ? App.cups.getCupWinner(event) : null;
@@ -104,6 +115,19 @@ App.calendar = {
       return `${event.homeScore} x ${event.awayScore}${winnerText}`;
     }
     return event.status || "Pendente";
+  },
+
+  getResultActionHtml(event) {
+    if (!App.calendar.canSubmitResult(event)) {
+      return `<span class="status-pill ${App.calendar.getStatusClass(event)}">${App.calendar.formatMatchResult(event)}</span>`;
+    }
+
+    return `
+      <div class="calendar-action-cell">
+        <span class="status-pill pending">${App.calendar.formatMatchResult(event)}</span>
+        <button class="mini-action-button" type="button" data-open-result-modal="${App.utils.escapeHtml(event.id)}">Enviar placar</button>
+      </div>
+    `;
   },
 
   getFilteredEvents() {
@@ -174,15 +198,77 @@ App.calendar = {
     if (!summary) return;
 
     const events = App.calendar.getCalendarEvents();
-    const pendingHuman = events.filter(event => App.calendar.involvesOurTeam(event) && App.calendar.getStatusClass(event) === "pending").length;
+    const pendingTech = events.filter(event => App.calendar.involvesOurTeam(event) && App.calendar.getStatusClass(event) === "pending").length;
     const done = events.filter(event => App.calendar.getStatusClass(event) === "done").length;
 
     summary.innerHTML = `
       <article class="summary-card"><span>Início</span><strong>19/05/2026</strong></article>
-      <article class="summary-card"><span>Eventos</span><strong>${events.length}</strong></article>
+      <article class="summary-card"><span>Jogos</span><strong>${events.length}</strong></article>
       <article class="summary-card"><span>Realizados</span><strong>${done}</strong></article>
-      <article class="summary-card"><span>Técnicos pendentes</span><strong>${pendingHuman}</strong></article>
+      <article class="summary-card"><span>Técnicos pendentes</span><strong>${pendingTech}</strong></article>
     `;
+  },
+
+  openResultModal(eventId) {
+    const event = App.calendar.getEventById(eventId);
+    const modal = document.getElementById("calendarResultModal");
+    const form = document.getElementById("calendarResultForm");
+    const message = document.getElementById("calendarResultMessage");
+    const preview = document.getElementById("calendarResultMatchPreview");
+    const title = document.getElementById("calendarResultModalTitle");
+    const subtitle = document.getElementById("calendarResultModalSubtitle");
+
+    if (!event || !modal || !form) return;
+
+    form.reset();
+    App.utils.setMessage(message, "", "");
+
+    form.elements.competition.value = event.competition;
+    form.elements.week.value = event.week;
+    form.elements.phase.value = event.phase;
+    form.elements.home.value = event.home;
+    form.elements.away.value = event.away;
+
+    const owners = App.calendar.getMatchOwners(event);
+    if (owners.length === 1 && form.elements.submittedBy) {
+      form.elements.submittedBy.value = owners[0];
+    }
+
+    if (title) title.textContent = `${event.home} x ${event.away}`;
+    if (subtitle) subtitle.textContent = `${event.competition} · ${event.phase} · Semana ${event.week}`;
+
+    if (preview) {
+      preview.innerHTML = `
+        <div>${App.clubs.getTeamIdentityHtml(event.home)}</div>
+        <strong>x</strong>
+        <div>${App.clubs.getTeamIdentityHtml(event.away)}</div>
+      `;
+    }
+
+    App.forms.updatePenaltyVisibility(form);
+    modal.classList.add("is-visible");
+    modal.setAttribute("aria-hidden", "false");
+    document.body.classList.add("modal-active");
+    setTimeout(() => form.elements.homeScore?.focus(), 50);
+  },
+
+  closeResultModal() {
+    const modal = document.getElementById("calendarResultModal");
+    if (!modal) return;
+    modal.classList.remove("is-visible");
+    modal.setAttribute("aria-hidden", "true");
+    document.body.classList.remove("modal-active");
+  },
+
+  bindCalendarActions() {
+    document.querySelectorAll("[data-open-result-modal]").forEach(button => {
+      if (button.dataset.bound === "true") return;
+      button.dataset.bound = "true";
+      button.addEventListener("click", event => {
+        event.stopPropagation();
+        App.calendar.openResultModal(button.dataset.openResultModal);
+      });
+    });
   },
 
   render() {
@@ -225,7 +311,7 @@ App.calendar = {
           <td class="calendar-match">${App.clubs.getMatchupHtml(event.home, event.away, "table-match")}</td>
           <td class="calendar-owner-cell">${owners.length ? owners.map(owner => `<span class="owner" style="background:${App.data.ownerColors[owner]}">${owner}</span>`).join(" ") : "<span class='calendar-muted'>CPU</span>"}</td>
           <td>${App.calendar.getMatchType(event)}</td>
-          <td><span class="status-pill ${App.calendar.getStatusClass(event)}">${App.calendar.formatMatchResult(event)}</span></td>
+          <td>${App.calendar.getResultActionHtml(event)}</td>
         </tr>
       `;
     }).join("");
@@ -238,10 +324,12 @@ App.calendar = {
           <div class="calendar-card-header"><span class="competition-badge ${event.className}">${event.competition}</span><span class="calendar-muted">${App.utils.formatDate(event.date)}</span></div>
           <h3>${App.clubs.getMatchupHtml(event.home, event.away, "card-match")}</h3>
           <p class="calendar-muted">${event.phase} · Semana ${event.week} · ${App.calendar.getMatchType(event)}</p>
-          <p>${owners.map(owner => `<span class="owner" style="background:${App.data.ownerColors[owner]}">${owner}</span>`).join(" ")}</p>
-          <span class="status-pill ${App.calendar.getStatusClass(event)}">${App.calendar.formatMatchResult(event)}</span>
+          <p>${owners.length ? owners.map(owner => `<span class="owner" style="background:${App.data.ownerColors[owner]}">${owner}</span>`).join(" ") : "<span class='calendar-muted'>CPU</span>"}</p>
+          <div class="mobile-card-footer">${App.calendar.getResultActionHtml(event)}</div>
         </article>
       `;
     }).join("");
+
+    App.calendar.bindCalendarActions();
   }
 };

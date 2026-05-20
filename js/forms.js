@@ -1,6 +1,93 @@
 window.App = window.App || {};
 
 App.forms = {
+  updatePenaltyVisibility(form) {
+    if (!form) return;
+    const competition = form.elements.competition?.value || "";
+    const homeScore = form.elements.homeScore?.value;
+    const awayScore = form.elements.awayScore?.value;
+    const hasPenalties = form.elements.hasPenalties?.checked || false;
+    const section = form.querySelector("[data-penalty-section]");
+    const fields = form.querySelector("[data-penalty-fields]");
+    const penaltyWinner = form.elements.penaltyWinner;
+    const penaltyScore = form.elements.penaltyScore;
+    const isCup = competition && competition !== "Championship";
+    const isTie = homeScore !== "" && awayScore !== "" && Number(homeScore) === Number(awayScore);
+
+    if (!section) return;
+
+    section.hidden = !isCup;
+
+    if (!isCup) {
+      if (form.elements.hasPenalties) form.elements.hasPenalties.checked = false;
+      if (fields) fields.hidden = true;
+      if (penaltyWinner) {
+        penaltyWinner.value = "";
+        penaltyWinner.required = false;
+      }
+      if (penaltyScore) {
+        penaltyScore.value = "";
+        penaltyScore.required = false;
+      }
+      return;
+    }
+
+    const shouldShowFields = hasPenalties || isTie;
+    if (fields) fields.hidden = !shouldShowFields;
+
+    if (penaltyWinner) penaltyWinner.required = isTie;
+    if (penaltyScore) penaltyScore.required = false;
+  },
+
+  normalizeResultPayload(payload) {
+    const isChampionship = payload.competition === "Championship";
+    const homeScore = Number(payload.homeScore);
+    const awayScore = Number(payload.awayScore);
+    const isCupTie = !isChampionship && homeScore === awayScore;
+
+    return {
+      ...payload,
+      week: Number(payload.week),
+      homeScore,
+      awayScore,
+      goalDetails: payload.goalDetails || "",
+      assistDetails: payload.assistDetails || "",
+      penaltyWinner: isChampionship ? "" : (payload.penaltyWinner || ""),
+      penaltyScore: isChampionship ? "" : (payload.penaltyScore || ""),
+      isCupTie
+    };
+  },
+
+  validateResultPayload(payload) {
+    if (payload.isCupTie && !payload.penaltyWinner) {
+      return "Jogo de copa empatado precisa informar o vencedor nos pênaltis.";
+    }
+    return "";
+  },
+
+  async submitResultPayload(payload, message, options = {}) {
+    const normalized = App.forms.normalizeResultPayload(payload);
+    const validation = App.forms.validateResultPayload(normalized);
+    if (validation) throw new Error(validation);
+
+    const data = await App.api.postToApi({
+      action: "addResult",
+      ...normalized
+    });
+
+    if (!data.ok) throw new Error(data.message || data.error || "Resultado rejeitado.");
+
+    App.utils.setMessage(message, data.message || "Resultado enviado com sucesso.", "success");
+
+    await App.api.loadApiData({
+      variant: "match",
+      title: "Atualizando dados",
+      message: options.refreshMessage || "Resultado salvo. Atualizando classificação, calendário e painel da liga..."
+    });
+
+    return data;
+  },
+
   async handleResultSubmit(event) {
     event.preventDefault();
     const form = event.currentTarget;
@@ -17,29 +104,45 @@ App.forms = {
     });
 
     try {
-      const data = await App.api.postToApi({
-        action: "addResult",
-        ...payload,
-        week: Number(payload.week),
-        homeScore: Number(payload.homeScore),
-        awayScore: Number(payload.awayScore),
-        goalDetails: "",
-        assistDetails: "",
-        penaltyWinner: payload.penaltyWinner || "",
-        penaltyScore: payload.penaltyScore || ""
-      });
-
-      if (!data.ok) throw new Error(data.message || data.error || "Resultado rejeitado.");
-      App.utils.setMessage(message, data.message || "Resultado enviado com sucesso.", "success");
+      await App.forms.submitResultPayload(payload, message);
       form.reset();
-      await App.api.loadApiData({
-        variant: "match",
-        title: "Atualizando dados",
-        message: "Resultado salvo. Atualizando classificação, calendário e painel da liga..."
-      });
+      App.forms.updatePenaltyVisibility(form);
     } catch (error) {
       const friendlyMessage = error.name === "AbortError"
-        ? "A simulação demorou demais para responder. Verifique se os jogos foram criados no Supabase; se não foram, tente novamente."
+        ? "A operação demorou demais para responder. Verifique o Supabase e tente novamente."
+        : error.message;
+      App.utils.setMessage(message, friendlyMessage, "error");
+    } finally {
+      App.main.hideLoader();
+      button.disabled = false;
+    }
+  },
+
+  async handleCalendarResultSubmit(event) {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const button = form.querySelector("button");
+    const message = document.getElementById("calendarResultMessage");
+    const payload = Object.fromEntries(new FormData(form).entries());
+
+    button.disabled = true;
+    App.utils.setMessage(message, "Salvando resultado...", "warning");
+    App.main.showLoader({
+      variant: "match",
+      title: "Salvando placar",
+      message: "Validando resultado pelo calendário e atualizando a liga."
+    });
+
+    try {
+      await App.forms.submitResultPayload(payload, message, {
+        refreshMessage: "Placar salvo. Atualizando calendário, classificação e central da rodada..."
+      });
+      form.reset();
+      App.forms.updatePenaltyVisibility(form);
+      App.calendar.closeResultModal();
+    } catch (error) {
+      const friendlyMessage = error.name === "AbortError"
+        ? "A operação demorou demais para responder. Verifique o Supabase e tente novamente."
         : error.message;
       App.utils.setMessage(message, friendlyMessage, "error");
     } finally {
@@ -146,8 +249,36 @@ App.forms = {
     `;
   },
 
+  setupPenaltyControls(form) {
+    if (!form || form.dataset.penaltyReady === "true") return;
+    form.dataset.penaltyReady = "true";
+    ["competition", "homeScore", "awayScore", "hasPenalties"].forEach(name => {
+      const field = form.elements[name];
+      if (!field) return;
+      field.addEventListener("input", () => App.forms.updatePenaltyVisibility(form));
+      field.addEventListener("change", () => App.forms.updatePenaltyVisibility(form));
+    });
+    App.forms.updatePenaltyVisibility(form);
+  },
+
   setupForms() {
-    document.getElementById("resultForm")?.addEventListener("submit", App.forms.handleResultSubmit);
+    const resultForm = document.getElementById("resultForm");
+    const calendarResultForm = document.getElementById("calendarResultForm");
+
+    resultForm?.addEventListener("submit", App.forms.handleResultSubmit);
+    calendarResultForm?.addEventListener("submit", App.forms.handleCalendarResultSubmit);
+
+    App.forms.setupPenaltyControls(resultForm);
+    App.forms.setupPenaltyControls(calendarResultForm);
+
+    document.querySelectorAll("[data-close-result-modal]").forEach(element => {
+      element.addEventListener("click", App.calendar.closeResultModal);
+    });
+
+    document.addEventListener("keydown", event => {
+      if (event.key === "Escape") App.calendar.closeResultModal();
+    });
+
     document.getElementById("transferForm")?.addEventListener("submit", App.forms.handleTransferSubmit);
     document.getElementById("cpuSimulationForm")?.addEventListener("submit", App.forms.handleCpuSimulationSubmit);
   },

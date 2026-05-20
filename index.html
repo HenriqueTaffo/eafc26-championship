@@ -77,6 +77,8 @@
     <section id="standingsView" class="view active">
       <section class="summary home-summary" id="standingsSummary"></section>
 
+      <section class="round-center" id="roundCenter"></section>
+
       <section class="home-grid">
         <article class="home-panel home-standings-panel">
           <div class="home-panel-header">
@@ -113,6 +115,8 @@
         <button type="button" class="cup-action" data-view-target="cupsView">Ver copas <span>›</span></button>
       </section>
 
+      <section class="activity-panel" id="activityPanel"></section>
+
       <section class="legend-block compact-legend">
         <p class="legend-title">Legendas de classificação</p>
         <div class="legend">
@@ -144,7 +148,7 @@
     <section id="calendarView" class="view">
       <section class="summary" id="calendarSummary"></section>
       <section class="controls">
-        <input id="calendarSearchInput" type="search" placeholder="Buscar time, competição, rodada ou jogador..." />
+        <input id="calendarSearchInput" type="search" placeholder="Buscar time, competição, rodada ou técnico..." />
         <select id="calendarCompetitionFilter">
           <option value="all">Todas as competições</option>
           <option value="Championship">Championship</option>
@@ -152,7 +156,7 @@
           <option value="FA Cup">FA Cup</option>
         </select>
         <select id="calendarOwnerFilter">
-          <option value="all">Todos os jogadores</option>
+          <option value="all">Todos os técnicos</option>
           <option value="Henrique">Henrique</option>
           <option value="Willian">Willian</option>
           <option value="Rafael">Rafael</option>
@@ -218,7 +222,7 @@
       <section class="controls">
         <input id="playersSearchInput" type="search" placeholder="Buscar jogador, time, contratação ou próximo jogo..." />
         <select id="playersFilter">
-          <option value="all">Todos os jogadores</option>
+          <option value="all">Todos os técnicos</option>
           <option value="Henrique">Henrique</option>
           <option value="Willian">Willian</option>
           <option value="Rafael">Rafael</option>
@@ -249,7 +253,7 @@
       <section class="controls">
         <input id="eventsSearchInput" type="search" placeholder="Buscar evento, jogador ou efeito..." />
         <select id="eventsOwnerFilter">
-          <option value="all">Todos os jogadores</option>
+          <option value="all">Todos os técnicos</option>
           <option value="Henrique">Henrique</option>
           <option value="Willian">Willian</option>
           <option value="Rafael">Rafael</option>
@@ -367,12 +371,20 @@
             <label>Gols visitante
               <input name="awayScore" type="number" min="0" required />
             </label>
-            <label>Vencedor nos pênaltis
-              <input name="penaltyWinner" list="teamOptions" type="text" placeholder="Somente se jogo de copa empatar" />
-            </label>
-            <label>Placar dos pênaltis
-              <input name="penaltyScore" type="text" placeholder="Ex: 4 x 3" />
-            </label>
+            <div class="penalty-section full" data-penalty-section hidden>
+              <label class="checkbox-row">
+                <input name="hasPenalties" type="checkbox" value="yes" />
+                <span>Houve disputa de pênaltis?</span>
+              </label>
+              <div class="penalty-fields" data-penalty-fields hidden>
+                <label>Vencedor nos pênaltis
+                  <input name="penaltyWinner" list="teamOptions" type="text" placeholder="Ex: Middlesbrough" />
+                </label>
+                <label>Placar dos pênaltis
+                  <input name="penaltyScore" type="text" placeholder="Ex: 4 x 3" />
+                </label>
+              </div>
+            </div>
           </div>
           <div class="form-actions">
             <button class="primary-button" type="submit">Enviar resultado</button>
@@ -436,6 +448,66 @@
             <span class="app-message" id="cpuSimulationMessage"></span>
           </div>
         </form>
+      </section>
+
+
+      <section class="result-modal" id="calendarResultModal" aria-hidden="true">
+        <div class="result-modal-backdrop" data-close-result-modal></div>
+        <article class="result-modal-card" role="dialog" aria-modal="true" aria-labelledby="calendarResultModalTitle">
+          <button class="result-modal-close" type="button" data-close-result-modal>×</button>
+          <div class="result-modal-header">
+            <span class="modal-kicker">Enviar resultado pelo calendário</span>
+            <h2 id="calendarResultModalTitle">Resultado da partida</h2>
+            <p id="calendarResultModalSubtitle">Preencha o placar para atualizar a liga.</p>
+          </div>
+
+          <form id="calendarResultForm">
+            <input type="hidden" name="competition" />
+            <input type="hidden" name="week" />
+            <input type="hidden" name="phase" />
+            <input type="hidden" name="home" />
+            <input type="hidden" name="away" />
+
+            <div class="modal-match-preview" id="calendarResultMatchPreview"></div>
+
+            <div class="form-grid">
+              <label>Gols mandante
+                <input name="homeScore" type="number" min="0" required />
+              </label>
+              <label>Gols visitante
+                <input name="awayScore" type="number" min="0" required />
+              </label>
+              <label>Enviado por
+                <select name="submittedBy" required>
+                  <option value="Henrique">Henrique</option>
+                  <option value="Willian">Willian</option>
+                  <option value="Rafael">Rafael</option>
+                  <option value="Renato">Renato</option>
+                </select>
+              </label>
+
+              <div class="penalty-section full" data-penalty-section hidden>
+                <label class="checkbox-row">
+                  <input name="hasPenalties" type="checkbox" value="yes" />
+                  <span>Houve disputa de pênaltis?</span>
+                </label>
+                <div class="penalty-fields" data-penalty-fields hidden>
+                  <label>Vencedor nos pênaltis
+                    <input name="penaltyWinner" list="teamOptions" type="text" placeholder="Ex: Middlesbrough" />
+                  </label>
+                  <label>Placar dos pênaltis
+                    <input name="penaltyScore" type="text" placeholder="Ex: 4 x 3" />
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            <div class="form-actions">
+              <button class="primary-button" type="submit">Salvar resultado</button>
+              <span class="app-message" id="calendarResultMessage"></span>
+            </div>
+          </form>
+        </article>
       </section>
 
       <datalist id="teamOptions"></datalist>

@@ -223,6 +223,137 @@ App.standings = {
     `).join("");
   },
 
+  getRoundCenterData() {
+    if (!App.calendar?.getCalendarEvents) return null;
+
+    const allEvents = App.calendar.getCalendarEvents();
+    const pending = allEvents.filter(event => App.calendar.getStatusClass(event) === "pending");
+    const pendingWithCoach = pending.filter(event => App.calendar.involvesOurTeam(event));
+    const nextPending = pendingWithCoach[0] || pending[0];
+    const currentWeek = Number(nextPending?.week || 1);
+
+    const weekEvents = allEvents.filter(event => Number(event.week) === currentWeek);
+    const weekTechEvents = weekEvents.filter(event => App.calendar.involvesOurTeam(event));
+    const weekCpuEvents = weekEvents.filter(event => App.calendar.getMatchOwners(event).length === 0);
+    const weekTechPending = weekTechEvents.filter(event => App.calendar.getStatusClass(event) === "pending");
+    const weekCpuPending = weekCpuEvents.filter(event => App.calendar.getStatusClass(event) === "pending");
+
+    const managers = App.utils.getHumanBuyers();
+    const byManager = managers.map(manager => {
+      const total = weekTechEvents.filter(event => App.calendar.getMatchOwners(event).includes(manager)).length;
+      const pendingCount = weekTechPending.filter(event => App.calendar.getMatchOwners(event).includes(manager)).length;
+      return { manager, total, pending: pendingCount, done: Math.max(0, total - pendingCount) };
+    });
+
+    return {
+      currentWeek,
+      weekEvents,
+      weekTechPending,
+      weekCpuPending,
+      cpuReady: weekTechPending.length === 0 && weekCpuPending.length > 0,
+      byManager
+    };
+  },
+
+  renderRoundCenter() {
+    const target = document.getElementById("roundCenter");
+    if (!target) return;
+
+    const data = App.standings.getRoundCenterData();
+    if (!data) {
+      target.innerHTML = "";
+      return;
+    }
+
+    const pendingText = data.weekTechPending.length === 0
+      ? "Todos os jogos com técnico da semana estão enviados."
+      : `${data.weekTechPending.length} jogo(s) com técnico pendente(s).`;
+
+    const cpuText = data.cpuReady
+      ? `${data.weekCpuPending.length} jogo(s) CPU x CPU prontos para simular.`
+      : `${data.weekCpuPending.length} jogo(s) CPU x CPU pendente(s).`;
+
+    target.innerHTML = `
+      <article class="round-center-card">
+        <div class="round-center-main">
+          <span class="modal-kicker">Central da rodada</span>
+          <h2>Semana ${data.currentWeek}</h2>
+          <p>${pendingText} ${cpuText}</p>
+        </div>
+        <div class="round-center-grid">
+          ${data.byManager.map(item => `
+            <div class="round-manager-card ${item.pending === 0 ? "done" : "pending"}">
+              <span class="owner" style="background:${App.data.ownerColors[item.manager]}">${item.manager}</span>
+              <strong>${item.pending === 0 ? "Completo" : `${item.pending} pendente(s)`}</strong>
+              <small>${item.done}/${item.total || 0} enviados</small>
+            </div>
+          `).join("")}
+          <button class="round-cpu-card ${data.cpuReady ? "is-ready" : ""}" type="button" data-view-target="submitView">
+            <span>CPU x CPU</span>
+            <strong>${data.cpuReady ? "Pode simular" : "Aguardando técnicos"}</strong>
+            <small>${data.weekCpuPending.length} jogo(s) pendente(s)</small>
+          </button>
+        </div>
+      </article>
+    `;
+  },
+
+  getActivityItems() {
+    const resultItems = (App.state.apiResults || []).map(row => ({
+      type: "Resultado",
+      date: row.Timestamp || row.created_at || row.Data || "",
+      title: `${App.utils.resolveTeamName(row.Mandante)} ${row.GolsMandante} x ${row.GolsVisitante} ${App.utils.resolveTeamName(row.Visitante)}`,
+      detail: `${row.Competicao || ""} · ${row.RodadaFase || ""} · ${row.EnviadoPor || ""}`.replace(/\s+·\s+$/g, "")
+    }));
+
+    const transferItems = (App.state.apiTransfers || []).map(row => ({
+      type: "Transferência",
+      date: row.Timestamp || "",
+      title: `${row.Comprador || "-"} contratou ${row.Jogador || "-"}`,
+      detail: `${App.utils.formatCurrency(row.ValorFinal || row.ValorTransfermarkt || 0)} · ${row.ClubeOrigem || ""}`
+    }));
+
+    const eventItems = (App.state.apiEvents || []).map(row => ({
+      type: "Evento",
+      date: row.Timestamp || row.ExpiraEm || "",
+      title: row.Titulo || "-",
+      detail: `${row.Jogador || ""} · ${row.Tipo || ""} · ${row.Status || ""}`
+    }));
+
+    return [...resultItems, ...transferItems, ...eventItems]
+      .filter(item => item.date)
+      .sort((a, b) => new Date(b.date) - new Date(a.date))
+      .slice(0, 8);
+  },
+
+  renderActivityPanel() {
+    const target = document.getElementById("activityPanel");
+    if (!target) return;
+
+    const items = App.standings.getActivityItems();
+
+    target.innerHTML = `
+      <article class="activity-card">
+        <div class="home-panel-header">
+          <h2>Atividades recentes</h2>
+        </div>
+        ${items.length ? `
+          <div class="activity-list">
+            ${items.map(item => `
+              <div class="activity-item">
+                <span class="activity-type">${item.type}</span>
+                <div>
+                  <strong>${App.utils.escapeHtml(item.title)}</strong>
+                  <small>${App.utils.escapeHtml(item.detail)} · ${App.utils.formatDateTime(item.date)}</small>
+                </div>
+              </div>
+            `).join("")}
+          </div>
+        ` : `<div class="next-game-empty">Nenhuma atividade recente encontrada.</div>`}
+      </article>
+    `;
+  },
+
   render() {
     const standings = App.standings.getStandings();
     const table = document.getElementById("standingsTable");
@@ -233,6 +364,8 @@ App.standings = {
     App.standings.renderSummaryCards(standings, summary);
     App.standings.renderHomeStandings(standings);
     App.standings.renderHomeNextGames();
+    App.standings.renderRoundCenter();
+    App.standings.renderActivityPanel();
     App.standings.bindHomeActions();
 
     table.innerHTML = standings.map(row => `
