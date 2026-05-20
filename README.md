@@ -4,7 +4,7 @@ Projeto segmentado para GitHub Pages.
 
 ## Como subir no GitHub
 
-1. Extraia este ZIP.
+1. Extraia este ZIP. 
 2. No repositório `eafc26-championship`, envie:
    - `index.html`
    - pasta `css`
