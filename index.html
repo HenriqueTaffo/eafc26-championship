@@ -234,7 +234,11 @@
     .competition-badge.league-cup { background: var(--league-cup); }
     .competition-badge.fa-cup { background: var(--fa-cup); }
 
-    .status-pill.pending { background: rgba(148, 163, 184, 0.28); color: #e2e8f0; }
+    .status-pill.pending {
+      background: rgba(59, 130, 246, 0.34);
+      color: #dbeafe;
+      box-shadow: 0 0 0 1px rgba(147, 197, 253, 0.22);
+    }
     .status-pill.done { background: rgba(34, 197, 94, 0.22); color: #bbf7d0; }
     .status-pill.waiting { background: rgba(234, 179, 8, 0.22); color: #fef3c7; }
 
@@ -482,6 +486,24 @@
     .leaderboard-row:last-child { border-bottom: 0; }
     .leaderboard-row strong { font-size: 15px; }
     .leaderboard-row span { color: var(--muted); font-size: 12px; }
+
+    tr.calendar-completed-row td {
+      opacity: 0.52;
+    }
+
+    tr.calendar-pending-row {
+      background: linear-gradient(90deg, rgba(59, 130, 246, 0.13), rgba(255, 255, 255, 0.02));
+      box-shadow: inset 4px 0 0 rgba(59, 130, 246, 0.85);
+    }
+
+    .calendar-card.calendar-completed-row {
+      opacity: 0.62;
+    }
+
+    .calendar-card.calendar-pending-row {
+      outline: 1px solid rgba(147, 197, 253, 0.28);
+      background: linear-gradient(135deg, rgba(59, 130, 246, 0.14), rgba(17, 28, 51, 0.94));
+    }
 
     .countdown-card {
       background: linear-gradient(135deg, rgba(37, 99, 235, 0.24), rgba(124, 58, 237, 0.24));
@@ -845,16 +867,16 @@
 
       <section class="leaderboard-grid">
         <article class="leaderboard-card">
-          <h2>Artilharia</h2>
+          <h2>Gols por time</h2>
           <div id="topScorers"></div>
         </article>
         <article class="leaderboard-card">
-          <h2>Assistências</h2>
+          <h2>Assistências por time</h2>
           <div id="topAssists"></div>
         </article>
       </section>
 
-      <p class="footer-note">Artilharia e assistências são calculadas a partir dos campos de gols e assistências enviados nos resultados. Use padrão parecido com <strong>Time: Jogador 2, Jogador 1</strong> para melhorar a leitura.</p>
+      <p class="footer-note">Os gols por time são calculados pelo placar dos resultados aprovados. Assistências por time usam os registros antigos que já estavam na planilha.</p>
     </section>
 
     <section id="transfersView" class="view">
@@ -912,7 +934,7 @@
 
       <section class="transfer-mobile" id="transferMobile"></section>
 
-      <p class="footer-note">As transferências enviadas pelo formulário aparecem aqui automaticamente. O app calcula <strong>valor Transfermarkt + percentual do overall</strong>, saldo com bônus de jogos/vitórias, limite de 3 transferências por dia e alerta duplicidade automaticamente.</p>
+      <p class="footer-note">Mostrando apenas as 5 transferências aprovadas mais recentes. O app calcula <strong>valor Transfermarkt + percentual do overall</strong>, saldo com bônus de jogos/vitórias, limite de 3 transferências por dia e alerta duplicidade automaticamente.</p>
     </section>
 
     <section id="submitView" class="view">
@@ -1835,8 +1857,9 @@
         const owners = getMatchOwners(event);
         const rowClass = involvesOurTeam(event) ? "ours-row" : "";
         const matchType = getMatchType(event);
+        const calendarVisualClass = getStatusClass(event) === "done" ? "calendar-completed-row" : "calendar-pending-row";
         return `
-          <tr class="${rowClass}">
+          <tr class="${rowClass} ${calendarVisualClass}">
             <td>${formatDate(event.date)}</td>
             <td class="numeric">${event.week}</td>
             <td><span class="competition-badge ${event.className}">${event.competition}</span></td>
@@ -1852,8 +1875,9 @@
         const owners = getMatchOwners(event);
         const rowClass = involvesOurTeam(event) ? "ours-row" : "";
         const matchType = getMatchType(event);
+        const calendarVisualClass = getStatusClass(event) === "done" ? "calendar-completed-row" : "calendar-pending-row";
         return `
-          <article class="calendar-card ${rowClass}">
+          <article class="calendar-card ${rowClass} ${calendarVisualClass}">
             <div class="calendar-card-header"><span class="competition-badge ${event.className}">${event.competition}</span><span class="calendar-muted">${formatDate(event.date)}</span></div>
             <h3>${event.home} x ${event.away}</h3>
             <div class="calendar-card-meta"><div class="calendar-meta-item"><span>Rodada/Fase</span><strong>${event.phase}</strong></div><div class="calendar-meta-item"><span>Envolvidos</span><strong>${owners}</strong></div><div class="calendar-meta-item"><span>Tipo</span><strong><span class="match-type ${matchType.className}">${matchType.label}</span></strong></div><div class="calendar-meta-item"><span>Status/Placar</span><strong>${formatMatchResult(event)}</strong></div><div class="calendar-meta-item"><span>Semana</span><strong>${event.week}</strong></div><div class="calendar-meta-item"><span>Data</span><strong>${formatDate(event.date)}</strong></div></div>
@@ -1893,15 +1917,23 @@
     function getAllTransfers() {
       const approvedApiTransfers = apiTransfers
         .filter(row => row.Status === "Aprovado")
-        .map(row => ({
+        .map((row, index) => ({
           player: row.Jogador,
           buyer: row.Comprador,
           fromClub: row.ClubeOrigem,
           overall: Number(row.Overall),
-          marketValue: Number(row.ValorTransfermarkt)
+          marketValue: Number(row.ValorTransfermarkt),
+          timestamp: row.Timestamp,
+          sourceIndex: index
         }));
 
-      return [...transfers, ...approvedApiTransfers];
+      const staticTransfers = transfers.map((transfer, index) => ({
+        ...transfer,
+        timestamp: transfer.timestamp || "",
+        sourceIndex: index
+      }));
+
+      return [...staticTransfers, ...approvedApiTransfers];
     }
 
     function getTransfersWithStats() {
@@ -1963,7 +1995,15 @@
         );
       }
 
-      return data;
+      data.sort((a, b) => {
+        const aTime = new Date(a.timestamp || 0).getTime();
+        const bTime = new Date(b.timestamp || 0).getTime();
+        const safeATime = Number.isNaN(aTime) ? 0 : aTime;
+        const safeBTime = Number.isNaN(bTime) ? 0 : bTime;
+        return safeBTime - safeATime || b.index - a.index;
+      });
+
+      return data.slice(0, 5);
     }
 
     function renderTransferSummary() {
@@ -2055,26 +2095,28 @@
       return rows;
     }
 
-    function getPlayerLeaderboards() {
-      const scorerMap = {};
+    function getTeamLeaderboards() {
+      const goalMap = {};
       const assistMap = {};
 
+      function addStat(map, teamName, count) {
+        const resolvedTeam = resolveTeamName(teamName);
+        const key = normalizeTeamName(resolvedTeam);
+        map[key] = map[key] || { name: resolvedTeam, detail: "Total acumulado", count: 0 };
+        map[key].count += Number(count || 0);
+      }
+
       getApprovedApiResults().forEach(row => {
-        parsePlayerStatText(row.GolsDetalhes, "goals").forEach(item => {
-          const key = `${normalizeText(item.player)}|${normalizeTeamName(item.team)}`;
-          scorerMap[key] = scorerMap[key] || { player: item.player, team: item.team, count: 0 };
-          scorerMap[key].count += item.count;
-        });
+        addStat(goalMap, row.Mandante, Number(row.GolsMandante));
+        addStat(goalMap, row.Visitante, Number(row.GolsVisitante));
 
         parsePlayerStatText(row.AssistenciasDetalhes, "assists").forEach(item => {
-          const key = `${normalizeText(item.player)}|${normalizeTeamName(item.team)}`;
-          assistMap[key] = assistMap[key] || { player: item.player, team: item.team, count: 0 };
-          assistMap[key].count += item.count;
+          addStat(assistMap, item.team, item.count);
         });
       });
 
-      const sortStats = data => Object.values(data).sort((a, b) => b.count - a.count || a.player.localeCompare(b.player)).slice(0, 10);
-      return { scorers: sortStats(scorerMap), assists: sortStats(assistMap) };
+      const sortStats = data => Object.values(data).sort((a, b) => b.count - a.count || a.name.localeCompare(b.name)).slice(0, 10);
+      return { goals: sortStats(goalMap), assists: sortStats(assistMap) };
     }
 
     function renderLeaderboard(container, data, label) {
@@ -2085,7 +2127,7 @@
 
       container.innerHTML = data.map((item, index) => `
         <div class="leaderboard-row">
-          <div><strong>${index + 1}. ${item.player}</strong><br><span>${item.team}</span></div>
+          <div><strong>${index + 1}. ${item.name}</strong><br><span>${item.detail}</span></div>
           <strong>${item.count}</strong>
         </div>
       `).join("");
@@ -2151,9 +2193,9 @@
         `;
       }).join("");
 
-      const leaderboards = getPlayerLeaderboards();
-      renderLeaderboard(topScorers, leaderboards.scorers, "gols");
-      renderLeaderboard(topAssists, leaderboards.assists, "assistências");
+      const leaderboards = getTeamLeaderboards();
+      renderLeaderboard(topScorers, leaderboards.goals, "gols por time");
+      renderLeaderboard(topAssists, leaderboards.assists, "assistências por time");
     }
 
     function renderTransfers() {
