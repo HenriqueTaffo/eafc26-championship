@@ -71,6 +71,7 @@ App.api = {
       App.state.apiTransfers = data.transfers || [];
       App.state.apiEvents = data.events || [];
       App.state.apiClubs = data.clubs || [];
+      App.state.apiBudgets = data.budgets || {};
 
       if (Array.isArray(data.eventSlots) && data.eventSlots.length) {
         App.config.eventSlots = data.eventSlots.map(Number);

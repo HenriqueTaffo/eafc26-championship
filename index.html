@@ -289,6 +289,9 @@
         <strong id="nextTransferCountdown">Calculando...</strong>
         <p>O limite diário reinicia à meia-noite. Eventos podem aumentar ou reduzir o limite do dia.</p>
       </section>
+
+      <section class="transfer-budget-board" id="transferBudgetBoard"></section>
+
       <section class="controls">
         <input id="transferSearchInput" type="search" placeholder="Buscar jogador, comprador ou clube..." />
         <select id="transferOwnerFilter">
@@ -305,6 +308,8 @@
           <option value="overbudget">Acima do orçamento</option>
         </select>
       </section>
+      <section class="transfer-insights" id="transferInsights"></section>
+
       <section class="rule-card">
         <h2>Regras de transferência</h2>
         <ul>
@@ -419,6 +424,12 @@
               <input name="marketValue" type="number" min="0" step="1" inputmode="numeric" placeholder="Ex: 32000000" required />
             </label>
           </div>
+
+          <div class="transfer-live-preview" id="transferFormPreview">
+            <strong>Prévia da contratação</strong>
+            <span>Preencha comprador, jogador, overall e valor para calcular custo final, saldo e travas antes de enviar.</span>
+          </div>
+
           <div class="form-actions">
             <button class="primary-button" type="submit">Enviar transferência</button>
             <span class="app-message" id="transferMessage"></span>

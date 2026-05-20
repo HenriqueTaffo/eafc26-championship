@@ -70,6 +70,9 @@ App.transfers = {
   },
 
   getTransferLimitForBuyer(buyer) {
+    const supabaseBudget = App.state.apiBudgets?.[buyer];
+    if (supabaseBudget?.transferLimit !== undefined) return Number(supabaseBudget.transferLimit);
+
     const impact = App.transfers.getEventImpactByBuyer();
     const modifier = impact[buyer]?.transferModifier || 0;
     return Math.max(0, Math.min(5, App.config.baseDailyTransferLimit + modifier));
@@ -78,24 +81,33 @@ App.transfers = {
   getBudgetInfoByBuyer() {
     const buyers = App.utils.getHumanBuyers();
     const info = buyers.reduce((acc, buyer) => {
+      const supabaseBudget = App.state.apiBudgets?.[buyer] || {};
+
       acc[buyer] = {
         buyer,
-        baseBudget: App.config.transferBudget,
-        homeMatches: 0,
-        wins: 0,
-        homeBonus: 0,
-        winBonusValue: 0,
-        eventBonus: 0,
+        baseBudget: Number(supabaseBudget.baseBudget ?? App.config.transferBudget),
+        homeMatches: Number(supabaseBudget.homeMatches ?? 0),
+        wins: Number(supabaseBudget.wins ?? 0),
+        homeBonus: Number(supabaseBudget.homeBonus ?? 0),
+        winBonusValue: Number(supabaseBudget.winBonusValue ?? supabaseBudget.winBonus ?? 0),
+        eventBonus: Number(supabaseBudget.eventBonus ?? 0),
         eventPenalty: 0,
-        eventTotal: 0,
-        eventCount: 0,
-        transferModifier: 0,
-        transferLimit: App.config.baseDailyTransferLimit,
-        activeInjuries: 0,
-        totalBudget: App.config.transferBudget
+        eventTotal: Number(supabaseBudget.eventTotal ?? 0),
+        eventCount: Number(supabaseBudget.eventCount ?? 0),
+        transferModifier: Number(supabaseBudget.transferModifier ?? 0),
+        transferLimit: Number(supabaseBudget.transferLimit ?? App.config.baseDailyTransferLimit),
+        activeInjuries: Number(supabaseBudget.activeInjuries ?? 0),
+        totalBudget: Number(supabaseBudget.totalBudget ?? App.config.transferBudget),
+        spentTotal: Number(supabaseBudget.spentTotal ?? 0),
+        remainingBudget: Number(supabaseBudget.remainingBudget ?? App.config.transferBudget),
+        transfersToday: Number(supabaseBudget.transfersToday ?? 0)
       };
       return acc;
     }, {});
+
+    if (Object.keys(App.state.apiBudgets || {}).length) {
+      return info;
+    }
 
     App.standings.getApprovedApiResults()
       .filter(result => App.utils.normalizeText(result.Competicao) === "championship")
@@ -146,8 +158,14 @@ App.transfers = {
       const isBlockedDuplicate = hasDuplicate && allTransfers.findIndex(item => App.utils.normalizeText(item.player) === nameKey) !== index;
       const countedCost = isBlockedDuplicate ? 0 : totalCost;
       spentByBuyer[transfer.buyer] = (spentByBuyer[transfer.buyer] || 0) + countedCost;
-      const currentBudget = App.transfers.getBudgetInfoByBuyer()[transfer.buyer]?.totalBudget || App.config.transferBudget;
-      const remainingBudget = currentBudget - spentByBuyer[transfer.buyer];
+      const budgetInfo = App.transfers.getBudgetInfoByBuyer()[transfer.buyer];
+      const currentBudget = budgetInfo?.totalBudget || App.config.transferBudget;
+      const runningSpent = Object.keys(App.state.apiBudgets || {}).length
+        ? (budgetInfo?.spentTotal || 0)
+        : spentByBuyer[transfer.buyer];
+      const remainingBudget = Object.keys(App.state.apiBudgets || {}).length
+        ? (budgetInfo?.remainingBudget ?? (currentBudget - runningSpent))
+        : currentBudget - runningSpent;
 
       return {
         ...transfer,
@@ -157,10 +175,14 @@ App.transfers = {
         hasDuplicate,
         isBlockedDuplicate,
         currentBudget,
-        runningSpent: spentByBuyer[transfer.buyer],
+        runningSpent,
         remainingBudget
       };
     });
+  },
+
+  getValidTransfers() {
+    return App.transfers.getTransfersWithStats().filter(item => !item.isBlockedDuplicate);
   },
 
   getTransferStatusClass(item) {
@@ -176,7 +198,7 @@ App.transfers = {
   },
 
   getFilteredTransfers(limit = 5) {
-    let data = App.transfers.getTransfersWithStats().filter(item => !item.isBlockedDuplicate);
+    let data = App.transfers.getValidTransfers();
     const search = App.utils.normalizeText(document.getElementById("transferSearchInput")?.value);
     const owner = document.getElementById("transferOwnerFilter")?.value || "all";
     const status = document.getElementById("transferStatusFilter")?.value || "all";
@@ -201,6 +223,9 @@ App.transfers = {
   },
 
   getTodayTransferCountByBuyer(buyer) {
+    const supabaseBudget = App.state.apiBudgets?.[buyer];
+    if (supabaseBudget?.transfersToday !== undefined) return Number(supabaseBudget.transfersToday);
+
     const today = new Date().toLocaleDateString("pt-BR");
 
     return App.state.apiTransfers
@@ -208,7 +233,6 @@ App.transfers = {
       .filter(row => App.utils.normalizeText(row.Comprador) === App.utils.normalizeText(buyer))
       .filter(row => {
         const timestamp = row.Timestamp;
-
         if (!timestamp) return false;
 
         if (typeof timestamp === "string" && timestamp.startsWith(today)) {
@@ -216,39 +240,263 @@ App.transfers = {
         }
 
         const parsed = new Date(timestamp);
-
-        if (Number.isNaN(parsed.getTime())) {
-          return false;
-        }
-
+        if (Number.isNaN(parsed.getTime())) return false;
         return parsed.toLocaleDateString("pt-BR") === today;
       }).length;
+  },
+
+  getSpendingSummary() {
+    const budgets = App.transfers.getBudgetInfoByBuyer();
+    const validTransfers = App.transfers.getValidTransfers();
+    const buyers = App.utils.getHumanBuyers();
+
+    return buyers.map(buyer => {
+      const budget = budgets[buyer] || {};
+      const transfers = validTransfers.filter(item => item.buyer === buyer);
+      const spent = Object.keys(App.state.apiBudgets || {}).length
+        ? Number(budget.spentTotal || 0)
+        : transfers.reduce((sum, item) => sum + item.totalCost, 0);
+      const totalBudget = Number(budget.totalBudget || App.config.transferBudget);
+      const remaining = Object.keys(App.state.apiBudgets || {}).length
+        ? Number(budget.remainingBudget ?? (totalBudget - spent))
+        : totalBudget - spent;
+      const transferLimit = Number(budget.transferLimit ?? App.transfers.getTransferLimitForBuyer(buyer));
+      const transfersToday = Number(budget.transfersToday ?? App.transfers.getTodayTransferCountByBuyer(buyer));
+      const pct = totalBudget > 0 ? Math.min(100, Math.max(0, (spent / totalBudget) * 100)) : 0;
+
+      return {
+        buyer,
+        totalBudget,
+        spent,
+        remaining,
+        transfers,
+        count: transfers.length,
+        transferLimit,
+        transfersToday,
+        pct,
+        eventTotal: Number(budget.eventTotal || 0),
+        activeInjuries: Number(budget.activeInjuries || 0),
+        homeBonus: Number(budget.homeBonus || 0),
+        winBonusValue: Number(budget.winBonusValue || 0)
+      };
+    });
+  },
+
+  findExistingPlayer(playerName) {
+    const key = App.utils.normalizeText(playerName);
+    if (!key) return null;
+    return App.transfers.getValidTransfers().find(item => App.utils.normalizeText(item.player) === key) || null;
+  },
+
+  getTransferPreview(form) {
+    if (!form) return null;
+
+    const buyer = form.elements.buyer?.value || "";
+    const player = form.elements.player?.value || "";
+    const fromClub = form.elements.fromClub?.value || "";
+    const overall = Number(form.elements.overall?.value);
+    const marketValue = Number(form.elements.marketValue?.value);
+    const hasEnoughData = Boolean(buyer && player && !Number.isNaN(overall) && !Number.isNaN(marketValue) && overall > 0 && marketValue >= 0);
+    const budget = App.transfers.getSpendingSummary().find(item => item.buyer === buyer);
+    const rate = Number.isNaN(overall) ? 0 : App.transfers.getTransferRate(overall);
+    const finalValue = Number.isNaN(marketValue) ? 0 : marketValue + (marketValue * rate);
+    const duplicate = App.transfers.findExistingPlayer(player);
+    const remainingAfter = budget ? budget.remaining - finalValue : 0;
+    const limitReached = budget ? budget.transfersToday >= budget.transferLimit : false;
+    const overBudget = budget ? finalValue > budget.remaining : false;
+    const hardBlock = Boolean(hasEnoughData && (duplicate || limitReached || overBudget));
+
+    return {
+      buyer,
+      player,
+      fromClub,
+      overall,
+      marketValue,
+      hasEnoughData,
+      rate,
+      finalValue,
+      duplicate,
+      budget,
+      remainingAfter,
+      limitReached,
+      overBudget,
+      hardBlock
+    };
+  },
+
+  renderTransferPreview(form) {
+    const target = document.getElementById("transferFormPreview");
+    if (!target || !form) return;
+
+    const preview = App.transfers.getTransferPreview(form);
+    const submitButton = form.querySelector("button[type='submit']");
+
+    if (!preview?.hasEnoughData) {
+      if (submitButton && !submitButton.dataset.submitting) submitButton.disabled = false;
+      target.className = "transfer-live-preview";
+      target.innerHTML = `
+        <strong>Prévia da contratação</strong>
+        <span>Preencha comprador, jogador, overall e valor para calcular custo final, saldo e travas antes de enviar.</span>
+      `;
+      return;
+    }
+
+    const messages = [];
+
+    if (preview.duplicate) {
+      messages.push(`Jogador já contratado por ${preview.duplicate.buyer}.`);
+    }
+
+    if (preview.limitReached) {
+      messages.push(`${preview.buyer} já atingiu o limite diário (${preview.budget.transfersToday}/${preview.budget.transferLimit}).`);
+    }
+
+    if (preview.overBudget) {
+      messages.push(`Saldo insuficiente: faltam ${App.utils.formatCurrency(Math.abs(preview.remainingAfter))}.`);
+    }
+
+    if (!messages.length) {
+      messages.push("Contratação liberada para envio.");
+    }
+
+    if (submitButton && !submitButton.dataset.submitting) {
+      submitButton.disabled = preview.hardBlock;
+    }
+
+    target.className = `transfer-live-preview ${preview.hardBlock ? "danger" : "success"}`;
+    target.innerHTML = `
+      <div class="preview-header">
+        <strong>${App.utils.escapeHtml(preview.player)}</strong>
+        <span>${preview.buyer}</span>
+      </div>
+      <div class="preview-grid">
+        <span>OVR <strong>${preview.overall}</strong></span>
+        <span>Taxa <strong>${Math.round(preview.rate * 100)}%</strong></span>
+        <span>Custo final <strong>${App.utils.formatCurrency(preview.finalValue)}</strong></span>
+        <span>Saldo após compra <strong>${App.utils.formatCurrency(preview.remainingAfter)}</strong></span>
+        <span>Transferências hoje <strong>${preview.budget.transfersToday}/${preview.budget.transferLimit}</strong></span>
+      </div>
+      <ul class="preview-alerts">
+        ${messages.map(message => `<li>${App.utils.escapeHtml(message)}</li>`).join("")}
+      </ul>
+    `;
+  },
+
+  renderBudgetBoard() {
+    const target = document.getElementById("transferBudgetBoard");
+    if (!target) return;
+
+    const data = App.transfers.getSpendingSummary();
+
+    target.innerHTML = data.map(item => {
+      const color = App.data.ownerColors[item.buyer] || "#2563eb";
+      const limitClass = item.transfersToday >= item.transferLimit ? "is-blocked" : item.transfersToday >= item.transferLimit - 1 ? "is-warning" : "";
+      return `
+        <article class="transfer-budget-card ${limitClass}">
+          <div class="budget-card-header">
+            <span class="owner" style="background:${color}">${item.buyer}</span>
+            <strong>${item.transfersToday}/${item.transferLimit} hoje</strong>
+          </div>
+          <div class="budget-money">
+            <span>Saldo livre</span>
+            <strong>${App.utils.formatCurrency(item.remaining)}</strong>
+          </div>
+          <div class="budget-bar" aria-label="Uso do orçamento">
+            <i style="width:${item.pct}%"></i>
+          </div>
+          <div class="budget-breakdown">
+            <span>Gasto: ${App.utils.formatCurrency(item.spent)}</span>
+            <span>Total: ${App.utils.formatCurrency(item.totalBudget)}</span>
+          </div>
+          <div class="budget-tags">
+            ${item.eventTotal ? `<span>${item.eventTotal > 0 ? "+" : ""}${App.utils.formatCurrency(item.eventTotal)} eventos</span>` : ""}
+            ${item.activeInjuries ? `<span>${item.activeInjuries} lesão(ões)</span>` : ""}
+          </div>
+        </article>
+      `;
+    }).join("");
+  },
+
+  renderInsights() {
+    const target = document.getElementById("transferInsights");
+    if (!target) return;
+
+    const transfers = App.transfers.getValidTransfers();
+    const biggest = [...transfers].sort((a, b) => b.totalCost - a.totalCost).slice(0, 5);
+    const spending = App.transfers.getSpendingSummary().sort((a, b) => b.spent - a.spent);
+    const remaining = App.transfers.getSpendingSummary().sort((a, b) => b.remaining - a.remaining);
+    const duplicateCount = App.transfers.getTransfersWithStats().filter(item => item.isBlockedDuplicate).length;
+
+    target.innerHTML = `
+      <article class="transfer-insight-card">
+        <h3>Maiores compras</h3>
+        ${biggest.length ? biggest.map(item => `
+          <div class="insight-row">
+            <span>${App.utils.escapeHtml(item.player)}</span>
+            <strong>${App.utils.formatCurrency(item.totalCost)}</strong>
+          </div>
+        `).join("") : `<p class="calendar-muted">Nenhuma compra aprovada ainda.</p>`}
+      </article>
+      <article class="transfer-insight-card">
+        <h3>Quem mais gastou</h3>
+        ${spending.map(item => `
+          <div class="insight-row">
+            <span>${item.buyer}</span>
+            <strong>${App.utils.formatCurrency(item.spent)}</strong>
+          </div>
+        `).join("")}
+      </article>
+      <article class="transfer-insight-card">
+        <h3>Maior saldo</h3>
+        ${remaining.map(item => `
+          <div class="insight-row">
+            <span>${item.buyer}</span>
+            <strong>${App.utils.formatCurrency(item.remaining)}</strong>
+          </div>
+        `).join("")}
+      </article>
+      <article class="transfer-insight-card">
+        <h3>Alertas</h3>
+        <div class="insight-row">
+          <span>Duplicadas bloqueadas</span>
+          <strong>${duplicateCount}</strong>
+        </div>
+        <div class="insight-row">
+          <span>Limites diários críticos</span>
+          <strong>${spending.filter(item => item.transfersToday >= item.transferLimit).length}</strong>
+        </div>
+        <div class="insight-row">
+          <span>Lesões ativas</span>
+          <strong>${spending.reduce((sum, item) => sum + item.activeInjuries, 0)}</strong>
+        </div>
+      </article>
+    `;
   },
 
   renderSummary() {
     const summary = document.getElementById("transferSummary");
     if (!summary) return;
 
-    const data = App.transfers.getTransfersWithStats().filter(item => !item.isBlockedDuplicate);
-    const buyers = App.utils.getHumanBuyers();
-    const budgetInfo = App.transfers.getBudgetInfoByBuyer();
-    const totalBonus = buyers.reduce((sum, buyer) => sum + (budgetInfo[buyer]?.homeBonus || 0) + (budgetInfo[buyer]?.winBonusValue || 0) + (budgetInfo[buyer]?.eventTotal || 0), 0);
-    const bestRemaining = Math.max(...buyers.map(buyer => {
-      const budget = budgetInfo[buyer]?.totalBudget || App.config.transferBudget;
-      const spent = data.filter(item => item.buyer === buyer).reduce((sum, item) => sum + item.totalCost, 0);
-      return budget - spent;
-    }), App.config.transferBudget);
+    const data = App.transfers.getValidTransfers();
+    const spending = App.transfers.getSpendingSummary();
+    const totalBonus = spending.reduce((sum, item) => sum + item.homeBonus + item.winBonusValue + item.eventTotal, 0);
+    const bestRemaining = Math.max(...spending.map(item => item.remaining), App.config.transferBudget);
+    const totalSpent = spending.reduce((sum, item) => sum + item.spent, 0);
 
     summary.innerHTML = `
       <article class="summary-card"><span>Orçamento base</span><strong>${App.utils.formatCurrency(App.config.transferBudget)}</strong></article>
       <article class="summary-card"><span>Bônus acumulado</span><strong>${App.utils.formatCurrency(totalBonus)}</strong></article>
       <article class="summary-card"><span>Contratações válidas</span><strong>${data.length}</strong></article>
+      <article class="summary-card"><span>Total gasto</span><strong>${App.utils.formatCurrency(totalSpent)}</strong></article>
       <article class="summary-card"><span>Maior saldo</span><strong>${App.utils.formatCurrency(bestRemaining)}</strong></article>
     `;
   },
 
   render() {
     App.transfers.renderSummary();
+    App.transfers.renderBudgetBoard();
+    App.transfers.renderInsights();
+
     const table = document.getElementById("transferTable");
     const mobile = document.getElementById("transferMobile");
     if (!table || !mobile) return;
@@ -266,9 +514,9 @@ App.transfers = {
       const remainingClass = item.remainingBudget < 0 ? "money-danger" : item.remainingBudget < 10000000 ? "money-warning" : "money-positive";
       return `
         <tr class="ours-row">
-          <td class="calendar-match">${item.player}</td>
+          <td class="calendar-match">${App.utils.escapeHtml(item.player)}</td>
           <td><span class="owner" style="background:${color}">${item.buyer}</span></td>
-          <td>${item.fromClub || "-"}</td>
+          <td>${App.utils.escapeHtml(item.fromClub || "-")}</td>
           <td class="numeric">${item.overall}</td>
           <td>${App.utils.formatCurrency(item.marketValue)}</td>
           <td class="numeric">${Math.round(item.feeRate * 100)}%</td>
@@ -284,8 +532,8 @@ App.transfers = {
       return `
         <article class="calendar-card ours-row">
           <div class="calendar-card-header"><span class="owner" style="background:${color}">${item.buyer}</span><span class="transfer-status ${App.transfers.getTransferStatusClass(item)}">${App.transfers.getTransferStatusLabel(item)}</span></div>
-          <h3>${item.player}</h3>
-          <p class="calendar-muted">${item.fromClub || "-"} · OVR ${item.overall}</p>
+          <h3>${App.utils.escapeHtml(item.player)}</h3>
+          <p class="calendar-muted">${App.utils.escapeHtml(item.fromClub || "-")} · OVR ${item.overall}</p>
           <p>Valor final: <strong>${App.utils.formatCurrency(item.totalCost)}</strong></p>
           <p>Saldo: <strong>${App.utils.formatCurrency(item.remainingBudget)}</strong></p>
         </article>

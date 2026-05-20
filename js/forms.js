@@ -167,6 +167,17 @@ App.forms = {
     });
 
     try {
+      const preview = App.transfers.getTransferPreview(form);
+
+      if (preview?.hardBlock) {
+        const reason = preview.duplicate
+          ? `Jogador já contratado por ${preview.duplicate.buyer}.`
+          : preview.limitReached
+            ? `${preview.buyer} já atingiu o limite diário.`
+            : "Saldo insuficiente para concluir a contratação.";
+        throw new Error(reason);
+      }
+
       const data = await App.api.postToApi({
         action: "addTransfer",
         ...payload,
@@ -177,6 +188,7 @@ App.forms = {
       if (!data.ok) throw new Error(data.message || data.error || "Transferência rejeitada.");
       App.utils.setMessage(message, data.message || "Transferência enviada com sucesso.", "success");
       form.reset();
+      App.transfers.renderTransferPreview(form);
       await App.api.loadApiData({
         variant: "market",
         title: "Atualizando dados",
@@ -261,6 +273,21 @@ App.forms = {
     App.forms.updatePenaltyVisibility(form);
   },
 
+  setupTransferPreview() {
+    const transferForm = document.getElementById("transferForm");
+    if (!transferForm || transferForm.dataset.previewReady === "true") return;
+
+    transferForm.dataset.previewReady = "true";
+    ["buyer", "player", "fromClub", "overall", "marketValue"].forEach(name => {
+      const field = transferForm.elements[name];
+      if (!field) return;
+      field.addEventListener("input", () => App.transfers.renderTransferPreview(transferForm));
+      field.addEventListener("change", () => App.transfers.renderTransferPreview(transferForm));
+    });
+
+    App.transfers.renderTransferPreview(transferForm);
+  },
+
   setupForms() {
     const resultForm = document.getElementById("resultForm");
     const calendarResultForm = document.getElementById("calendarResultForm");
@@ -270,6 +297,7 @@ App.forms = {
 
     App.forms.setupPenaltyControls(resultForm);
     App.forms.setupPenaltyControls(calendarResultForm);
+    App.forms.setupTransferPreview();
 
     document.querySelectorAll("[data-close-result-modal]").forEach(element => {
       element.addEventListener("click", App.calendar.closeResultModal);
