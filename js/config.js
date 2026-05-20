@@ -22,6 +22,7 @@ App.state = {
   apiTransfers: [],
   apiEvents: [],
   apiLoaded: false,
+  loadingCount: 0,
   autoEventGenerationRunning: false,
   lastAutoEventCheckKey: ""
 };

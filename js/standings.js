@@ -71,6 +71,77 @@ App.standings = {
     return "neutral";
   },
 
+  getTeamInitials(teamName) {
+    const map = {
+      "Coventry City": "CC",
+      "Ipswich Town": "IT",
+      "Birmingham City": "BC",
+      "Middlesbrough": "MID",
+      "Southampton": "SOU",
+      "Bristol City": "BRC",
+      "Hull City": "HUL",
+      "Leicester City": "LEI",
+      "Millwall": "MIL",
+      "Sheffield United": "SHU",
+      "Swansea City": "SWA",
+      "Wrexham": "WRE",
+      "Derby County": "DER",
+      "Norwich City": "NOR",
+      "Preston North End": "PNE",
+      "Queens Park Rangers": "QPR",
+      "Stoke City": "STK",
+      "Watford": "WAT",
+      "West Bromwich Albion": "WBA",
+      "Blackburn Rovers": "BLB",
+      "Charlton Athletic": "CHA",
+      "Oxford United": "OXF",
+      "Portsmouth": "POR",
+      "Sheffield Wednesday": "SWD"
+    };
+    return map[teamName] || teamName.split(" ").map(part => part[0]).join("").slice(0, 3).toUpperCase();
+  },
+
+  getTeamAccent(teamName) {
+    const map = {
+      "Coventry City": "#3b82f6",
+      "Ipswich Town": "#2563eb",
+      "Birmingham City": "#2563eb",
+      "Middlesbrough": "#dc2626",
+      "Southampton": "#ef4444",
+      "Bristol City": "#dc2626",
+      "Hull City": "#f59e0b",
+      "Leicester City": "#2563eb",
+      "Millwall": "#2563eb",
+      "Sheffield United": "#dc2626",
+      "Swansea City": "#64748b",
+      "Wrexham": "#dc2626",
+      "Derby County": "#94a3b8",
+      "Norwich City": "#22c55e",
+      "Preston North End": "#94a3b8",
+      "Queens Park Rangers": "#3b82f6",
+      "Stoke City": "#ef4444",
+      "Watford": "#eab308",
+      "West Bromwich Albion": "#60a5fa",
+      "Blackburn Rovers": "#60a5fa",
+      "Charlton Athletic": "#ef4444",
+      "Oxford United": "#eab308",
+      "Portsmouth": "#2563eb",
+      "Sheffield Wednesday": "#3b82f6"
+    };
+    return map[teamName] || "#64748b";
+  },
+
+  getTeamIdentityHtml(teamName) {
+    const initials = App.standings.getTeamInitials(teamName);
+    const accent = App.standings.getTeamAccent(teamName);
+    return `
+      <span class="team-cell">
+        <span class="team-emblem" style="--team-accent:${accent}">${initials}</span>
+        <span class="team-name">${teamName}</span>
+      </span>
+    `;
+  },
+
   render() {
     const standings = App.standings.getStandings();
     const table = document.getElementById("standingsTable");
@@ -90,12 +161,11 @@ App.standings = {
     `;
 
     table.innerHTML = standings.map(row => {
-      const color = App.data.ownerColors[row.owner] || App.data.ownerColors["Livre / CPU"];
       return `
-        <tr class="${App.standings.getPositionClass(row.position)} ${row.status === "Nosso" ? "ours-row" : ""}">
+        <tr class="${App.standings.getPositionClass(row.position)} ${row.status === "Nosso" ? "standings-human-row" : ""}">
           <td class="numeric">${row.position}</td>
-          <td class="calendar-match">${row.team}</td>
-          <td><span class="owner" style="background:${color}">${row.owner}</span></td>
+          <td class="calendar-match">${App.standings.getTeamIdentityHtml(row.team)}</td>
+          <td><span class="owner-name">${row.owner}</span></td>
           <td class="numeric">${row.played}</td>
           <td class="numeric">${row.wins}</td>
           <td class="numeric">${row.draws}</td>
@@ -109,19 +179,17 @@ App.standings = {
     }).join("");
 
     mobile.innerHTML = standings.map(row => {
-      const color = App.data.ownerColors[row.owner] || App.data.ownerColors["Livre / CPU"];
       const classificationClass = App.standings.getPositionClass(row.position);
       const badgeClass = App.standings.getPositionBadgeClass(row.position);
       return `
-        <article class="calendar-card standings-mobile-card ${classificationClass} ${row.status === "Nosso" ? "ours-row" : ""}">
+        <article class="calendar-card standings-mobile-card ${classificationClass} ${row.status === "Nosso" ? "standings-human-card" : ""}">
           <div class="calendar-card-header">
             <span class="position-badge ${badgeClass}">${row.position}º</span>
             <span class="calendar-muted">${row.points} pts</span>
           </div>
-          <h3>${row.team}</h3>
+          <h3 class="standings-team-title">${App.standings.getTeamIdentityHtml(row.team)}</h3>
           <div class="mobile-owner-line">
-            <span class="owner-dot" style="background:${color}"></span>
-            <span class="calendar-muted">${row.owner}</span>
+            <span class="calendar-muted owner-plain">${row.owner}</span>
           </div>
           <p class="calendar-muted">J ${row.played} · V ${row.wins} · E ${row.draws} · D ${row.losses} · SG ${App.utils.formatGoalDifference(row.goalDifference)}</p>
         </article>

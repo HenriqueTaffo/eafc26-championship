@@ -27,7 +27,7 @@ App.forms = {
       if (!data.ok) throw new Error(data.message || data.error || "Resultado rejeitado.");
       App.utils.setMessage(message, data.message || "Resultado enviado com sucesso.", "success");
       form.reset();
-      await App.api.loadApiData();
+      await App.api.loadApiData({ title: "Atualizando dados", message: "Resultado salvo. Atualizando classificação, calendário e painel da liga..." });
     } catch (error) {
       App.utils.setMessage(message, error.message, "error");
     } finally {
@@ -56,7 +56,7 @@ App.forms = {
       if (!data.ok) throw new Error(data.message || data.error || "Transferência rejeitada.");
       App.utils.setMessage(message, data.message || "Transferência enviada com sucesso.", "success");
       form.reset();
-      await App.api.loadApiData();
+      await App.api.loadApiData({ title: "Atualizando dados", message: "Transferência salva. Atualizando orçamento, lista de transferências e painel..." });
     } catch (error) {
       App.utils.setMessage(message, error.message, "error");
     } finally {
@@ -84,7 +84,7 @@ App.forms = {
       if (!data.ok) throw new Error(data.message || data.error || "Simulação rejeitada.");
       App.utils.setMessage(message, data.message || "Semana simulada com sucesso.", "success");
       form.reset();
-      await App.api.loadApiData();
+      await App.api.loadApiData({ title: "Atualizando dados", message: "Simulação concluída. Atualizando semana, tabela e calendário..." });
     } catch (error) {
       App.utils.setMessage(message, error.message, "error");
     } finally {

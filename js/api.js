@@ -1,7 +1,17 @@
 window.App = window.App || {};
 
 App.api = {
-  async loadApiData() {
+  async loadApiData(options = {}) {
+    const {
+      showLoader = true,
+      title = "Atualizando dados",
+      message = "Aguarde enquanto os dados mais recentes são consultados."
+    } = options;
+
+    if (showLoader && App.main?.showLoader) {
+      App.main.showLoader(title, message);
+    }
+
     try {
       const response = await fetch(`${App.config.API_URL}?t=${Date.now()}`);
       const data = await response.json();
@@ -20,6 +30,10 @@ App.api = {
       const resultMessage = document.getElementById("resultMessage");
       App.utils.setMessage(resultMessage, `Não consegui carregar a planilha: ${error.message}`, "error");
       throw error;
+    } finally {
+      if (showLoader && App.main?.hideLoader) {
+        App.main.hideLoader();
+      }
     }
   },
 

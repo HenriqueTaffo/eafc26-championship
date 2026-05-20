@@ -49,7 +49,7 @@ App.events = {
       const data = await App.api.postToApi({ action: "generateDueEvents" });
       if (data.ok && Number(data.created || 0) > 0) {
         App.utils.setMessage(document.getElementById("eventsMessage"), data.message || "Eventos automáticos gerados.", "success");
-        await App.api.loadApiData();
+        await App.api.loadApiData({ showLoader: false });
       }
     } catch (error) {
       console.warn("Falha ao gerar eventos automaticamente", error);
