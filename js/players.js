@@ -186,8 +186,8 @@ App.players = {
             <div class="player-stat"><span>Vitórias</span><strong>${budget.wins}</strong></div>
             <div class="player-stat"><span>Eventos</span><strong>${budget.eventCount || 0}</strong></div>
             <div class="player-stat"><span>Lesões ativas</span><strong>${budget.activeInjuries || 0}</strong></div>
-            <div class="player-stat"><span>Limite transf.</span><strong>${budget.transferLimit || App.config.baseDailyTransferLimit}/dia</strong></div>
-            <div class="player-stat"><span>Transfers hoje</span><strong>${todayCount}/${budget.transferLimit || App.config.baseDailyTransferLimit}</strong></div>
+            <div class="player-stat"><span>Limite atual</span><strong>${budget.transferLimit ?? App.config.baseDailyTransferLimit}/dia</strong></div>
+            <div class="player-stat ${todayCount > (budget.transferLimit ?? App.config.baseDailyTransferLimit) ? "warning-stat" : ""}"><span>Usadas hoje</span><strong>${todayCount}</strong></div>
           </div>
           <p class="calendar-muted"><strong>Próximo jogo:</strong> ${next ? `${App.utils.formatDate(next.date)} - ${next.competition} - ${next.home} x ${next.away}` : "A definir"}</p>
           ${App.events.renderActiveInjuriesForBuyer(team.owner)}

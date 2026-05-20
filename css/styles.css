@@ -904,3 +904,11 @@ body.loader-active {
 @keyframes loaderSpin {
   to { transform: rotate(360deg); }
 }
+
+.player-stat.warning-stat {
+  border-color: rgba(245, 158, 11, 0.35);
+  background: rgba(245, 158, 11, 0.08);
+}
+.player-stat.warning-stat strong {
+  color: #fbbf24;
+}

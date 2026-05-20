@@ -129,6 +129,38 @@ App.events = {
       .sort((a, b) => new Date(b.Timestamp || 0) - new Date(a.Timestamp || 0));
   },
 
+
+  formatEventDate(value) {
+    if (!value) return "";
+    const text = String(value || "").replace(/^'/, "").trim();
+    if (/^\d{2}\/\d{2}\/\d{4}$/.test(text)) return text;
+    const date = new Date(text);
+    if (!Number.isNaN(date.getTime())) return date.toLocaleDateString("pt-BR");
+    return text;
+  },
+
+  formatEventTime(value) {
+    if (!value) return "";
+    const text = String(value || "").replace(/^'/, "").trim();
+    if (/^\d{2}:\d{2}$/.test(text)) return text;
+    const date = new Date(text);
+    if (!Number.isNaN(date.getTime()) && date.getFullYear() < 2000) {
+      return date.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+    }
+    return text;
+  },
+
+  cleanEventEffect(event) {
+    const effect = String(event.Efeito || "").trim();
+    if (effect && effect !== "#ERROR!") return effect;
+
+    const modifier = Number(event.ModificadorTransferencias || 0);
+    if (modifier > 0) return `Libera ${modifier} transferência(s) extra hoje.`;
+    if (modifier < 0) return `Reduz ${Math.abs(modifier)} transferência(s) hoje.`;
+
+    return "Sem efeito adicional.";
+  },
+
   render() {
     App.events.updateEventCountdown();
 
@@ -137,7 +169,7 @@ App.events = {
     if (!summary || !grid) return;
 
     const todayText = new Date().toLocaleDateString("pt-BR");
-    const todayEvents = App.state.apiEvents.filter(event => String(event.Data || "") === todayText || new Date(event.Timestamp || 0).toLocaleDateString("pt-BR") === todayText);
+    const todayEvents = App.state.apiEvents.filter(event => App.events.formatEventDate(event.Data || event.Timestamp) === todayText);
     const totalImpact = App.state.apiEvents.reduce((sum, event) => sum + Number(event.ImpactoFinanceiro || 0), 0);
     const pendingSlots = Math.max(0, (App.config.eventSlots.length * App.utils.getHumanBuyers().length) - todayEvents.length);
 
@@ -160,11 +192,11 @@ App.events = {
             <span class="event-impact ${typeClass}">${App.events.getEventImpactLabel(event)}</span>
           </div>
           <p>${event.Descricao || "Sem descrição."}</p>
-          <p><strong>Efeito:</strong> ${event.Efeito || "Sem efeito adicional."}</p>
+          <p><strong>Efeito:</strong> ${App.events.cleanEventEffect(event)}</p>
           ${modifier !== 0 ? `<span class="limit-pill">${modifier > 0 ? "+" : ""}${modifier} transferência(s) hoje</span>` : ""}
           ${event.JogadorAfetado ? `<span class="injury-pill">${event.JogadorAfetado} afetado</span>` : ""}
           ${App.events.getEventDurationLabel(event) ? `<div class="event-timer"><strong>Duração do efeito</strong>${App.events.getEventDurationLabel(event)}</div>` : ""}
-          <div class="event-meta">${event.Data || ""} · ${event.Horario || ""} · ${event.Tipo || "Evento"} · ${event.Status || "Gerado"}</div>
+          <div class="event-meta">${App.events.formatEventDate(event.Data)} · ${App.events.formatEventTime(event.Horario)} · ${event.Tipo || "Evento"} · ${event.Status || "Gerado"}</div>
         </article>
       `;
     }).join("") : `<article class="event-card"><h2>Nenhum evento encontrado</h2><p>Os eventos serão gerados automaticamente quando os horários forem abertos.</p></article>`;
