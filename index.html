@@ -1186,24 +1186,28 @@
         return acc;
       }, {});
 
-      getApprovedApiResults().forEach(result => {
-        const homeTeam = getTeamByName(result.Mandante);
-        const awayTeam = getTeamByName(result.Visitante);
-        const homeScore = Number(result.GolsMandante);
-        const awayScore = Number(result.GolsVisitante);
+      getApprovedApiResults()
+        .filter(result => result.Competicao === "Championship")
+        .forEach(result => {
+          const homeTeam = getTeamByName(result.Mandante);
+          const awayTeam = getTeamByName(result.Visitante);
+          const homeScore = Number(result.GolsMandante);
+          const awayScore = Number(result.GolsVisitante);
 
-        if (homeTeam && homeTeam.status === "Nosso" && info[homeTeam.owner]) {
-          info[homeTeam.owner].homeMatches += 1;
-        }
+          if (Number.isNaN(homeScore) || Number.isNaN(awayScore)) return;
 
-        if (homeScore > awayScore && homeTeam && homeTeam.status === "Nosso" && info[homeTeam.owner]) {
-          info[homeTeam.owner].wins += 1;
-        }
+          if (homeTeam && homeTeam.status === "Nosso" && info[homeTeam.owner]) {
+            info[homeTeam.owner].homeMatches += 1;
+          }
 
-        if (awayScore > homeScore && awayTeam && awayTeam.status === "Nosso" && info[awayTeam.owner]) {
-          info[awayTeam.owner].wins += 1;
-        }
-      });
+          if (homeScore > awayScore && homeTeam && homeTeam.status === "Nosso" && info[homeTeam.owner]) {
+            info[homeTeam.owner].wins += 1;
+          }
+
+          if (awayScore > homeScore && awayTeam && awayTeam.status === "Nosso" && info[awayTeam.owner]) {
+            info[awayTeam.owner].wins += 1;
+          }
+        });
 
       Object.values(info).forEach(item => {
         item.homeBonus = item.homeMatches * homeMatchBonus;
