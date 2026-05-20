@@ -4079,3 +4079,62 @@ body.modal-active {
     align-items: flex-start;
   }
 }
+
+/* v38 — mercado mundial: seletor mais limpo */
+.market-player-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: -4px;
+  padding: 10px 12px;
+  border: 1px solid rgba(148,163,184,.12);
+  border-radius: 14px;
+  background: rgba(2,6,23,.18);
+  color: #94a3b8;
+  font-size: 12px;
+}
+
+.market-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: auto;
+  white-space: nowrap;
+  cursor: pointer;
+  color: #e5e7eb;
+  font-weight: 800;
+}
+
+.market-toggle input {
+  width: 16px;
+  height: 16px;
+  min-height: auto;
+}
+
+.market-player-results {
+  scrollbar-color: rgba(148,163,184,.45) rgba(2,6,23,.26);
+}
+
+.market-player-option {
+  grid-template-columns: minmax(220px, 1.4fr) minmax(150px, .9fr) minmax(110px, auto) auto;
+}
+
+.market-player-main strong {
+  font-size: 14px;
+}
+
+.market-player-option.is-contracted {
+  display: grid;
+}
+
+@media (max-width: 720px) {
+  .market-player-toolbar {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .market-player-option {
+    grid-template-columns: 1fr;
+  }
+}

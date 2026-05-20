@@ -52,29 +52,42 @@ App.api = {
   },
 
 
-  async loadMarketPlayers() {
+  async loadMarketPlayers(query = "", showContracted = false, limit = 12) {
     try {
-      const response = await App.api.fetchWithTimeout(
-        `${App.config.SUPABASE_URL}/rest/v1/players_market?select=id,name,club,league,country,position,age,market_value_eur,transfermarkt_url,source,last_synced_at&order=name.asc&limit=5000`,
-        {
-          method: "GET",
-          headers: App.api.getSupabaseHeaders()
-        },
-        45000
-      );
+      const data = await App.api.rpc("app_search_market_players", {
+        p_query: query || "",
+        p_show_contracted: Boolean(showContracted),
+        p_limit: Number(limit || 12)
+      }, 30000);
 
-      if (!response.ok) {
+      App.state.apiMarketPlayers = Array.isArray(data) ? data : [];
+      return App.state.apiMarketPlayers;
+    } catch (rpcError) {
+      console.warn("Busca RPC players_market indisponível, tentando leitura direta:", rpcError);
+
+      try {
+        const response = await App.api.fetchWithTimeout(
+          `${App.config.SUPABASE_URL}/rest/v1/players_market?select=id,name,club,league,country,position,age,market_value_eur,transfermarkt_url,source,last_synced_at&order=name.asc&limit=200`,
+          {
+            method: "GET",
+            headers: App.api.getSupabaseHeaders()
+          },
+          30000
+        );
+
+        if (!response.ok) {
+          App.state.apiMarketPlayers = [];
+          return [];
+        }
+
+        const data = await response.json();
+        App.state.apiMarketPlayers = Array.isArray(data) ? data : [];
+        return App.state.apiMarketPlayers;
+      } catch (error) {
+        console.warn("Não consegui carregar players_market:", error);
         App.state.apiMarketPlayers = [];
         return [];
       }
-
-      const data = await response.json();
-      App.state.apiMarketPlayers = Array.isArray(data) ? data : [];
-      return App.state.apiMarketPlayers;
-    } catch (error) {
-      console.warn("Não consegui carregar players_market:", error);
-      App.state.apiMarketPlayers = [];
-      return [];
     }
   },
 

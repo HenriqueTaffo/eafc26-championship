@@ -286,9 +286,21 @@ App.forms = {
     });
 
     const marketSearch = document.getElementById("marketPlayerSearch");
+    const showContracted = document.getElementById("showContractedPlayers");
+    let marketSearchTimer = null;
+
+    const requestMarketRender = () => {
+      clearTimeout(marketSearchTimer);
+      marketSearchTimer = setTimeout(App.transfers.renderMarketPlayerResults, 220);
+    };
+
     if (marketSearch) {
-      marketSearch.addEventListener("input", App.transfers.renderMarketPlayerResults);
+      marketSearch.addEventListener("input", requestMarketRender);
       marketSearch.addEventListener("focus", App.transfers.renderMarketPlayerResults);
+    }
+
+    if (showContracted) {
+      showContracted.addEventListener("change", App.transfers.renderMarketPlayerResults);
     }
 
     App.transfers.renderMarketPlayerResults();

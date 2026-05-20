@@ -414,6 +414,13 @@
             <label class="full">Buscar jogador no mercado
               <input id="marketPlayerSearch" type="search" placeholder="Digite nome, clube, liga ou posição..." autocomplete="off" />
             </label>
+            <div class="market-player-toolbar full">
+              <span>Por padrão, jogadores já contratados ficam escondidos.</span>
+              <label class="market-toggle">
+                <input id="showContractedPlayers" type="checkbox" />
+                <span>Mostrar já contratados</span>
+              </label>
+            </div>
             <div class="market-player-results full" id="marketPlayerResults">
               <div class="market-empty">Carregue a base `players_market` no Supabase para selecionar jogadores. O preenchimento manual continua disponível.</div>
             </div>
