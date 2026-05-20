@@ -2494,3 +2494,69 @@ tr.calendar-completed-row.is-hidden-by-default,
     padding: 12px;
   }
 }
+
+
+/* v25 — ajuste do logo apenas no desktop
+   No mobile mantém o comportamento anterior. */
+@media (min-width: 641px) {
+  .league-hero {
+    min-height: 112px;
+    padding: 14px 18px;
+    gap: 18px;
+    overflow: visible;
+  }
+
+  .league-seal {
+    width: 86px;
+    height: 86px;
+    flex: 0 0 86px;
+    border-width: 1px;
+    background:
+      radial-gradient(circle at 50% 38%, rgba(251, 191, 36, .16), transparent 42%),
+      linear-gradient(145deg, rgba(15, 23, 42, .96), rgba(30, 41, 59, .72));
+    box-shadow:
+      0 0 0 5px rgba(251, 191, 36, .035),
+      0 16px 34px rgba(0, 0, 0, .28);
+  }
+
+  .league-seal-ring {
+    width: 72px;
+    height: 72px;
+    overflow: hidden;
+    border-radius: 999px;
+    border: 2px solid rgba(251, 191, 36, .82);
+    background: #0f172a;
+  }
+
+  .league-seal-ring img {
+    width: 76px;
+    height: 76px;
+    margin: 0;
+    object-fit: cover;
+    object-position: center 12%;
+    border-radius: 999px;
+    transform: scale(1.04);
+    box-shadow: none;
+  }
+
+  .seal-top,
+  .seal-bottom,
+  .seal-left,
+  .seal-right {
+    display: none;
+  }
+
+  .league-hero-divider {
+    height: 58px;
+  }
+
+  .league-hero h1 {
+    font-size: clamp(36px, 4.2vw, 54px);
+    line-height: 1;
+  }
+
+  .league-hero p {
+    margin-top: 8px;
+    font-size: 15px;
+  }
+}

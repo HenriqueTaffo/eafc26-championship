@@ -4,7 +4,7 @@ Projeto segmentado para GitHub Pages.
 
 ## Como subir no GitHub
 
-1. Extraia este ZIP. 
+1. Extraia este ZIP.
 2. No repositório `eafc26-championship`, envie:
    - `index.html`
    - pasta `css`
@@ -80,3 +80,10 @@ Se você publicar uma nova versão do Apps Script e a URL mudar, altere `js/conf
 - Adicionado filtro para ver próximos 30, realizados ou todos os jogos.
 - Eventos agora abrem mostrando somente a última rodada de eventos.
 - Adicionado filtro para ver ativos/em duração, eventos de hoje, últimos 12 ou histórico completo.
+
+
+## Atualização v25
+
+- Ajuste visual do logo apenas no desktop.
+- Mobile mantido como estava.
+- Logo desktop ficou menor, sem textos internos cortados, em formato de avatar/selo limpo.
