@@ -71,6 +71,12 @@ App.events = {
     return value > 0 ? `+${App.utils.formatCurrency(value)}` : `-${App.utils.formatCurrency(Math.abs(value))}`;
   },
 
+  isCupPrizeEvent(event) {
+    const type = App.utils.normalizeText(event.Tipo || "");
+    const title = App.utils.normalizeText(event.Titulo || "");
+    return type === "premiacao de copa" || title.includes("premiacao por avanco") || title.includes("premiacao de campeao");
+  },
+
   getEventDurationLabel(event) {
     const durationType = App.utils.normalizeText(event.DuracaoTipo || "");
     const affectedPlayer = String(event.JogadorAfetado || "").trim();
@@ -175,11 +181,13 @@ App.events = {
     const period = document.getElementById("eventsPeriodFilter")?.value || "latest";
 
     let events = [...App.state.apiEvents];
+    const dynamicEvents = events.filter(event => !App.events.isCupPrizeEvent(event));
+
     if (period === "latest") {
-      const latestKey = App.events.getLatestEventSlotKey(events);
-      events = latestKey ? events.filter(event => App.events.getEventSlotKey(event) === latestKey) : events;
+      const latestKey = App.events.getLatestEventSlotKey(dynamicEvents);
+      events = latestKey ? dynamicEvents.filter(event => App.events.getEventSlotKey(event) === latestKey) : dynamicEvents;
     } else if (period === "active") {
-      events = events.filter(event => App.events.isActiveOrDurationEvent(event));
+      events = dynamicEvents.filter(event => App.events.isActiveOrDurationEvent(event));
     } else if (period === "today") {
       const todayText = new Date().toLocaleDateString("pt-BR");
       events = events.filter(event => App.events.formatEventDate(event.Data || event.Timestamp) === todayText);
@@ -245,7 +253,8 @@ App.events = {
     if (!summary || !grid) return;
 
     const todayText = new Date().toLocaleDateString("pt-BR");
-    const todayEvents = App.state.apiEvents.filter(event => App.events.formatEventDate(event.Data || event.Timestamp) === todayText);
+    const dynamicEvents = App.state.apiEvents.filter(event => !App.events.isCupPrizeEvent(event));
+    const todayEvents = dynamicEvents.filter(event => App.events.formatEventDate(event.Data || event.Timestamp) === todayText);
     const totalImpact = App.state.apiEvents.reduce((sum, event) => sum + Number(event.ImpactoFinanceiro || 0), 0);
     const pendingSlots = Math.max(0, (App.config.eventSlots.length * App.utils.getHumanBuyers().length) - todayEvents.length);
 
@@ -280,7 +289,12 @@ App.events = {
           ${modifier !== 0 ? `<span class="limit-pill">${modifier > 0 ? "+" : ""}${modifier} transferência(s) hoje</span>` : ""}
           ${event.JogadorAfetado ? `<span class="injury-pill">${event.JogadorAfetado} afetado</span>` : ""}
           ${App.events.getEventDurationLabel(event) ? `<div class="event-timer"><strong>Duração do efeito</strong>${App.events.getEventDurationLabel(event)}</div>` : ""}
-          <div class="event-meta">${App.events.formatEventDate(event.Data)} · ${App.events.formatEventTime(event.Horario)} · ${event.Tipo || "Evento"} · ${event.Status || "Gerado"}</div>
+          <div class="event-meta">${[
+            App.events.formatEventDate(event.Data),
+            App.events.formatEventTime(event.Horario),
+            event.Tipo || "Evento",
+            event.Status || "Gerado"
+          ].filter(Boolean).join(" · ")}</div>
         </article>
       `;
     }).join("") : `<article class="event-card"><h2>Nenhum evento encontrado</h2><p>Troque o filtro de período para ver eventos anteriores ou o histórico completo.</p></article>`;
