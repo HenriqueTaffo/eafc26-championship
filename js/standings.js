@@ -71,98 +71,12 @@ App.standings = {
     return "neutral";
   },
 
-  getTeamInitials(teamName) {
-    const map = {
-      "Coventry City": "CC",
-      "Ipswich Town": "IPS",
-      "Birmingham City": "BIR",
-      "Middlesbrough": "MID",
-      "Southampton": "SOU",
-      "Bristol City": "BRC",
-      "Hull City": "HUL",
-      "Leicester City": "LEI",
-      "Millwall": "MIL",
-      "Sheffield United": "SHU",
-      "Swansea City": "SWA",
-      "Wrexham": "WRE",
-      "Derby County": "DER",
-      "Norwich City": "NOR",
-      "Preston North End": "PNE",
-      "Queens Park Rangers": "QPR",
-      "Stoke City": "STK",
-      "Watford": "WAT",
-      "West Bromwich Albion": "WBA",
-      "Blackburn Rovers": "BLB",
-      "Charlton Athletic": "CHA",
-      "Oxford United": "OXF",
-      "Portsmouth": "POR",
-      "Sheffield Wednesday": "SHW"
-    };
-    return map[teamName] || teamName.split(" ").map(part => part[0]).join("").slice(0, 3).toUpperCase();
-  },
-
-  getTeamAccent(teamName) {
-    const map = {
-      "Coventry City": "#3b82f6",
-      "Ipswich Town": "#2563eb",
-      "Birmingham City": "#2563eb",
-      "Middlesbrough": "#dc2626",
-      "Southampton": "#ef4444",
-      "Bristol City": "#dc2626",
-      "Hull City": "#f59e0b",
-      "Leicester City": "#2563eb",
-      "Millwall": "#2563eb",
-      "Sheffield United": "#dc2626",
-      "Swansea City": "#64748b",
-      "Wrexham": "#dc2626",
-      "Derby County": "#94a3b8",
-      "Norwich City": "#22c55e",
-      "Preston North End": "#94a3b8",
-      "Queens Park Rangers": "#3b82f6",
-      "Stoke City": "#ef4444",
-      "Watford": "#eab308",
-      "West Bromwich Albion": "#60a5fa",
-      "Blackburn Rovers": "#60a5fa",
-      "Charlton Athletic": "#ef4444",
-      "Oxford United": "#eab308",
-      "Portsmouth": "#2563eb",
-      "Sheffield Wednesday": "#3b82f6"
-    };
-    return map[teamName] || "#64748b";
-  },
-
-  getTeamSecondary(teamName) {
-    const map = {
-      "Norwich City": "#facc15",
-      "Leeds United": "#facc15",
-      "Hull City": "#111827",
-      "Watford": "#111827",
-      "West Bromwich Albion": "#ffffff",
-      "Blackburn Rovers": "#ffffff",
-      "Oxford United": "#2563eb"
-    };
-    return map[teamName] || "#ffffff";
-  },
-
   getTeamEmblemHtml(teamName, extraClass = "") {
-    const initials = App.standings.getTeamInitials(teamName);
-    const accent = App.standings.getTeamAccent(teamName);
-    const secondary = App.standings.getTeamSecondary(teamName);
-
-    return `
-      <span class="team-crest ${extraClass}" style="--team-accent:${accent}; --team-secondary:${secondary}">
-        <span>${initials}</span>
-      </span>
-    `;
+    return App.clubs.getTeamBadgeHtml(teamName, extraClass);
   },
 
   getTeamIdentityHtml(teamName) {
-    return `
-      <span class="team-cell">
-        ${App.standings.getTeamEmblemHtml(teamName)}
-        <span class="team-name">${teamName}</span>
-      </span>
-    `;
+    return App.clubs.getTeamIdentityHtml(teamName);
   },
 
   getHomeNextEvents() {

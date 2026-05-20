@@ -36,7 +36,7 @@ js/main.js
 O app está apontando para o Apps Script versão 5 informado:
 
 ```text
-https://script.google.com/macros/s/AKfycbwh_NeuSPy8X-MmibPyIQH8aiz7cmeVPWz9n-dqkR0tHEsDVAMotyDeTk25IH9W-3QT/exec
+https://script.google.com/macros/s/AKfycbxbm5pIAkY4VHcWECWBwMNrpSbnxJu85jY665CQJhF0WcmhDPChymHEU9KSBO_H5wlj/exec
 ```
 
 Se você publicar uma nova versão do Apps Script e a URL mudar, altere `js/config.js`.
@@ -50,3 +50,10 @@ Se você publicar uma nova versão do Apps Script e a URL mudar, altere `js/conf
 - Classificação resumida com emblemas estilizados.
 - Próximos jogos com emblemas dos times.
 - Seção Copa Mistura no rodapé da home.
+
+
+## Atualização v18
+
+- Frontend apontando para a API v17 implantada na versão 9.
+- Suporte a logos reais via aba `Clubes`.
+- Visual refresh aplicado.

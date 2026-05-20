@@ -243,8 +243,8 @@ App.cups = {
                     const winner = App.cups.getCupWinner(event);
                     return `
                       <div class="bracket-match">
-                        <div class="bracket-team ${winner && App.utils.sameTeamName(winner, event.home) ? "winner" : ""}"><span>${event.home}</span><span>${typeof event.homeScore === "number" ? event.homeScore : "-"}</span></div>
-                        <div class="bracket-team ${winner && App.utils.sameTeamName(winner, event.away) ? "winner" : ""}"><span>${event.away}</span><span>${typeof event.awayScore === "number" ? event.awayScore : "-"}</span></div>
+                        <div class="bracket-team ${winner && App.utils.sameTeamName(winner, event.home) ? "winner" : ""}"><span>${App.clubs.getTeamIdentityHtml(event.home, "bracket-identity")}</span><span>${typeof event.homeScore === "number" ? event.homeScore : "-"}</span></div>
+                        <div class="bracket-team ${winner && App.utils.sameTeamName(winner, event.away) ? "winner" : ""}"><span>${App.clubs.getTeamIdentityHtml(event.away, "bracket-identity")}</span><span>${typeof event.awayScore === "number" ? event.awayScore : "-"}</span></div>
                         <div class="bracket-meta">${App.utils.formatDate(event.date)} · ${event.phase}<br>${App.calendar.formatMatchResult(event)}</div>
                       </div>
                     `;

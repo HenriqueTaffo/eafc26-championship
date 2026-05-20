@@ -183,7 +183,7 @@ App.calendar = {
           <td class="numeric">${event.week}</td>
           <td><span class="competition-badge ${event.className}">${event.competition}</span></td>
           <td>${event.phase}</td>
-          <td class="calendar-match">${event.home} x ${event.away}</td>
+          <td class="calendar-match">${App.clubs.getMatchupHtml(event.home, event.away, "table-match")}</td>
           <td>${owners.length ? owners.map(owner => `<span class="owner" style="background:${App.data.ownerColors[owner]}">${owner}</span>`).join(" ") : "CPU"}</td>
           <td>${App.calendar.getMatchType(event)}</td>
           <td><span class="status-pill ${App.calendar.getStatusClass(event)}">${App.calendar.formatMatchResult(event)}</span></td>
@@ -197,7 +197,7 @@ App.calendar = {
       return `
         <article class="calendar-card ${App.calendar.involvesOurTeam(event) ? "ours-row" : ""} ${visualClass}">
           <div class="calendar-card-header"><span class="competition-badge ${event.className}">${event.competition}</span><span class="calendar-muted">${App.utils.formatDate(event.date)}</span></div>
-          <h3>${event.home} x ${event.away}</h3>
+          <h3>${App.clubs.getMatchupHtml(event.home, event.away, "card-match")}</h3>
           <p class="calendar-muted">${event.phase} · Semana ${event.week} · ${App.calendar.getMatchType(event)}</p>
           <p>${owners.map(owner => `<span class="owner" style="background:${App.data.ownerColors[owner]}">${owner}</span>`).join(" ")}</p>
           <span class="status-pill ${App.calendar.getStatusClass(event)}">${App.calendar.formatMatchResult(event)}</span>

@@ -34,6 +34,7 @@ App.api = {
       App.state.apiResults = data.results || [];
       App.state.apiTransfers = data.transfers || [];
       App.state.apiEvents = data.events || [];
+      App.state.apiClubs = data.clubs || [];
       App.state.apiLoaded = true;
       App.main.renderAll();
       return data;
