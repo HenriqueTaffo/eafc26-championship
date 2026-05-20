@@ -107,3 +107,11 @@ Se você publicar uma nova versão do Apps Script e a URL mudar, altere `js/conf
 - Eventos automáticos via RPC `app_generate_due_events`.
 - Simulação CPU x CPU usa o calendário do front e grava os resultados pelo RPC seguro.
 - Antes de subir este ZIP, rode o SQL `supabase-mistura-managers-league-rpc-v3.sql` no Supabase.
+
+
+## Atualização v28
+
+- Cards de eventos com altura uniforme no desktop.
+- Títulos e descrições usam limite de linhas para preservar o layout.
+- Rodapé do card fica sempre alinhado embaixo.
+- Mobile mantém altura flexível para evitar corte excessivo de conteúdo.

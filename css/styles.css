@@ -2560,3 +2560,101 @@ tr.calendar-completed-row.is-hidden-by-default,
     font-size: 15px;
   }
 }
+
+
+/* v28 — cards de eventos com altura uniforme */
+.event-grid {
+  align-items: stretch;
+}
+
+.event-grid .event-card {
+  height: 218px;
+  min-height: 218px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  margin-bottom: 0;
+}
+
+.event-card-header {
+  min-height: 58px;
+  flex: 0 0 auto;
+}
+
+.event-card-header > div {
+  min-width: 0;
+}
+
+.event-card h2 {
+  min-height: 48px;
+  margin: 0 0 8px;
+  line-height: 1.12;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.event-card > p {
+  margin: 8px 0 0;
+  line-height: 1.35;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.event-card > p:first-of-type {
+  min-height: 44px;
+  -webkit-line-clamp: 2;
+}
+
+.event-card > p:nth-of-type(2) {
+  min-height: 22px;
+  -webkit-line-clamp: 1;
+}
+
+.event-card .limit-pill,
+.event-card .injury-pill {
+  flex: 0 0 auto;
+  width: fit-content;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.event-card .event-timer {
+  flex: 0 0 auto;
+  padding: 8px 10px;
+  margin-top: 8px;
+  max-height: 58px;
+  overflow: hidden;
+}
+
+.event-card .event-meta {
+  margin-top: auto;
+  padding-top: 8px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.event-grid .compact-info-card {
+  height: auto;
+  min-height: 0;
+}
+
+@media (max-width: 840px) {
+  .event-grid .event-card {
+    height: auto;
+    min-height: 218px;
+  }
+
+  .event-card h2 {
+    min-height: 0;
+  }
+
+  .event-card > p:first-of-type,
+  .event-card > p:nth-of-type(2) {
+    min-height: 0;
+  }
+}
