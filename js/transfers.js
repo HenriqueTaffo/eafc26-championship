@@ -201,13 +201,27 @@ App.transfers = {
   },
 
   getTodayTransferCountByBuyer(buyer) {
-    const today = new Date().toISOString().slice(0, 10);
+    const today = new Date().toLocaleDateString("pt-BR");
+
     return App.state.apiTransfers
       .filter(row => App.utils.normalizeText(row.Status) === "aprovado")
       .filter(row => App.utils.normalizeText(row.Comprador) === App.utils.normalizeText(buyer))
       .filter(row => {
-        const parsed = new Date(row.Timestamp);
-        return !Number.isNaN(parsed.getTime()) && parsed.toISOString().slice(0, 10) === today;
+        const timestamp = row.Timestamp;
+
+        if (!timestamp) return false;
+
+        if (typeof timestamp === "string" && timestamp.startsWith(today)) {
+          return true;
+        }
+
+        const parsed = new Date(timestamp);
+
+        if (Number.isNaN(parsed.getTime())) {
+          return false;
+        }
+
+        return parsed.toLocaleDateString("pt-BR") === today;
       }).length;
   },
 
