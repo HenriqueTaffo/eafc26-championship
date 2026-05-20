@@ -3126,3 +3126,48 @@ tr.calendar-completed-row.is-hidden-by-default,
     transition-duration: 0.01ms !important;
   }
 }
+
+
+
+/* v33 — escudos reais sem fallback por iniciais */
+.club-logo img,
+.team-logo img,
+.home-team-logo img,
+.calendar-team-logo img,
+.crest img,
+.mini-crest img,
+.home-crest img,
+.calendar-crest img,
+.standings-crest img,
+.logo-badge img {
+  object-fit: contain;
+  background: transparent;
+}
+
+/* v34 — card do líder com escudo real e nomenclatura Técnico */
+.metric-icon.leader-club-icon {
+  background: rgba(248, 250, 252, 0.06);
+  border: 1px solid rgba(255,255,255,.12);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.06);
+}
+
+.metric-icon.leader-club-icon .club-badge {
+  width: 54px;
+  height: 54px;
+  flex-basis: 54px;
+  border-radius: 999px;
+  box-shadow: none;
+}
+
+.metric-icon.leader-club-icon .club-badge.has-logo {
+  background: rgba(248, 250, 252, .98);
+}
+
+.metric-icon.leader-club-icon .club-badge img {
+  width: 88%;
+  height: 88%;
+}
+
+.leader-metric strong {
+  line-height: 1.05;
+}

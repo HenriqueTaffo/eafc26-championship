@@ -87,8 +87,8 @@ App.calendar = {
 
   getMatchType(event) {
     const owners = App.calendar.getMatchOwners(event);
-    if (owners.length >= 2) return "Humano x Humano";
-    if (owners.length === 1) return "Humano x CPU";
+    if (owners.length >= 2) return "Técnico x Técnico";
+    if (owners.length === 1) return "Técnico x CPU";
     return "CPU x CPU";
   },
 
@@ -181,7 +181,7 @@ App.calendar = {
       <article class="summary-card"><span>Início</span><strong>19/05/2026</strong></article>
       <article class="summary-card"><span>Eventos</span><strong>${events.length}</strong></article>
       <article class="summary-card"><span>Realizados</span><strong>${done}</strong></article>
-      <article class="summary-card"><span>Humanos pendentes</span><strong>${pendingHuman}</strong></article>
+      <article class="summary-card"><span>Técnicos pendentes</span><strong>${pendingHuman}</strong></article>
     `;
   },
 

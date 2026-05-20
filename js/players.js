@@ -65,7 +65,7 @@ App.players = {
     humanTeams.forEach(team => {
       goalsMap[App.utils.normalizeTeamName(team)] = {
         name: team,
-        detail: App.utils.getTeamByName(team)?.owner || "Jogador humano",
+        detail: App.utils.getTeamByName(team)?.owner || "Técnico",
         count: 0
       };
     });

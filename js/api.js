@@ -198,7 +198,7 @@ App.api = {
       return {
         ok: false,
         created: 0,
-        message: `Ainda existem ${missingHumanMatches.length} jogo(s) humano(s) sem resultado nesta semana.`
+        message: `Ainda existem ${missingHumanMatches.length} jogo(s) com técnico sem resultado nesta semana.`
       };
     }
 

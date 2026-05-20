@@ -130,13 +130,15 @@ App.standings = {
 
   renderSummaryCards(standings, summary) {
     const leader = standings[0];
-    const bestHuman = standings.filter(team => team.status === "Nosso")[0];
+    const bestCoach = standings.filter(team => team.status === "Nosso")[0];
     const played = App.standings.getApprovedApiResults()
       .filter(row => App.utils.normalizeText(row.Competicao) === "championship").length;
 
     summary.innerHTML = `
-      <article class="summary-card home-metric">
-        <div class="metric-icon shield">♜</div>
+      <article class="summary-card home-metric leader-metric">
+        <div class="metric-icon leader-club-icon">
+          ${leader ? App.standings.getTeamEmblemHtml(leader.team, "metric-club-badge") : "♜"}
+        </div>
         <div>
           <span>Líder</span>
           <strong>${leader?.team || "-"}</strong>
@@ -146,9 +148,9 @@ App.standings = {
       <article class="summary-card home-metric">
         <div class="metric-icon person">●</div>
         <div>
-          <span>Melhor humano</span>
-          <strong>${bestHuman ? `${bestHuman.owner} (${bestHuman.position}º)` : "-"}</strong>
-          <small>${bestHuman ? `${bestHuman.points} pts` : ""}</small>
+          <span>Melhor técnico</span>
+          <strong>${bestCoach ? `${bestCoach.owner} (${bestCoach.position}º)` : "-"}</strong>
+          <small>${bestCoach ? `${bestCoach.points} pts` : ""}</small>
         </div>
       </article>
       <article class="summary-card home-metric">
