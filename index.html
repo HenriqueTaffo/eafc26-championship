@@ -18,34 +18,73 @@
   </div>
 
   <main class="app">
-    <header class="hero hero-minimal" aria-label="Mistura Managers League">
-      <div class="hero-minimal-shell">
-        <img
-          class="hero-mascot"
-          src="./assets/mistura-mascot.png"
-          alt="Mascote da Mistura Managers League"
-        />
-        <div class="hero-copy">
-          <span class="hero-kicker">Liga oficial</span>
-          <h1>Mistura Managers League</h1>
-          <p>Classificação, calendário completo da Championship, copas, transferências e eventos automáticos da liga.</p>
+    <header class="hero league-hero">
+      <div class="league-seal" aria-hidden="true">
+        <div class="league-seal-ring">
+          <span class="seal-top">MISTURA</span>
+          <img src="./assets/mistura-mascot.png" alt="" />
+          <span class="seal-left">20</span>
+          <span class="seal-right">24</span>
+          <span class="seal-bottom">MANAGERS LEAGUE</span>
         </div>
+      </div>
+      <div class="league-hero-divider" aria-hidden="true"></div>
+      <div class="league-hero-copy">
+        <h1>Mistura Managers League</h1>
+        <p>Competição oficial de managers. Paixão, estratégia e glória, morra will</p>
       </div>
     </header>
 
     <nav class="tabs" aria-label="Navegação principal">
-      <button class="tab-button active" data-view="standingsView">Classificação</button>
-      <button class="tab-button" data-view="calendarView">Calendário</button>
-      <button class="tab-button" data-view="cupsView">Copas</button>
-      <button class="tab-button" data-view="playersView">Painel</button>
-      <button class="tab-button" data-view="eventsView">Eventos</button>
-      <button class="tab-button" data-view="transfersView">Transferências</button>
-      <button class="tab-button" data-view="submitView">Enviar dados</button>
+      <button class="tab-button active" data-view="standingsView"><span class="tab-icon">♜</span>Classificação</button>
+      <button class="tab-button" data-view="calendarView"><span class="tab-icon">▦</span>Calendário</button>
+      <button class="tab-button" data-view="cupsView"><span class="tab-icon">🏆</span>Copas</button>
+      <button class="tab-button" data-view="playersView"><span class="tab-icon">▣</span>Painel</button>
+      <button class="tab-button" data-view="eventsView"><span class="tab-icon">✦</span>Eventos</button>
+      <button class="tab-button" data-view="transfersView"><span class="tab-icon">⇄</span>Transferências</button>
+      <button class="tab-button" data-view="submitView"><span class="tab-icon">☁</span>Enviar dados</button>
     </nav>
 
     <section id="standingsView" class="view active">
-      <section class="summary" id="standingsSummary"></section>
-      <section class="legend-block">
+      <section class="summary home-summary" id="standingsSummary"></section>
+
+      <section class="home-grid">
+        <article class="home-panel home-standings-panel">
+          <div class="home-panel-header">
+            <h2>Classificação geral</h2>
+          </div>
+          <div class="home-standings-table-wrap">
+            <table class="home-standings-table">
+              <thead>
+                <tr>
+                  <th>Pos</th><th>Time</th><th>Pts</th><th>J</th><th>V</th><th>E</th><th>D</th><th>SG</th>
+                </tr>
+              </thead>
+              <tbody id="homeStandingsTable"></tbody>
+            </table>
+          </div>
+          <button class="home-link" type="button" data-scroll-target="standingsFullBlock">Ver classificação completa <span>›</span></button>
+        </article>
+
+        <article class="home-panel home-next-panel">
+          <div class="home-panel-header">
+            <h2>Próximos jogos</h2>
+          </div>
+          <div class="next-games-list" id="homeNextGames"></div>
+          <button class="home-link" type="button" data-view-target="calendarView">Ver calendário completo <span>›</span></button>
+        </article>
+      </section>
+
+      <section class="home-cup-card">
+        <div class="cup-icon">🏆</div>
+        <div>
+          <h2>Copa Mistura</h2>
+          <p>Inscrições abertas para a próxima fase. Garanta seu lugar!</p>
+        </div>
+        <button type="button" class="cup-action" data-view-target="cupsView">Ver copas <span>›</span></button>
+      </section>
+
+      <section class="legend-block compact-legend">
         <p class="legend-title">Legendas de classificação</p>
         <div class="legend">
           <span class="badge"><span class="dot promotion"></span>Acesso direto</span>
@@ -54,17 +93,23 @@
           <span class="badge"><span class="dot ours"></span>Times humanos</span>
         </div>
       </section>
-      <section class="table-wrapper">
-        <table>
-          <thead>
-            <tr>
-              <th>Pos</th><th>Time</th><th>Dono</th><th>J</th><th>V</th><th>E</th><th>D</th><th>GP</th><th>GC</th><th>SG</th><th>Pts</th>
-            </tr>
-          </thead>
-          <tbody id="standingsTable"></tbody>
-        </table>
+
+      <section id="standingsFullBlock" class="full-standings-block">
+        <div class="home-panel-header">
+          <h2>Tabela completa</h2>
+        </div>
+        <section class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>Pos</th><th>Time</th><th>Dono</th><th>J</th><th>V</th><th>E</th><th>D</th><th>GP</th><th>GC</th><th>SG</th><th>Pts</th>
+              </tr>
+            </thead>
+            <tbody id="standingsTable"></tbody>
+          </table>
+        </section>
+        <section class="mobile-list" id="standingsMobile"></section>
       </section>
-      <section class="mobile-list" id="standingsMobile"></section>
     </section>
 
     <section id="calendarView" class="view">
