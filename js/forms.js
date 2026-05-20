@@ -29,7 +29,10 @@ App.forms = {
       form.reset();
       await App.api.loadApiData({ title: "Atualizando dados", message: "Resultado salvo. Atualizando classificação, calendário e painel da liga..." });
     } catch (error) {
-      App.utils.setMessage(message, error.message, "error");
+      const friendlyMessage = error.name === "AbortError"
+        ? "A simulação demorou demais para responder. Verifique se os jogos foram criados na planilha; se não foram, tente novamente."
+        : error.message;
+      App.utils.setMessage(message, friendlyMessage, "error");
     } finally {
       button.disabled = false;
     }
@@ -58,7 +61,10 @@ App.forms = {
       form.reset();
       await App.api.loadApiData({ title: "Atualizando dados", message: "Transferência salva. Atualizando orçamento, lista de transferências e painel..." });
     } catch (error) {
-      App.utils.setMessage(message, error.message, "error");
+      const friendlyMessage = error.name === "AbortError"
+        ? "A operação demorou demais para responder. Verifique a planilha e tente novamente."
+        : error.message;
+      App.utils.setMessage(message, friendlyMessage, "error");
     } finally {
       button.disabled = false;
     }
@@ -72,7 +78,7 @@ App.forms = {
     const payload = Object.fromEntries(new FormData(form).entries());
 
     button.disabled = true;
-    App.utils.setMessage(message, "Simulando jogos CPU x CPU...", "warning");
+    App.utils.setMessage(message, "Simulando jogos CPU x CPU... Isso deve levar poucos segundos.", "warning");
 
     try {
       const data = await App.api.postToApi({
@@ -86,7 +92,10 @@ App.forms = {
       form.reset();
       await App.api.loadApiData({ title: "Atualizando dados", message: "Simulação concluída. Atualizando semana, tabela e calendário..." });
     } catch (error) {
-      App.utils.setMessage(message, error.message, "error");
+      const friendlyMessage = error.name === "AbortError"
+        ? "A operação demorou demais para responder. Verifique a planilha e tente novamente."
+        : error.message;
+      App.utils.setMessage(message, friendlyMessage, "error");
     } finally {
       button.disabled = false;
     }

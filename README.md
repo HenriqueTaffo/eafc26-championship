@@ -36,13 +36,17 @@ js/main.js
 O app está apontando para o Apps Script versão 5 informado:
 
 ```text
-https://script.google.com/macros/s/AKfycbzcGlXJ8Y4o8CzCJg92Blv-DbSAzzneA1K1igjDgaeKyeqjKGIIeHRHX9DUQmfQg1Ix/exec
+https://script.google.com/macros/s/AKfycbwh_NeuSPy8X-MmibPyIQH8aiz7cmeVPWz9n-dqkR0tHEsDVAMotyDeTk25IH9W-3QT/exec
 ```
 
 Se você publicar uma nova versão do Apps Script e a URL mudar, altere `js/config.js`.
 
 
-## Atualização v11
+## Atualização v13
 
-- Header substituído por banner visual da Mistura Managers League.
-- Imagem adicionada em `assets/mistura-managers-league-banner.png`.
+- Home da classificação redesenhada no estilo Mistura Managers League.
+- Header com mascote em selo circular e frase personalizada.
+- Cards principais com ícones.
+- Classificação resumida com emblemas estilizados.
+- Próximos jogos com emblemas dos times.
+- Seção Copa Mistura no rodapé da home.

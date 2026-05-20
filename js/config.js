@@ -1,8 +1,8 @@
-const API_URL = "https://script.google.com/macros/s/AKfycbzcGlXJ8Y4o8CzCJg92Blv-DbSAzzneA1K1igjDgaeKyeqjKGIIeHRHX9DUQmfQg1Ix/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbwh_NeuSPy8X-MmibPyIQH8aiz7cmeVPWz9n-dqkR0tHEsDVAMotyDeTk25IH9W-3QT/exec";
 window.App = window.App || {};
 
 App.config = {
-  API_URL: "https://script.google.com/macros/s/AKfycbzcGlXJ8Y4o8CzCJg92Blv-DbSAzzneA1K1igjDgaeKyeqjKGIIeHRHX9DUQmfQg1Ix/exec",
+  API_URL: "https://script.google.com/macros/s/AKfycbwh_NeuSPy8X-MmibPyIQH8aiz7cmeVPWz9n-dqkR0tHEsDVAMotyDeTk25IH9W-3QT/exec",
   API_PIN: "eafc26",
   transferBudget: 65000000,
   homeMatchBonus: 1250000,

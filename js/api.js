@@ -1,6 +1,20 @@
 window.App = window.App || {};
 
 App.api = {
+  async fetchWithTimeout(url, options = {}, timeoutMs = 45000) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+    try {
+      return await fetch(url, {
+        ...options,
+        signal: controller.signal
+      });
+    } finally {
+      clearTimeout(timeoutId);
+    }
+  },
+
   async loadApiData(options = {}) {
     const {
       showLoader = true,
@@ -13,7 +27,7 @@ App.api = {
     }
 
     try {
-      const response = await fetch(`${App.config.API_URL}?t=${Date.now()}`);
+      const response = await App.api.fetchWithTimeout(`${App.config.API_URL}?t=${Date.now()}`, {}, 45000);
       const data = await response.json();
       if (!data.ok) throw new Error(data.error || "Erro ao carregar planilha.");
 
@@ -28,7 +42,10 @@ App.api = {
       console.error(error);
       App.main.renderAll();
       const resultMessage = document.getElementById("resultMessage");
-      App.utils.setMessage(resultMessage, `Não consegui carregar a planilha: ${error.message}`, "error");
+      const errorMessage = error.name === "AbortError"
+        ? "A planilha demorou demais para responder. Tente novamente em alguns segundos."
+        : `Não consegui carregar a planilha: ${error.message}`;
+      App.utils.setMessage(resultMessage, errorMessage, "error");
       throw error;
     } finally {
       if (showLoader && App.main?.hideLoader) {
@@ -38,11 +55,12 @@ App.api = {
   },
 
   async postToApi(payload) {
-    const response = await fetch(App.config.API_URL, {
+    const response = await App.api.fetchWithTimeout(App.config.API_URL, {
       method: "POST",
       headers: { "Content-Type": "text/plain;charset=utf-8" },
       body: JSON.stringify({ ...payload, pin: App.config.API_PIN })
-    });
+    }, 45000);
+
     return response.json();
   }
 };
