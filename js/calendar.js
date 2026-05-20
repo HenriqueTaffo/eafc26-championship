@@ -184,7 +184,7 @@ App.calendar = {
           <td><span class="competition-badge ${event.className}">${event.competition}</span></td>
           <td>${event.phase}</td>
           <td class="calendar-match">${App.clubs.getMatchupHtml(event.home, event.away, "table-match")}</td>
-          <td>${owners.length ? owners.map(owner => `<span class="owner" style="background:${App.data.ownerColors[owner]}">${owner}</span>`).join(" ") : "CPU"}</td>
+          <td class="calendar-owner-cell">${owners.length ? owners.map(owner => `<span class="owner" style="background:${App.data.ownerColors[owner]}">${owner}</span>`).join(" ") : "<span class='calendar-muted'>CPU</span>"}</td>
           <td>${App.calendar.getMatchType(event)}</td>
           <td><span class="status-pill ${App.calendar.getStatusClass(event)}">${App.calendar.formatMatchResult(event)}</span></td>
         </tr>

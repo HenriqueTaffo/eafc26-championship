@@ -2105,3 +2105,340 @@ tr:hover td {
     min-width: 220px;
   }
 }
+
+
+/* v19 — correção de logos duplicados e alinhamento */
+.club-badge.has-logo {
+  background: rgba(248, 250, 252, 0.96);
+  border: 1px solid rgba(255,255,255,.34);
+}
+
+.club-badge.has-logo img {
+  width: 88%;
+  height: 88%;
+  object-fit: contain;
+}
+
+.home-panel,
+.table-wrapper,
+.legend-block,
+.summary-card,
+.home-cup-card {
+  overflow: hidden;
+}
+
+.home-standings-table td,
+.home-standings-table th {
+  vertical-align: middle;
+}
+
+.home-standings-table .team-identity {
+  width: 100%;
+  max-width: 240px;
+}
+
+.home-standings-table .team-identity-name {
+  max-width: 180px;
+}
+
+.next-game-card {
+  grid-template-columns: 70px minmax(0, 1fr) auto;
+  overflow: hidden;
+}
+
+.next-game-teams,
+.matchup {
+  min-width: 0;
+}
+
+.matchup.table-match {
+  display: grid;
+  grid-template-columns: minmax(130px, 1fr) 18px minmax(130px, 1fr);
+  align-items: center;
+  width: 100%;
+  min-width: 340px;
+}
+
+.matchup.card-match {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+}
+
+.matchup-side {
+  min-width: 0;
+}
+
+.matchup-side.home {
+  justify-content: flex-end;
+  text-align: right;
+}
+
+.matchup-side.away {
+  justify-content: flex-start;
+  text-align: left;
+}
+
+.matchup-name,
+.team-identity-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.calendar-match {
+  min-width: 390px;
+  max-width: 460px;
+}
+
+.calendar-owner-cell {
+  min-width: 94px;
+  width: 94px;
+  text-align: center;
+}
+
+.calendar-owner-cell .owner {
+  position: static;
+  white-space: nowrap;
+  max-width: 84px;
+  justify-content: center;
+}
+
+#calendarView table {
+  min-width: 1180px;
+  table-layout: fixed;
+}
+
+#calendarView th:nth-child(1),
+#calendarView td:nth-child(1) {
+  width: 128px;
+}
+
+#calendarView th:nth-child(2),
+#calendarView td:nth-child(2) {
+  width: 76px;
+}
+
+#calendarView th:nth-child(3),
+#calendarView td:nth-child(3) {
+  width: 138px;
+}
+
+#calendarView th:nth-child(4),
+#calendarView td:nth-child(4) {
+  width: 124px;
+}
+
+#calendarView th:nth-child(5),
+#calendarView td:nth-child(5) {
+  width: 430px;
+}
+
+#calendarView th:nth-child(6),
+#calendarView td:nth-child(6) {
+  width: 110px;
+}
+
+#calendarView th:nth-child(7),
+#calendarView td:nth-child(7) {
+  width: 130px;
+}
+
+#calendarView th:nth-child(8),
+#calendarView td:nth-child(8) {
+  width: 150px;
+}
+
+.bracket-team {
+  gap: 10px;
+}
+
+.bracket-team > span:first-child {
+  min-width: 0;
+}
+
+.bracket-identity {
+  max-width: 100%;
+}
+
+.bracket-identity .team-identity-name {
+  max-width: 135px;
+}
+
+@media (max-width: 760px) {
+  .calendar-match {
+    min-width: 260px;
+    max-width: none;
+  }
+
+  .matchup.table-match {
+    min-width: 260px;
+    grid-template-columns: 1fr;
+    gap: 7px;
+  }
+
+  .matchup.table-match .matchup-x {
+    display: none;
+  }
+
+  .matchup-side.home,
+  .matchup-side.away {
+    justify-content: flex-start;
+    text-align: left;
+  }
+
+  .calendar-owner-cell {
+    text-align: left;
+  }
+
+  .next-game-card {
+    grid-template-columns: 58px minmax(0, 1fr);
+  }
+}
+
+
+/* v20 — alinhamento final de partidas/logos */
+.club-badge {
+  width: 28px;
+  height: 28px;
+  flex: 0 0 28px;
+}
+
+.club-badge.small {
+  width: 28px;
+  height: 28px;
+  flex-basis: 28px;
+}
+
+.team-identity {
+  max-width: 100%;
+}
+
+.matchup.table-match,
+.matchup.card-match,
+.next-game-teams .matchup {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 18px minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+}
+
+.matchup-side {
+  display: grid;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.matchup-side.home {
+  grid-template-columns: minmax(0, 1fr) 28px;
+  text-align: right;
+}
+
+.matchup-side.away {
+  grid-template-columns: 28px minmax(0, 1fr);
+  text-align: left;
+}
+
+.matchup-name {
+  display: block;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.matchup-x {
+  width: 18px;
+  text-align: center;
+  opacity: .9;
+}
+
+.next-game-card {
+  grid-template-columns: 62px minmax(0, 1fr) 92px;
+  gap: 12px;
+}
+
+.next-game-card .round-pill {
+  justify-self: end;
+  max-width: 88px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.calendar-owner-cell {
+  position: relative;
+  z-index: 2;
+}
+
+.calendar-owner-cell .owner {
+  display: inline-flex;
+  min-width: 70px;
+  max-width: 88px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.calendar-match {
+  overflow: hidden;
+}
+
+#calendarView td,
+#calendarView th {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+#calendarView .calendar-match {
+  overflow: visible;
+}
+
+.bracket-team {
+  grid-template-columns: minmax(0, 1fr) 28px;
+}
+
+.bracket-team .team-identity {
+  min-width: 0;
+}
+
+.bracket-identity .team-identity-name {
+  max-width: 120px;
+}
+
+@media (max-width: 760px) {
+  .matchup.table-match,
+  .matchup.card-match,
+  .next-game-teams .matchup {
+    grid-template-columns: 1fr;
+  }
+
+  .matchup-x {
+    display: none;
+  }
+
+  .matchup-side.home,
+  .matchup-side.away {
+    grid-template-columns: 28px minmax(0, 1fr);
+    text-align: left;
+  }
+
+  .matchup-side.home .matchup-name {
+    order: 2;
+  }
+
+  .matchup-side.home .club-badge {
+    order: 1;
+  }
+
+  .next-game-card {
+    grid-template-columns: 54px minmax(0, 1fr);
+  }
+
+  .next-game-card .round-pill {
+    grid-column: 2;
+    justify-self: start;
+  }
+}

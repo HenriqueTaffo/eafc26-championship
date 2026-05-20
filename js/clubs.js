@@ -99,7 +99,7 @@ App.clubs = {
     const secondary = club.CorSecundaria || "#ffffff";
     const logo = String(club.LogoUrl || "").trim();
 
-    if (logo && !App.clubs.isPlaceholder(teamName)) {
+    if (logo && !App.clubs.isPlaceholder(teamName) && !App.clubs.isDuplicateLogoUrl(teamName, logo)) {
       return `
         <span class="club-badge has-logo ${extraClass}" style="--club-primary:${primary}; --club-secondary:${secondary}">
           <img src="${App.utils.escapeHtml(logo)}" alt="${App.utils.escapeHtml(teamName)}" loading="lazy" referrerpolicy="no-referrer" />
@@ -112,6 +112,19 @@ App.clubs = {
         <span>${App.clubs.getInitials(teamName)}</span>
       </span>
     `;
+  },
+
+  isDuplicateLogoUrl(teamName, logoUrl) {
+    const normalizedLogo = String(logoUrl || "").trim().toLowerCase();
+    if (!normalizedLogo) return false;
+
+    const teamsWithSameLogo = (App.state.apiClubs || [])
+      .filter(club => String(club.LogoUrl || "").trim().toLowerCase() === normalizedLogo)
+      .map(club => App.utils.normalizeTeamName(club.Time));
+
+    const uniqueTeams = [...new Set(teamsWithSameLogo)];
+
+    return uniqueTeams.length > 1;
   },
 
   getTeamIdentityHtml(teamName, extraClass = "") {
