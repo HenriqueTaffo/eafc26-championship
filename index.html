@@ -483,6 +483,86 @@
     .leaderboard-row strong { font-size: 15px; }
     .leaderboard-row span { color: var(--muted); font-size: 12px; }
 
+    .countdown-card {
+      background: linear-gradient(135deg, rgba(37, 99, 235, 0.24), rgba(124, 58, 237, 0.24));
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      padding: 16px;
+      margin-bottom: 18px;
+      box-shadow: 0 16px 45px rgba(0, 0, 0, 0.18);
+    }
+
+    .countdown-card span {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-weight: 900;
+      margin-bottom: 6px;
+    }
+
+    .countdown-card strong {
+      display: block;
+      font-size: clamp(24px, 4vw, 38px);
+      line-height: 1.1;
+    }
+
+    .countdown-card p {
+      color: var(--muted);
+      margin: 8px 0 0;
+      line-height: 1.5;
+    }
+
+    .bracket-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(240px, 1fr));
+      gap: 14px;
+      align-items: start;
+      overflow-x: auto;
+      padding-bottom: 8px;
+    }
+
+    .bracket-round {
+      background: rgba(17, 28, 51, 0.88);
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      padding: 14px;
+      min-width: 240px;
+    }
+
+    .bracket-round h2 {
+      margin: 0 0 12px;
+      font-size: 16px;
+    }
+
+    .bracket-match {
+      background: rgba(15, 23, 42, 0.7);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 14px;
+      padding: 10px;
+      margin-bottom: 10px;
+    }
+
+    .bracket-team {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 6px 0;
+      font-weight: 900;
+    }
+
+    .bracket-team.winner {
+      color: #bbf7d0;
+    }
+
+    .bracket-meta {
+      margin-top: 6px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.4;
+    }
+
     .classification-border { box-shadow: inset 4px 0 0 var(--zone-color, transparent); }
     .numeric { font-weight: 800; text-align: center; }
     .points { font-size: 18px; font-weight: 900; color: #f8fafc; }
@@ -602,6 +682,7 @@
     <nav class="tabs" aria-label="Navegação do campeonato">
       <button class="tab-button active" data-view="standingsView">Classificação</button>
       <button class="tab-button" data-view="calendarView">Calendário</button>
+      <button class="tab-button" data-view="cupsView">Copas</button>
       <button class="tab-button" data-view="playersView">Painel</button>
       <button class="tab-button" data-view="transfersView">Transferências</button>
       <button class="tab-button" data-view="submitView">Enviar dados</button>
@@ -720,6 +801,32 @@
       <p class="footer-note">Calendário iniciado em <strong>19/05/2026</strong>. A Championship segue terça, quinta e domingo. As copas entram aos sábados das semanas definidas. Na FA Cup, a 3ª fase já inclui Championship, Premier League e classificados simulados das fases anteriores.</p>
     </section>
 
+    <section id="cupsView" class="view">
+      <section class="summary" id="cupsSummary"></section>
+
+      <section class="controls">
+        <input id="cupsSearchInput" type="search" placeholder="Buscar time, fase ou confronto..." />
+        <select id="cupsCompetitionFilter">
+          <option value="all">Todas as copas</option>
+          <option value="Copa da Liga">Copa da Liga</option>
+          <option value="FA Cup">FA Cup</option>
+        </select>
+      </section>
+
+      <section class="legend-block">
+        <p class="legend-title">Chaveamento das copas</p>
+        <div class="legend">
+          <span class="badge"><span class="dot" style="background: var(--league-cup)"></span>Copa da Liga</span>
+          <span class="badge"><span class="dot" style="background: var(--fa-cup)"></span>FA Cup</span>
+          <span class="badge"><span class="dot" style="background: var(--promotion)"></span>Classificado</span>
+        </div>
+      </section>
+
+      <section id="cupsBracket"></section>
+
+      <p class="footer-note">Os vencedores das próximas fases aparecem automaticamente com base nos resultados aprovados da planilha. Em empate de copa, o campo <strong>Vencedor nos pênaltis</strong> define o classificado.</p>
+    </section>
+
     <section id="playersView" class="view">
       <section class="summary" id="playersSummary"></section>
 
@@ -752,6 +859,11 @@
 
     <section id="transfersView" class="view">
       <section class="summary" id="transferSummary"></section>
+      <section class="countdown-card">
+        <span>Janela de transferências</span>
+        <strong id="nextTransferCountdown">Calculando...</strong>
+        <p>O limite de 3 transferências por jogador reinicia todos os dias à meia-noite.</p>
+      </section>
 
       <section class="rule-card">
         <p class="legend-title">Regras de mercado</p>
@@ -1116,6 +1228,11 @@
     const calendarWeekFilter = document.getElementById("calendarWeekFilter");
     const calendarTable = document.getElementById("calendarTable");
     const calendarMobile = document.getElementById("calendarMobile");
+    const cupsSummary = document.getElementById("cupsSummary");
+    const cupsSearchInput = document.getElementById("cupsSearchInput");
+    const cupsCompetitionFilter = document.getElementById("cupsCompetitionFilter");
+    const cupsBracket = document.getElementById("cupsBracket");
+    const nextTransferCountdown = document.getElementById("nextTransferCountdown");
     const playersSummary = document.getElementById("playersSummary");
     const playersSearchInput = document.getElementById("playersSearchInput");
     const playersFilter = document.getElementById("playersFilter");
@@ -1446,11 +1563,32 @@
       });
     }
 
+    function hydrateCupMatchWithApiResult(match, competition, phase) {
+      const cleanPhase = String(phase || "").split(" - Jogo")[0];
+      const result = getApprovedApiResults().find(row =>
+        normalizeText(row.Competicao) === normalizeText(competition) &&
+        normalizeText(row.RodadaFase).includes(normalizeText(cleanPhase)) &&
+        sameTeamName(row.Mandante, match.home) &&
+        sameTeamName(row.Visitante, match.away)
+      );
+
+      if (!result) return match;
+
+      return {
+        ...match,
+        homeScore: Number(result.GolsMandante),
+        awayScore: Number(result.GolsVisitante),
+        penaltyWinner: result.VencedorPenaltis || result.PenaltyWinner || "",
+        penaltyScore: result.PlacarPenaltis || result.PenaltyScore || "",
+        status: "Finalizado"
+      };
+    }
+
     function getCupWinner(match) {
       if (typeof match.homeScore === "number" && typeof match.awayScore === "number") {
         if (match.homeScore > match.awayScore) return match.home;
         if (match.awayScore > match.homeScore) return match.away;
-        if (match.penaltyWinner) return match.penaltyWinner;
+        if (match.penaltyWinner) return resolveTeamName(match.penaltyWinner);
       }
       return null;
     }
@@ -1465,17 +1603,22 @@
           let currentRoundMatches = [];
 
           if (roundIndex === 0) {
-            currentRoundMatches = round.matches.map((match, index) => ({
-              ...match,
-              id: `${cup.name}-${round.phase}-${index + 1}`,
-              date: getCupDate(round.week),
-              week: round.week,
-              competition: cup.name,
-              className: cup.className,
-              phase: `${round.phase} - Jogo ${index + 1}`,
-              bracketCode: `${round.phase} Jogo ${index + 1}`,
-              status: typeof match.homeScore === "number" && typeof match.awayScore === "number" ? "Finalizado" : "Pendente"
-            }));
+            currentRoundMatches = round.matches.map((match, index) => {
+              const phaseLabel = `${round.phase} - Jogo ${index + 1}`;
+              const hydratedMatch = hydrateCupMatchWithApiResult(match, cup.name, phaseLabel);
+
+              return {
+                ...hydratedMatch,
+                id: `${cup.name}-${round.phase}-${index + 1}`,
+                date: getCupDate(round.week),
+                week: round.week,
+                competition: cup.name,
+                className: cup.className,
+                phase: phaseLabel,
+                bracketCode: `${round.phase} Jogo ${index + 1}`,
+                status: typeof hydratedMatch.homeScore === "number" && typeof hydratedMatch.awayScore === "number" ? "Finalizado" : "Pendente"
+              };
+            });
           } else {
             for (let index = 0; index < previousRoundMatches.length; index += 2) {
               const sourceA = previousRoundMatches[index];
@@ -1485,20 +1628,27 @@
               const home = winnerA || `Vencedor ${sourceA.bracketCode}`;
               const away = winnerB || (sourceB ? `Vencedor ${sourceB.bracketCode}` : "A definir");
 
-              currentRoundMatches.push({
-                id: `${cup.name}-${round.phase}-${Math.floor(index / 2) + 1}`,
-                date: getCupDate(round.week),
-                week: round.week,
-                competition: cup.name,
-                className: cup.className,
-                phase: `${round.phase} - Jogo ${Math.floor(index / 2) + 1}`,
-                bracketCode: `${round.phase} Jogo ${Math.floor(index / 2) + 1}`,
+              const phaseLabel = `${round.phase} - Jogo ${Math.floor(index / 2) + 1}`;
+              const baseMatch = {
                 home,
                 away,
                 homeScore: null,
                 awayScore: null,
                 penaltyWinner: "",
-                status: winnerA && winnerB ? "Pendente" : "Aguardando classificados"
+                penaltyScore: ""
+              };
+              const hydratedMatch = hydrateCupMatchWithApiResult(baseMatch, cup.name, phaseLabel);
+
+              currentRoundMatches.push({
+                ...hydratedMatch,
+                id: `${cup.name}-${round.phase}-${Math.floor(index / 2) + 1}`,
+                date: getCupDate(round.week),
+                week: round.week,
+                competition: cup.name,
+                className: cup.className,
+                phase: phaseLabel,
+                bracketCode: `${round.phase} Jogo ${Math.floor(index / 2) + 1}`,
+                status: typeof hydratedMatch.homeScore === "number" && typeof hydratedMatch.awayScore === "number" ? "Finalizado" : winnerA && winnerB ? "Pendente" : "Aguardando classificados"
               });
             }
           }
@@ -1520,7 +1670,7 @@
     function formatMatchResult(match) {
       if (typeof match.homeScore === "number" && typeof match.awayScore === "number") {
         const winner = getCupWinner(match);
-        const penaltyText = match.penaltyWinner ? `, ${match.penaltyWinner} nos pênaltis` : "";
+        const penaltyText = match.penaltyWinner ? `, ${resolveTeamName(match.penaltyWinner)} nos pênaltis${match.penaltyScore ? ` (${match.penaltyScore})` : ""}` : "";
         const winnerText = match.competition !== "Championship" && winner ? ` - ${winner} classificado${penaltyText}` : "";
         return `${match.homeScore} x ${match.awayScore}${winnerText}`;
       }
@@ -1608,6 +1758,74 @@
             <div class="mobile-stats"><div class="mobile-stat"><span>J</span><strong>${item.played}</strong></div><div class="mobile-stat"><span>V</span><strong>${item.wins}</strong></div><div class="mobile-stat"><span>E</span><strong>${item.draws}</strong></div><div class="mobile-stat"><span>D</span><strong>${item.losses}</strong></div><div class="mobile-stat"><span>GP</span><strong>${item.goalsFor}</strong></div><div class="mobile-stat"><span>GC</span><strong>${item.goalsAgainst}</strong></div><div class="mobile-stat"><span>SG</span><strong>${formatGoalDifference(item.goalDifference)}</strong></div><div class="mobile-stat points-stat"><span>PTS</span><strong>${item.points}</strong></div></div>
           </article>`;
       }).join("");
+    }
+
+    function renderCupsSummary() {
+      const cupEvents = getCalendarEvents().filter(event => event.competition !== "Championship");
+      const finished = cupEvents.filter(event => typeof event.homeScore === "number" && typeof event.awayScore === "number").length;
+      const pending = cupEvents.filter(event => event.status === "Pendente").length;
+      const waiting = cupEvents.filter(event => String(event.status || "").includes("Aguardando")).length;
+
+      cupsSummary.innerHTML = `
+        <article class="summary-card"><span>Jogos de copa</span><strong>${cupEvents.length}</strong></article>
+        <article class="summary-card"><span>Finalizados</span><strong>${finished}</strong></article>
+        <article class="summary-card"><span>Pendentes</span><strong>${pending}</strong></article>
+        <article class="summary-card"><span>Aguardando chave</span><strong>${waiting}</strong></article>
+      `;
+    }
+
+    function renderCupBracket() {
+      const search = normalizeText(cupsSearchInput.value);
+      const competitionFilter = cupsCompetitionFilter.value;
+      const cupEvents = getCalendarEvents().filter(event => event.competition !== "Championship");
+      const competitions = [...new Set(cupEvents.map(event => event.competition))]
+        .filter(competition => competitionFilter === "all" || competition === competitionFilter);
+
+      cupsBracket.innerHTML = competitions.map(competition => {
+        const events = cupEvents.filter(event => event.competition === competition).filter(event => {
+          if (!search) return true;
+          return normalizeText(`${event.home} ${event.away} ${event.phase} ${formatMatchResult(event)}`).includes(search);
+        });
+        const rounds = [...new Set(events.map(event => event.phase.split(" - Jogo")[0]))];
+
+        return `
+          <section class="legend-block">
+            <p class="legend-title">${competition}</p>
+            <div class="bracket-grid">
+              ${rounds.map(round => {
+                const roundEvents = events.filter(event => event.phase.startsWith(round));
+                return `
+                  <article class="bracket-round">
+                    <h2>${round}</h2>
+                    ${roundEvents.map(event => {
+                      const winner = getCupWinner(event);
+                      return `
+                        <div class="bracket-match">
+                          <div class="bracket-team ${winner && sameTeamName(winner, event.home) ? "winner" : ""}"><span>${event.home}</span><span>${typeof event.homeScore === "number" ? event.homeScore : "-"}</span></div>
+                          <div class="bracket-team ${winner && sameTeamName(winner, event.away) ? "winner" : ""}"><span>${event.away}</span><span>${typeof event.awayScore === "number" ? event.awayScore : "-"}</span></div>
+                          <div class="bracket-meta">${formatDate(event.date)} · ${event.phase}<br>${formatMatchResult(event)}</div>
+                        </div>
+                      `;
+                    }).join("")}
+                  </article>
+                `;
+              }).join("")}
+            </div>
+          </section>
+        `;
+      }).join("");
+    }
+
+    function updateTransferCountdown() {
+      if (!nextTransferCountdown) return;
+      const now = new Date();
+      const nextReset = new Date(now);
+      nextReset.setHours(24, 0, 0, 0);
+      const diff = Math.max(0, nextReset - now);
+      const hours = Math.floor(diff / 3600000);
+      const minutes = Math.floor((diff % 3600000) / 60000);
+      const seconds = Math.floor((diff % 60000) / 1000);
+      nextTransferCountdown.textContent = `${String(hours).padStart(2, "0")}h ${String(minutes).padStart(2, "0")}m ${String(seconds).padStart(2, "0")}s`;
     }
 
     function renderCalendar() {
@@ -2129,6 +2347,8 @@
       renderTable();
       renderCalendarSummary();
       renderCalendar();
+      renderCupsSummary();
+      renderCupBracket();
       renderPlayersDashboard();
       renderTransferSummary();
       renderTransfers();
@@ -2151,6 +2371,8 @@
     calendarCompetitionFilter.addEventListener("change", update);
     calendarTeamFilter.addEventListener("change", update);
     calendarWeekFilter.addEventListener("change", update);
+    cupsSearchInput.addEventListener("input", update);
+    cupsCompetitionFilter.addEventListener("change", update);
     playersSearchInput.addEventListener("input", update);
     playersFilter.addEventListener("change", update);
     transferSearchInput.addEventListener("input", update);
@@ -2163,6 +2385,8 @@
     populateTeamOptions();
     populateCalendarWeeks();
     update();
+    updateTransferCountdown();
+    setInterval(updateTransferCountdown, 1000);
     loadApiData();
   </script>
 </body>
