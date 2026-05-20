@@ -218,7 +218,10 @@ App.calendar = {
     const title = document.getElementById("calendarResultModalTitle");
     const subtitle = document.getElementById("calendarResultModalSubtitle");
 
-    if (!event || !modal || !form) return;
+    if (!event || !modal || !form) {
+      document.body.classList.remove("modal-active");
+      return;
+    }
 
     form.reset();
     App.utils.setMessage(message, "", "");
@@ -248,8 +251,14 @@ App.calendar = {
     App.forms.updatePenaltyVisibility(form);
     modal.classList.add("is-visible");
     modal.setAttribute("aria-hidden", "false");
-    document.body.classList.add("modal-active");
-    setTimeout(() => form.elements.homeScore?.focus(), 50);
+
+    const opened = modal.classList.contains("is-visible") && modal.getAttribute("aria-hidden") === "false";
+    if (opened) {
+      document.body.classList.add("modal-active");
+      setTimeout(() => form.elements.homeScore?.focus(), 50);
+    } else {
+      document.body.classList.remove("modal-active");
+    }
   },
 
   closeResultModal() {

@@ -214,6 +214,20 @@
           <span class="badge"><span class="dot promotion"></span>Classificado</span>
         </div>
       </section>
+      <section class="cup-prize-card">
+        <div>
+          <span class="modal-kicker">Premiação das copas</span>
+          <h2>Bônus por avanço de fase</h2>
+          <p>Além da bilheteria, cada técnico recebe orçamento extra quando seu time avança nas copas.</p>
+        </div>
+        <div class="cup-prize-grid">
+          <span>Fase inicial <strong>+€ 1M</strong></span>
+          <span>Oitavas <strong>+€ 1,5M</strong></span>
+          <span>Quartas <strong>+€ 2,5M</strong></span>
+          <span>Semifinal <strong>+€ 4M</strong></span>
+          <span>Campeão <strong>+€ 7,5M</strong></span>
+        </div>
+      </section>
       <section id="cupsBracket"></section>
     </section>
 
@@ -317,6 +331,7 @@
           <li>Bônus por mando: <strong>+1,25M</strong> por partida em casa.</li>
           <li>Bônus por vitória: <strong>+500 mil</strong> por vitória.</li>
           <li>Eventos financeiros podem aumentar ou reduzir o orçamento.</li>
+          <li>Copas geram premiação automática por avanço de fase.</li>
           <li>Limite base: <strong>3 transferências por dia</strong>. Eventos podem alterar esse limite.</li>
           <li>Valor final = valor Transfermarkt + percentual por overall.</li>
         </ul>
@@ -473,9 +488,10 @@
           </div>
         </form>
       </section>
-
-
-      <section class="result-modal" id="calendarResultModal" aria-hidden="true">
+<datalist id="teamOptions"></datalist>
+    </section>
+  
+  <section class="result-modal" id="calendarResultModal" aria-hidden="true">
         <div class="result-modal-backdrop" data-close-result-modal></div>
         <article class="result-modal-card" role="dialog" aria-modal="true" aria-labelledby="calendarResultModalTitle">
           <button class="result-modal-close" type="button" data-close-result-modal>×</button>
@@ -533,10 +549,7 @@
           </form>
         </article>
       </section>
-
-      <datalist id="teamOptions"></datalist>
-    </section>
-  </main>
+</main>
 
   <script src="./js/config.js"></script>
   <script src="./js/data.js"></script>
