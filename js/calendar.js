@@ -109,13 +109,29 @@ App.calendar = {
   getFilteredEvents() {
     const search = App.utils.normalizeText(document.getElementById("calendarSearchInput")?.value);
     const competition = document.getElementById("calendarCompetitionFilter")?.value || "all";
+    const ownerFilter = document.getElementById("calendarOwnerFilter")?.value || "all";
     const week = document.getElementById("calendarWeekFilter")?.value || "all";
 
     return App.calendar.getCalendarEvents().filter(event => {
-      const matchesSearch = !search || App.utils.normalizeText(`${event.home} ${event.away} ${event.competition} ${event.phase} ${App.calendar.getMatchOwners(event).join(" ")}`).includes(search);
+      const owners = App.calendar.getMatchOwners(event);
+      const matchType = App.calendar.getMatchType(event);
+
+      const matchesSearch = !search || App.utils.normalizeText(`${event.home} ${event.away} ${event.competition} ${event.phase} ${owners.join(" ")} ${matchType}`).includes(search);
       const matchesCompetition = competition === "all" || event.competition === competition;
       const matchesWeek = week === "all" || String(event.week) === String(week);
-      return matchesSearch && matchesCompetition && matchesWeek;
+
+      let matchesOwner = true;
+      if (ownerFilter === "human") {
+        matchesOwner = owners.length > 0;
+      } else if (ownerFilter === "human-vs-human") {
+        matchesOwner = owners.length >= 2;
+      } else if (ownerFilter === "cpu") {
+        matchesOwner = owners.length === 0;
+      } else if (ownerFilter !== "all") {
+        matchesOwner = owners.includes(ownerFilter);
+      }
+
+      return matchesSearch && matchesCompetition && matchesWeek && matchesOwner;
     });
   },
 

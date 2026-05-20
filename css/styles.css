@@ -629,3 +629,129 @@ tr.calendar-pending-row {
   .form-grid { grid-template-columns: 1fr; }
   .player-stats-grid { grid-template-columns: repeat(2, 1fr); }
 }
+
+
+/* Correção mobile: posição/classificação não deve usar a cor do dono */
+.position-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 38px;
+  height: 30px;
+  border-radius: 999px;
+  padding: 0 10px;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 900;
+  box-shadow: 0 0 0 1px rgba(255,255,255,.08);
+}
+
+.position-badge.promotion { background: var(--promotion); }
+.position-badge.playoff { background: var(--playoff); }
+.position-badge.relegation { background: var(--relegation); }
+.position-badge.neutral { background: var(--free); }
+
+.mobile-owner-line {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 8px 0 10px;
+}
+
+.owner-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 999px;
+  display: inline-block;
+  background: var(--free);
+  box-shadow: 0 0 0 3px rgba(255,255,255,.05);
+}
+
+.standings-mobile-card.promotion-row {
+  box-shadow: inset 4px 0 0 var(--promotion);
+}
+.standings-mobile-card.playoff-row {
+  box-shadow: inset 4px 0 0 var(--playoff);
+}
+.standings-mobile-card.relegation-row {
+  box-shadow: inset 4px 0 0 var(--relegation);
+}
+.standings-mobile-card.ours-row {
+  background:
+    linear-gradient(135deg, rgba(37, 99, 235, 0.10), rgba(17, 28, 51, 0.92));
+}
+
+
+/* Calendário desktop: evita scroll lateral e melhora leitura */
+.calendar-table-wrapper {
+  overflow-x: hidden;
+}
+
+.calendar-table {
+  min-width: 0;
+  width: 100%;
+  table-layout: fixed;
+}
+
+.calendar-table th,
+.calendar-table td {
+  white-space: normal;
+  vertical-align: middle;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.calendar-table th:nth-child(1),
+.calendar-table td:nth-child(1) { width: 11%; }
+
+.calendar-table th:nth-child(2),
+.calendar-table td:nth-child(2) { width: 7%; text-align: center; }
+
+.calendar-table th:nth-child(3),
+.calendar-table td:nth-child(3) { width: 13%; }
+
+.calendar-table th:nth-child(4),
+.calendar-table td:nth-child(4) { width: 12%; }
+
+.calendar-table th:nth-child(5),
+.calendar-table td:nth-child(5) { width: 25%; }
+
+.calendar-table th:nth-child(6),
+.calendar-table td:nth-child(6) { width: 13%; }
+
+.calendar-table th:nth-child(7),
+.calendar-table td:nth-child(7) { width: 10%; }
+
+.calendar-table th:nth-child(8),
+.calendar-table td:nth-child(8) { width: 9%; }
+
+.calendar-table .owner,
+.calendar-table .status-pill,
+.calendar-table .competition-badge {
+  white-space: normal;
+}
+
+.calendar-table .owner {
+  margin: 2px 4px 2px 0;
+}
+
+.calendar-table .status-pill {
+  justify-content: center;
+  text-align: center;
+  max-width: 100%;
+}
+
+@media (min-width: 841px) {
+  #calendarView .controls {
+    display: grid;
+    grid-template-columns: minmax(260px, 1fr) 190px 190px 170px;
+    align-items: stretch;
+  }
+
+  #calendarView .controls input,
+  #calendarView .controls select {
+    width: 100%;
+    min-width: 0;
+  }
+}

@@ -59,6 +59,16 @@
           <option value="Copa da Liga">Copa da Liga</option>
           <option value="FA Cup">FA Cup</option>
         </select>
+        <select id="calendarOwnerFilter">
+          <option value="all">Todos os jogadores</option>
+          <option value="Henrique">Henrique</option>
+          <option value="Willian">Willian</option>
+          <option value="Rafael">Rafael</option>
+          <option value="Renato">Renato</option>
+          <option value="human">Apenas jogos com humano</option>
+          <option value="human-vs-human">Humano x Humano</option>
+          <option value="cpu">CPU x CPU</option>
+        </select>
         <select id="calendarWeekFilter">
           <option value="all">Todas as semanas</option>
         </select>
@@ -71,8 +81,8 @@
           <span class="badge"><span class="dot done"></span>Realizado</span>
         </div>
       </section>
-      <section class="table-wrapper">
-        <table>
+      <section class="table-wrapper calendar-table-wrapper">
+        <table class="calendar-table">
           <thead>
             <tr>
               <th>Data</th><th>Semana</th><th>Competição</th><th>Rodada/Fase</th><th>Jogo</th><th>Envolvidos</th><th>Tipo</th><th>Status/Placar</th>

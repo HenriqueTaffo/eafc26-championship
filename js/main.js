@@ -24,7 +24,7 @@ App.main = {
 
   setupFilters() {
     [
-      "calendarSearchInput", "calendarCompetitionFilter", "calendarWeekFilter",
+      "calendarSearchInput", "calendarCompetitionFilter", "calendarOwnerFilter", "calendarWeekFilter",
       "cupsSearchInput", "cupsCompetitionFilter",
       "playersSearchInput", "playersFilter",
       "eventsSearchInput", "eventsOwnerFilter", "eventsTypeFilter",

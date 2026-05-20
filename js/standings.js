@@ -64,6 +64,13 @@ App.standings = {
     return "";
   },
 
+  getPositionBadgeClass(position) {
+    if (position <= 2) return "promotion";
+    if (position <= 6) return "playoff";
+    if (position >= 22) return "relegation";
+    return "neutral";
+  },
+
   render() {
     const standings = App.standings.getStandings();
     const table = document.getElementById("standingsTable");
@@ -103,11 +110,20 @@ App.standings = {
 
     mobile.innerHTML = standings.map(row => {
       const color = App.data.ownerColors[row.owner] || App.data.ownerColors["Livre / CPU"];
+      const classificationClass = App.standings.getPositionClass(row.position);
+      const badgeClass = App.standings.getPositionBadgeClass(row.position);
       return `
-        <article class="calendar-card ${row.status === "Nosso" ? "ours-row" : ""}">
-          <div class="calendar-card-header"><span class="owner" style="background:${color}">${row.position}º</span><span class="calendar-muted">${row.points} pts</span></div>
+        <article class="calendar-card standings-mobile-card ${classificationClass} ${row.status === "Nosso" ? "ours-row" : ""}">
+          <div class="calendar-card-header">
+            <span class="position-badge ${badgeClass}">${row.position}º</span>
+            <span class="calendar-muted">${row.points} pts</span>
+          </div>
           <h3>${row.team}</h3>
-          <p class="calendar-muted">${row.owner} · J ${row.played} · V ${row.wins} · E ${row.draws} · D ${row.losses} · SG ${App.utils.formatGoalDifference(row.goalDifference)}</p>
+          <div class="mobile-owner-line">
+            <span class="owner-dot" style="background:${color}"></span>
+            <span class="calendar-muted">${row.owner}</span>
+          </div>
+          <p class="calendar-muted">J ${row.played} · V ${row.wins} · E ${row.draws} · D ${row.losses} · SG ${App.utils.formatGoalDifference(row.goalDifference)}</p>
         </article>
       `;
     }).join("");
