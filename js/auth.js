@@ -140,7 +140,11 @@ App.auth = {
         p_manager_id: session.managerId,
         p_access_code: session.accessCode
       }, 45000);
+    } catch (error) {
+      console.warn("Processamento de bônus de patrocínio indisponível:", error);
+    }
 
+    try {
       const result = await App.api.rpc("app_get_my_sponsorships", {
         p_manager_id: session.managerId,
         p_access_code: session.accessCode

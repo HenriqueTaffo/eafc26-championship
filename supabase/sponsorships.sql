@@ -343,7 +343,7 @@ begin
       and claims_used < max_claims
   loop
     for v_result in execute format(
-      'select *, concat_ws(''|'', coalesce("Competicao"::text, ''''), coalesce("RodadaFase"::text, ''''), "Mandante"::text, "Visitante"::text) as result_key
+      'select *, concat_ws(''|'', coalesce("Mandante"::text, ''''), coalesce("Visitante"::text, ''''), coalesce("GolsMandante"::text, ''''), coalesce("GolsVisitante"::text, '''')) as result_key
          from %s
         where lower("Status"::text) = lower(''aprovado'')
           and (lower("Mandante"::text) = lower($1) or lower("Visitante"::text) = lower($1))',
