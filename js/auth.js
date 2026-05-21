@@ -34,12 +34,19 @@ App.auth = {
   async bootstrapSessionState() {
     if (!App.auth.isLoggedIn()) return;
 
-    await Promise.all([
-      App.auth.loadMyDecisions(),
-      App.auth.loadMyTransferProposals(),
-      App.auth.loadMySponsorships(),
-      App.auth.loadPublicNews()
-    ]);
+    if (App.auth.isCommissioner()) {
+      await Promise.all([
+        App.governance?.loadData?.(),
+        App.auth.loadPublicNews()
+      ]);
+    } else {
+      await Promise.all([
+        App.auth.loadMyDecisions(),
+        App.auth.loadMyTransferProposals(),
+        App.auth.loadMySponsorships(),
+        App.auth.loadPublicNews()
+      ]);
+    }
 
     App.auth.renderAll();
   },
@@ -50,11 +57,25 @@ App.auth = {
     return App.utils.normalizeText(session.managerName) === App.utils.normalizeText(managerName);
   },
 
+  isCommissioner() {
+    const session = App.auth.getSession();
+    return Boolean(session?.isCommissioner || session?.managerId === "comissario");
+  },
+
   async login(managerName, accessCode) {
-    const result = await App.api.rpc("app_login_manager", {
-      p_manager_name: managerName,
-      p_access_code: accessCode
-    }, 30000);
+    let result;
+
+    if (App.utils.normalizeText(managerName).includes("comiss")) {
+      result = await App.api.rpc("app_login_commissioner", {
+        p_manager_name: managerName,
+        p_access_code: accessCode
+      }, 30000);
+    } else {
+      result = await App.api.rpc("app_login_manager", {
+        p_manager_name: managerName,
+        p_access_code: accessCode
+      }, 30000);
+    }
 
     if (!result.ok) throw new Error(result.message || "Login não autorizado.");
 
@@ -62,15 +83,19 @@ App.auth = {
       managerId: result.manager.id,
       managerName: result.manager.name,
       clubName: result.manager.club || "",
+      isCommissioner: Boolean(result.manager.isCommissioner),
       accessCode
     };
 
     localStorage.setItem(App.auth.storageKey, JSON.stringify(App.auth.currentSession));
 
-    await App.auth.generateDueDecisions();
-    await App.auth.loadMyDecisions();
-    await App.auth.loadMyTransferProposals();
-    await App.auth.loadMySponsorships();
+    if (!App.auth.currentSession.isCommissioner) {
+      await App.auth.generateDueDecisions();
+      await App.auth.loadMyDecisions();
+      await App.auth.loadMyTransferProposals();
+      await App.auth.loadMySponsorships();
+    }
+    await App.governance?.loadData?.();
     await App.auth.loadPublicNews();
     App.auth.renderAll();
 
@@ -316,14 +341,15 @@ App.auth = {
 
     const session = App.auth.getSession();
     const managers = App.utils?.getHumanBuyers ? App.utils.getHumanBuyers() : ["Henrique", "Willian", "Rafael", "Renato"];
+    const loginOptions = [...managers, "Comissário da Liga"];
 
     if (session) {
       panel.innerHTML = `
         <div class="manager-session-card is-logged">
           <div>
-            <span>Login do técnico</span>
+            <span>${session.isCommissioner ? "Login do comissário" : "Login do técnico"}</span>
             <strong>${App.utils.escapeHtml(session.managerName)}</strong>
-            <small>${App.utils.escapeHtml(session.clubName || "Clube vinculado")} · decisões privadas liberadas</small>
+            <small>${App.utils.escapeHtml(session.clubName || "Clube vinculado")} · ${session.isCommissioner ? "governança liberada" : "decisões privadas liberadas"}</small>
           </div>
           <div class="manager-session-actions">
             <button type="button" class="ghost-button" data-auth-action="logout">Sair</button>
@@ -339,19 +365,19 @@ App.auth = {
     panel.innerHTML = `
       <form class="manager-login-card" id="managerLoginForm">
         <div>
-          <span>Login do técnico</span>
-          <strong>Decisões privadas</strong>
-          <small>Entre com seu código para responder apenas os seus eventos de Sim/Não.</small>
+          <span>Login da liga</span>
+          <strong>Área privada</strong>
+          <small>Técnicos acessam decisões próprias. O comissário acessa as ferramentas de governança.</small>
         </div>
         <label>
-          Técnico
+          Perfil
           <select name="managerName" required>
-            ${managers.map(name => `<option value="${App.utils.escapeHtml(name)}">${App.utils.escapeHtml(name)}</option>`).join("")}
+            ${loginOptions.map(name => `<option value="${App.utils.escapeHtml(name)}">${App.utils.escapeHtml(name)}</option>`).join("")}
           </select>
         </label>
         <label>
           Código
-          <input name="accessCode" type="password" inputmode="numeric" placeholder="PIN do técnico" required />
+          <input name="accessCode" type="password" inputmode="numeric" placeholder="PIN" required />
         </label>
         <button type="submit" class="primary-button">Entrar</button>
       </form>

@@ -42,6 +42,55 @@ create table if not exists public.governance_weekly_reviews (
   created_at timestamptz not null default now()
 );
 
+create table if not exists public.commissioner_admins (
+  id text primary key,
+  display_name text not null,
+  access_code text not null,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+insert into public.commissioner_admins (id, display_name, access_code)
+values ('comissario', 'Comissario da Liga', 'MML-2026')
+on conflict (id) do update
+   set display_name = excluded.display_name,
+       access_code = excluded.access_code,
+       updated_at = now();
+
+create or replace function public.app_login_commissioner(
+  p_manager_name text,
+  p_access_code text
+)
+returns jsonb
+language plpgsql
+security definer
+as $$
+declare
+  v_admin public.commissioner_admins%rowtype;
+begin
+  select *
+    into v_admin
+  from public.commissioner_admins
+  where id = 'comissario'
+    and lower(p_manager_name) in (lower(display_name), lower('Comissário da Liga'))
+  limit 1;
+
+  if not found or v_admin.access_code is distinct from p_access_code then
+    return jsonb_build_object('ok', false, 'message', 'Login do comissario invalido.');
+  end if;
+
+  return jsonb_build_object(
+    'ok', true,
+    'manager', jsonb_build_object(
+      'id', v_admin.id,
+      'name', 'Comissário da Liga',
+      'club', 'Governança da Liga',
+      'isCommissioner', true
+    )
+  );
+end;
+$$;
+
 create or replace function public.app_governance_login(
   p_manager_id text,
   p_access_code text
@@ -54,6 +103,21 @@ declare
   v_manager record;
   v_login jsonb;
 begin
+  if p_manager_id = 'comissario' then
+    v_login := public.app_login_commissioner('Comissario da Liga', p_access_code)::jsonb;
+    if coalesce((v_login ->> 'ok')::boolean, false) is false then
+      return jsonb_build_object('ok', false, 'message', 'Login do comissario invalido.');
+    end if;
+
+    return jsonb_build_object(
+      'ok', true,
+      'managerId', 'comissario',
+      'managerName', 'Comissário da Liga',
+      'clubName', 'Governança da Liga',
+      'isCommissioner', true
+    );
+  end if;
+
   select id, display_name
     into v_manager
   from public.managers
@@ -68,12 +132,7 @@ begin
     return jsonb_build_object('ok', false, 'message', 'Login invalido.');
   end if;
 
-  return jsonb_build_object(
-    'ok', true,
-    'managerId', v_manager.id,
-    'managerName', coalesce(v_login #>> '{manager,name}', v_manager.display_name),
-    'clubName', coalesce(v_login #>> '{manager,club}', v_manager.display_name)
-  );
+  return jsonb_build_object('ok', false, 'message', 'Apenas o comissario pode executar acoes de governanca.');
 end;
 $$;
 

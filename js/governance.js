@@ -84,6 +84,7 @@ App.governance = {
   async runAction(action, payload = {}) {
     const session = App.auth?.getSession ? App.auth.getSession() : null;
     if (!session) throw new Error("Faça login como técnico antes de usar a mesa do comissário.");
+    if (!App.auth?.isCommissioner?.()) throw new Error("Apenas o Comissário da Liga pode executar esta ação.");
 
     const rpcPayload = {
       p_manager_id: session.managerId,
@@ -123,6 +124,7 @@ App.governance = {
   renderAuctions() {
     const auctions = App.state.apiGovernance?.auctions || [];
     const candidates = App.transfers.getAuctionCandidates();
+    const canAct = App.auth?.isCommissioner?.();
 
     return `
       <article class="commissioner-card" id="commissionerAuctions">
@@ -134,12 +136,12 @@ App.governance = {
           <span class="coach-section-kicker">${App.governance.getMarketPhase().name}</span>
         </div>
         <p class="calendar-muted">${App.governance.getMarketPhase().detail}</p>
-        <form class="commissioner-inline-form" data-governance-auction>
+        ${canAct ? `<form class="commissioner-inline-form" data-governance-auction>
           <input name="player" type="text" placeholder="Jogador do leilão" required />
           <input name="overall" type="number" min="1" max="99" placeholder="OVR" required />
           <input name="value" type="number" min="1" placeholder="Lance inicial" required />
           <button type="submit">Abrir leilão</button>
-        </form>
+        </form>` : `<p class="calendar-muted">Faça login como Comissário da Liga para abrir leilões.</p>`}
         <div class="commissioner-list">
           ${auctions.length ? auctions.slice(0, 6).map(item => `
             <div>
@@ -158,6 +160,7 @@ App.governance = {
 
   renderMedical() {
     const injuries = App.governance.getActiveInjuries();
+    const canAct = App.auth?.isCommissioner?.();
 
     return `
       <article class="commissioner-card" id="commissionerMedical">
@@ -173,14 +176,14 @@ App.governance = {
             <div>
               <strong>${App.utils.escapeHtml(event.JogadorAfetado)} · ${App.utils.escapeHtml(event.Jogador)}</strong>
               <span>${App.utils.escapeHtml(event.Titulo || "Lesão")} · ${App.events.getEventDurationLabel(event)}</span>
-              <div class="commissioner-actions">
+              ${canAct ? `<div class="commissioner-actions">
                 <button type="button" data-medical-action="intensive" data-event-id="${App.utils.escapeHtml(event.Id || event.id || "")}" data-event-key="${App.utils.escapeHtml(event.ChaveUnica || "")}" data-event-owner="${App.utils.escapeHtml(event.Jogador || "")}" data-event-player="${App.utils.escapeHtml(event.JogadorAfetado || "")}">Tratamento intensivo</button>
                 <button type="button" data-medical-action="force_return" data-event-id="${App.utils.escapeHtml(event.Id || event.id || "")}" data-event-key="${App.utils.escapeHtml(event.ChaveUnica || "")}" data-event-owner="${App.utils.escapeHtml(event.Jogador || "")}" data-event-player="${App.utils.escapeHtml(event.JogadorAfetado || "")}">Forçar retorno</button>
-              </div>
+              </div>` : ""}
             </div>
           `).join("") : `<p class="calendar-muted">Nenhuma lesão ativa para tratar.</p>`}
         </div>
-        <button class="secondary-button" type="button" data-commissioner-clear-injuries>Mutirão do DM</button>
+        ${canAct ? `<button class="secondary-button" type="button" data-commissioner-clear-injuries>Mutirão do DM</button>` : `<p class="calendar-muted">Faça login como Comissário da Liga para aplicar ações médicas.</p>`}
       </article>
     `;
   },
@@ -188,6 +191,7 @@ App.governance = {
   renderWeekly() {
     const rows = App.governance.getWeeklyObjectiveRows();
     const reviews = App.state.apiGovernance?.weeklyReviews || [];
+    const canAct = App.auth?.isCommissioner?.();
 
     return `
       <article class="commissioner-card" id="commissionerWeekly">
@@ -196,7 +200,7 @@ App.governance = {
             <span class="modal-kicker">Fechamento semanal</span>
             <h2>Objetivos e diretoria</h2>
           </div>
-          <button class="secondary-button" type="button" data-close-weekly-review>Fechar semana</button>
+          ${canAct ? `<button class="secondary-button" type="button" data-close-weekly-review>Fechar semana</button>` : ""}
         </div>
         <div class="commissioner-list">
           ${rows.map(item => `
