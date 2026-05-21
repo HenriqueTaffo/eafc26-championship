@@ -193,6 +193,23 @@ App.cups = {
       });
     });
 
+    const dbCupEvents = App.api?.getDbMatchEvents ? App.api.getDbMatchEvents().filter(event => event.competition !== "Championship") : [];
+    dbCupEvents.forEach(dbEvent => {
+      const exists = allEvents.some(event =>
+        App.utils.normalizeText(event.competition) === App.utils.normalizeText(dbEvent.competition) &&
+        App.utils.normalizeText(event.phase) === App.utils.normalizeText(dbEvent.phase) &&
+        App.cups.sameCupTeams(event.home, event.away, dbEvent.home, dbEvent.away)
+      );
+
+      if (!exists) {
+        allEvents.push({
+          ...dbEvent,
+          bracketCode: dbEvent.phase,
+          status: typeof dbEvent.homeScore === "number" && typeof dbEvent.awayScore === "number" ? "Finalizado" : "Pendente"
+        });
+      }
+    });
+
     return allEvents;
   },
 

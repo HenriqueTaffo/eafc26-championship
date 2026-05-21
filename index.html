@@ -458,6 +458,11 @@
             <span>Preencha comprador, jogador, overall e valor para calcular custo final, saldo e travas antes de enviar.</span>
           </div>
 
+          <label class="checkbox-row transfer-confirmation-row">
+            <input name="confirmTransferBuyer" type="checkbox" value="yes" required />
+            <span>Confirmo que o comprador selecionado está correto e assumo esta contratação para esse técnico.</span>
+          </label>
+
           <div class="form-actions">
             <button class="primary-button" type="submit">Enviar transferência</button>
             <span class="app-message" id="transferMessage"></span>
@@ -485,6 +490,9 @@
           <div class="form-actions">
             <button class="primary-button" type="submit">Simular semana</button>
             <span class="app-message" id="cpuSimulationMessage"></span>
+          </div>
+          <div class="simulation-preview" id="cpuSimulationPreview">
+            <div class="sim-preview-empty">Informe a semana para ver pendências por competição antes de simular.</div>
           </div>
         </form>
       </section>

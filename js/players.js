@@ -122,6 +122,12 @@ App.players = {
       .slice(0, limit);
   },
 
+  getActiveInjuriesForCoach(buyer) {
+    return App.events.getActiveEventsForBuyer(buyer)
+      .filter(event => String(event.JogadorAfetado || "").trim())
+      .filter(event => Number(event.PartidasRestantes || 0) > 0 || App.events.isActiveOrDurationEvent(event));
+  },
+
   getCoachAlerts(team, standing, budget, next, transfersToday) {
     const alerts = [];
     const activeEvents = App.events.getActiveEventsForBuyer(team.owner);
@@ -185,6 +191,7 @@ App.players = {
     const transferLimit = Number(budget.transferLimit ?? App.config.baseDailyTransferLimit);
     const alerts = App.players.getCoachAlerts(activeTeam, standing, budget, next, todayCount);
     const events = App.players.getCoachEvents(activeTeam.owner);
+    const injuries = App.players.getActiveInjuriesForCoach(activeTeam.owner);
     const color = App.data.ownerColors[activeTeam.owner] || "#2563eb";
 
     return `
@@ -225,6 +232,21 @@ App.players = {
                 ${App.calendar.canSubmitResult(next) ? `<button class="mini-action-button" type="button" data-open-result-modal="${next.id}">Enviar resultado</button>` : `<span class="status-pill pending">${App.calendar.formatMatchResult(next)}</span>`}
               </div>
             ` : `<p class="calendar-muted">Nenhum compromisso pendente encontrado.</p>`}
+          </article>
+
+          <article class="coach-panel-card coach-injuries-card">
+            <div class="home-panel-header"><h2>Lesões ativas</h2></div>
+            ${injuries.length ? `
+              <div class="coach-injury-list">
+                ${injuries.map(event => `
+                  <div class="injury-chip">
+                    <strong>${App.utils.escapeHtml(event.JogadorAfetado)}</strong>
+                    <span>${App.utils.escapeHtml(event.Titulo || "Lesão ativa")}</span>
+                    <b>${App.events.getEventDurationLabel(event)}</b>
+                  </div>
+                `).join("")}
+              </div>
+            ` : `<p class="calendar-muted">Nenhum jogador lesionado no momento.</p>`}
           </article>
 
           <article class="coach-panel-card">

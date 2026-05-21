@@ -4222,3 +4222,175 @@ body.modal-active {
     grid-template-columns: 1fr;
   }
 }
+
+/* v43 — simulador completo, confirmação de transferências e lesões no painel */
+.simulation-preview {
+  margin-top: 16px;
+  display: grid;
+  gap: 14px;
+}
+
+.sim-preview-empty,
+.sim-warning {
+  padding: 12px 14px;
+  border-radius: 16px;
+  border: 1px solid rgba(148,163,184,.16);
+  background: rgba(2,6,23,.22);
+  color: #cbd5e1;
+  font-size: 13px;
+}
+
+.sim-warning {
+  border-color: rgba(245,158,11,.35);
+  background: rgba(245,158,11,.10);
+  color: #fde68a;
+  font-weight: 800;
+}
+
+.sim-preview-summary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.sim-preview-summary article {
+  padding: 12px;
+  border-radius: 16px;
+  border: 1px solid rgba(148,163,184,.14);
+  background: rgba(15,23,42,.56);
+}
+
+.sim-preview-summary span {
+  display: block;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  font-size: 10px;
+  font-weight: 900;
+}
+
+.sim-preview-summary strong {
+  display: block;
+  margin-top: 4px;
+  font-size: 24px;
+}
+
+.sim-preview-grid {
+  display: grid;
+  gap: 12px;
+}
+
+.sim-competition-block {
+  padding: 12px;
+  border-radius: 18px;
+  border: 1px solid rgba(148,163,184,.16);
+  background: rgba(17,28,51,.78);
+}
+
+.sim-competition-header,
+.sim-match-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+}
+
+.sim-competition-header {
+  margin-bottom: 10px;
+}
+
+.sim-competition-header span {
+  color: #a78bfa;
+  font-weight: 900;
+}
+
+.sim-match-list {
+  display: grid;
+  gap: 8px;
+}
+
+.sim-match-row {
+  grid-template-columns: minmax(220px, 1fr) minmax(180px, .7fr) auto;
+  padding: 10px;
+  border-radius: 14px;
+  background: rgba(2,6,23,.25);
+  border: 1px solid rgba(148,163,184,.10);
+}
+
+.sim-match-row.is-cpu {
+  border-color: rgba(34,197,94,.22);
+}
+
+.sim-match-row.has-human {
+  border-color: rgba(245,158,11,.25);
+}
+
+.sim-match-row.is-done {
+  opacity: .65;
+}
+
+.sim-match-row small {
+  color: #94a3b8;
+}
+
+.sim-match-row b {
+  color: #e5e7eb;
+  font-size: 12px;
+  text-align: right;
+}
+
+.transfer-confirmation-row {
+  margin-top: 12px;
+  padding: 12px 14px;
+  border-radius: 16px;
+  border: 1px solid rgba(59,130,246,.25);
+  background: rgba(37,99,235,.10);
+}
+
+.coach-injuries-card {
+  border-color: rgba(248,113,113,.24);
+  background:
+    radial-gradient(circle at top left, rgba(239,68,68,.10), transparent 36%),
+    rgba(17,28,51,.86);
+}
+
+.coach-injury-list {
+  display: grid;
+  gap: 10px;
+}
+
+.injury-chip {
+  display: grid;
+  gap: 4px;
+  padding: 11px 12px;
+  border-radius: 14px;
+  background: rgba(127,29,29,.24);
+  border: 1px solid rgba(248,113,113,.24);
+}
+
+.injury-chip strong {
+  color: #fecaca;
+}
+
+.injury-chip span {
+  color: #cbd5e1;
+}
+
+.injury-chip b {
+  color: #fca5a5;
+  font-size: 12px;
+}
+
+@media (max-width: 760px) {
+  .sim-preview-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .sim-match-row {
+    grid-template-columns: 1fr;
+  }
+
+  .sim-match-row b {
+    text-align: left;
+  }
+}

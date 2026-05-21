@@ -169,6 +169,29 @@ App.forms = {
     try {
       const preview = App.transfers.getTransferPreview(form);
 
+      if (form.elements.confirmTransferBuyer && !form.elements.confirmTransferBuyer.checked) {
+        throw new Error("Confirme que o comprador selecionado está correto antes de enviar.");
+      }
+
+      if (!preview || !payload.buyer || !payload.player || !payload.fromClub || !payload.overall || !payload.marketValue) {
+        throw new Error("Preencha todos os dados da transferência antes de confirmar.");
+      }
+
+      const confirmationText = [
+        "Confirmar transferência?",
+        "",
+        `Comprador: ${payload.buyer}`,
+        `Jogador: ${payload.player}`,
+        `Clube origem: ${payload.fromClub}`,
+        `Overall: ${payload.overall}`,
+        `Valor base: ${App.utils.formatCurrency(Number(payload.marketValue))}`,
+        `Valor final estimado: ${App.utils.formatCurrency(Number(preview.finalValue || 0))}`
+      ].join("\n");
+
+      if (!window.confirm(confirmationText)) {
+        throw new Error("Transferência cancelada antes do envio.");
+      }
+
       if (preview?.hardBlock) {
         const reason = preview.duplicate
           ? `Jogador já contratado por ${preview.duplicate.buyer}.`
@@ -188,6 +211,7 @@ App.forms = {
       if (!data.ok) throw new Error(data.message || data.error || "Transferência rejeitada.");
       App.utils.setMessage(message, data.message || "Transferência enviada com sucesso.", "success");
       form.reset();
+      if (form.elements.confirmTransferBuyer) form.elements.confirmTransferBuyer.checked = false;
       App.transfers.renderTransferPreview(form);
       await App.api.loadApiData({
         variant: "market",
@@ -235,6 +259,7 @@ App.forms = {
         title: "Atualizando dados",
         message: "Simulação concluída. Atualizando semana, tabela, calendário e eventos..."
       });
+      App.api.renderCpuSimulationPreview(payload.week);
     } catch (error) {
       const friendlyMessage = error.name === "AbortError"
         ? "A operação demorou demais para responder. Verifique o Supabase e tente novamente."
@@ -327,7 +352,17 @@ App.forms = {
     });
 
     document.getElementById("transferForm")?.addEventListener("submit", App.forms.handleTransferSubmit);
-    document.getElementById("cpuSimulationForm")?.addEventListener("submit", App.forms.handleCpuSimulationSubmit);
+    const cpuSimulationForm = document.getElementById("cpuSimulationForm");
+    if (cpuSimulationForm) {
+      cpuSimulationForm.addEventListener("submit", App.forms.handleCpuSimulationSubmit);
+      const weekField = cpuSimulationForm.elements.week;
+      if (weekField) {
+        const updatePreview = () => App.api.renderCpuSimulationPreview(weekField.value);
+        weekField.addEventListener("input", updatePreview);
+        weekField.addEventListener("change", updatePreview);
+        updatePreview();
+      }
+    }
   },
 
   populateTeamOptions() {

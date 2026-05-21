@@ -25,7 +25,15 @@ App.clubs = {
     "Charlton Athletic": ["#ef4444", "#ffffff"],
     "Oxford United": ["#eab308", "#2563eb"],
     "Portsmouth": ["#2563eb", "#ffffff"],
-    "Sheffield Wednesday": ["#3b82f6", "#ffffff"]
+    "Sheffield Wednesday": ["#3b82f6", "#ffffff"],
+    "Manchester City": ["#6cabdd", "#ffffff"],
+    "Manchester United": ["#da291c", "#fbe122"],
+    "Liverpool": ["#c8102e", "#ffffff"],
+    "Arsenal": ["#ef0107", "#ffffff"],
+    "Chelsea": ["#034694", "#ffffff"],
+    "Tottenham Hotspur": ["#132257", "#ffffff"],
+    "Newcastle United": ["#111827", "#ffffff"],
+    "Aston Villa": ["#670e36", "#95bfe5"]
   },
 
   getClubByTeamName(teamName) {
@@ -80,7 +88,15 @@ App.clubs = {
       "Charlton Athletic": "CHA",
       "Oxford United": "OXF",
       "Portsmouth": "POR",
-      "Sheffield Wednesday": "SHW"
+      "Sheffield Wednesday": "SHW",
+      "Manchester City": "MCI",
+      "Manchester United": "MUN",
+      "Liverpool": "LIV",
+      "Arsenal": "ARS",
+      "Chelsea": "CHE",
+      "Tottenham Hotspur": "TOT",
+      "Newcastle United": "NEW",
+      "Aston Villa": "AVL"
     };
 
     const resolved = App.utils.resolveTeamName(teamName);
