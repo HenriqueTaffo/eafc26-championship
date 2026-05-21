@@ -764,7 +764,13 @@ App.transfers = {
     App.api.mergeEaRatings?.(ratings);
 
     if (!ratings.length) {
-      target.innerHTML = `<div class="market-empty">Base oficial EA ainda não importada. Use o SQL de ratings para carregar o cache local.</div>`;
+      const marketMatches = await App.api.loadMarketPlayers(query, true, 3).catch(() => []);
+      target.innerHTML = `
+        <div class="market-empty">
+          Nenhum overall/foto importado para "${App.utils.escapeHtml(query)}".
+          ${marketMatches.length ? "O jogador existe no mercado, mas ainda precisa entrar na base de ratings." : "Tente nome completo ou confira se ele existe no mercado."}
+        </div>
+      `;
       return;
     }
 
