@@ -3500,6 +3500,79 @@ body.modal-active {
   border-color: rgba(239,68,68,.40);
 }
 
+.transfer-movement-card {
+  background:
+    radial-gradient(circle at top right, rgba(37, 99, 235, .12), transparent 35%),
+    rgba(17, 28, 51, .88);
+  border: 1px solid rgba(148,163,184,.18);
+  border-radius: 18px;
+  padding: 14px;
+  box-shadow: 0 16px 35px rgba(0,0,0,.18);
+}
+
+.transfer-movement-empty {
+  grid-column: 1 / -1;
+}
+
+.movement-card-header,
+.movement-meta,
+.movement-value {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.movement-card-header small,
+.movement-meta,
+.movement-value span {
+  color: #94a3b8;
+  font-size: 12px;
+}
+
+.movement-player {
+  margin-top: 14px;
+}
+
+.movement-player span,
+.movement-card-header > span {
+  display: block;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.movement-player strong {
+  display: block;
+  min-height: 34px;
+  margin-top: 6px;
+  font-size: clamp(18px, 2vw, 24px);
+  line-height: 1.05;
+}
+
+.movement-meta {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(148,163,184,.10);
+}
+
+.movement-meta span:first-child {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.movement-value {
+  margin-top: 12px;
+}
+
+.movement-value strong {
+  white-space: nowrap;
+}
+
 .budget-card-header,
 .budget-breakdown,
 .insight-row,
