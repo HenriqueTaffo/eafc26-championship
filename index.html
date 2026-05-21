@@ -74,6 +74,7 @@
       <button class="tab-button" data-view="playersView"><span class="tab-icon">▣</span>Painel</button>
       <button class="tab-button" data-view="eventsView"><span class="tab-icon">✦</span>Eventos</button>
       <button class="tab-button" data-view="transfersView"><span class="tab-icon">⇄</span>Transferências</button>
+      <button class="tab-button" data-view="commissionerView"><span class="tab-icon">⚖</span>Comissário</button>
       <button class="tab-button" data-view="submitView"><span class="tab-icon">☁</span>Enviar dados</button>
     </nav>
 
@@ -378,6 +379,24 @@
       <p class="footer-note">Mostrando apenas as 5 transferências aprovadas mais recentes.</p>
     </section>
 
+    <section id="commissionerView" class="view">
+      <section class="summary commissioner-summary" id="commissionerSummary"></section>
+      <section class="submit-hero commissioner-hero">
+        <div>
+          <span class="modal-kicker">Governança da liga</span>
+          <h2>Mesa do comissário</h2>
+          <p>Leilões, centro médico, fair play, fechamento semanal e ações especiais para manter a temporada divertida e controlada.</p>
+        </div>
+        <div class="submit-hero-actions">
+          <a href="#commissionerAuctions">Leilões</a>
+          <a href="#commissionerMedical">Centro médico</a>
+          <a href="#commissionerWeekly">Semana</a>
+        </div>
+      </section>
+      <section class="commissioner-grid" id="commissionerGrid"></section>
+      <span class="app-message" id="commissionerMessage"></span>
+    </section>
+
     <section id="submitView" class="view">
       <section class="summary" id="apiSummary"></section>
 
@@ -659,6 +678,7 @@
   <script src="./js/transfers.js"></script>
   <script src="./js/events.js"></script>
   <script src="./js/players.js"></script>
+  <script src="./js/governance.js"></script>
   <script src="./js/forms.js"></script>
   <script src="./js/main.js"></script>
 </body>

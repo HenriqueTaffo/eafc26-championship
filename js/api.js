@@ -389,6 +389,7 @@ App.api = {
       await App.api.loadMatches();
       await App.api.loadMarketPlayers();
       await App.api.loadManagerOnboarding?.();
+      await App.governance?.loadData?.();
       await App.auth?.generateDueDecisions?.();
       await App.auth?.loadPublicNews?.();
       await App.auth?.loadMyDecisions?.();

@@ -28,6 +28,11 @@ App.state = {
   apiMatches: [],
   apiMarketPlayers: [],
   apiOnboarding: {},
+  apiGovernance: {
+    auctions: [],
+    medicalActions: [],
+    weeklyReviews: []
+  },
   apiLoaded: false,
   loadingCount: 0,
   silentSyncRunning: false,

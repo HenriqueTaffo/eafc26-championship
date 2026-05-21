@@ -8,7 +8,8 @@ App.main = {
       cupsView: App.cups.render,
       playersView: App.players.render,
       eventsView: App.events.render,
-      transfersView: App.transfers.render
+      transfersView: App.transfers.render,
+      commissionerView: App.governance.render
     };
   },
 
@@ -81,7 +82,7 @@ App.main = {
 
   getDefaultLoaderVariant() {
     const activeView = document.querySelector(".view.active")?.id;
-    if (activeView === "playersView" || activeView === "transfersView") return "market";
+    if (activeView === "playersView" || activeView === "transfersView" || activeView === "commissionerView") return "market";
     if (activeView === "submitView") return "chaos";
     return "match";
   },
