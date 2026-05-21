@@ -478,21 +478,50 @@ App.events = {
     const periodSelect = document.getElementById("eventsPeriodFilter");
     const periodLabel = periodSelect ? periodSelect.options[periodSelect.selectedIndex]?.textContent : "Eventos filtrados";
 
+    const activeFilteredEvents = events.filter(event => App.events.isActiveOrDurationEvent(event)).slice(0, 4);
+
     grid.innerHTML = events.length ? `
-      <section class="event-board-header">
-        <div>
-          <strong>${periodLabel}</strong>
-          <span>${events.length} ocorrência(s) na tela. A central agora prioriza leitura rápida de impacto, técnico afetado e duração.</span>
-        </div>
-        <div class="event-mini-stats">
-          <span>💰 ${stats.positive} positivos</span>
-          <span>⚠️ ${stats.negative} negativos</span>
-          <span>🚑 ${stats.injuries} lesões</span>
-          <span>🔒 ${stats.market} mercado</span>
-        </div>
-      </section>
-      <section class="event-card-grid-v45">
-        ${events.map(event => App.events.renderEventCard(event)).join("")}
+      <section class="event-workspace">
+        <section class="event-board-header event-board-header-v66">
+          <div>
+            <span class="modal-kicker">Mesa de controle</span>
+            <strong>${periodLabel}</strong>
+            <span>${events.length} ocorrência(s) na tela, organizadas por impacto, técnico e duração.</span>
+          </div>
+          <div class="event-mini-stats">
+            <span>Caixa +${stats.positive}</span>
+            <span>Risco ${stats.negative}</span>
+            <span>DM ${stats.injuries}</span>
+            <span>Mercado ${stats.market}</span>
+          </div>
+        </section>
+
+        <section class="event-focus-grid">
+          <article class="event-focus-card">
+            <span>Ativos em duração</span>
+            <strong>${activeFilteredEvents.length}</strong>
+            ${activeFilteredEvents.length ? activeFilteredEvents.map(event => `
+              <div class="event-focus-row">
+                <b>${App.utils.escapeHtml(event.Jogador || "Liga")}</b>
+                <small>${App.utils.escapeHtml(event.Titulo || "Evento ativo")}</small>
+              </div>
+            `).join("") : `<p class="calendar-muted">Nenhuma duração ativa no filtro atual.</p>`}
+          </article>
+          <article class="event-focus-card event-focus-card-wide">
+            <span>Leitura rápida</span>
+            <strong>${stats.positive + stats.negative} impacto(s) financeiros</strong>
+            <div class="event-focus-pills">
+              <i>Positivos: ${stats.positive}</i>
+              <i>Negativos: ${stats.negative}</i>
+              <i>Lesões: ${stats.injuries}</i>
+              <i>Mercado: ${stats.market}</i>
+            </div>
+          </article>
+        </section>
+
+        <section class="event-card-grid-v45 event-card-grid-v66">
+          ${events.map(event => App.events.renderEventCard(event)).join("")}
+        </section>
       </section>
     ` : `
       <article class="event-empty-v45">

@@ -185,9 +185,7 @@ App.auth = {
       message: "Aplicando consequência, atualizando orçamento, eventos e manchetes..."
     });
 
-    await App.auth.loadMyDecisions();
-    await App.auth.loadPublicNews();
-    App.auth.renderAll();
+    await App.auth.syncManagerState();
 
     return result;
   },
@@ -211,10 +209,26 @@ App.auth = {
       message: "Atualizando propostas, mercado, orçamentos e painel dos técnicos..."
     });
 
-    await App.auth.loadMyTransferProposals();
-    App.auth.renderAll();
+    await App.auth.syncManagerState();
 
     return result;
+  },
+
+  async syncManagerState(options = {}) {
+    const { refreshData = false } = options;
+    if (refreshData && App.api?.loadApiData) {
+      await App.api.loadApiData({ showLoader: false });
+      return;
+    }
+
+    await Promise.all([
+      App.auth.loadMyDecisions(),
+      App.auth.loadMyTransferProposals(),
+      App.auth.loadPublicNews()
+    ]);
+
+    App.main?.renderCurrentView?.();
+    App.auth.renderAll();
   },
 
   renderAll() {

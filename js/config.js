@@ -30,6 +30,7 @@ App.state = {
   apiOnboarding: {},
   apiLoaded: false,
   loadingCount: 0,
+  silentSyncRunning: false,
   autoEventGenerationRunning: false,
   lastAutoEventCheckKey: ""
 };
