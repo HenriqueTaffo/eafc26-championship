@@ -333,7 +333,7 @@ App.players = {
     `;
 
     const decisionCard = App.auth?.renderCoachDecisionCard ? App.auth.renderCoachDecisionCard(activeTeam.owner) : "";
-    const pinCard = App.auth?.renderPinChangeCard ? App.auth.renderPinChangeCard() : "";
+    const pinCard = App.auth?.renderPinChangeCard ? App.auth.renderPinChangeCard(activeTeam.owner) : "";
 
     return `
       <section class="coach-dashboard" style="--coach-color:${color}">
@@ -396,7 +396,7 @@ App.players = {
               ${App.players.renderCoachEventDeck(events)}
             </article>
 
-            ${pinCard}
+            ${pinCard || ""}
           </div>
         </section>
       </section>

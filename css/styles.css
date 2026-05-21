@@ -6428,3 +6428,164 @@ body {
     width: 100% !important;
   }
 }
+
+/* v61 — correção APENAS DESKTOP do alinhamento da seção Painel.
+   Mobile preservado. Corrige o desalinhamento entre resumo, busca e seletor de técnicos. */
+@media (min-width: 1101px) {
+  #playersView .summary,
+  #playersView .controls,
+  #playersView .player-grid,
+  #playersView .leaderboard-grid,
+  #playersView .footer-note {
+    width: min(1320px, 100%) !important;
+    max-width: 1320px !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+  }
+
+  #playersView .controls {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) 230px !important;
+    gap: 10px !important;
+    align-items: center !important;
+  }
+
+  #playersView .controls input,
+  #playersView .controls select {
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  #playersView .player-grid {
+    display: block !important;
+  }
+
+  #playersView .coach-selector {
+    width: 100% !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+  }
+}
+
+/* v62 — corrige sobreposição Mercado/Radar no desktop.
+   Causa: regras antigas ainda deixavam grid-row fixo nos cards.
+   Mobile preservado. */
+@media (min-width: 1101px) {
+  #playersView .coach-flow-v55 {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    gap: 18px !important;
+    align-items: start !important;
+  }
+
+  #playersView .coach-flow-v55 > .coach-war-room-card,
+  #playersView .coach-flow-v55 > .coach-market-card,
+  #playersView .coach-flow-v55 > .coach-event-radar-card,
+  #playersView .coach-flow-v55 > .pin-change-card {
+    grid-column: 1 / -1 !important;
+    grid-row: auto !important;
+    position: relative !important;
+    z-index: auto !important;
+    width: 100% !important;
+    max-width: none !important;
+    height: auto !important;
+    min-height: 0 !important;
+    transform: none !important;
+  }
+
+  #playersView .coach-market-card {
+    max-height: none !important;
+    overflow: visible !important;
+  }
+
+  #playersView .coach-market-card .coach-transfer-timeline {
+    max-height: none !important;
+    overflow: visible !important;
+    padding-right: 0 !important;
+  }
+
+  #playersView .coach-flow-v55 .coach-market-header {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  }
+
+  #playersView .coach-flow-v55 .coach-transfer-timeline,
+  #playersView .coach-flow-v55 .coach-alert-deck,
+  #playersView .coach-flow-v55 .coach-event-stack {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+
+/* v63 — desktop: alinhamento final + card Lesões compacto.
+   Mobile preservado. */
+@media (min-width: 1101px) {
+  /* Todos os blocos principais do Painel usam exatamente o mesmo eixo/largura. */
+  #playersView > .summary,
+  #playersView > .controls,
+  #playersView > .player-grid,
+  #playersView > .leaderboard-grid,
+  #playersView > .footer-note,
+  #playersView .coach-tabs,
+  #playersView .coach-dashboard,
+  #playersView .coach-comparison {
+    width: min(1320px, 100%) !important;
+    max-width: 1320px !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    box-sizing: border-box !important;
+  }
+
+  #playersView > .leaderboard-grid {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 18px !important;
+    align-items: start !important;
+  }
+
+  #playersView > .leaderboard-grid > .leaderboard-card {
+    width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  /* Lesões não deve esticar para acompanhar Próximo compromisso. */
+  #playersView .coach-top-row-v54 {
+    align-items: start !important;
+  }
+
+  #playersView .coach-top-row-v54 > .coach-panel-card {
+    height: auto !important;
+  }
+
+  #playersView .coach-injuries-card {
+    min-height: 0 !important;
+    height: auto !important;
+    align-self: start !important;
+    padding: 18px !important;
+  }
+
+  #playersView .coach-injuries-card .home-panel-header {
+    margin-bottom: 10px !important;
+  }
+
+  #playersView .coach-injuries-card .calendar-muted {
+    margin: 0 !important;
+    line-height: 1.35 !important;
+  }
+
+  #playersView .coach-injury-list {
+    display: grid !important;
+    gap: 8px !important;
+  }
+
+  #playersView .coach-injury-list .injury-chip {
+    min-height: 0 !important;
+    padding: 12px 14px !important;
+    border-radius: 14px !important;
+  }
+
+  #playersView .coach-injury-list .injury-chip strong,
+  #playersView .coach-injury-list .injury-chip span,
+  #playersView .coach-injury-list .injury-chip b {
+    line-height: 1.25 !important;
+  }
+}

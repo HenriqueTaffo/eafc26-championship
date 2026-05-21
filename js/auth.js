@@ -424,23 +424,13 @@ App.auth = {
     `;
   },
 
-  renderPinChangeCard() {
+  renderPinChangeCard(ownerName = "") {
     const session = App.auth.getSession();
 
-    if (!session) {
-      return `
-        <section class="coach-panel-card pin-change-card">
-          <div class="home-panel-header">
-            <h2>PIN do técnico</h2>
-            <span class="coach-section-kicker">Bloqueado</span>
-          </div>
-          <div class="coach-empty-state">
-            <span>🔐</span>
-            <strong>Faça login para alterar seu PIN</strong>
-            <p>A troca de PIN só aparece para o técnico logado.</p>
-          </div>
-        </section>
-      `;
+    if (!session) return "";
+
+    if (ownerName && App.utils.normalizeText(session.managerName) !== App.utils.normalizeText(ownerName)) {
+      return "";
     }
 
     return `
