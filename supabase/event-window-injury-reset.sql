@@ -28,6 +28,14 @@ where not exists (
   where key = 'event_slots'
 );
 
+alter table public.events
+  drop constraint if exists events_slot_check;
+
+alter table public.events
+  add constraint events_slot_check
+  check (slot_hour is null or slot_hour in (9, 12, 15, 18))
+  not valid;
+
 update public.events
    set status = 'recovered',
        matches_remaining = 0,
