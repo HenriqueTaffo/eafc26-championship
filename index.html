@@ -259,10 +259,15 @@
 
     <section id="eventsView" class="view">
       <section class="summary" id="eventsSummary"></section>
-      <section class="countdown-card">
-        <span>Próxima rodada de eventos</span>
-        <strong id="nextEventCountdown">Calculando...</strong>
-        <p>Eventos automáticos às 05h, 08h, 11h, 14h, 17h, 20h e 23h. O app verifica a cada minuto se existe evento pendente.</p>
+      <section class="countdown-card events-command-card">
+        <div>
+          <span>Central de Eventos</span>
+          <strong id="nextEventCountdown">Calculando...</strong>
+          <p>A sala do caos da liga: dinheiro inesperado, punições, lesões, travas de mercado e premiações aparecem aqui com impacto direto nos técnicos.</p>
+        </div>
+        <div class="event-slot-list" aria-label="Horários de eventos">
+          <b>05h</b><b>08h</b><b>11h</b><b>14h</b><b>17h</b><b>20h</b><b>23h</b>
+        </div>
       </section>
       <section class="controls">
         <input id="eventsSearchInput" type="search" placeholder="Buscar evento, jogador ou efeito..." />
@@ -287,13 +292,22 @@
           <option value="all">Histórico completo</option>
         </select>
       </section>
-      <section class="form-card">
-        <h2>Eventos automáticos ativos</h2>
-        <p>O sistema verifica automaticamente os horários liberados e cria os eventos pendentes quando o app estiver aberto. Por padrão, esta tela mostra só a última rodada de eventos para não virar uma lista gigante.</p>
+      <section class="form-card events-intro-card">
+        <div>
+          <h2>Radar da Liga</h2>
+          <p>Por padrão, exibimos a última rodada para manter a tela leve. Use os filtros para investigar histórico, lesões ativas, punições de mercado, premiações e impactos financeiros.</p>
+        </div>
+        <div class="event-legend-pills">
+          <span>💰 Caixa</span>
+          <span>🚑 DM</span>
+          <span>🔒 Mercado</span>
+          <span>🏆 Copas</span>
+          <span>⚠️ Punições</span>
+        </div>
         <span class="app-message" id="eventsMessage"></span>
       </section>
       <section class="event-grid" id="eventsGrid"></section>
-      <p class="footer-note">Eventos financeiros entram no orçamento automaticamente. Eventos de mercado/condicionais aparecem como regra manual. Eventos de lesão podem exibir duração por partidas ou por tempo.</p>
+      <p class="footer-note">Central de eventos v45: lançamentos financeiros entram no orçamento automaticamente; mercado, lesões e punições aparecem com duração e impacto destacado para cada técnico.</p>
     </section>
 
     <section id="transfersView" class="view">

@@ -121,6 +121,212 @@ App.events = {
   },
 
 
+
+  getEventCategory(event) {
+    const type = App.utils.normalizeText(event.Tipo || "");
+    const title = App.utils.normalizeText(event.Titulo || "");
+    const impact = Number(event.ImpactoFinanceiro || 0);
+    const modifier = Number(event.ModificadorTransferencias || 0);
+    const affectedPlayer = String(event.JogadorAfetado || "").trim();
+
+    if (App.events.isCupPrizeEvent(event)) return "cup";
+    if (affectedPlayer || type.includes("esportivo") || title.includes("lesao") || title.includes("desconforto")) return "injury";
+    if (modifier !== 0 || type.includes("mercado") || title.includes("transfer ban") || title.includes("janela")) return "market";
+    if (impact > 0) return "money-positive";
+    if (impact < 0) return "money-negative";
+    return "neutral";
+  },
+
+  getEventCategoryLabel(event) {
+    const labels = {
+      "cup": "Premiação de copa",
+      "injury": "Departamento médico",
+      "market": "Mercado",
+      "money-positive": "Caixa positivo",
+      "money-negative": "Caixa negativo",
+      "neutral": "Regra da liga"
+    };
+
+    return labels[App.events.getEventCategory(event)] || "Evento";
+  },
+
+  getEventIcon(event) {
+    const icons = {
+      "cup": "🏆",
+      "injury": "🚑",
+      "market": "🔒",
+      "money-positive": "💰",
+      "money-negative": "⚠️",
+      "neutral": "🎲"
+    };
+
+    return icons[App.events.getEventCategory(event)] || "🎲";
+  },
+
+  getEventPresentation(event) {
+    const key = App.utils.normalizeText(event.Titulo || "");
+    const map = {
+      "venda de camisas acima do esperado": {
+        title: "Camisa virou objeto de desejo",
+        description: "A loja oficial foi tomada pela torcida e o caixa sorriu antes do almoço.",
+        effect: "Receita extra adicionada ao orçamento."
+      },
+      "socio torcedor bateu meta parcial": {
+        title: "Torcida passou o PIX",
+        description: "A campanha de sócio-torcedor engatou e a diretoria recebeu um respiro financeiro.",
+        effect: "Bônus financeiro creditado ao técnico."
+      },
+      "patrocinador regional ativou bonus": {
+        title: "Patrocinador local abriu o cofre",
+        description: "A marca apareceu bem, gostou do barulho da torcida e pagou o bônus combinado.",
+        effect: "Entrada imediata no orçamento."
+      },
+      "camarotes esgotados": {
+        title: "Camarote virou ouro",
+        description: "Os ingressos premium evaporaram e o financeiro já pediu para repetir a dose.",
+        effect: "Bilheteria especial creditada no orçamento."
+      },
+      "video do clube viralizou": {
+        title: "Mascote quebrou a internet",
+        description: "Um corte do clube viralizou, virou assunto no grupo e trouxe receita comercial.",
+        effect: "Receita de mídia adicionada ao caixa."
+      },
+      "multa por atraso administrativo": {
+        title: "Boleto esquecido na gaveta",
+        description: "A secretaria dormiu no ponto e a liga mandou a cobrança sem dó.",
+        effect: "Desconto aplicado diretamente no orçamento."
+      },
+      "manutencao emergencial no ct": {
+        title: "CT pediu socorro",
+        description: "Um reparo urgente apareceu do nada e a conta caiu no colo da diretoria.",
+        effect: "Custo emergencial descontado do caixa."
+      },
+      "problema no gramado": {
+        title: "Gramado declarou guerra",
+        description: "O campo resolveu virar personagem principal e exigiu manutenção antes do próximo jogo.",
+        effect: "Despesa operacional descontada do orçamento."
+      },
+      "janela aquecida": {
+        title: "Mercado virou feira livre",
+        description: "Empresários ligaram sem parar e a liga liberou um respiro para novas negociações.",
+        effect: "Transferência extra liberada temporariamente."
+      },
+      "diretoria pediu cautela": {
+        title: "Diretoria fechou a mão",
+        description: "O conselho viu os números, respirou fundo e segurou a caneta das contratações.",
+        effect: "Limite de transferências reduzido temporariamente."
+      },
+      "transfer ban relampago": {
+        title: "Liga apertou o botão vermelho",
+        description: "Uma pendência documental travou a mesa de inscrições e deixou o mercado em modo emergência.",
+        effect: "Transferências bloqueadas temporariamente."
+      },
+      "desconforto muscular": {
+        title: "DM pediu um minuto",
+        description: "Um contratado sentiu a perna no treino e o departamento médico mandou preservar.",
+        effect: "Jogador afetado fica fora pelo período indicado."
+      },
+      "lesao moderada": {
+        title: "Treino cobrou a conta",
+        description: "A intensidade passou do ponto e um jogador precisará de recuperação antes de voltar.",
+        effect: "Jogador afetado fica fora pelo período indicado."
+      },
+      "novo patrocinador master": {
+        title: "Patrocinador master chegou de helicóptero",
+        description: "Uma proposta grande caiu na mesa e mudou o humor da diretoria instantaneamente.",
+        effect: "Grande bônus financeiro creditado no orçamento."
+      },
+      "escandalo financeiro": {
+        title: "Auditoria chutou a porta",
+        description: "Um problema antigo veio à tona e o caixa pagou a conta da bagunça.",
+        effect: "Grande desconto aplicado no orçamento."
+      },
+      "premiacao por avanco copa da liga": {
+        title: "Prêmio de classificação",
+        description: "A campanha na copa rendeu bônus esportivo pela vaga na próxima fase.",
+        effect: "Premiação de copa adicionada ao orçamento."
+      },
+      "premiacao por avanco fa cup": {
+        title: "Prêmio de classificação",
+        description: "A campanha na FA Cup rendeu bônus esportivo pela vaga na próxima fase.",
+        effect: "Premiação de copa adicionada ao orçamento."
+      }
+    };
+
+    let item = map[key];
+
+    if (!item && key.includes("premiacao") && key.includes("copa")) {
+      item = {
+        title: "Prêmio de classificação",
+        description: "A classificação na copa gerou premiação esportiva para o técnico.",
+        effect: "Bônus de avanço adicionado ao orçamento."
+      };
+    }
+
+    return {
+      title: item?.title || event.Titulo || "Evento da Liga",
+      description: item?.description || event.Descricao || "A liga registrou uma ocorrência com impacto no planejamento.",
+      effect: item?.effect || App.events.cleanEventEffect(event),
+      category: App.events.getEventCategory(event),
+      categoryLabel: App.events.getEventCategoryLabel(event),
+      icon: App.events.getEventIcon(event)
+    };
+  },
+
+  renderEventCard(event) {
+    const presentation = App.events.getEventPresentation(event);
+    const typeClass = App.events.getEventTypeClass(event);
+    const color = App.data.ownerColors[event.Jogador] || App.data.ownerColors["Livre / CPU"];
+    const modifier = Number(event.ModificadorTransferencias || 0);
+    const durationLabel = App.events.getEventDurationLabel(event);
+    const metaItems = [
+      App.events.formatEventDate(event.Data),
+      App.events.formatEventTime(event.Horario),
+      event.Status || "Gerado"
+    ].filter(Boolean);
+
+    return `
+      <article class="event-card event-card-v45 event-category-${presentation.category}" style="--event-color:${color}">
+        <div class="event-card-topline">
+          <span class="event-icon" aria-hidden="true">${presentation.icon}</span>
+          <span class="event-category-label">${presentation.categoryLabel}</span>
+          <span class="owner" style="background:${color}">${event.Jogador || "Liga"}</span>
+        </div>
+
+        <div class="event-card-header">
+          <div>
+            <h2>${App.utils.escapeHtml(presentation.title)}</h2>
+            <p class="event-flavor">${App.utils.escapeHtml(presentation.description)}</p>
+          </div>
+          <span class="event-impact ${typeClass}">${App.events.getEventImpactLabel(event)}</span>
+        </div>
+
+        <div class="event-effect-box">
+          <strong>Impacto</strong>
+          <span>${App.utils.escapeHtml(presentation.effect)}</span>
+        </div>
+
+        <div class="event-badges">
+          ${modifier !== 0 ? `<span class="limit-pill">${modifier > 0 ? "+" : ""}${modifier} transferência(s) hoje</span>` : ""}
+          ${event.JogadorAfetado ? `<span class="injury-pill">🚑 ${App.utils.escapeHtml(event.JogadorAfetado)}</span>` : ""}
+          ${durationLabel ? `<span class="duration-pill">${App.utils.escapeHtml(durationLabel)}</span>` : ""}
+        </div>
+
+        <div class="event-meta">${metaItems.map(App.utils.escapeHtml).join(" · ")}</div>
+      </article>
+    `;
+  },
+
+  getEventStats(events) {
+    return {
+      positive: events.filter(event => Number(event.ImpactoFinanceiro || 0) > 0).length,
+      negative: events.filter(event => Number(event.ImpactoFinanceiro || 0) < 0).length,
+      injuries: events.filter(event => String(event.JogadorAfetado || "").trim()).length,
+      market: events.filter(event => Number(event.ModificadorTransferencias || 0) !== 0).length
+    };
+  },
+
+
   getEventDateTime(event) {
     const dataText = String(event.Data || "").replace(/^'/, "").trim();
     const horaText = String(event.Horario || "").replace(/^'/, "").trim();
@@ -255,48 +461,60 @@ App.events = {
     const todayText = new Date().toLocaleDateString("pt-BR");
     const dynamicEvents = App.state.apiEvents.filter(event => !App.events.isCupPrizeEvent(event));
     const todayEvents = dynamicEvents.filter(event => App.events.formatEventDate(event.Data || event.Timestamp) === todayText);
+    const activeEvents = dynamicEvents.filter(event => App.events.isActiveOrDurationEvent(event));
     const totalImpact = App.state.apiEvents.reduce((sum, event) => sum + Number(event.ImpactoFinanceiro || 0), 0);
     const pendingSlots = Math.max(0, (App.config.eventSlots.length * App.utils.getHumanBuyers().length) - todayEvents.length);
 
+    summary.classList.add("events-summary-v45");
     summary.innerHTML = `
-      <article class="summary-card"><span>Eventos hoje</span><strong>${todayEvents.length}</strong></article>
-      <article class="summary-card"><span>Faltam hoje</span><strong>${pendingSlots}</strong></article>
-      <article class="summary-card"><span>Impacto total</span><strong>${App.utils.formatCurrency(totalImpact)}</strong></article>
-      <article class="summary-card"><span>Horários</span><strong>05h-23h</strong></article>
+      <article class="summary-card event-summary-main">
+        <span>Última rodada</span>
+        <strong>${todayEvents.length}</strong>
+        <small>eventos dinâmicos hoje</small>
+      </article>
+      <article class="summary-card">
+        <span>Ativos agora</span>
+        <strong>${activeEvents.length}</strong>
+        <small>lesões, mercado ou duração</small>
+      </article>
+      <article class="summary-card">
+        <span>Impacto líquido</span>
+        <strong>${App.utils.formatCurrency(totalImpact)}</strong>
+        <small>somando histórico carregado</small>
+      </article>
+      <article class="summary-card">
+        <span>Slots restantes</span>
+        <strong>${pendingSlots}</strong>
+        <small>até 23h</small>
+      </article>
     `;
 
     const events = App.events.getFilteredEvents();
+    const stats = App.events.getEventStats(events);
     const periodSelect = document.getElementById("eventsPeriodFilter");
     const periodLabel = periodSelect ? periodSelect.options[periodSelect.selectedIndex]?.textContent : "Eventos filtrados";
 
     grid.innerHTML = events.length ? `
-      <div class="compact-info-card">
-        <strong>${events.length} evento(s) exibido(s)</strong>
-        <span>${periodLabel}${(document.getElementById("eventsPeriodFilter")?.value === "all" && !document.getElementById("eventsSearchInput")?.value) ? " — exibindo os 120 mais recentes para manter o site leve." : ""}. Use os filtros para consultar eventos antigos quando precisar.</span>
-      </div>
-    ` + events.map(event => {
-      const typeClass = App.events.getEventTypeClass(event);
-      const color = App.data.ownerColors[event.Jogador] || App.data.ownerColors["Livre / CPU"];
-      const modifier = Number(event.ModificadorTransferencias || 0);
-      return `
-        <article class="event-card" style="--event-color:${color}">
-          <div class="event-card-header">
-            <div><h2>${event.Titulo || "Evento"}</h2><span class="owner" style="background:${color}">${event.Jogador || "Liga"}</span></div>
-            <span class="event-impact ${typeClass}">${App.events.getEventImpactLabel(event)}</span>
-          </div>
-          <p>${event.Descricao || "Sem descrição."}</p>
-          <p><strong>Efeito:</strong> ${App.events.cleanEventEffect(event)}</p>
-          ${modifier !== 0 ? `<span class="limit-pill">${modifier > 0 ? "+" : ""}${modifier} transferência(s) hoje</span>` : ""}
-          ${event.JogadorAfetado ? `<span class="injury-pill">${event.JogadorAfetado} afetado</span>` : ""}
-          ${App.events.getEventDurationLabel(event) ? `<div class="event-timer"><strong>Duração do efeito</strong>${App.events.getEventDurationLabel(event)}</div>` : ""}
-          <div class="event-meta">${[
-            App.events.formatEventDate(event.Data),
-            App.events.formatEventTime(event.Horario),
-            event.Tipo || "Evento",
-            event.Status || "Gerado"
-          ].filter(Boolean).join(" · ")}</div>
-        </article>
-      `;
-    }).join("") : `<article class="event-card"><h2>Nenhum evento encontrado</h2><p>Troque o filtro de período para ver eventos anteriores ou o histórico completo.</p></article>`;
+      <section class="event-board-header">
+        <div>
+          <strong>${periodLabel}</strong>
+          <span>${events.length} ocorrência(s) na tela. A central agora prioriza leitura rápida de impacto, técnico afetado e duração.</span>
+        </div>
+        <div class="event-mini-stats">
+          <span>💰 ${stats.positive} positivos</span>
+          <span>⚠️ ${stats.negative} negativos</span>
+          <span>🚑 ${stats.injuries} lesões</span>
+          <span>🔒 ${stats.market} mercado</span>
+        </div>
+      </section>
+      <section class="event-card-grid-v45">
+        ${events.map(event => App.events.renderEventCard(event)).join("")}
+      </section>
+    ` : `
+      <article class="event-empty-v45">
+        <strong>Nenhum evento encontrado</strong>
+        <p>Troque o período, remova filtros ou pesquise por técnico, jogador, punição, premiação ou impacto financeiro.</p>
+      </article>
+    `;
   }
 };
