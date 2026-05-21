@@ -101,7 +101,7 @@ App.transfers = {
     const onboarding = App.state.apiOnboarding?.[buyer];
     if (!onboarding || onboarding.transferLimit === undefined || onboarding.transferLimit === null) return null;
     const limit = Number(onboarding.transferLimit);
-    return Number.isFinite(limit) ? limit : null;
+    return Number.isFinite(limit) && limit > 0 ? limit : null;
   },
 
   getTransferLimitForBuyer(buyer) {
