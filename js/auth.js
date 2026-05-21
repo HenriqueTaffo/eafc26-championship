@@ -601,6 +601,13 @@ App.auth = {
     const rewards = Array.isArray(data.recentRewards) ? data.recentRewards : [];
     const maxActive = Number(data.maxActiveContracts || 2);
     const slotsLeft = Math.max(0, Number(data.activeSlotsLeft ?? (maxActive - active.length)));
+    const offersByCategory = offers.reduce((groups, offer) => {
+      const category = offer.category || "Patrocínio";
+      groups[category] = groups[category] || [];
+      groups[category].push(offer);
+      return groups;
+    }, {});
+    const offerCategories = Object.keys(offersByCategory);
 
     return `
       <article class="coach-panel-card sponsorship-card">
@@ -626,19 +633,29 @@ App.auth = {
 
         ${slotsLeft > 0 && offers.length ? `
           <div class="sponsor-market-note">
-            <strong>${slotsLeft} vaga(s) comercial(is) livre(s)</strong>
-            <span>${offers.length} proposta(s) na mesa, mas você não consegue assinar todas.</span>
+            <strong>${active.length}/${maxActive} contratos ativos · ${slotsLeft} vaga(s) livre(s)</strong>
+            <span>${offers.length} proposta(s) em ${offerCategories.length} categoria(s). Ao assinar uma categoria, as concorrentes dela saem da mesa.</span>
           </div>
-          <div class="sponsor-offer-grid">
-            ${offers.map(offer => `
-              <article class="sponsor-offer-card">
-                <span>${App.utils.escapeHtml(offer.category || "Patrocínio")}</span>
-                <strong>${App.utils.escapeHtml(offer.title)}</strong>
-                <em>${App.utils.escapeHtml(offer.sponsorName)}</em>
-                <p>${App.utils.escapeHtml(offer.description)}</p>
-                <small>${App.utils.escapeHtml(offer.riskLevel || "Meta comercial")} · Luvas ${App.utils.formatCurrency(offer.signingBonus)} · ${App.utils.escapeHtml(offer.conditionLabel || "Meta cumprida")} paga ${App.utils.formatCurrency(offer.rewardValue)}</small>
-                <button type="button" data-sponsor-offer="${App.utils.escapeHtml(offer.id)}">Assinar</button>
-              </article>
+          <div class="sponsor-category-list">
+            ${offerCategories.map(category => `
+              <section class="sponsor-category-group">
+                <div class="sponsor-category-header">
+                  <strong>${App.utils.escapeHtml(category)}</strong>
+                  <span>${offersByCategory[category].length} proposta(s)</span>
+                </div>
+                <div class="sponsor-offer-grid">
+                  ${offersByCategory[category].map(offer => `
+                    <article class="sponsor-offer-card">
+                      <span>${App.utils.escapeHtml(offer.riskLevel || "Meta comercial")}</span>
+                      <strong>${App.utils.escapeHtml(offer.title)}</strong>
+                      <em>${App.utils.escapeHtml(offer.sponsorName)}</em>
+                      <p>${App.utils.escapeHtml(offer.description)}</p>
+                      <small>Luvas ${App.utils.formatCurrency(offer.signingBonus)} · ${App.utils.escapeHtml(offer.conditionLabel || "Meta cumprida")} paga ${App.utils.formatCurrency(offer.rewardValue)}</small>
+                      <button type="button" data-sponsor-offer="${App.utils.escapeHtml(offer.id)}">Assinar</button>
+                    </article>
+                  `).join("")}
+                </div>
+              </section>
             `).join("")}
           </div>
         ` : slotsLeft <= 0 ? `<p class="calendar-muted">Limite comercial preenchido. Novas propostas ficam bloqueadas enquanto houver ${maxActive} contratos ativos.</p>` : ""}

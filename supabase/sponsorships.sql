@@ -92,8 +92,8 @@ as $$
       'conditionType', 'win_by_2',
       'conditionLabel', 'Vencer por 2+ gols',
       'riskLevel', 'Alta exigencia',
-      'signingBonus', 1800000,
-      'rewardValue', 3200000,
+      'signingBonus', 500000,
+      'rewardValue', 1400000,
       'maxClaims', 4
     ),
     jsonb_build_object(
@@ -105,8 +105,8 @@ as $$
       'conditionType', 'any_win',
       'conditionLabel', 'Vencer qualquer partida',
       'riskLevel', 'Baixa exigencia',
-      'signingBonus', 900000,
-      'rewardValue', 1300000,
+      'signingBonus', 250000,
+      'rewardValue', 650000,
       'maxClaims', 6
     ),
     jsonb_build_object(
@@ -118,8 +118,8 @@ as $$
       'conditionType', 'home_win',
       'conditionLabel', 'Vencer como mandante',
       'riskLevel', 'Media exigencia',
-      'signingBonus', 2500000,
-      'rewardValue', 3000000,
+      'signingBonus', 700000,
+      'rewardValue', 1300000,
       'maxClaims', 4
     ),
     jsonb_build_object(
@@ -131,8 +131,8 @@ as $$
       'conditionType', 'win_by_2',
       'conditionLabel', 'Vencer por 2+ gols',
       'riskLevel', 'Alta exigencia',
-      'signingBonus', 1200000,
-      'rewardValue', 4200000,
+      'signingBonus', 350000,
+      'rewardValue', 1700000,
       'maxClaims', 3
     ),
     jsonb_build_object(
@@ -144,8 +144,8 @@ as $$
       'conditionType', 'clean_sheet',
       'conditionLabel', 'Nao sofrer gols',
       'riskLevel', 'Media exigencia',
-      'signingBonus', 1400000,
-      'rewardValue', 2400000,
+      'signingBonus', 400000,
+      'rewardValue', 950000,
       'maxClaims', 5
     ),
     jsonb_build_object(
@@ -157,8 +157,8 @@ as $$
       'conditionType', 'three_goals',
       'conditionLabel', 'Marcar 3+ gols',
       'riskLevel', 'Alta exigencia',
-      'signingBonus', 1000000,
-      'rewardValue', 3300000,
+      'signingBonus', 300000,
+      'rewardValue', 1300000,
       'maxClaims', 4
     ),
     jsonb_build_object(
@@ -170,8 +170,8 @@ as $$
       'conditionType', 'three_goals',
       'conditionLabel', 'Marcar 3+ gols',
       'riskLevel', 'Alta exigencia',
-      'signingBonus', 2200000,
-      'rewardValue', 3800000,
+      'signingBonus', 650000,
+      'rewardValue', 1500000,
       'maxClaims', 4
     ),
     jsonb_build_object(
@@ -183,8 +183,8 @@ as $$
       'conditionType', 'any_win',
       'conditionLabel', 'Vencer qualquer partida',
       'riskLevel', 'Baixa exigencia',
-      'signingBonus', 1500000,
-      'rewardValue', 1800000,
+      'signingBonus', 450000,
+      'rewardValue', 800000,
       'maxClaims', 5
     ),
     jsonb_build_object(
@@ -196,8 +196,8 @@ as $$
       'conditionType', 'away_win',
       'conditionLabel', 'Vencer como visitante',
       'riskLevel', 'Media exigencia',
-      'signingBonus', 1000000,
-      'rewardValue', 2600000,
+      'signingBonus', 300000,
+      'rewardValue', 1100000,
       'maxClaims', 5
     ),
     jsonb_build_object(
@@ -209,8 +209,8 @@ as $$
       'conditionType', 'away_win',
       'conditionLabel', 'Vencer como visitante',
       'riskLevel', 'Alta exigencia',
-      'signingBonus', 500000,
-      'rewardValue', 3400000,
+      'signingBonus', 150000,
+      'rewardValue', 1400000,
       'maxClaims', 4
     ),
     jsonb_build_object(
@@ -222,8 +222,8 @@ as $$
       'conditionType', 'any_win',
       'conditionLabel', 'Vencer qualquer partida',
       'riskLevel', 'Baixa exigencia',
-      'signingBonus', 700000,
-      'rewardValue', 1400000,
+      'signingBonus', 200000,
+      'rewardValue', 700000,
       'maxClaims', 6
     ),
     jsonb_build_object(
@@ -235,8 +235,8 @@ as $$
       'conditionType', 'three_goals',
       'conditionLabel', 'Marcar 3+ gols',
       'riskLevel', 'Media exigencia',
-      'signingBonus', 900000,
-      'rewardValue', 2600000,
+      'signingBonus', 250000,
+      'rewardValue', 1100000,
       'maxClaims', 4
     )
   );
