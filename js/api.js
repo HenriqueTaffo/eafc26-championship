@@ -104,6 +104,23 @@ App.api = {
     }
   },
 
+  async loadMatchAudit(week = null) {
+    try {
+      return await App.api.rpc("app_get_match_audit", {
+        p_week: week ? Number(week) : null
+      }, 45000);
+    } catch (error) {
+      console.warn("Auditoria de partidas indisponível:", error);
+      return {
+        ok: false,
+        week: week || null,
+        summary: {},
+        matches: [],
+        message: error.message || "Não consegui carregar auditoria de partidas."
+      };
+    }
+  },
+
   getDbMatchEvents() {
     return (App.state.apiMatches || []).map(row => {
       const homeScore = row.home_score === null || row.home_score === undefined ? null : Number(row.home_score);
@@ -208,68 +225,124 @@ App.api = {
     };
   },
 
-  renderCpuSimulationPreview(weekValue) {
+  async renderCpuSimulationPreview(weekValue) {
     const container = document.getElementById("cpuSimulationPreview");
     if (!container) return;
 
     const week = Number(weekValue || 0);
-    if (!week) {
-      container.innerHTML = `<div class="sim-preview-empty">Informe uma semana para ver jogos pendentes por competição.</div>`;
-      return;
-    }
-
-    const report = App.api.getCpuSimulationReport(week);
-
-    if (!report.events.length) {
-      container.innerHTML = `<div class="sim-preview-empty">Nenhum jogo encontrado na semana ${week}.</div>`;
-      return;
-    }
-
-    const competitionBlocks = report.competitions.map(competition => {
-      const events = report.events.filter(event => event.competition === competition);
-      return `
-        <article class="sim-competition-block">
-          <div class="sim-competition-header">
-            <strong>${App.utils.escapeHtml(competition)}</strong>
-            <span>${events.length} jogo(s)</span>
-          </div>
-          <div class="sim-match-list">
-            ${events.map(event => {
-              const owners = App.calendar.getMatchOwners(event);
-              const type = App.calendar.getMatchType(event);
-              const status = App.calendar.getStatusClass(event) === "done"
-                ? App.calendar.formatMatchResult(event)
-                : App.api.isPlayablePendingMatch(event)
-                  ? "Pendente"
-                  : (event.status || "Aguardando");
-              return `
-                <div class="sim-match-row ${owners.length ? "has-human" : "is-cpu"} ${App.calendar.getStatusClass(event) === "done" ? "is-done" : ""}">
-                  <span>${App.clubs.getMatchupHtml(event.home, event.away, "mini-match")}</span>
-                  <small>${App.utils.escapeHtml(event.phase || "-")} · ${type}</small>
-                  <b>${App.utils.escapeHtml(status)}</b>
-                </div>
-              `;
-            }).join("")}
-          </div>
-        </article>
-      `;
-    }).join("");
 
     container.innerHTML = `
-      <div class="sim-preview-summary">
-        <article><span>Competições</span><strong>${report.competitions.length}</strong></article>
-        <article><span>CPU x CPU pendentes</span><strong>${report.cpuPending.length}</strong></article>
-        <article><span>Com técnico pendentes</span><strong>${report.humanPending.length}</strong></article>
-        <article><span>Finalizados</span><strong>${report.done.length}</strong></article>
-      </div>
-      ${report.humanPending.length ? `
-        <div class="sim-warning">
-          Ainda existem ${report.humanPending.length} jogo(s) com técnico pendente nessa semana. A simulação fica bloqueada até esses resultados serem enviados.
+      <div class="sim-preview-shell is-loading">
+        <div class="sim-preview-title">
+          <strong>${week ? `Analisando semana ${week}` : "Mapa de pendências"}</strong>
+          <span>Consultando o banco oficial...</span>
         </div>
-      ` : ""}
-      <div class="sim-preview-grid">${competitionBlocks}</div>
+      </div>
     `;
+
+    const audit = await App.api.loadMatchAudit(week || null);
+    const matches = Array.isArray(audit.matches) ? audit.matches : [];
+
+    if (!audit.ok) {
+      container.innerHTML = `<div class="sim-preview-empty">${App.utils.escapeHtml(audit.message || "Não consegui carregar a auditoria de partidas.")}</div>`;
+      return;
+    }
+
+    if (!matches.length) {
+      container.innerHTML = `<div class="sim-preview-empty">${week ? `Nenhum jogo encontrado na semana ${week}.` : "Nenhum jogo pendente encontrado no banco."}</div>`;
+      return;
+    }
+
+    const summary = audit.summary || {};
+    const pendingWeeks = [...new Set(matches
+      .filter(match => match.status !== "approved")
+      .map(match => match.week)
+      .filter(Boolean)
+    )].sort((a, b) => Number(a) - Number(b));
+
+    const grouped = matches.reduce((acc, match) => {
+      const key = week ? match.competition : `Semana ${match.week || "-"} · ${match.competition}`;
+      if (!acc[key]) acc[key] = [];
+      acc[key].push(match);
+      return acc;
+    }, {});
+
+    const blocks = Object.entries(grouped).map(([title, items]) => `
+      <article class="sim-competition-block">
+        <div class="sim-competition-header">
+          <strong>${App.utils.escapeHtml(title)}</strong>
+          <span>${items.length} jogo(s)</span>
+        </div>
+        <div class="sim-match-list">
+          ${items.map(match => {
+            const isDone = match.status === "approved";
+            const isCpu = match.match_type === "CPU x CPU";
+            const statusLabel = isDone
+              ? `${match.home_score} x ${match.away_score}${match.penalty_winner ? ` · Pên.: ${match.penalty_winner} ${match.penalty_score || ""}` : ""}`
+              : match.status_label || "Pendente";
+
+            return `
+              <div class="sim-match-row ${isCpu ? "is-cpu" : "has-human"} ${isDone ? "is-done" : ""}">
+                <div class="sim-match-main">
+                  <strong>${App.utils.escapeHtml(match.home)} <span>x</span> ${App.utils.escapeHtml(match.away)}</strong>
+                  <small>${App.utils.escapeHtml(match.phase || "-")} · ${App.utils.escapeHtml(match.match_type || "-")}</small>
+                </div>
+                <b>${App.utils.escapeHtml(statusLabel)}</b>
+              </div>
+            `;
+          }).join("")}
+        </div>
+      </article>
+    `).join("");
+
+    const canSimulate = Number(summary.human_pending || 0) === 0 && Number(summary.cpu_pending || 0) > 0;
+
+    container.innerHTML = `
+      <div class="sim-preview-shell">
+        <div class="sim-preview-title">
+          <strong>${week ? `Semana ${week}` : "Pendências por semana"}</strong>
+          <span>${week ? "Auditoria oficial do Supabase antes da simulação." : "Informe uma semana para simular; abaixo está o mapa geral."}</span>
+        </div>
+
+        ${!week && pendingWeeks.length ? `
+          <div class="sim-week-pills">
+            ${pendingWeeks.map(item => `<button type="button" data-fill-sim-week="${item}">Semana ${item}</button>`).join("")}
+          </div>
+        ` : ""}
+
+        <div class="sim-preview-summary">
+          <article><span>Total</span><strong>${Number(summary.total || matches.length)}</strong></article>
+          <article><span>CPU x CPU pendentes</span><strong>${Number(summary.cpu_pending || 0)}</strong></article>
+          <article><span>Com técnico pendentes</span><strong>${Number(summary.human_pending || 0)}</strong></article>
+          <article><span>Finalizados</span><strong>${Number(summary.approved || 0)}</strong></article>
+        </div>
+
+        ${week && canSimulate ? `
+          <div class="sim-ok">Semana pronta: ${Number(summary.cpu_pending || 0)} jogo(s) CPU x CPU podem ser simulados agora.</div>
+        ` : ""}
+
+        ${week && Number(summary.human_pending || 0) > 0 ? `
+          <div class="sim-warning">A simulação está bloqueada: ainda existe(m) ${Number(summary.human_pending || 0)} jogo(s) com técnico pendente nessa semana.</div>
+        ` : ""}
+
+        ${week && Number(summary.cpu_pending || 0) === 0 && Number(summary.human_pending || 0) === 0 ? `
+          <div class="sim-preview-empty">Não há jogos CPU x CPU pendentes para simular nessa semana.</div>
+        ` : ""}
+
+        <div class="sim-preview-grid">${blocks}</div>
+      </div>
+    `;
+
+    container.querySelectorAll("[data-fill-sim-week]").forEach(button => {
+      button.addEventListener("click", () => {
+        const form = document.getElementById("cpuSimulationForm");
+        if (!form?.elements.week) return;
+        form.elements.week.value = button.dataset.fillSimWeek;
+        App.api.renderCpuSimulationPreview(button.dataset.fillSimWeek);
+      });
+    });
   },
+
 
 
   async loadApiData(options = {}) {
@@ -411,82 +484,15 @@ App.api = {
   async simulateCpuWeek(payload) {
     const week = Number(payload.week);
     const submittedBy = payload.submittedBy || "Liga";
-    const report = App.api.getCpuSimulationReport(week);
 
     if (!week) {
       return { ok: false, created: 0, message: "Informe uma semana válida para simular." };
     }
 
-    if (report.humanPending.length > 0) {
-      const sample = report.humanPending.slice(0, 4).map(match => `${match.competition}: ${match.home} x ${match.away}`).join("; ");
-      return {
-        ok: false,
-        created: 0,
-        message: `Ainda existem ${report.humanPending.length} jogo(s) com técnico sem resultado na semana ${week}. Exemplos: ${sample}`
-      };
-    }
-
-    const cpuMatches = report.cpuPending;
-
-    let created = 0;
-    let rejected = 0;
-    const details = [];
-
-    for (const match of cpuMatches) {
-      const score = App.api.simulateScore(match.home, match.away);
-      let penaltyWinner = "";
-      let penaltyScore = "";
-
-      if (App.api.isCupCompetition(match.competition) && score.homeScore === score.awayScore) {
-        const shootout = App.api.generatePenaltyShootout(match.home, match.away);
-        penaltyWinner = shootout.winner;
-        penaltyScore = shootout.score;
-      }
-
-      const response = await App.api.rpc("app_add_result", {
-        p_pin: App.config.API_PIN,
-        p_competition: match.competition,
-        p_week: week,
-        p_phase: match.phase,
-        p_home: match.home,
-        p_away: match.away,
-        p_home_score: score.homeScore,
-        p_away_score: score.awayScore,
-        p_goal_details: "",
-        p_assist_details: "",
-        p_penalty_winner: penaltyWinner,
-        p_penalty_score: penaltyScore,
-        p_submitted_by: submittedBy
-      }, 45000);
-
-      if (response.ok) created += 1;
-      else rejected += 1;
-
-      details.push({
-        competition: match.competition,
-        match: `${match.home} x ${match.away}`,
-        score: `${score.homeScore} x ${score.awayScore}`,
-        penalties: penaltyWinner ? `${penaltyWinner} (${penaltyScore})` : "",
-        ok: Boolean(response.ok),
-        message: response.message || ""
-      });
-    }
-
-    const byCompetition = details.reduce((acc, item) => {
-      if (item.ok) acc[item.competition] = (acc[item.competition] || 0) + 1;
-      return acc;
-    }, {});
-
-    const competitionText = Object.entries(byCompetition)
-      .map(([competition, total]) => `${competition}: ${total}`)
-      .join(" · ");
-
-    return {
-      ok: true,
-      created,
-      rejected,
-      details,
-      message: `${created} jogo(s) CPU x CPU simulados na semana ${week}${competitionText ? ` (${competitionText})` : ""}.${rejected ? ` ${rejected} rejeitado(s).` : ""}`
-    };
+    return App.api.rpc("app_simulate_cpu_week", {
+      p_pin: App.config.API_PIN,
+      p_week: week,
+      p_submitted_by: submittedBy
+    }, 120000);
   }
 };

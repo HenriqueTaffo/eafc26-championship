@@ -253,13 +253,12 @@ App.forms = {
 
       if (!data.ok) throw new Error(data.message || data.error || "Simulação rejeitada.");
       App.utils.setMessage(message, data.message || "Semana simulada com sucesso.", "success");
-      form.reset();
       await App.api.loadApiData({
         variant: "chaos",
         title: "Atualizando dados",
         message: "Simulação concluída. Atualizando semana, tabela, calendário e eventos..."
       });
-      App.api.renderCpuSimulationPreview(payload.week);
+      await App.api.renderCpuSimulationPreview(payload.week);
     } catch (error) {
       const friendlyMessage = error.name === "AbortError"
         ? "A operação demorou demais para responder. Verifique o Supabase e tente novamente."
@@ -357,10 +356,14 @@ App.forms = {
       cpuSimulationForm.addEventListener("submit", App.forms.handleCpuSimulationSubmit);
       const weekField = cpuSimulationForm.elements.week;
       if (weekField) {
-        const updatePreview = () => App.api.renderCpuSimulationPreview(weekField.value);
+        let previewTimer = null;
+        const updatePreview = () => {
+          clearTimeout(previewTimer);
+          previewTimer = setTimeout(() => App.api.renderCpuSimulationPreview(weekField.value), 250);
+        };
         weekField.addEventListener("input", updatePreview);
         weekField.addEventListener("change", updatePreview);
-        updatePreview();
+        App.api.renderCpuSimulationPreview(null);
       }
     }
   },
