@@ -91,19 +91,40 @@ App.api = {
     }
   },
 
+  mergeEaRatings(rows = []) {
+    const current = Array.isArray(App.state.apiRatings) ? App.state.apiRatings : [];
+    const byKey = current.reduce((acc, item) => {
+      const key = String(item.id || item.ea_id || item.name || "").toLowerCase();
+      if (key) acc[key] = item;
+      return acc;
+    }, {});
+
+    rows.forEach(item => {
+      const key = String(item.id || item.ea_id || item.name || "").toLowerCase();
+      if (key) byKey[key] = item;
+    });
+
+    App.state.apiRatings = Object.values(byKey);
+    return App.state.apiRatings;
+  },
+
+  async searchEaRatings(query = "", limit = 12) {
+    const data = await App.api.rpc("app_search_ea_player_ratings", {
+      p_query: query || "",
+      p_limit: Number(limit || 12)
+    }, 30000);
+
+    return Array.isArray(data) ? data : [];
+  },
+
   async loadEaRatings(query = "", limit = 12) {
     try {
-      const data = await App.api.rpc("app_search_ea_player_ratings", {
-        p_query: query || "",
-        p_limit: Number(limit || 12)
-      }, 30000);
-
-      App.state.apiRatings = Array.isArray(data) ? data : [];
+      const rows = await App.api.searchEaRatings(query, limit);
+      App.api.mergeEaRatings(rows);
       return App.state.apiRatings;
     } catch (error) {
       console.warn("Base oficial EA FC indisponível:", error);
-      App.state.apiRatings = [];
-      return [];
+      return App.state.apiRatings || [];
     }
   },
 
@@ -521,7 +542,7 @@ App.api = {
 
       await App.api.loadMatches();
       await App.api.loadMarketPlayers();
-      await App.api.loadEaRatings();
+      await App.api.loadEaRatings("", 50);
       await App.api.loadExperienceData();
       await App.api.loadManagerOnboarding?.();
       await App.governance?.loadData?.();

@@ -29,6 +29,7 @@ create table if not exists public.ea_player_ratings (
   physical integer,
   avatar_url text,
   shield_url text,
+  card_type text not null default 'Normal',
   source_url text not null default 'https://www.ea.com/games/ea-sports-fc/ratings',
   source_name text not null default 'EA SPORTS FC official ratings',
   synced_at timestamptz not null default now(),
@@ -47,6 +48,9 @@ alter table public.ea_player_ratings
 
 alter table public.ea_player_ratings
   add column if not exists shield_url text;
+
+alter table public.ea_player_ratings
+  add column if not exists card_type text not null default 'Normal';
 
 create table if not exists public.league_opportunities (
   id bigserial primary key,
@@ -105,7 +109,9 @@ begin
     physical,
     avatar_url,
     shield_url,
+    card_type,
     source_url,
+    source_name,
     synced_at,
     updated_at
   )
@@ -125,7 +131,9 @@ begin
     nullif(player ->> 'physical', '')::integer,
     coalesce(nullif(player ->> 'avatar_url', ''), nullif(player ->> 'avatarUrl', '')),
     coalesce(nullif(player ->> 'shield_url', ''), nullif(player ->> 'shieldUrl', '')),
+    coalesce(nullif(player ->> 'card_type', ''), nullif(player ->> 'version', ''), 'Normal'),
     coalesce(nullif(player ->> 'source_url', ''), 'https://www.ea.com/games/ea-sports-fc/ratings'),
+    coalesce(nullif(player ->> 'source_name', ''), 'EA SPORTS FC official ratings'),
     now(),
     now()
   from jsonb_array_elements(coalesce(p_players, '[]'::jsonb)) as payload(player)
@@ -145,7 +153,9 @@ begin
          physical = excluded.physical,
          avatar_url = excluded.avatar_url,
          shield_url = excluded.shield_url,
+         card_type = excluded.card_type,
          source_url = excluded.source_url,
+         source_name = excluded.source_name,
          synced_at = now(),
          updated_at = now();
 
@@ -183,6 +193,8 @@ as $$
       physical,
       avatar_url,
       shield_url,
+      card_type,
+      source_name,
       source_url,
       synced_at
     from public.ea_player_ratings

@@ -7,6 +7,8 @@
     "check:js": "for file in js/*.js; do node --check \"$file\"; done",
     "sync:ea-ratings": "node scripts/import-ea-ratings.js",
     "sync:ea-ratings:dry": "node scripts/import-ea-ratings.js --dry-run",
+    "sync:futbin-ratings": "node scripts/import-futbin-ratings.js",
+    "sync:futbin-ratings:dry": "node scripts/import-futbin-ratings.js --dry-run",
     "format": "prettier --write \"**/*.{html,css,js,json,md}\"",
     "format:check": "prettier --check \"**/*.{html,css,js,json,md}\"",
     "lint": "eslint js"

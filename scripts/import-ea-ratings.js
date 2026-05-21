@@ -37,7 +37,9 @@ function mapPlayer(player) {
     physical: toInt(stats.phy?.value),
     avatar_url: player.avatarUrl || "",
     shield_url: player.shieldUrl || "",
-    source_url: EA_RATINGS_URL
+    card_type: "Normal",
+    source_url: EA_RATINGS_URL,
+    source_name: "EA SPORTS FC official ratings"
   };
 }
 

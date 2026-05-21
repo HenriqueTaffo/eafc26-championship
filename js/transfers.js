@@ -750,7 +750,14 @@ App.transfers = {
     const target = document.getElementById("eaRatingResults");
     if (!target) return;
 
-    const ratings = await App.api.loadEaRatings(query, query ? 8 : 5);
+    const ratings = query
+      ? await App.api.searchEaRatings(query, 8).catch(error => {
+        console.warn("Busca de rating EA indisponível:", error);
+        return [];
+      })
+      : await App.api.loadEaRatings("", 8);
+
+    App.api.mergeEaRatings?.(ratings);
 
     if (!ratings.length) {
       target.innerHTML = `<div class="market-empty">Base oficial EA ainda não importada. Use o SQL de ratings para carregar o cache local.</div>`;
@@ -792,6 +799,10 @@ App.transfers = {
     target.innerHTML = `<div class="market-empty">Buscando jogadores no mercado...</div>`;
 
     const players = await App.transfers.searchMarketPlayers(query);
+    const ratingRows = await Promise.all(players.slice(0, 10).map(player =>
+      App.api.searchEaRatings(player.name || "", 3).catch(() => [])
+    ));
+    App.api.mergeEaRatings?.(ratingRows.flat());
 
     if (!players.length) {
       target.innerHTML = `
