@@ -29,6 +29,7 @@ order by created_at desc;
 update public.events
    set status = 'recovered',
        transfer_modifier = 0,
+       slot_hour = null,
        expires_at = coalesce(expires_at, now()),
        updated_at = now()
  where coalesce(transfer_modifier, 0) < 0
