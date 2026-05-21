@@ -5,6 +5,7 @@ App.auth = {
   currentSession: null,
   publicNews: [],
   myDecisions: [],
+  myTransferProposals: [],
   autoDecisionRunning: false,
 
   init() {
@@ -53,6 +54,7 @@ App.auth = {
 
     await App.auth.generateDueDecisions();
     await App.auth.loadMyDecisions();
+    await App.auth.loadMyTransferProposals();
     await App.auth.loadPublicNews();
     App.auth.renderAll();
 
@@ -62,6 +64,7 @@ App.auth = {
   logout() {
     App.auth.currentSession = null;
     App.auth.myDecisions = [];
+    App.auth.myTransferProposals = [];
     localStorage.removeItem(App.auth.storageKey);
     App.auth.renderAll();
   },
@@ -100,6 +103,28 @@ App.auth = {
     }
   },
 
+  async loadMyTransferProposals() {
+    const session = App.auth.getSession();
+    if (!session?.managerId || !session?.accessCode) {
+      App.auth.myTransferProposals = [];
+      return [];
+    }
+
+    try {
+      const result = await App.api.rpc("app_get_my_internal_transfer_proposals", {
+        p_manager_id: session.managerId,
+        p_access_code: session.accessCode
+      }, 30000);
+
+      App.auth.myTransferProposals = Array.isArray(result) ? result : [];
+      return App.auth.myTransferProposals;
+    } catch (error) {
+      console.warn("Propostas de transferencia indisponiveis:", error);
+      App.auth.myTransferProposals = [];
+      return [];
+    }
+  },
+
   async generateDueDecisions() {
     if (App.auth.autoDecisionRunning) return null;
 
@@ -110,6 +135,7 @@ App.auth = {
 
       if (App.auth.isLoggedIn()) {
         await App.auth.loadMyDecisions();
+        await App.auth.loadMyTransferProposals();
       }
 
       App.auth.renderAll();
@@ -166,9 +192,35 @@ App.auth = {
     return result;
   },
 
+  async answerTransferProposal(proposalId, decision) {
+    const session = App.auth.getSession();
+    if (!session) throw new Error("Faça login como técnico vendedor antes de responder propostas.");
+
+    const result = await App.api.rpc("app_answer_internal_transfer_proposal", {
+      p_manager_id: session.managerId,
+      p_access_code: session.accessCode,
+      p_proposal_id: Number(proposalId),
+      p_decision: decision
+    }, 45000);
+
+    if (!result.ok) throw new Error(result.message || "Não foi possível responder a proposta.");
+
+    await App.api.loadApiData({
+      variant: "market",
+      title: decision === "accepted" ? "Transferência aprovada" : "Proposta recusada",
+      message: "Atualizando propostas, mercado, orçamentos e painel dos técnicos..."
+    });
+
+    await App.auth.loadMyTransferProposals();
+    App.auth.renderAll();
+
+    return result;
+  },
+
   renderAll() {
     App.auth.renderLoginPanel();
     App.auth.renderDecisionCenter();
+    App.auth.renderTransferProposalPanel();
     App.auth.renderLeagueNews();
   },
 
@@ -299,6 +351,42 @@ App.auth = {
     App.auth.bindDecisionAnswerButtons(panel);
   },
 
+  renderTransferProposalPanel() {
+    const panel = document.getElementById("transferProposalPanel");
+    if (!panel) return;
+
+    const session = App.auth.getSession();
+    if (!session) {
+      panel.innerHTML = "";
+      return;
+    }
+
+    const pending = App.auth.myTransferProposals.filter(item => item.status === "pending");
+
+    if (!pending.length) {
+      panel.innerHTML = "";
+      return;
+    }
+
+    panel.innerHTML = `
+      <section class="decision-private-card transfer-proposal-card">
+        <div class="decision-header">
+          <div>
+            <span>Propostas de mercado</span>
+            <strong>${pending.length} proposta(s) pendente(s)</strong>
+            <p>${App.utils.escapeHtml(session.managerName)}, aceite ou recuse ofertas pelos seus jogadores.</p>
+          </div>
+          <span class="decision-auto-pill">Resposta do vendedor</span>
+        </div>
+        <div class="decision-grid">
+          ${pending.map(item => App.auth.renderTransferProposalCard(item)).join("")}
+        </div>
+      </section>
+    `;
+
+    App.auth.bindTransferProposalButtons(panel);
+  },
+
 
   renderCoachDecisionCard(ownerName) {
     const session = App.auth.getSession();
@@ -382,6 +470,29 @@ App.auth = {
     `;
   },
 
+  renderCoachTransferProposalCard(ownerName) {
+    const session = App.auth.getSession();
+    if (!session || App.utils.normalizeText(session.managerName) !== App.utils.normalizeText(ownerName)) return "";
+
+    const pending = App.auth.myTransferProposals.filter(item => item.status === "pending");
+    if (!pending.length) return "";
+
+    return `
+      <article class="coach-panel-card coach-decision-card transfer-proposal-card">
+        <div class="home-panel-header">
+          <div>
+            <h2>Propostas recebidas</h2>
+            <p class="coach-card-subtitle">Ofertas de outros técnicos pelos seus jogadores.</p>
+          </div>
+          <span class="coach-section-kicker">${pending.length} pendente(s)</span>
+        </div>
+        <div class="coach-decision-grid">
+          ${pending.map(item => App.auth.renderTransferProposalCard(item)).join("")}
+        </div>
+      </article>
+    `;
+  },
+
   bindDecisionAnswerButtons(root = document) {
     root.querySelectorAll("[data-decision-answer]").forEach(button => {
       if (button.dataset.bound === "true") return;
@@ -405,6 +516,58 @@ App.auth = {
         }
       });
     });
+  },
+
+  bindTransferProposalButtons(root = document) {
+    root.querySelectorAll("[data-transfer-proposal-answer]").forEach(button => {
+      if (button.dataset.bound === "true") return;
+      button.dataset.bound = "true";
+
+      button.addEventListener("click", async event => {
+        const target = event.currentTarget;
+        const proposalId = target.dataset.proposalId;
+        const decision = target.dataset.decision;
+        const label = decision === "accepted" ? "aceitar" : "recusar";
+
+        if (!confirm(`Deseja ${label} esta proposta?`)) return;
+
+        try {
+          target.disabled = true;
+          await App.auth.answerTransferProposal(proposalId, decision);
+        } catch (error) {
+          alert(error.message);
+        } finally {
+          target.disabled = false;
+        }
+      });
+    });
+  },
+
+  renderTransferProposalCard(item) {
+    return `
+      <article class="decision-card transfer-proposal-item">
+        <div class="decision-card-top">
+          <span>Oferta interna</span>
+          <b>${App.utils.escapeHtml(item.status || "pending")}</b>
+        </div>
+        <h3>${App.utils.escapeHtml(item.player)}</h3>
+        <p>${App.utils.escapeHtml(item.buyer)} ofereceu ${App.utils.formatCurrency(item.proposed_value)} por este jogador.</p>
+        <div class="proposal-meta">
+          <span>OVR ${App.utils.escapeHtml(item.overall || "-")}</span>
+          <span>${App.utils.escapeHtml(item.from_club || "Negociação interna")}</span>
+        </div>
+        <div class="decision-options">
+          <button type="button" data-transfer-proposal-answer data-proposal-id="${item.id}" data-decision="accepted">
+            <strong>Aceitar</strong>
+            <small>Vende o jogador e recebe o valor.</small>
+          </button>
+          <button type="button" data-transfer-proposal-answer data-proposal-id="${item.id}" data-decision="rejected">
+            <strong>Recusar</strong>
+            <small>A proposta é encerrada sem movimentação.</small>
+          </button>
+        </div>
+      </article>
+    `;
   },
 
   renderDecisionCard(item) {

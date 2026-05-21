@@ -169,15 +169,22 @@ App.forms = {
     try {
       const preview = App.transfers.getTransferPreview(form);
       const isInternal = App.transfers.isInternalTransferForm(form);
+      const session = App.auth?.getSession ? App.auth.getSession() : null;
 
       if (form.elements.confirmTransferBuyer && !form.elements.confirmTransferBuyer.checked) {
         throw new Error("Confirme que o comprador selecionado está correto antes de enviar.");
       }
 
       if (isInternal) {
+        if (!session) throw new Error("Faça login como comprador para enviar proposta a outro técnico.");
+        if (App.utils.normalizeText(session.managerName) !== App.utils.normalizeText(payload.buyer)) {
+          throw new Error("A proposta interna precisa ser enviada pelo comprador logado.");
+        }
         if (!payload.seller) throw new Error("Selecione o técnico vendedor.");
         if (payload.buyer === payload.seller) throw new Error("Comprador e vendedor precisam ser técnicos diferentes.");
         payload.fromClub = `Negociação interna: ${payload.seller}`;
+        payload.managerId = session.managerId;
+        payload.accessCode = session.accessCode;
       }
 
       if (!preview || !payload.buyer || !payload.player || !payload.fromClub || !payload.overall || !payload.marketValue) {
@@ -185,7 +192,7 @@ App.forms = {
       }
 
       const confirmationText = [
-        "Confirmar transferência?",
+        isInternal ? "Enviar proposta de transferência?" : "Confirmar transferência?",
         "",
         `Tipo: ${isInternal ? "Entre técnicos" : "Mercado externo"}`,
         `Comprador: ${payload.buyer}`,
@@ -220,7 +227,7 @@ App.forms = {
       });
 
       if (!data.ok) throw new Error(data.message || data.error || "Transferência rejeitada.");
-      App.utils.setMessage(message, data.message || "Transferência enviada com sucesso.", "success");
+      App.utils.setMessage(message, data.message || (isInternal ? "Proposta enviada com sucesso." : "Transferência enviada com sucesso."), "success");
       form.reset();
       if (form.elements.confirmTransferBuyer) form.elements.confirmTransferBuyer.checked = false;
       App.transfers.syncInternalTransferFields(form);
@@ -228,7 +235,9 @@ App.forms = {
       await App.api.loadApiData({
         variant: "market",
         title: "Atualizando dados",
-        message: "Transferência salva. Atualizando orçamento, lista de transferências e painel..."
+        message: isInternal
+          ? "Proposta enviada. Atualizando pendências do mercado..."
+          : "Transferência salva. Atualizando orçamento, lista de transferências e painel..."
       });
     } catch (error) {
       const friendlyMessage = error.name === "AbortError"

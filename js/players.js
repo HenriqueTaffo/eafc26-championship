@@ -334,6 +334,7 @@ App.players = {
     `;
 
     const decisionCard = App.auth?.renderCoachDecisionCard ? App.auth.renderCoachDecisionCard(activeTeam.owner) : "";
+    const proposalCard = App.auth?.renderCoachTransferProposalCard ? App.auth.renderCoachTransferProposalCard(activeTeam.owner) : "";
     const pinCard = App.auth?.renderPinChangeCard ? App.auth.renderPinChangeCard(activeTeam.owner) : "";
 
     return `
@@ -373,6 +374,7 @@ App.players = {
           </div>
 
           ${decisionCard ? `<div class="coach-full-row-v54">${decisionCard}</div>` : ""}
+          ${proposalCard ? `<div class="coach-full-row-v54">${proposalCard}</div>` : ""}
 
           <div class="coach-flow-v55">
             <article class="coach-panel-card coach-war-room-card">

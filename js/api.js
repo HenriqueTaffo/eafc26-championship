@@ -388,6 +388,7 @@ App.api = {
       await App.auth?.generateDueDecisions?.();
       await App.auth?.loadPublicNews?.();
       await App.auth?.loadMyDecisions?.();
+      await App.auth?.loadMyTransferProposals?.();
 
       if (Array.isArray(data.eventSlots) && data.eventSlots.length) {
         App.config.eventSlots = data.eventSlots.map(Number);
@@ -457,8 +458,9 @@ App.api = {
 
     if (payload.action === "addTransfer") {
       if (payload.transferType === "internal") {
-        return App.api.rpc("app_add_internal_transfer", {
-          p_pin: App.config.API_PIN,
+        return App.api.rpc("app_create_internal_transfer_proposal", {
+          p_manager_id: payload.managerId,
+          p_access_code: payload.accessCode,
           p_buyer: payload.buyer,
           p_seller: payload.seller || "",
           p_player: payload.player,
