@@ -6133,3 +6133,124 @@ body {
     grid-template-columns: 1fr !important;
   }
 }
+
+/* v56 — correção APENAS DESKTOP
+   Mobile preservado. Não altera regras abaixo de 1100px. */
+@media (min-width: 1101px) {
+  /* Área útil mais coerente no desktop, sem painel espremido no centro */
+  .app {
+    width: min(1520px, calc(100% - 64px));
+  }
+
+  #playersView .summary,
+  #playersView .coach-dashboard,
+  #playersView .coach-comparison,
+  #playersView .stats-grid,
+  #eventsView .events-summary-v45,
+  #eventsView .event-board-header,
+  #eventsView .event-card-grid-v45,
+  #eventsView .footer-note {
+    max-width: none;
+    width: 100%;
+  }
+
+  /* Painel do técnico: desktop com grid controlado e sem buracos */
+  #playersView .coach-dashboard {
+    display: grid;
+    gap: 18px;
+  }
+
+  #playersView .coach-layout-v54 {
+    display: grid !important;
+    gap: 18px !important;
+  }
+
+  #playersView .coach-top-row-v54 {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 18px;
+    align-items: start;
+  }
+
+  #playersView .coach-full-row-v54 {
+    width: 100%;
+  }
+
+  #playersView .coach-flow-v55 {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 18px;
+    align-items: start;
+    width: 100%;
+  }
+
+  #playersView .coach-flow-v55 > .coach-war-room-card {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  #playersView .coach-flow-v55 > .coach-market-card {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+  }
+
+  #playersView .coach-flow-v55 > .coach-event-radar-card {
+    grid-column: 1;
+    grid-row: 2;
+  }
+
+  #playersView .coach-flow-v55 > .pin-change-card {
+    grid-column: 1 / -1 !important;
+    grid-row: 3;
+  }
+
+  /* Evita que listas longas criem buracos absurdos no desktop */
+  #playersView .coach-market-card {
+    max-height: 620px;
+    overflow: hidden;
+  }
+
+  #playersView .coach-market-card .coach-transfer-timeline {
+    max-height: 430px;
+    overflow: auto;
+    padding-right: 4px;
+  }
+
+  #playersView .coach-flow-v55 .coach-alert-deck,
+  #playersView .coach-flow-v55 .coach-event-stack,
+  #playersView .coach-flow-v55 .coach-transfer-timeline {
+    grid-template-columns: 1fr !important;
+  }
+
+  #playersView .pin-change-form {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) auto !important;
+  }
+
+  /* Eventos: desktop com cards alinhados e sem “vazio” por altura de linha */
+  #eventsView .event-card-grid-v45 {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+    align-items: start !important;
+  }
+
+  #eventsView .event-card-v45 {
+    min-height: 0 !important;
+    height: auto !important;
+    align-self: start;
+  }
+
+  #eventsView .event-card-v45 .event-meta {
+    margin-top: 0 !important;
+  }
+}
+
+@media (min-width: 1500px) {
+  .app {
+    width: min(1600px, calc(100% - 96px));
+  }
+
+  #eventsView .event-card-grid-v45 {
+    grid-template-columns: repeat(2, minmax(520px, 1fr));
+  }
+}
