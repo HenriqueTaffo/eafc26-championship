@@ -456,6 +456,18 @@ App.api = {
     }
 
     if (payload.action === "addTransfer") {
+      if (payload.transferType === "internal") {
+        return App.api.rpc("app_add_internal_transfer", {
+          p_pin: App.config.API_PIN,
+          p_buyer: payload.buyer,
+          p_seller: payload.seller || "",
+          p_player: payload.player,
+          p_from_club: payload.fromClub,
+          p_overall: Number(payload.overall),
+          p_market_value: Number(payload.marketValue)
+        }, 45000);
+      }
+
       return App.api.rpc("app_add_transfer", {
         p_pin: App.config.API_PIN,
         p_buyer: payload.buyer,

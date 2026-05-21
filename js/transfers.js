@@ -158,6 +158,21 @@ App.transfers = {
       acc[key] = (acc[key] || 0) + 1;
       return acc;
     }, {});
+    const latestIndexByPlayer = allTransfers.reduce((acc, transfer, index) => {
+      const key = App.utils.normalizeText(transfer.player);
+      const currentIndex = acc[key];
+      if (currentIndex === undefined) {
+        acc[key] = index;
+        return acc;
+      }
+
+      const currentTime = new Date(allTransfers[currentIndex].timestamp || 0).getTime();
+      const nextTime = new Date(transfer.timestamp || 0).getTime();
+      const currentScore = Number.isNaN(currentTime) ? 0 : currentTime;
+      const nextScore = Number.isNaN(nextTime) ? 0 : nextTime;
+      if (nextScore > currentScore || (nextScore === currentScore && index > currentIndex)) acc[key] = index;
+      return acc;
+    }, {});
     const spentByBuyer = {};
 
     return allTransfers.map((transfer, index) => {
@@ -165,7 +180,7 @@ App.transfers = {
       const totalCost = Number(transfer.marketValue || 0) + (Number(transfer.marketValue || 0) * feeRate);
       const nameKey = App.utils.normalizeText(transfer.player);
       const hasDuplicate = nameCounts[nameKey] > 1;
-      const isBlockedDuplicate = hasDuplicate && allTransfers.findIndex(item => App.utils.normalizeText(item.player) === nameKey) !== index;
+      const isBlockedDuplicate = hasDuplicate && latestIndexByPlayer[nameKey] !== index;
       const countedCost = isBlockedDuplicate ? 0 : totalCost;
       spentByBuyer[transfer.buyer] = (spentByBuyer[transfer.buyer] || 0) + countedCost;
       const budgetInfo = App.transfers.getBudgetInfoByBuyer()[transfer.buyer];
@@ -308,10 +323,27 @@ App.transfers = {
     return App.transfers.getValidTransfers().find(item => App.utils.normalizeText(item.player) === key) || null;
   },
 
+  isInternalTransferForm(form) {
+    return form?.elements.transferType?.value === "internal";
+  },
+
+  getOwnedTransfersByBuyer(buyer) {
+    return App.transfers.getValidTransfers()
+      .filter(item => item.buyer === buyer)
+      .sort((a, b) => a.player.localeCompare(b.player));
+  },
+
+  getInternalTransferPlayerByIndex(seller, index) {
+    if (index === "" || index === undefined || index === null) return null;
+    return App.transfers.getOwnedTransfersByBuyer(seller)[Number(index)] || null;
+  },
+
   getTransferPreview(form) {
     if (!form) return null;
 
     const buyer = form.elements.buyer?.value || "";
+    const seller = form.elements.seller?.value || "";
+    const isInternal = App.transfers.isInternalTransferForm(form);
     const player = form.elements.player?.value || "";
     const fromClub = form.elements.fromClub?.value || "";
     const overall = Number(form.elements.overall?.value);
@@ -321,13 +353,18 @@ App.transfers = {
     const rate = Number.isNaN(overall) ? 0 : App.transfers.getTransferRate(overall);
     const finalValue = Number.isNaN(marketValue) ? 0 : marketValue + (marketValue * rate);
     const duplicate = App.transfers.findExistingPlayer(player);
+    const internalSellerMismatch = Boolean(isInternal && duplicate && seller && duplicate.buyer !== seller);
+    const sameBuyerAndSeller = Boolean(isInternal && buyer && seller && buyer === seller);
+    const duplicateBlock = duplicate && (!isInternal || internalSellerMismatch);
     const remainingAfter = budget ? budget.remaining - finalValue : 0;
     const limitReached = budget ? budget.transfersToday >= budget.transferLimit : false;
     const overBudget = budget ? finalValue > budget.remaining : false;
-    const hardBlock = Boolean(hasEnoughData && (duplicate || limitReached || overBudget));
+    const hardBlock = Boolean(hasEnoughData && (duplicateBlock || sameBuyerAndSeller || limitReached || overBudget));
 
     return {
       buyer,
+      seller,
+      isInternal,
       player,
       fromClub,
       overall,
@@ -336,6 +373,9 @@ App.transfers = {
       rate,
       finalValue,
       duplicate,
+      duplicateBlock,
+      internalSellerMismatch,
+      sameBuyerAndSeller,
       budget,
       remainingAfter,
       limitReached,
@@ -363,8 +403,16 @@ App.transfers = {
 
     const messages = [];
 
-    if (preview.duplicate) {
+    if (preview.duplicateBlock) {
       messages.push(`Jogador já contratado por ${preview.duplicate.buyer}.`);
+    }
+
+    if (preview.sameBuyerAndSeller) {
+      messages.push("Comprador e vendedor precisam ser técnicos diferentes.");
+    }
+
+    if (preview.isInternal && preview.duplicate && !preview.internalSellerMismatch) {
+      messages.push(`Negociação interna saindo de ${preview.seller}.`);
     }
 
     if (preview.limitReached) {
@@ -392,7 +440,7 @@ App.transfers = {
       <div class="preview-grid">
         <span>OVR <strong>${preview.overall}</strong></span>
         <span>Taxa <strong>${Math.round(preview.rate * 100)}%</strong></span>
-        <span>Custo final <strong>${App.utils.formatCurrency(preview.finalValue)}</strong></span>
+        <span>${preview.isInternal ? "Valor negociado" : "Custo final"} <strong>${App.utils.formatCurrency(preview.finalValue)}</strong></span>
         <span>Saldo após compra <strong>${App.utils.formatCurrency(preview.remainingAfter)}</strong></span>
         <span>Transferências hoje <strong>${preview.budget.transfersToday}/${preview.budget.transferLimit}</strong></span>
       </div>
@@ -400,6 +448,64 @@ App.transfers = {
         ${messages.map(message => `<li>${App.utils.escapeHtml(message)}</li>`).join("")}
       </ul>
     `;
+  },
+
+  syncInternalTransferFields(form) {
+    if (!form) return;
+
+    const isInternal = App.transfers.isInternalTransferForm(form);
+    const marketFields = form.querySelectorAll("[data-market-transfer-field]");
+    const internalFields = form.querySelectorAll("[data-internal-transfer-field]");
+    const valueLabel = document.getElementById("transferValueLabel");
+
+    marketFields.forEach(element => { element.hidden = isInternal; });
+    internalFields.forEach(element => { element.hidden = !isInternal; });
+    if (valueLabel) valueLabel.textContent = isInternal ? "Valor negociado entre técnicos" : "Valor Transfermarkt";
+
+    if (!isInternal) {
+      if (form.elements.seller) form.elements.seller.value = "";
+      App.transfers.populateInternalTransferPlayers(form);
+      return;
+    }
+
+    App.transfers.populateInternalTransferPlayers(form);
+    App.transfers.selectInternalTransferPlayer(form);
+  },
+
+  populateInternalTransferPlayers(form) {
+    const select = document.getElementById("internalTransferPlayer");
+    if (!select || !form) return;
+
+    const seller = form.elements.seller?.value || "";
+    const players = seller ? App.transfers.getOwnedTransfersByBuyer(seller) : [];
+    const currentValue = select.value;
+
+    select.innerHTML = `
+      <option value="">${seller ? "Escolha o jogador" : "Escolha vendedor e jogador"}</option>
+      ${players.map((item, index) => `
+        <option value="${index}">${App.utils.escapeHtml(item.player)} · ${App.utils.formatCurrency(item.totalCost)}</option>
+      `).join("")}
+    `;
+
+    if ([...select.options].some(option => option.value === currentValue)) select.value = currentValue;
+  },
+
+  selectInternalTransferPlayer(form) {
+    const select = document.getElementById("internalTransferPlayer");
+    if (!select || !form || !App.transfers.isInternalTransferForm(form)) return;
+
+    const seller = form.elements.seller?.value || "";
+    const transfer = App.transfers.getInternalTransferPlayerByIndex(seller, select.value);
+    if (!transfer) return;
+
+    if (form.elements.player) form.elements.player.value = transfer.player || "";
+    if (form.elements.fromClub) form.elements.fromClub.value = `Negociação interna: ${seller}`;
+    if (form.elements.overall) form.elements.overall.value = transfer.overall || "";
+    if (form.elements.marketValue && !Number(form.elements.marketValue.value)) {
+      form.elements.marketValue.value = Math.round(Number(transfer.marketValue || transfer.totalCost || 0));
+    }
+
+    App.transfers.renderTransferPreview(form);
   },
 
   renderBudgetBoard() {

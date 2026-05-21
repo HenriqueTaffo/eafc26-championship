@@ -81,6 +81,8 @@
 
       <section class="round-center" id="roundCenter"></section>
 
+      <section class="attention-panel" id="attentionPanel"></section>
+
       <section id="leagueNewsPanel" class="league-news-panel"></section>
 
       <section class="home-grid">
@@ -188,6 +190,7 @@
           <span class="badge"><span class="dot done"></span>Realizado</span>
         </div>
       </section>
+      <section class="calendar-week-board" id="calendarWeekBoard"></section>
       <section class="table-wrapper calendar-table-wrapper">
         <table class="calendar-table">
           <thead>
@@ -374,10 +377,29 @@
     <section id="submitView" class="view">
       <section class="summary" id="apiSummary"></section>
 
-      <section class="form-card">
-        <h2>Enviar resultado</h2>
-        <p>Use este formulário para registrar placares. Para jogos de copa empatados, informe o vencedor nos pênaltis.</p>
-        <form id="resultForm">
+      <section class="submit-hero">
+        <div>
+          <span class="modal-kicker">Central de lançamentos</span>
+          <h2>Enviar dados da liga</h2>
+          <p>Resultados, mercado e simulações ficam no mesmo lugar, com prévias para reduzir erro antes de salvar.</p>
+        </div>
+        <div class="submit-hero-actions">
+          <a href="#resultForm">Resultado</a>
+          <a href="#transferForm">Transferência</a>
+          <a href="#cpuSimulationForm">CPU x CPU</a>
+        </div>
+      </section>
+
+      <section class="submit-form-grid">
+        <section class="form-card submit-card submit-card-result">
+          <div class="submit-card-header">
+            <span class="submit-card-icon">▦</span>
+            <div>
+              <h2>Enviar resultado</h2>
+              <p>Registre placares. Em jogos de copa empatados, informe o vencedor nos pênaltis.</p>
+            </div>
+          </div>
+          <form id="resultForm">
           <div class="form-grid">
             <label>Competição
               <select name="competition" required>
@@ -398,7 +420,7 @@
                 <option value="Willian">Willian</option>
                 <option value="Rafael">Rafael</option>
                 <option value="Renato">Renato</option>
-          <option value="Bruno Silva">Bruno Silva</option>
+                <option value="Bruno Silva">Bruno Silva</option>
               </select>
             </label>
             <label>Mandante
@@ -432,34 +454,64 @@
             <button class="primary-button" type="submit">Enviar resultado</button>
             <span class="app-message" id="resultMessage"></span>
           </div>
-        </form>
-      </section>
+          </form>
+        </section>
 
-      <section class="form-card">
-        <h2>Enviar transferência</h2>
-        <p>Informe o valor do Transfermarkt em número cheio. Exemplo: 10 milhões = 10000000.</p>
-        <form id="transferForm">
+        <section class="form-card submit-card submit-card-transfer">
+          <div class="submit-card-header">
+            <span class="submit-card-icon">⇄</span>
+            <div>
+              <h2>Enviar transferência</h2>
+              <p>Compre no mercado externo ou negocie um jogador que já pertence a outro técnico.</p>
+            </div>
+          </div>
+          <form id="transferForm">
           <div class="form-grid">
+            <div class="submit-mode-switch full" aria-label="Tipo de transferência">
+              <label>
+                <input name="transferType" type="radio" value="market" checked />
+                <span>Mercado externo</span>
+              </label>
+              <label>
+                <input name="transferType" type="radio" value="internal" />
+                <span>Entre técnicos</span>
+              </label>
+            </div>
             <label>Comprador
               <select name="buyer" required>
                 <option value="Henrique">Henrique</option>
                 <option value="Willian">Willian</option>
                 <option value="Rafael">Rafael</option>
                 <option value="Renato">Renato</option>
-          <option value="Bruno Silva">Bruno Silva</option>
+                <option value="Bruno Silva">Bruno Silva</option>
               </select>
             </label>
-            <label class="full">Buscar jogador no mercado
+            <label class="internal-transfer-field" data-internal-transfer-field hidden>Vendedor
+              <select name="seller">
+                <option value="">Selecione o vendedor</option>
+                <option value="Henrique">Henrique</option>
+                <option value="Willian">Willian</option>
+                <option value="Rafael">Rafael</option>
+                <option value="Renato">Renato</option>
+                <option value="Bruno Silva">Bruno Silva</option>
+              </select>
+            </label>
+            <label class="internal-transfer-field full" data-internal-transfer-field hidden>Jogador do vendedor
+              <select id="internalTransferPlayer" name="internalPlayer">
+                <option value="">Escolha vendedor e jogador</option>
+              </select>
+            </label>
+            <label class="full" data-market-transfer-field>Buscar jogador no mercado
               <input id="marketPlayerSearch" type="search" placeholder="Digite nome, clube, liga ou posição..." autocomplete="off" />
             </label>
-            <div class="market-player-toolbar full">
+            <div class="market-player-toolbar full" data-market-transfer-field>
               <span>Por padrão, jogadores já contratados ficam escondidos.</span>
               <label class="market-toggle">
                 <input id="showContractedPlayers" type="checkbox" />
                 <span>Mostrar já contratados</span>
               </label>
             </div>
-            <div class="market-player-results full" id="marketPlayerResults">
+            <div class="market-player-results full" id="marketPlayerResults" data-market-transfer-field>
               <div class="market-empty">Carregue a base `players_market` no Supabase para selecionar jogadores. O preenchimento manual continua disponível.</div>
             </div>
             <label>Jogador
@@ -471,7 +523,7 @@
             <label>Overall EAFC
               <input name="overall" type="number" min="1" max="99" placeholder="Ex: 82" required />
             </label>
-            <label class="full">Valor Transfermarkt
+            <label class="full"><span id="transferValueLabel">Valor Transfermarkt</span>
               <input name="marketValue" type="number" min="0" step="1" inputmode="numeric" placeholder="Ex: 32000000" required />
             </label>
           </div>
@@ -490,13 +542,18 @@
             <button class="primary-button" type="submit">Enviar transferência</button>
             <span class="app-message" id="transferMessage"></span>
           </div>
-        </form>
-      </section>
+          </form>
+        </section>
 
-      <section class="form-card">
-        <h2>Simular CPU x CPU da semana</h2>
-        <p>Escolha a semana, confira a auditoria oficial do banco e simule apenas os confrontos CPU x CPU pendentes. Copas empatadas são decididas nos pênaltis automaticamente.</p>
-        <form id="cpuSimulationForm">
+        <section class="form-card submit-card submit-card-cpu">
+          <div class="submit-card-header">
+            <span class="submit-card-icon">☁</span>
+            <div>
+              <h2>Simular CPU x CPU da semana</h2>
+              <p>Confira a auditoria oficial e simule apenas confrontos CPU x CPU pendentes.</p>
+            </div>
+          </div>
+          <form id="cpuSimulationForm">
           <div class="form-grid">
             <label>Semana
               <input name="week" type="number" min="1" placeholder="Ex: 1" required />
@@ -507,7 +564,7 @@
                 <option value="Willian">Willian</option>
                 <option value="Rafael">Rafael</option>
                 <option value="Renato">Renato</option>
-          <option value="Bruno Silva">Bruno Silva</option>
+                <option value="Bruno Silva">Bruno Silva</option>
               </select>
             </label>
           </div>
@@ -518,9 +575,10 @@
           <div class="simulation-preview" id="cpuSimulationPreview">
             <div class="sim-preview-empty">Carregando mapa de pendências por semana...</div>
           </div>
-        </form>
+          </form>
+        </section>
       </section>
-<datalist id="teamOptions"></datalist>
+      <datalist id="teamOptions"></datalist>
     </section>
   
   <section class="result-modal" id="calendarResultModal" aria-hidden="true">

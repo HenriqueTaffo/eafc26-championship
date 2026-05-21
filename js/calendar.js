@@ -209,6 +209,53 @@ App.calendar = {
     `;
   },
 
+  renderWeekBoard(events) {
+    const target = document.getElementById("calendarWeekBoard");
+    if (!target) return;
+
+    const source = events?.length ? events : App.calendar.getFilteredEvents();
+    const weeks = [...source.reduce((acc, event) => {
+      const key = String(event.week || "-");
+      if (!acc.has(key)) acc.set(key, []);
+      acc.get(key).push(event);
+      return acc;
+    }, new Map()).entries()]
+      .sort((a, b) => Number(a[0]) - Number(b[0]))
+      .slice(0, 4);
+
+    if (!weeks.length) {
+      target.innerHTML = "";
+      return;
+    }
+
+    target.innerHTML = `
+      <div class="calendar-week-header">
+        <div>
+          <span class="modal-kicker">Agenda por semana</span>
+          <h2>Visão rápida</h2>
+        </div>
+        <small>${source.length} jogo(s) no filtro atual</small>
+      </div>
+      <div class="calendar-week-grid">
+        ${weeks.map(([week, weekEvents]) => {
+          const pending = weekEvents.filter(event => App.calendar.getStatusClass(event) === "pending");
+          const human = weekEvents.filter(event => App.calendar.involvesOurTeam(event));
+          const next = pending[0] || weekEvents[0];
+          return `
+            <article class="calendar-week-card">
+              <div>
+                <span>Semana ${App.utils.escapeHtml(week)}</span>
+                <strong>${pending.length} pendente(s)</strong>
+              </div>
+              <p>${human.length} jogo(s) com técnico</p>
+              ${next ? `<small>${App.utils.escapeHtml(next.home)} x ${App.utils.escapeHtml(next.away)}</small>` : ""}
+            </article>
+          `;
+        }).join("")}
+      </div>
+    `;
+  },
+
   openResultModal(eventId) {
     const event = App.calendar.getEventById(eventId);
     const modal = document.getElementById("calendarResultModal");
@@ -289,6 +336,7 @@ App.calendar = {
     if (!table || !mobile) return;
 
     const events = App.calendar.getFilteredEvents();
+    App.calendar.renderWeekBoard(events);
 
     if (!events.length) {
       const emptyMessage = `

@@ -298,6 +298,71 @@ App.standings = {
     `;
   },
 
+  getAttentionItems() {
+    const pendingHumanGames = App.calendar.getCalendarEvents()
+      .filter(event => App.calendar.getStatusClass(event) === "pending" && App.calendar.involvesOurTeam(event))
+      .slice(0, 3)
+      .map(event => ({
+        type: "Jogo pendente",
+        title: `${event.home} x ${event.away}`,
+        detail: `${event.competition} · ${event.phase} · Semana ${event.week}`,
+        action: "Calendário",
+        target: "calendarView"
+      }));
+
+    const activeEvents = (App.state.apiEvents || [])
+      .filter(event => App.events.isActiveOrDurationEvent(event))
+      .slice(0, 3)
+      .map(event => ({
+        type: "Evento ativo",
+        title: event.Titulo || "Evento da liga",
+        detail: `${event.Jogador || "Liga"} · ${event.Tipo || "Evento"}`,
+        action: "Eventos",
+        target: "eventsView"
+      }));
+
+    const recentTransfers = App.transfers.getRecentTransferMovements(3)
+      .map(item => ({
+        type: "Mercado",
+        title: `${item.buyer} contratou ${item.player}`,
+        detail: `${App.utils.formatCurrency(item.totalCost)} · ${item.fromClub || "Clube não informado"}`,
+        action: "Transferências",
+        target: "transfersView"
+      }));
+
+    return [...pendingHumanGames, ...activeEvents, ...recentTransfers].slice(0, 6);
+  },
+
+  renderAttentionPanel() {
+    const target = document.getElementById("attentionPanel");
+    if (!target) return;
+
+    const items = App.standings.getAttentionItems();
+
+    target.innerHTML = `
+      <article class="attention-card">
+        <div class="home-panel-header">
+          <div>
+            <span class="modal-kicker">Atenção agora</span>
+            <h2>O que pede ação</h2>
+          </div>
+        </div>
+        ${items.length ? `
+          <div class="attention-grid">
+            ${items.map(item => `
+              <button class="attention-item" type="button" data-view-target="${item.target}">
+                <span>${App.utils.escapeHtml(item.type)}</span>
+                <strong>${App.utils.escapeHtml(item.title)}</strong>
+                <small>${App.utils.escapeHtml(item.detail)}</small>
+                <b>${App.utils.escapeHtml(item.action)} ›</b>
+              </button>
+            `).join("")}
+          </div>
+        ` : `<div class="next-game-empty">Nada urgente agora. A liga está respirando.</div>`}
+      </article>
+    `;
+  },
+
   getActivityItems() {
     const resultItems = (App.state.apiResults || []).map(row => ({
       type: "Resultado",
@@ -365,6 +430,7 @@ App.standings = {
     App.standings.renderHomeStandings(standings);
     App.standings.renderHomeNextGames();
     App.standings.renderRoundCenter();
+    App.standings.renderAttentionPanel();
     App.standings.renderActivityPanel();
     App.standings.bindHomeActions();
 

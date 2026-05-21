@@ -168,9 +168,16 @@ App.forms = {
 
     try {
       const preview = App.transfers.getTransferPreview(form);
+      const isInternal = App.transfers.isInternalTransferForm(form);
 
       if (form.elements.confirmTransferBuyer && !form.elements.confirmTransferBuyer.checked) {
         throw new Error("Confirme que o comprador selecionado está correto antes de enviar.");
+      }
+
+      if (isInternal) {
+        if (!payload.seller) throw new Error("Selecione o técnico vendedor.");
+        if (payload.buyer === payload.seller) throw new Error("Comprador e vendedor precisam ser técnicos diferentes.");
+        payload.fromClub = `Negociação interna: ${payload.seller}`;
       }
 
       if (!preview || !payload.buyer || !payload.player || !payload.fromClub || !payload.overall || !payload.marketValue) {
@@ -180,12 +187,14 @@ App.forms = {
       const confirmationText = [
         "Confirmar transferência?",
         "",
+        `Tipo: ${isInternal ? "Entre técnicos" : "Mercado externo"}`,
         `Comprador: ${payload.buyer}`,
+        ...(isInternal ? [`Vendedor: ${payload.seller}`] : []),
         `Jogador: ${payload.player}`,
         `Clube origem: ${payload.fromClub}`,
         `Overall: ${payload.overall}`,
-        `Valor base: ${App.utils.formatCurrency(Number(payload.marketValue))}`,
-        `Valor final estimado: ${App.utils.formatCurrency(Number(preview.finalValue || 0))}`
+        `${isInternal ? "Valor negociado" : "Valor base"}: ${App.utils.formatCurrency(Number(payload.marketValue))}`,
+        `${isInternal ? "Débito estimado" : "Valor final estimado"}: ${App.utils.formatCurrency(Number(preview.finalValue || 0))}`
       ].join("\n");
 
       if (!window.confirm(confirmationText)) {
@@ -193,7 +202,9 @@ App.forms = {
       }
 
       if (preview?.hardBlock) {
-        const reason = preview.duplicate
+        const reason = preview.sameBuyerAndSeller
+          ? "Comprador e vendedor precisam ser técnicos diferentes."
+          : preview.duplicateBlock
           ? `Jogador já contratado por ${preview.duplicate.buyer}.`
           : preview.limitReached
             ? `${preview.buyer} já atingiu o limite diário.`
@@ -212,6 +223,7 @@ App.forms = {
       App.utils.setMessage(message, data.message || "Transferência enviada com sucesso.", "success");
       form.reset();
       if (form.elements.confirmTransferBuyer) form.elements.confirmTransferBuyer.checked = false;
+      App.transfers.syncInternalTransferFields(form);
       App.transfers.renderTransferPreview(form);
       await App.api.loadApiData({
         variant: "market",
@@ -302,11 +314,24 @@ App.forms = {
     if (!transferForm || transferForm.dataset.previewReady === "true") return;
 
     transferForm.dataset.previewReady = "true";
-    ["buyer", "player", "fromClub", "overall", "marketValue"].forEach(name => {
+    ["buyer", "seller", "internalPlayer", "player", "fromClub", "overall", "marketValue"].forEach(name => {
       const field = transferForm.elements[name];
       if (!field) return;
       field.addEventListener("input", () => App.transfers.renderTransferPreview(transferForm));
       field.addEventListener("change", () => App.transfers.renderTransferPreview(transferForm));
+    });
+
+    transferForm.querySelectorAll('input[name="transferType"]').forEach(field => {
+      field.addEventListener("change", () => App.transfers.syncInternalTransferFields(transferForm));
+    });
+
+    transferForm.elements.seller?.addEventListener("change", () => {
+      App.transfers.populateInternalTransferPlayers(transferForm);
+      App.transfers.selectInternalTransferPlayer(transferForm);
+    });
+
+    transferForm.elements.internalPlayer?.addEventListener("change", () => {
+      App.transfers.selectInternalTransferPlayer(transferForm);
     });
 
     const marketSearch = document.getElementById("marketPlayerSearch");
@@ -328,6 +353,7 @@ App.forms = {
     }
 
     App.transfers.renderMarketPlayerResults();
+    App.transfers.syncInternalTransferFields(transferForm);
     App.transfers.renderTransferPreview(transferForm);
   },
 
