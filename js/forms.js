@@ -343,9 +343,28 @@ App.forms = {
       App.transfers.selectInternalTransferPlayer(transferForm);
     });
 
+    document.getElementById("transferFormPreview")?.addEventListener("click", async event => {
+      const button = event.target.closest("[data-open-auto-auction]");
+      if (!button) return;
+
+      const message = document.getElementById("transferMessage");
+      const preview = App.transfers.getTransferPreview(transferForm);
+      try {
+        button.disabled = true;
+        await App.transfers.createAutoAuctionFromPreview(preview);
+        App.utils.setMessage(message, "Leilão automático registrado na Liga+.", "success");
+      } catch (error) {
+        App.utils.setMessage(message, error.message, "error");
+      } finally {
+        button.disabled = false;
+      }
+    });
+
     const marketSearch = document.getElementById("marketPlayerSearch");
+    const eaRatingSearch = document.getElementById("eaRatingSearch");
     const showContracted = document.getElementById("showContractedPlayers");
     let marketSearchTimer = null;
+    let eaSearchTimer = null;
 
     const requestMarketRender = () => {
       clearTimeout(marketSearchTimer);
@@ -357,11 +376,22 @@ App.forms = {
       marketSearch.addEventListener("focus", App.transfers.renderMarketPlayerResults);
     }
 
+    const requestEaRender = () => {
+      clearTimeout(eaSearchTimer);
+      eaSearchTimer = setTimeout(() => App.transfers.renderEaRatingResults(eaRatingSearch?.value || ""), 220);
+    };
+
+    if (eaRatingSearch) {
+      eaRatingSearch.addEventListener("input", requestEaRender);
+      eaRatingSearch.addEventListener("focus", () => App.transfers.renderEaRatingResults(eaRatingSearch.value || ""));
+    }
+
     if (showContracted) {
       showContracted.addEventListener("change", App.transfers.renderMarketPlayerResults);
     }
 
     App.transfers.renderMarketPlayerResults();
+    App.transfers.renderEaRatingResults(eaRatingSearch?.value || "");
     App.transfers.syncInternalTransferFields(transferForm);
     App.transfers.renderTransferPreview(transferForm);
   },

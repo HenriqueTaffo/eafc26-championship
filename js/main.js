@@ -7,6 +7,7 @@ App.main = {
       calendarView: App.calendar.render,
       cupsView: App.cups.render,
       playersView: App.players.render,
+      experienceView: App.experience.render,
       eventsView: App.events.render,
       transfersView: App.transfers.render,
       commissionerView: App.governance.render

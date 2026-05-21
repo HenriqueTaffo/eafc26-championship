@@ -9,6 +9,12 @@ App.transfers = {
     return 0;
   },
 
+  findEaRatingByName(playerName) {
+    const key = App.utils.normalizeText(playerName);
+    if (!key) return null;
+    return (App.state.apiRatings || []).find(item => App.utils.normalizeText(item.name) === key) || null;
+  },
+
   getAllTransfers() {
     const approvedApiTransfers = App.state.apiTransfers
       .filter(row => App.utils.normalizeText(row.Status) === "aprovado")
@@ -402,6 +408,27 @@ App.transfers = {
     };
   },
 
+  async createAutoAuctionFromPreview(preview) {
+    if (!preview?.duplicateBlock || preview.isInternal) {
+      throw new Error("Leilão automático só abre quando há disputa por jogador externo já contratado.");
+    }
+
+    const result = await App.api.rpc("app_create_auto_auction", {
+      p_player_name: preview.player,
+      p_buyer: preview.buyer,
+      p_existing_owner: preview.duplicate?.buyer || "",
+      p_overall: Number(preview.overall || 0),
+      p_current_value: Number(preview.finalValue || 0),
+      p_reason: "Disputa por jogador ja contratado"
+    }, 30000);
+
+    if (result?.ok === false) throw new Error(result.message || "Não foi possível abrir o leilão.");
+
+    await App.api.loadExperienceData?.();
+    App.main.renderCurrentView();
+    return result;
+  },
+
   renderTransferPreview(form) {
     const target = document.getElementById("transferFormPreview");
     if (!target || !form) return;
@@ -423,6 +450,7 @@ App.transfers = {
 
     if (preview.duplicateBlock) {
       messages.push(`Jogador já contratado por ${preview.duplicate.buyer}.`);
+      if (!preview.isInternal) messages.push("Abra um leilão automático para registrar a disputa com o comissário.");
     }
 
     if (preview.sameBuyerAndSeller) {
@@ -470,6 +498,7 @@ App.transfers = {
       <ul class="preview-alerts">
         ${messages.map(message => `<li>${App.utils.escapeHtml(message)}</li>`).join("")}
       </ul>
+      ${preview.duplicateBlock && !preview.isInternal ? `<button type="button" class="secondary-button" data-open-auto-auction>Abrir leilão automático</button>` : ""}
     `;
   },
 
@@ -686,10 +715,47 @@ App.transfers = {
     if (form.elements.fromClub) form.elements.fromClub.value = player.club || "";
     if (form.elements.marketValue) form.elements.marketValue.value = Math.round(Number(player.market_value_eur || 0));
 
+    const eaRating = App.transfers.findEaRatingByName(player.name);
+    if (eaRating && form.elements.overall) form.elements.overall.value = Number(eaRating.overall || player.overall || "");
+
     const search = document.getElementById("marketPlayerSearch");
     if (search) search.value = `${player.name} • ${player.club}`;
 
     App.transfers.renderTransferPreview(form);
+  },
+
+  async renderEaRatingResults(query = "") {
+    const target = document.getElementById("eaRatingResults");
+    if (!target) return;
+
+    const ratings = await App.api.loadEaRatings(query, query ? 8 : 5);
+
+    if (!ratings.length) {
+      target.innerHTML = `<div class="market-empty">Base oficial EA ainda não importada. Use o SQL de ratings para carregar o cache local.</div>`;
+      return;
+    }
+
+    target.innerHTML = ratings.map(player => `
+      <button class="ea-rating-option" type="button" data-ea-rating="${App.utils.escapeHtml(player.id || player.ea_id || player.name)}">
+        <span>
+          <strong>${App.utils.escapeHtml(player.name || "-")}</strong>
+          <small>${App.utils.escapeHtml([player.position, player.club, player.nation].filter(Boolean).join(" · "))}</small>
+        </span>
+        <b>OVR ${Number(player.overall || 0)}</b>
+      </button>
+    `).join("");
+
+    target.querySelectorAll("[data-ea-rating]").forEach(button => {
+      button.addEventListener("click", () => {
+        const selected = ratings.find(item => String(item.id || item.ea_id || item.name) === String(button.dataset.eaRating));
+        const form = document.getElementById("transferForm");
+        if (!selected || !form) return;
+        if (form.elements.player) form.elements.player.value = selected.name || "";
+        if (form.elements.fromClub) form.elements.fromClub.value = selected.club || "";
+        if (form.elements.overall) form.elements.overall.value = Number(selected.overall || "");
+        App.transfers.renderTransferPreview(form);
+      });
+    });
   },
 
   async renderMarketPlayerResults() {
@@ -756,6 +822,7 @@ App.transfers = {
     App.transfers.renderBudgetBoard();
     App.transfers.renderInsights();
     App.transfers.renderMarketPlayerResults();
+    App.transfers.renderEaRatingResults(document.getElementById("eaRatingSearch")?.value || "");
 
     const table = document.getElementById("transferTable");
     const mobile = document.getElementById("transferMobile");

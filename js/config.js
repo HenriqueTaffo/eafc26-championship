@@ -27,7 +27,13 @@ App.state = {
   apiBudgets: {},
   apiMatches: [],
   apiMarketPlayers: [],
+  apiRatings: [],
   apiOnboarding: {},
+  apiExperience: {
+    opportunities: [],
+    auctions: [],
+    news: []
+  },
   apiGovernance: {
     auctions: [],
     medicalActions: [],

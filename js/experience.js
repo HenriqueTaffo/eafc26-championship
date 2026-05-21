@@ -1,0 +1,318 @@
+window.App = window.App || {};
+
+App.experience = {
+  getCoachProfile(team) {
+    const standings = App.standings.getStandings();
+    const standing = standings.find(row => App.utils.sameTeamName(row.team, team.team)) || {};
+    const budget = App.transfers.getBudgetInfoByBuyer()[team.owner] || {};
+    const transfers = App.players.getApprovedTransfersForBuyer(team.owner);
+    const injuries = App.players.getActiveInjuriesForCoach(team.owner);
+    const recent = App.players.getRecentForm(team.team, 5);
+    const wins = recent.filter(item => item.result === "V").length;
+    const losses = recent.filter(item => item.result === "D").length;
+    const spendPct = Number(budget.totalBudget || 0) > 0 ? Number(budget.spentTotal || 0) / Number(budget.totalBudget || 1) : 0;
+    const morale = Math.max(0, Math.min(100,
+      52 +
+      Number(standing.points || 0) * 1.6 +
+      Number(standing.goalDifference || 0) * 1.2 +
+      wins * 5 -
+      losses * 6 -
+      injuries.length * 5 -
+      (Number(budget.remainingBudget || 0) < 0 ? 18 : 0) -
+      (spendPct > .9 ? 8 : 0)
+    ));
+
+    const reputation = morale >= 78 ? "Alta" : morale >= 58 ? "Estável" : morale >= 40 ? "Pressão" : "Crise";
+    return { team, standing, budget, transfers, injuries, recent, morale: Math.round(morale), reputation };
+  },
+
+  getProfiles() {
+    return App.data.teams.filter(team => team.status === "Nosso").map(team => App.experience.getCoachProfile(team));
+  },
+
+  getDirectorObjectives(profile) {
+    const objectives = [
+      {
+        label: "Manter caixa positivo",
+        status: Number(profile.budget.remainingBudget || 0) >= 0,
+        reward: "+ moral financeira"
+      },
+      {
+        label: "Pontuar no próximo jogo",
+        status: profile.recent[0]?.result !== "D",
+        reward: "+ reputação"
+      },
+      {
+        label: "Evitar DM lotado",
+        status: profile.injuries.length <= 1,
+        reward: "+ confiança da diretoria"
+      },
+      {
+        label: "Mercado sob controle",
+        status: Number(profile.budget.spentTotal || 0) <= Number(profile.budget.totalBudget || 0) * .85,
+        reward: "+ limite de negociação"
+      }
+    ];
+
+    const done = objectives.filter(item => item.status).length;
+    const verdict = done >= 3 ? "Diretoria satisfeita" : done >= 2 ? "Semana em observação" : "Cobrança interna";
+    return { objectives, done, verdict };
+  },
+
+  getOpportunityRows() {
+    const ratings = (App.state.apiRatings || []).filter(item => Number(item.overall || 0) >= 72);
+    const market = App.transfers.getMarketPlayers().map(item => ({
+      name: item.name,
+      club: item.club,
+      position: item.position,
+      overall: Number(item.overall || 0),
+      value: Number(item.market_value_eur || 0)
+    }));
+
+    const source = ratings.length ? ratings.map(item => ({
+      name: item.name,
+      club: item.club,
+      position: item.position,
+      overall: Number(item.overall || 0),
+      value: Math.max(1000000, Number(item.market_value_eur || 0))
+    })) : market;
+
+    return source
+      .filter(item => item.name)
+      .sort((a, b) => Number(b.overall || 0) - Number(a.overall || 0) || String(a.name).localeCompare(String(b.name)))
+      .slice(0, 6)
+      .map((item, index) => ({
+        ...item,
+        tag: index % 3 === 0 ? "Scout recomenda" : index % 3 === 1 ? "Preço observável" : "Janela curta",
+        risk: Number(item.overall || 0) >= 84 ? "Disputa provável" : "Boa oportunidade"
+      }));
+  },
+
+  getAuctionRows() {
+    const transfers = App.transfers.getTransfersWithStats();
+    const grouped = transfers.reduce((acc, item) => {
+      const key = App.utils.normalizeText(item.player);
+      if (!key) return acc;
+      acc[key] = acc[key] || [];
+      acc[key].push(item);
+      return acc;
+    }, {});
+
+    const duplicates = Object.values(grouped)
+      .filter(items => new Set(items.map(item => item.buyer)).size > 1)
+      .map(items => {
+        const latest = items[items.length - 1];
+        return {
+          player: latest.player,
+          detail: [...new Set(items.map(item => item.buyer))].join(" x "),
+          value: Math.max(...items.map(item => Number(item.totalCost || 0))),
+          status: "Disputa detectada"
+        };
+      });
+
+    const expensive = App.transfers.getValidTransfers()
+      .filter(item => Number(item.overall || 0) >= 85 || Number(item.totalCost || 0) >= 35000000)
+      .slice(0, 4)
+      .map(item => ({
+        player: item.player,
+        detail: item.buyer,
+        value: item.totalCost,
+        status: "Candidato a leilão"
+      }));
+
+    const persisted = (App.state.apiExperience?.auctions || []).map(item => ({
+      player: item.player_name,
+      detail: item.trigger_reason,
+      value: Number(item.current_value || 0),
+      status: item.status || "open"
+    }));
+
+    return [...persisted, ...duplicates, ...expensive].slice(0, 6);
+  },
+
+  getNewsRows() {
+    const profiles = App.experience.getProfiles();
+    const rows = profiles.map(profile => {
+      const result = profile.recent[0];
+      if (profile.reputation === "Crise") {
+        return `${profile.team.owner} entra em semana decisiva após pressão financeira e esportiva.`;
+      }
+      if (result?.result === "V") {
+        return `${profile.team.team} vence e fortalece a moral de ${profile.team.owner}.`;
+      }
+      return `${profile.team.owner} tem ${profile.reputation.toLowerCase()} na diretoria antes da próxima rodada.`;
+    });
+
+    const sponsorRewards = (App.auth?.mySponsorships?.recentRewards || []).map(item =>
+      `${item.sponsor_name || "Patrocinador"} pagou bônus por meta cumprida.`
+    );
+
+    const persisted = (App.state.apiExperience?.news || []).map(item => item.body || item.title).filter(Boolean);
+    return [...persisted, ...sponsorRewards, ...rows].slice(0, 8);
+  },
+
+  renderSummary() {
+    const target = document.getElementById("experienceSummary");
+    if (!target) return;
+
+    const profiles = App.experience.getProfiles();
+    const avgMorale = profiles.length
+      ? Math.round(profiles.reduce((sum, item) => sum + item.morale, 0) / profiles.length)
+      : 0;
+    const opportunities = App.experience.getOpportunityRows();
+    const auctions = App.experience.getAuctionRows();
+    const ratings = App.state.apiRatings || [];
+
+    target.innerHTML = `
+      ${App.ui.summaryCard("Moral média", `${avgMorale}/100`)}
+      ${App.ui.summaryCard("Oportunidades", opportunities.length)}
+      ${App.ui.summaryCard("Radar de leilão", auctions.length)}
+      ${App.ui.summaryCard("Cache EA FC", ratings.length ? `${ratings.length} jogador(es)` : "Aguardando import")}
+    `;
+  },
+
+  renderDirectorBoard(profiles) {
+    return `
+      <article class="experience-card experience-wide" id="directorBoard">
+        <div class="home-panel-header">
+          <div>
+            <span class="modal-kicker">Central de Diretoria</span>
+            <h2>Objetivos da semana</h2>
+          </div>
+        </div>
+        <div class="director-grid">
+          ${profiles.map(profile => {
+            const board = App.experience.getDirectorObjectives(profile);
+            return `
+              <div class="director-card">
+                <div class="director-card-top">
+                  ${App.ui.ownerBadge(profile.team.owner)}
+                  <strong>${board.done}/4</strong>
+                </div>
+                <h3>${App.utils.escapeHtml(board.verdict)}</h3>
+                ${board.objectives.map(item => `
+                  <span class="${item.status ? "is-done" : "is-open"}">${App.utils.escapeHtml(item.label)} <b>${App.utils.escapeHtml(item.reward)}</b></span>
+                `).join("")}
+              </div>
+            `;
+          }).join("")}
+        </div>
+      </article>
+    `;
+  },
+
+  renderMoraleBoard(profiles) {
+    return `
+      <article class="experience-card">
+        <span class="modal-kicker">Moral e reputação</span>
+        <h2>Técnicos sob análise</h2>
+        <div class="morale-list">
+          ${profiles.map(profile => `
+            <div class="morale-row">
+              <span>${App.utils.escapeHtml(profile.team.owner)}</span>
+              <div class="morale-bar"><i style="width:${profile.morale}%"></i></div>
+              <strong>${profile.morale}</strong>
+              <small>${App.utils.escapeHtml(profile.reputation)}</small>
+            </div>
+          `).join("")}
+        </div>
+      </article>
+    `;
+  },
+
+  renderScoutBoard() {
+    const ratings = App.state.apiRatings || [];
+    return `
+      <article class="experience-card" id="eaScoutBoard">
+        <span class="modal-kicker">Base oficial EA FC</span>
+        <h2>Scout de overall</h2>
+        <p class="calendar-muted">Use a tabela local importada da página oficial da EA para validar OVR, posição e clube antes de enviar transferência.</p>
+        <div class="scout-list">
+          ${ratings.length ? ratings.slice(0, 6).map(item => `
+            <div>
+              <strong>${App.utils.escapeHtml(item.name)}</strong>
+              <span>${App.utils.escapeHtml([item.position, item.club].filter(Boolean).join(" · "))}</span>
+              <b>OVR ${Number(item.overall || 0)}</b>
+            </div>
+          `).join("") : `<p class="calendar-muted">Cache ainda vazio. Rode o SQL de ratings e importe a base oficial da EA.</p>`}
+        </div>
+      </article>
+    `;
+  },
+
+  renderOpportunities() {
+    const persisted = (App.state.apiExperience?.opportunities || []).map(item => ({
+      name: item.player_name || item.title,
+      club: item.club,
+      position: item.position,
+      overall: Number(item.overall || 0),
+      tag: item.tag || "Scout recomenda",
+      risk: item.risk || "Boa oportunidade"
+    }));
+    const rows = [...persisted, ...App.experience.getOpportunityRows()].slice(0, 6);
+    return `
+      <article class="experience-card experience-wide" id="opportunityBoard">
+        <div class="home-panel-header">
+          <div>
+            <span class="modal-kicker">Mercado de Oportunidades</span>
+            <h2>Alvos recomendados</h2>
+          </div>
+        </div>
+        <div class="opportunity-grid">
+          ${rows.length ? rows.map(item => `
+            <div class="opportunity-card">
+              <span>${App.utils.escapeHtml(item.tag)}</span>
+              <strong>${App.utils.escapeHtml(item.name)}</strong>
+              <small>${App.utils.escapeHtml([item.position, item.club].filter(Boolean).join(" · "))}</small>
+              <b>OVR ${Number(item.overall || 0)}</b>
+              <em>${App.utils.escapeHtml(item.risk)}</em>
+            </div>
+          `).join("") : `<p class="calendar-muted">Sem oportunidades enquanto a base de mercado/rating estiver vazia.</p>`}
+        </div>
+      </article>
+    `;
+  },
+
+  renderAuctionsAndNews() {
+    const auctions = App.experience.getAuctionRows();
+    const news = App.experience.getNewsRows();
+
+    return `
+      <article class="experience-card">
+        <span class="modal-kicker">Leilão automático</span>
+        <h2>Radar de disputa</h2>
+        <div class="experience-list">
+          ${auctions.length ? auctions.map(item => `
+            <div>
+              <strong>${App.utils.escapeHtml(item.player)}</strong>
+              <span>${App.utils.escapeHtml(item.detail)} · ${App.utils.formatCurrency(item.value)}</span>
+              <b>${App.utils.escapeHtml(item.status)}</b>
+            </div>
+          `).join("") : `<p class="calendar-muted">Nenhuma disputa automática detectada.</p>`}
+        </div>
+      </article>
+      <article class="experience-card">
+        <span class="modal-kicker">Notícias automáticas</span>
+        <h2>Jornal da Liga</h2>
+        <div class="experience-list">
+          ${news.map(item => `<div><strong>${App.utils.escapeHtml(item)}</strong></div>`).join("")}
+        </div>
+      </article>
+    `;
+  },
+
+  render() {
+    App.experience.renderSummary();
+    const target = document.getElementById("experienceGrid");
+    if (!target) return;
+    const profiles = App.experience.getProfiles();
+
+    target.innerHTML = `
+      ${App.experience.renderDirectorBoard(profiles)}
+      ${App.experience.renderMoraleBoard(profiles)}
+      ${App.experience.renderScoutBoard()}
+      ${App.experience.renderOpportunities()}
+      ${App.experience.renderAuctionsAndNews()}
+    `;
+  }
+};

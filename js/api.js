@@ -91,6 +91,34 @@ App.api = {
     }
   },
 
+  async loadEaRatings(query = "", limit = 12) {
+    try {
+      const data = await App.api.rpc("app_search_ea_player_ratings", {
+        p_query: query || "",
+        p_limit: Number(limit || 12)
+      }, 30000);
+
+      App.state.apiRatings = Array.isArray(data) ? data : [];
+      return App.state.apiRatings;
+    } catch (error) {
+      console.warn("Base oficial EA FC indisponível:", error);
+      App.state.apiRatings = [];
+      return [];
+    }
+  },
+
+  async loadExperienceData() {
+    try {
+      const data = await App.api.rpc("app_get_experience_data", {}, 30000);
+      App.state.apiExperience = data || { opportunities: [], auctions: [], news: [] };
+      return App.state.apiExperience;
+    } catch (error) {
+      console.warn("Camada de experiência indisponível:", error);
+      App.state.apiExperience = App.state.apiExperience || { opportunities: [], auctions: [], news: [] };
+      return App.state.apiExperience;
+    }
+  },
+
 
   async loadMatches() {
     try {
@@ -493,6 +521,8 @@ App.api = {
 
       await App.api.loadMatches();
       await App.api.loadMarketPlayers();
+      await App.api.loadEaRatings();
+      await App.api.loadExperienceData();
       await App.api.loadManagerOnboarding?.();
       await App.governance?.loadData?.();
       await App.auth?.generateDueDecisions?.();
