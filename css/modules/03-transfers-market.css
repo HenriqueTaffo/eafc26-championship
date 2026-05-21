@@ -582,7 +582,7 @@
 .market-player-option {
   width: 100%;
   display: grid;
-  grid-template-columns: minmax(180px, 1.2fr) minmax(140px, .9fr) auto auto;
+  grid-template-columns: 42px minmax(180px, 1.2fr) minmax(140px, .9fr) auto auto auto;
   gap: 10px;
   align-items: center;
   padding: 11px 12px;
@@ -592,6 +592,29 @@
   color: #f8fafc;
   text-align: left;
   cursor: pointer;
+}
+
+.market-player-photo {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  overflow: hidden;
+  place-items: center;
+  border: 1px solid rgba(148, 163, 184, .18);
+  border-radius: 999px;
+  background: rgba(15, 23, 42, .76);
+}
+
+.market-player-photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.market-player-photo i {
+  color: #bfdbfe;
+  font-style: normal;
+  font-weight: 900;
 }
 
 .market-player-option:hover {
@@ -617,6 +640,16 @@
 .market-player-value {
   font-weight: 900;
   color: #bbf7d0;
+  white-space: nowrap;
+}
+
+.market-player-overall {
+  padding: 5px 8px;
+  border-radius: 999px;
+  background: rgba(59, 130, 246, .16);
+  color: #bfdbfe;
+  font-size: 11px;
+  font-weight: 900;
   white-space: nowrap;
 }
 
@@ -714,7 +747,7 @@
 }
 
 .market-player-option {
-  grid-template-columns: minmax(220px, 1.4fr) minmax(150px, .9fr) minmax(110px, auto) auto;
+  grid-template-columns: 42px minmax(220px, 1.4fr) minmax(150px, .9fr) auto minmax(110px, auto) auto;
 }
 
 .market-player-main strong {
@@ -735,4 +768,3 @@
     grid-template-columns: 1fr;
   }
 }
-

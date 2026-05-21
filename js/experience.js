@@ -61,13 +61,17 @@ App.experience = {
 
   getOpportunityRows() {
     const ratings = (App.state.apiRatings || []).filter(item => Number(item.overall || 0) >= 72);
-    const market = App.transfers.getMarketPlayers().map(item => ({
-      name: item.name,
-      club: item.club,
-      position: item.position,
-      overall: Number(item.overall || 0),
-      value: Number(item.market_value_eur || 0)
-    }));
+    const market = App.transfers.getMarketPlayers().map(item => {
+      const rating = App.transfers.findEaRatingForMarketPlayer?.(item);
+      return {
+        name: item.name,
+        club: item.club,
+        position: item.position,
+        overall: Number(rating?.overall || item.overall || 0),
+        avatar_url: rating?.avatar_url || item.avatar_url || "",
+        value: Number(item.market_value_eur || 0)
+      };
+    });
 
     const source = ratings.length ? ratings.map(item => ({
       name: item.name,
@@ -80,7 +84,11 @@ App.experience = {
 
     return source
       .filter(item => item.name)
-      .sort((a, b) => Number(b.overall || 0) - Number(a.overall || 0) || String(a.name).localeCompare(String(b.name)))
+      .sort((a, b) =>
+        Number(b.overall || 0) - Number(a.overall || 0) ||
+        Number(b.value || 0) - Number(a.value || 0) ||
+        String(a.name).localeCompare(String(b.name))
+      )
       .slice(0, 6)
       .map((item, index) => ({
         ...item,
@@ -250,6 +258,7 @@ App.experience = {
       club: item.club,
       position: item.position,
       overall: Number(item.overall || 0),
+      value: Number(item.suggested_value || 0),
       avatar_url: item.avatar_url || "",
       tag: item.tag || "Scout recomenda",
       risk: item.risk || "Boa oportunidade"
@@ -270,7 +279,7 @@ App.experience = {
               <span>${App.utils.escapeHtml(item.tag)}</span>
               <strong>${App.utils.escapeHtml(item.name)}</strong>
               <small>${App.utils.escapeHtml([item.position, item.club].filter(Boolean).join(" · "))}</small>
-              <b>OVR ${Number(item.overall || 0)}</b>
+              ${Number(item.overall || 0) ? `<b>OVR ${Number(item.overall || 0)}</b>` : `<b>${App.utils.formatCurrency(Number(item.value || 0))}</b>`}
               <em>${App.utils.escapeHtml(item.risk)}</em>
             </div>
           `).join("") : `<p class="calendar-muted">Sem oportunidades enquanto a base de mercado/rating estiver vazia.</p>`}
@@ -307,18 +316,44 @@ App.experience = {
     `;
   },
 
+  renderFallbackCard(title, error) {
+    const message = error?.message || "Não consegui montar este bloco agora.";
+    return `
+      <article class="experience-card">
+        <span class="modal-kicker">Liga+</span>
+        <h2>${App.utils.escapeHtml(title)}</h2>
+        <p class="calendar-muted">${App.utils.escapeHtml(message)}</p>
+      </article>
+    `;
+  },
+
+  renderSafe(title, renderer) {
+    try {
+      return renderer();
+    } catch (error) {
+      console.warn(`Liga+ indisponível em ${title}:`, error);
+      return App.experience.renderFallbackCard(title, error);
+    }
+  },
+
   render() {
-    App.experience.renderSummary();
+    try {
+      App.experience.renderSummary();
+    } catch (error) {
+      console.warn("Resumo Liga+ indisponível:", error);
+      const summary = document.getElementById("experienceSummary");
+      if (summary) summary.innerHTML = App.ui.summaryCard("Liga+", "Revisar dados");
+    }
+
     const target = document.getElementById("experienceGrid");
     if (!target) return;
-    const profiles = App.experience.getProfiles();
 
     target.innerHTML = `
-      ${App.experience.renderDirectorBoard(profiles)}
-      ${App.experience.renderMoraleBoard(profiles)}
-      ${App.experience.renderScoutBoard()}
-      ${App.experience.renderOpportunities()}
-      ${App.experience.renderAuctionsAndNews()}
+      ${App.experience.renderSafe("Central de Diretoria", () => App.experience.renderDirectorBoard(App.experience.getProfiles()))}
+      ${App.experience.renderSafe("Moral e reputação", () => App.experience.renderMoraleBoard(App.experience.getProfiles()))}
+      ${App.experience.renderSafe("Scout EA", () => App.experience.renderScoutBoard())}
+      ${App.experience.renderSafe("Oportunidades", () => App.experience.renderOpportunities())}
+      ${App.experience.renderSafe("Leilões e notícias", () => App.experience.renderAuctionsAndNews())}
     `;
   }
 };

@@ -720,6 +720,13 @@
   background: rgba(15, 23, 42, .65);
 }
 
+.opportunity-card .scout-photo,
+.scout-list .scout-photo {
+  display: grid;
+  color: inherit;
+  font-size: inherit;
+}
+
 .scout-photo {
   margin-bottom: 10px;
 }

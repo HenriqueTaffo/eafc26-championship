@@ -15,6 +15,28 @@ App.transfers = {
     return (App.state.apiRatings || []).find(item => App.utils.normalizeText(item.name) === key) || null;
   },
 
+  findEaRatingForMarketPlayer(player) {
+    const key = App.utils.normalizeText(player?.name);
+    if (!key) return null;
+
+    const clubKey = App.utils.normalizeText(player?.club);
+    const ratings = App.state.apiRatings || [];
+    return ratings.find(item =>
+      App.utils.normalizeText(item.name) === key &&
+      (!clubKey || !item.club || App.utils.normalizeText(item.club) === clubKey)
+    ) || ratings.find(item => App.utils.normalizeText(item.name) === key) || null;
+  },
+
+  renderPlayerPhoto(player, rating = null, className = "market-player-photo") {
+    const avatar = rating?.avatar_url || player?.avatar_url || "";
+    const name = player?.name || rating?.name || "?";
+    return `
+      <span class="${className}">
+        ${avatar ? `<img src="${App.utils.escapeHtml(avatar)}" alt="" loading="lazy" />` : `<i>${App.utils.escapeHtml(String(name).charAt(0))}</i>`}
+      </span>
+    `;
+  },
+
   getAllTransfers() {
     const approvedApiTransfers = App.state.apiTransfers
       .filter(row => App.utils.normalizeText(row.Status) === "aprovado")
@@ -715,7 +737,7 @@ App.transfers = {
     if (form.elements.fromClub) form.elements.fromClub.value = player.club || "";
     if (form.elements.marketValue) form.elements.marketValue.value = Math.round(Number(player.market_value_eur || 0));
 
-    const eaRating = App.transfers.findEaRatingByName(player.name);
+    const eaRating = App.transfers.findEaRatingForMarketPlayer(player);
     if (eaRating && form.elements.overall) form.elements.overall.value = Number(eaRating.overall || player.overall || "");
 
     const search = document.getElementById("marketPlayerSearch");
@@ -783,13 +805,17 @@ App.transfers = {
 
     target.innerHTML = players.map(player => {
       const isContracted = Boolean(player.alreadyContracted || player.is_contracted);
+      const eaRating = App.transfers.findEaRatingForMarketPlayer(player);
+      const overall = Number(eaRating?.overall || player.overall || 0);
       return `
         <button class="market-player-option ${isContracted ? "is-contracted" : ""}" type="button" data-market-player="${player.id}" ${isContracted ? "disabled" : ""}>
+          ${App.transfers.renderPlayerPhoto(player, eaRating)}
           <span class="market-player-main">
             <strong>${App.utils.escapeHtml(player.name || "-")}</strong>
             <small>${App.utils.escapeHtml([player.position, player.age ? `${player.age} anos` : "", player.league].filter(Boolean).join(" · "))}</small>
           </span>
           <span class="market-player-club">${App.utils.escapeHtml(player.club || "Clube não informado")}</span>
+          ${overall ? `<span class="market-player-overall">OVR ${overall}</span>` : ""}
           <span class="market-player-value">${App.utils.formatCurrency(Number(player.market_value_eur || 0))}</span>
           ${isContracted ? `<span class="market-player-status">Já contratado</span>` : ""}
         </button>
