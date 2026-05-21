@@ -389,6 +389,7 @@ App.api = {
       await App.auth?.loadPublicNews?.();
       await App.auth?.loadMyDecisions?.();
       await App.auth?.loadMyTransferProposals?.();
+      await App.auth?.loadMySponsorships?.();
 
       if (Array.isArray(data.eventSlots) && data.eventSlots.length) {
         App.config.eventSlots = data.eventSlots.map(Number);

@@ -190,7 +190,9 @@
 }
 
 .event-card-grid-v66 {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  display: block;
+  column-count: 3;
+  column-gap: 14px;
 }
 
 .event-grid .event-card-v45,
@@ -211,6 +213,10 @@
 }
 
 .event-card-grid-v66 .event-card-v45 {
+  display: inline-grid;
+  width: 100%;
+  break-inside: avoid;
+  margin: 0 0 14px;
   border-radius: 16px;
   padding: 14px;
   gap: 10px;
@@ -378,6 +384,10 @@ body {
   .event-card-grid-v45,
   .event-card-grid-v66 {
     grid-template-columns: 1fr;
+  }
+
+  .event-card-grid-v66 {
+    column-count: 1;
   }
 
   .events-command-card,

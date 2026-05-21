@@ -6,6 +6,7 @@ App.auth = {
   publicNews: [],
   myDecisions: [],
   myTransferProposals: [],
+  mySponsorships: null,
   autoDecisionRunning: false,
 
   init() {
@@ -55,6 +56,7 @@ App.auth = {
     await App.auth.generateDueDecisions();
     await App.auth.loadMyDecisions();
     await App.auth.loadMyTransferProposals();
+    await App.auth.loadMySponsorships();
     await App.auth.loadPublicNews();
     App.auth.renderAll();
 
@@ -65,6 +67,7 @@ App.auth = {
     App.auth.currentSession = null;
     App.auth.myDecisions = [];
     App.auth.myTransferProposals = [];
+    App.auth.mySponsorships = null;
     localStorage.removeItem(App.auth.storageKey);
     App.auth.renderAll();
   },
@@ -125,6 +128,55 @@ App.auth = {
     }
   },
 
+  async loadMySponsorships() {
+    const session = App.auth.getSession();
+    if (!session?.managerId || !session?.accessCode) {
+      App.auth.mySponsorships = null;
+      return null;
+    }
+
+    try {
+      await App.api.rpc("app_process_sponsorship_rewards", {
+        p_manager_id: session.managerId,
+        p_access_code: session.accessCode
+      }, 45000);
+
+      const result = await App.api.rpc("app_get_my_sponsorships", {
+        p_manager_id: session.managerId,
+        p_access_code: session.accessCode
+      }, 30000);
+
+      App.auth.mySponsorships = result || null;
+      return App.auth.mySponsorships;
+    } catch (error) {
+      console.warn("Patrocínios indisponíveis:", error);
+      App.auth.mySponsorships = null;
+      return null;
+    }
+  },
+
+  async acceptSponsorship(offerId) {
+    const session = App.auth.getSession();
+    if (!session) throw new Error("Faça login como técnico antes de assinar patrocínio.");
+
+    const result = await App.api.rpc("app_accept_sponsorship", {
+      p_manager_id: session.managerId,
+      p_access_code: session.accessCode,
+      p_offer_id: offerId
+    }, 45000);
+
+    if (!result.ok) throw new Error(result.message || "Não foi possível assinar este patrocínio.");
+
+    await App.api.loadApiData({
+      variant: "market",
+      title: "Patrocínio assinado",
+      message: "Registrando bônus, contrato e novas metas comerciais..."
+    });
+
+    await App.auth.syncManagerState();
+    return result;
+  },
+
   async generateDueDecisions() {
     if (App.auth.autoDecisionRunning) return null;
 
@@ -136,6 +188,7 @@ App.auth = {
       if (App.auth.isLoggedIn()) {
         await App.auth.loadMyDecisions();
         await App.auth.loadMyTransferProposals();
+        await App.auth.loadMySponsorships();
       }
 
       App.auth.renderAll();
@@ -224,6 +277,7 @@ App.auth = {
     await Promise.all([
       App.auth.loadMyDecisions(),
       App.auth.loadMyTransferProposals(),
+      App.auth.loadMySponsorships(),
       App.auth.loadPublicNews()
     ]);
 
@@ -519,6 +573,67 @@ App.auth = {
     `;
   },
 
+  renderCoachSponsorshipCard(ownerName) {
+    const session = App.auth.getSession();
+    if (!session || App.utils.normalizeText(session.managerName) !== App.utils.normalizeText(ownerName)) return "";
+
+    const data = App.auth.mySponsorships || {};
+    const active = Array.isArray(data.active) ? data.active : [];
+    const offers = Array.isArray(data.offers) ? data.offers : [];
+    const rewards = Array.isArray(data.recentRewards) ? data.recentRewards : [];
+
+    return `
+      <article class="coach-panel-card sponsorship-card">
+        <div class="home-panel-header">
+          <div>
+            <h2>Patrocínios</h2>
+            <p class="coach-card-subtitle">Assine metas comerciais para gerar renda extra por desempenho.</p>
+          </div>
+          <span class="coach-section-kicker">${active.length} ativo(s)</span>
+        </div>
+
+        ${active.length ? `
+          <div class="sponsor-active-list">
+            ${active.map(item => `
+              <div class="sponsor-active-item">
+                <span>${App.utils.escapeHtml(item.category || "Patrocínio")}</span>
+                <strong>${App.utils.escapeHtml(item.title)}</strong>
+                <small>${App.utils.escapeHtml(item.sponsor_name)} · ${Number(item.claims_used || 0)}/${Number(item.max_claims || 0)} bônus pagos · ${App.utils.formatCurrency(item.reward_value)}</small>
+              </div>
+            `).join("")}
+          </div>
+        ` : `<p class="calendar-muted">Nenhum patrocinador ativo. Escolha uma oferta para começar a gerar caixa.</p>`}
+
+        ${offers.length ? `
+          <div class="sponsor-offer-grid">
+            ${offers.map(offer => `
+              <article class="sponsor-offer-card">
+                <span>${App.utils.escapeHtml(offer.category || "Patrocínio")}</span>
+                <strong>${App.utils.escapeHtml(offer.title)}</strong>
+                <em>${App.utils.escapeHtml(offer.sponsorName)}</em>
+                <p>${App.utils.escapeHtml(offer.description)}</p>
+                <small>Assinatura ${App.utils.formatCurrency(offer.signingBonus)} · ${App.utils.escapeHtml(offer.conditionLabel || "Meta cumprida")} paga ${App.utils.formatCurrency(offer.rewardValue)}</small>
+                <button type="button" data-sponsor-offer="${App.utils.escapeHtml(offer.id)}">Assinar</button>
+              </article>
+            `).join("")}
+          </div>
+        ` : ""}
+
+        ${rewards.length ? `
+          <div class="sponsor-reward-list">
+            <strong>Últimos pagamentos</strong>
+            ${rewards.map(item => `
+              <div>
+                <span>${App.utils.escapeHtml(item.sponsor_name)}</span>
+                <b>${App.utils.formatCurrency(item.reward_value)}</b>
+              </div>
+            `).join("")}
+          </div>
+        ` : ""}
+      </article>
+    `;
+  },
+
   bindDecisionAnswerButtons(root = document) {
     root.querySelectorAll("[data-decision-answer]").forEach(button => {
       if (button.dataset.bound === "true") return;
@@ -564,6 +679,29 @@ App.auth = {
           alert(error.message);
         } finally {
           target.disabled = false;
+        }
+      });
+    });
+
+    App.auth.bindSponsorshipButtons(root);
+  },
+
+  bindSponsorshipButtons(root = document) {
+    root.querySelectorAll("[data-sponsor-offer]").forEach(button => {
+      if (button.dataset.bound === "true") return;
+      button.dataset.bound = "true";
+
+      button.addEventListener("click", async event => {
+        const offerId = event.currentTarget.dataset.sponsorOffer;
+        if (!confirm("Assinar este patrocínio? Ele ficará ativo e pagará bônus quando as metas forem cumpridas.")) return;
+
+        try {
+          event.currentTarget.disabled = true;
+          await App.auth.acceptSponsorship(offerId);
+        } catch (error) {
+          alert(error.message);
+        } finally {
+          event.currentTarget.disabled = false;
         }
       });
     });

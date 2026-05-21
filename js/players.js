@@ -335,6 +335,7 @@ App.players = {
 
     const decisionCard = App.auth?.renderCoachDecisionCard ? App.auth.renderCoachDecisionCard(activeTeam.owner) : "";
     const proposalCard = App.auth?.renderCoachTransferProposalCard ? App.auth.renderCoachTransferProposalCard(activeTeam.owner) : "";
+    const sponsorshipCard = App.auth?.renderCoachSponsorshipCard ? App.auth.renderCoachSponsorshipCard(activeTeam.owner) : "";
     const pinCard = App.auth?.renderPinChangeCard ? App.auth.renderPinChangeCard(activeTeam.owner) : "";
 
     return `
@@ -375,6 +376,7 @@ App.players = {
 
           ${decisionCard ? `<div class="coach-full-row-v54">${decisionCard}</div>` : ""}
           ${proposalCard ? `<div class="coach-full-row-v54">${proposalCard}</div>` : ""}
+          ${sponsorshipCard ? `<div class="coach-full-row-v54">${sponsorshipCard}</div>` : ""}
 
           <div class="coach-flow-v55">
             <article class="coach-panel-card coach-war-room-card">
@@ -504,6 +506,8 @@ App.players = {
     App.players.bindCoachActions();
     App.auth?.bindPinChangeForm?.();
     App.auth?.bindDecisionAnswerButtons?.(grid);
+    App.auth?.bindTransferProposalButtons?.(grid);
+    App.auth?.bindSponsorshipButtons?.(grid);
     App.players.renderLeaderboard(document.getElementById("topScorers"), App.players.getGoalsByHumanTeams(), "gols por time");
     App.players.renderLeaderboard(document.getElementById("topAssists"), App.players.getTopExpensiveTransfers(5), "transferências caras");
   }
