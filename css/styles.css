@@ -6437,10 +6437,6 @@ body {
   #playersView .player-grid,
   #playersView .leaderboard-grid,
   #playersView .footer-note {
-    width: min(1320px, 100%) !important;
-    max-width: 1320px !important;
-    margin-left: auto !important;
-    margin-right: auto !important;
   }
 
   #playersView .controls {
@@ -6527,10 +6523,6 @@ body {
   #playersView .coach-tabs,
   #playersView .coach-dashboard,
   #playersView .coach-comparison {
-    width: min(1320px, 100%) !important;
-    max-width: 1320px !important;
-    margin-left: auto !important;
-    margin-right: auto !important;
     box-sizing: border-box !important;
   }
 
