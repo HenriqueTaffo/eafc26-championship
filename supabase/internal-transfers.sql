@@ -29,10 +29,13 @@ security definer
 as $$
 declare
   v_transfer_table regclass;
+  v_event_table regclass;
   v_current_owner text;
   v_rate numeric := 0;
   v_final_value numeric := 0;
   v_from_club text;
+  v_today text := to_char(now(), 'DD/MM/YYYY');
+  v_time text := to_char(now(), 'HH24:MI');
 begin
   if p_pin is distinct from 'eafc26' then
     return jsonb_build_object('ok', false, 'message', 'PIN invalido.');
@@ -78,6 +81,29 @@ begin
   execute format('alter table %s add column if not exists "ValorNegociado" numeric', v_transfer_table);
   execute format('alter table %s add column if not exists "ValorFinal" numeric', v_transfer_table);
 
+  select c.oid::regclass
+    into v_event_table
+  from pg_class c
+  join pg_namespace n on n.oid = c.relnamespace
+  where c.relkind = 'r'
+    and n.nspname = 'public'
+    and exists (select 1 from pg_attribute a where a.attrelid = c.oid and a.attname = 'Jogador' and not a.attisdropped)
+    and exists (select 1 from pg_attribute a where a.attrelid = c.oid and a.attname = 'Titulo' and not a.attisdropped)
+    and exists (select 1 from pg_attribute a where a.attrelid = c.oid and a.attname = 'ImpactoFinanceiro' and not a.attisdropped)
+  order by c.relname
+  limit 1;
+
+  if v_event_table is not null then
+    execute format('alter table %s add column if not exists "Descricao" text', v_event_table);
+    execute format('alter table %s add column if not exists "Efeito" text', v_event_table);
+    execute format('alter table %s add column if not exists "Tipo" text', v_event_table);
+    execute format('alter table %s add column if not exists "Status" text', v_event_table);
+    execute format('alter table %s add column if not exists "Timestamp" timestamptz', v_event_table);
+    execute format('alter table %s add column if not exists "Data" text', v_event_table);
+    execute format('alter table %s add column if not exists "Horario" text', v_event_table);
+    execute format('alter table %s add column if not exists "ModificadorTransferencias" numeric default 0', v_event_table);
+  end if;
+
   execute format(
     'select "Comprador"::text
        from %s
@@ -101,15 +127,8 @@ begin
     );
   end if;
 
-  v_rate := case
-    when p_overall >= 89 then 0.25
-    when p_overall >= 84 then 0.20
-    when p_overall >= 80 then 0.15
-    when p_overall >= 75 then 0.05
-    else 0
-  end;
-
-  v_final_value := coalesce(p_market_value, 0) + (coalesce(p_market_value, 0) * v_rate);
+  v_rate := 0;
+  v_final_value := coalesce(p_market_value, 0);
   v_from_club := coalesce(nullif(trim(p_from_club), ''), 'Negociacao interna: ' || p_seller);
 
   execute format(
@@ -137,6 +156,56 @@ begin
     coalesce(p_market_value, 0)
   );
 
+  if v_event_table is not null then
+    execute format(
+      'insert into %s (
+         "Jogador",
+         "Titulo",
+         "Descricao",
+         "Efeito",
+         "Tipo",
+         "ImpactoFinanceiro",
+         "ModificadorTransferencias",
+         "Status",
+         "Timestamp",
+         "Data",
+         "Horario"
+       ) values (%L, %L, %L, %L, ''Negociacao interna'', %s, 0, ''aplicado'', now(), %L, %L)',
+      v_event_table,
+      p_seller,
+      'Venda interna: ' || p_player,
+      p_seller || ' vendeu ' || p_player || ' para ' || p_buyer || '.',
+      '+' || v_final_value::text || ' creditado ao orcamento.',
+      v_final_value,
+      v_today,
+      v_time
+    );
+
+    execute format(
+      'insert into %s (
+         "Jogador",
+         "Titulo",
+         "Descricao",
+         "Efeito",
+         "Tipo",
+         "ImpactoFinanceiro",
+         "ModificadorTransferencias",
+         "Status",
+         "Timestamp",
+         "Data",
+         "Horario"
+       ) values (%L, %L, %L, %L, ''Negociacao interna'', %s, 0, ''aplicado'', now(), %L, %L)',
+      v_event_table,
+      p_buyer,
+      'Compra interna: ' || p_player,
+      p_buyer || ' comprou ' || p_player || ' de ' || p_seller || '.',
+      '-' || v_final_value::text || ' descontado do orcamento.',
+      -v_final_value,
+      v_today,
+      v_time
+    );
+  end if;
+
   return jsonb_build_object(
     'ok', true,
     'message', format('%s negociado de %s para %s.', p_player, p_seller, p_buyer),
@@ -144,7 +213,8 @@ begin
     'seller', p_seller,
     'buyer', p_buyer,
     'player', p_player,
-    'value', v_final_value
+    'value', v_final_value,
+    'budgetEventsCreated', v_event_table is not null
   );
 end;
 $$;
@@ -152,10 +222,13 @@ $$;
 comment on function public.app_add_internal_transfer(text, text, text, text, text, integer, numeric)
 is 'Registra transferencia interna entre tecnicos. O historico mais recente define a posse atual do jogador.';
 
--- Importante sobre orcamento:
--- Este RPC registra a movimentacao e permite que o app mude a posse pelo
--- historico mais recente. Se o seu app_get_data calcula orcamentos direto no
--- banco, ajuste essa funcao/view para:
---   1. debitar o comprador pelo ValorFinal/ValorNegociado da negociacao interna;
---   2. creditar o vendedor pelo ValorNegociado, se essa for a regra da liga;
---   3. considerar apenas a linha mais recente de cada Jogador como posse atual.
+-- Orcamento:
+-- O RPC registra dois eventos financeiros:
+--   1. vendedor recebe +ValorNegociado;
+--   2. comprador recebe -ValorNegociado.
+-- Se o seu app_get_data ja soma ImpactoFinanceiro dos eventos no budget,
+-- o saldo sera atualizado automaticamente depois do reload do app.
+--
+-- Posse:
+-- A posse atual do jogador deve ser lida pela transferencia aprovada mais
+-- recente de cada Jogador.

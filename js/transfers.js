@@ -350,7 +350,7 @@ App.transfers = {
     const marketValue = Number(form.elements.marketValue?.value);
     const hasEnoughData = Boolean(buyer && player && !Number.isNaN(overall) && !Number.isNaN(marketValue) && overall > 0 && marketValue >= 0);
     const budget = App.transfers.getSpendingSummary().find(item => item.buyer === buyer);
-    const rate = Number.isNaN(overall) ? 0 : App.transfers.getTransferRate(overall);
+    const rate = Number.isNaN(overall) || isInternal ? 0 : App.transfers.getTransferRate(overall);
     const finalValue = Number.isNaN(marketValue) ? 0 : marketValue + (marketValue * rate);
     const duplicate = App.transfers.findExistingPlayer(player);
     const internalSellerMismatch = Boolean(isInternal && duplicate && seller && duplicate.buyer !== seller);
