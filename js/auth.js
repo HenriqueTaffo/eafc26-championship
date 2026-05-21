@@ -28,6 +28,12 @@ App.auth = {
     return Boolean(session?.managerId && session?.accessCode);
   },
 
+  canViewManagerPrivate(managerName) {
+    const session = App.auth.getSession();
+    if (!session?.managerName || !managerName) return false;
+    return App.utils.normalizeText(session.managerName) === App.utils.normalizeText(managerName);
+  },
+
   async login(managerName, accessCode) {
     const result = await App.api.rpc("app_login_manager", {
       p_manager_name: managerName,

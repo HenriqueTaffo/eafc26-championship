@@ -69,7 +69,17 @@ App.transfers = {
     return impact;
   },
 
+  getOnboardingLimitForBuyer(buyer) {
+    const onboarding = App.state.apiOnboarding?.[buyer];
+    if (!onboarding || onboarding.transferLimit === undefined || onboarding.transferLimit === null) return null;
+    const limit = Number(onboarding.transferLimit);
+    return Number.isFinite(limit) ? limit : null;
+  },
+
   getTransferLimitForBuyer(buyer) {
+    const onboardingLimit = App.transfers.getOnboardingLimitForBuyer(buyer);
+    if (onboardingLimit !== null) return onboardingLimit;
+
     const supabaseBudget = App.state.apiBudgets?.[buyer];
     if (supabaseBudget?.transferLimit !== undefined) return Number(supabaseBudget.transferLimit);
 

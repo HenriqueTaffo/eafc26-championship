@@ -236,7 +236,7 @@ App.players = {
     `;
   },
 
-  getCoachAlerts(team, standing, budget, next, transfersToday) {
+  getCoachAlerts(team, standing, budget, next, transfersToday, canViewPrivate = false) {
     const alerts = [];
     const activeEvents = App.events.getActiveEventsForBuyer(team.owner);
     const injuries = activeEvents.filter(event => String(event.JogadorAfetado || "").trim());
@@ -244,10 +244,10 @@ App.players = {
     const remaining = Number(budget.remainingBudget ?? App.config.transferBudget);
 
     if (next) alerts.push(`Próximo jogo pendente: ${next.home} x ${next.away}`);
-    if (injuries.length) alerts.push(`${injuries.length} jogador(es) afetado(s) por evento.`);
-    if (transfersToday >= limit) alerts.push("Limite diário de transferências atingido.");
-    else if (transfersToday >= Math.max(1, limit - 1)) alerts.push("Limite diário de transferências quase atingido.");
-    if (remaining < 10000000) alerts.push("Saldo de transferências baixo.");
+    if (canViewPrivate && injuries.length) alerts.push(`${injuries.length} jogador(es) afetado(s) por evento.`);
+    if (canViewPrivate && transfersToday >= limit) alerts.push("Limite diário de transferências atingido.");
+    else if (canViewPrivate && transfersToday >= Math.max(1, limit - 1)) alerts.push("Limite diário de transferências quase atingido.");
+    if (canViewPrivate && remaining < 10000000) alerts.push("Saldo de transferências baixo.");
     if (standing?.position <= 2) alerts.push("Zona de acesso direto.");
     else if (standing?.position <= 6) alerts.push("Zona de playoffs.");
 
@@ -297,10 +297,11 @@ App.players = {
     const recentForm = App.players.getRecentForm(activeTeam.team);
     const todayCount = App.transfers.getTodayTransferCountByBuyer(activeTeam.owner);
     const transferLimit = Number(budget.transferLimit ?? App.config.baseDailyTransferLimit);
-    const alerts = App.players.getCoachAlerts(activeTeam, standing, budget, next, todayCount);
+    const alerts = App.players.getCoachAlerts(activeTeam, standing, budget, next, todayCount, canViewPrivate);
     const events = App.players.getCoachEvents(activeTeam.owner);
     const injuries = App.players.getActiveInjuriesForCoach(activeTeam.owner);
     const color = App.data.ownerColors[activeTeam.owner] || "#2563eb";
+    const canViewPrivate = App.auth?.canViewManagerPrivate ? App.auth.canViewManagerPrivate(activeTeam.owner) : false;
 
     const nextMatchCard = `
       <article class="coach-panel-card coach-next-match">
@@ -356,17 +357,19 @@ App.players = {
           </div>
         </article>
 
-        <section class="coach-quick-grid">
+        <section class="coach-quick-grid ${canViewPrivate ? "" : "public-only"}">
           <article><span>Campanha</span><strong>${standing?.wins || 0}/${standing?.draws || 0}/${standing?.losses || 0}</strong><small>V/E/D</small></article>
           <article><span>Saldo de gols</span><strong>${App.utils.formatGoalDifference(standing?.goalDifference || 0)}</strong><small>${standing?.goalsFor || 0} pró / ${standing?.goalsAgainst || 0} contra</small></article>
-          <article><span>Saldo mercado</span><strong>${App.utils.formatCurrency(breakdown.available)}</strong><small>Gasto ${App.utils.formatCurrency(breakdown.spent)}</small></article>
-          <article><span>Transfers hoje</span><strong>${todayCount}/${transferLimit}</strong><small>${transfers.length} totais válidas</small></article>
+          ${canViewPrivate ? `
+            <article><span>Saldo mercado</span><strong>${App.utils.formatCurrency(breakdown.available)}</strong><small>Gasto ${App.utils.formatCurrency(breakdown.spent)}</small></article>
+            <article><span>Transfers hoje</span><strong>${todayCount}/${transferLimit}</strong><small>${transfers.length} totais válidas</small></article>
+          ` : ""}
         </section>
 
         <section class="coach-layout-v54">
-          <div class="coach-top-row-v54">
+          <div class="coach-top-row-v54 ${canViewPrivate ? "" : "public-only"}">
             ${nextMatchCard}
-            ${injuriesCard}
+            ${canViewPrivate ? injuriesCard : ""}
           </div>
 
           ${decisionCard ? `<div class="coach-full-row-v54">${decisionCard}</div>` : ""}
@@ -474,7 +477,8 @@ App.players = {
       const budget = budgetInfo[team.owner] || {};
       const next = App.players.getNextMatchForTeam(team.team);
       const todayCount = App.transfers.getTodayTransferCountByBuyer(team.owner);
-      return sum + App.players.getCoachAlerts(team, standing, budget, next, todayCount).length;
+      const canViewPrivate = App.auth?.canViewManagerPrivate ? App.auth.canViewManagerPrivate(team.owner) : false;
+      return sum + App.players.getCoachAlerts(team, standing, budget, next, todayCount, canViewPrivate).length;
     }, 0);
 
     summary.innerHTML = `

@@ -27,6 +27,7 @@ App.state = {
   apiBudgets: {},
   apiMatches: [],
   apiMarketPlayers: [],
+  apiOnboarding: {},
   apiLoaded: false,
   loadingCount: 0,
   autoEventGenerationRunning: false,

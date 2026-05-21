@@ -6,6 +6,7 @@ App.data = {
     "Willian": "#16a34a",
     "Rafael": "#dc2626",
     "Renato": "#d97706",
+    "Bruno Silva": "#06b6d4",
     "Livre / CPU": "#64748b"
   },
 
@@ -21,7 +22,7 @@ App.data = {
     { team: "Millwall", owner: "Livre / CPU", status: "CPU" },
     { team: "Sheffield United", owner: "Livre / CPU", status: "CPU" },
     { team: "Swansea City", owner: "Livre / CPU", status: "CPU" },
-    { team: "Wrexham", owner: "Livre / CPU", status: "CPU" },
+    { team: "Wrexham", owner: "Bruno Silva", status: "Nosso" },
     { team: "Derby County", owner: "Livre / CPU", status: "CPU" },
     { team: "Norwich City", owner: "Livre / CPU", status: "CPU" },
     { team: "Preston North End", owner: "Livre / CPU", status: "CPU" },

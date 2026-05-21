@@ -345,6 +345,22 @@ App.api = {
 
 
 
+  async loadManagerOnboarding() {
+    try {
+      const result = await App.api.rpc("app_get_manager_onboarding", {}, 30000);
+      const rows = Array.isArray(result) ? result : [];
+      App.state.apiOnboarding = rows.reduce((acc, item) => {
+        if (item.managerName) acc[item.managerName] = item;
+        return acc;
+      }, {});
+      return App.state.apiOnboarding;
+    } catch (error) {
+      console.warn("Onboarding de técnicos indisponível:", error);
+      App.state.apiOnboarding = {};
+      return {};
+    }
+  },
+
   async loadApiData(options = {}) {
     const {
       showLoader = true,
@@ -368,6 +384,7 @@ App.api = {
       App.state.apiBudgets = data.budgets || {};
       await App.api.loadMatches();
       await App.api.loadMarketPlayers();
+      await App.api.loadManagerOnboarding?.();
       await App.auth?.generateDueDecisions?.();
       await App.auth?.loadPublicNews?.();
       await App.auth?.loadMyDecisions?.();

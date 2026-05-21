@@ -6259,6 +6259,17 @@ body {
    Baseada no v57, sem usar o layout quebrado do v58.
    Mobile preservado: só aplica acima de 1100px. */
 @media (min-width: 1101px) {
+  /* Mantém largura confortável sem estourar o desenho */
+  #playersView .coach-tabs,
+  #playersView .summary,
+  #playersView .coach-dashboard,
+  #playersView .coach-comparison,
+  #playersView .stats-grid {
+    width: min(1320px, 100%);
+    max-width: 1320px;
+    margin-left: auto;
+    margin-right: auto;
+  }
 
   #playersView .coach-dashboard,
   #playersView .coach-layout-v54 {
@@ -6568,5 +6579,24 @@ body {
   #playersView .coach-injury-list .injury-chip span,
   #playersView .coach-injury-list .injury-chip b {
     line-height: 1.25 !important;
+  }
+}
+
+/* v65 — onboarding Bruno + privacidade de orçamento/lesões */
+.coach-quick-grid.public-only {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.coach-top-row-v54.public-only {
+  grid-template-columns: 1fr !important;
+}
+
+.coach-top-row-v54.public-only .coach-next-match {
+  width: 100%;
+}
+
+@media (max-width: 640px) {
+  .coach-quick-grid.public-only {
+    grid-template-columns: 1fr;
   }
 }
