@@ -384,10 +384,20 @@ begin
   end if;
 
   return coalesce((
-    select jsonb_agg(to_jsonb(p) order by p.created_at desc)
+    select jsonb_agg(
+      to_jsonb(p) ||
+      jsonb_build_object(
+        'proposal_role',
+        case
+          when lower(p.seller) = lower(v_manager_name) then 'received'
+          else 'sent'
+        end
+      )
+      order by p.created_at desc
+    )
     from public.internal_transfer_proposals p
     where lower(p.seller) = lower(v_manager_name)
-      and p.status = 'pending'
+       or lower(p.buyer) = lower(v_manager_name)
   ), '[]'::jsonb);
 end;
 $$;

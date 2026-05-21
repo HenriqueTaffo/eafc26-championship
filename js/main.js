@@ -65,6 +65,20 @@ App.main = {
     App.auth?.renderAll?.();
   },
 
+  markSynced(label = "Dados sincronizados") {
+    const element = document.getElementById("syncStatusText");
+    if (!element) return;
+
+    const now = new Date();
+    const time = now.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+    element.textContent = `${label} às ${time}`;
+  },
+
+  markSyncing(label = "Sincronizando dados da liga...") {
+    const element = document.getElementById("syncStatusText");
+    if (element) element.textContent = label;
+  },
+
   getDefaultLoaderVariant() {
     const activeView = document.querySelector(".view.active")?.id;
     if (activeView === "playersView" || activeView === "transfersView") return "market";
@@ -148,6 +162,26 @@ App.main = {
     });
   },
 
+  setupManualSync() {
+    document.querySelectorAll("[data-manual-sync]").forEach(button => {
+      if (button.dataset.bound === "true") return;
+      button.dataset.bound = "true";
+      button.addEventListener("click", async () => {
+        try {
+          button.disabled = true;
+          App.main.markSyncing("Sincronizando manualmente...");
+          await App.api.loadApiData({
+            showLoader: false
+          });
+        } catch (error) {
+          App.main.markSynced("Falha ao sincronizar");
+        } finally {
+          button.disabled = false;
+        }
+      });
+    });
+  },
+
   setupFilters() {
     [
       "calendarSearchInput", "calendarCompetitionFilter", "calendarOwnerFilter", "calendarWeekFilter", "calendarStatusFilter",
@@ -220,6 +254,7 @@ App.main = {
 
   init() {
     App.main.setupTabs();
+    App.main.setupManualSync();
     App.forms.populateTeamOptions();
     App.forms.setupForms();
     App.main.setupFilters();

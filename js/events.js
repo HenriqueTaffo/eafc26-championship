@@ -496,26 +496,21 @@ App.events = {
           </div>
         </section>
 
-        <section class="event-focus-grid">
-          <article class="event-focus-card">
-            <span>Ativos em duração</span>
+        <section class="event-focus-strip">
+          <article>
+            <span>Ativos</span>
             <strong>${activeFilteredEvents.length}</strong>
-            ${activeFilteredEvents.length ? activeFilteredEvents.map(event => `
-              <div class="event-focus-row">
-                <b>${App.utils.escapeHtml(event.Jogador || "Liga")}</b>
-                <small>${App.utils.escapeHtml(event.Titulo || "Evento ativo")}</small>
-              </div>
-            `).join("") : `<p class="calendar-muted">Nenhuma duração ativa no filtro atual.</p>`}
+            <small>${activeFilteredEvents.length ? activeFilteredEvents.map(event => `${event.Jogador || "Liga"}: ${event.Titulo || "Evento ativo"}`).join(" · ") : "Nenhuma duração ativa no filtro atual."}</small>
           </article>
-          <article class="event-focus-card event-focus-card-wide">
-            <span>Leitura rápida</span>
-            <strong>${stats.positive + stats.negative} impacto(s) financeiros</strong>
-            <div class="event-focus-pills">
-              <i>Positivos: ${stats.positive}</i>
-              <i>Negativos: ${stats.negative}</i>
-              <i>Lesões: ${stats.injuries}</i>
-              <i>Mercado: ${stats.market}</i>
-            </div>
+          <article>
+            <span>Financeiro</span>
+            <strong>${stats.positive + stats.negative}</strong>
+            <small>${stats.positive} positivo(s), ${stats.negative} negativo(s)</small>
+          </article>
+          <article>
+            <span>DM / Mercado</span>
+            <strong>${stats.injuries + stats.market}</strong>
+            <small>${stats.injuries} lesão(ões), ${stats.market} trava(s)</small>
           </article>
         </section>
 

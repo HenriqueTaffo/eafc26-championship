@@ -143,22 +143,22 @@
   font-weight: 900;
 }
 
-.event-focus-grid {
+.event-focus-strip {
   display: grid;
-  grid-template-columns: minmax(260px, .75fr) minmax(0, 1fr);
-  gap: 12px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
 }
 
-.event-focus-card {
+.event-focus-strip article {
   border: 1px solid rgba(148,163,184,.16);
-  border-radius: 18px;
-  padding: 14px;
+  border-radius: 14px;
+  padding: 12px;
   background:
     radial-gradient(circle at top right, rgba(34,197,94,.10), transparent 34%),
     rgba(15,23,42,.76);
 }
 
-.event-focus-card > span {
+.event-focus-strip span {
   display: block;
   color: #94a3b8;
   text-transform: uppercase;
@@ -167,43 +167,19 @@
   font-weight: 900;
 }
 
-.event-focus-card > strong {
+.event-focus-strip strong {
   display: block;
   margin-top: 6px;
-  font-size: 22px;
+  font-size: 20px;
 }
 
-.event-focus-row {
-  display: grid;
-  gap: 3px;
-  padding: 10px 0;
-  border-top: 1px solid rgba(148,163,184,.10);
-}
-
-.event-focus-row:first-of-type {
-  margin-top: 10px;
-}
-
-.event-focus-row small {
+.event-focus-strip small {
+  display: block;
+  margin-top: 5px;
   color: #94a3b8;
-}
-
-.event-focus-pills {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 14px;
-}
-
-.event-focus-pills i {
-  font-style: normal;
-  padding: 8px 10px;
-  border-radius: 999px;
-  color: #dbeafe;
-  background: rgba(37,99,235,.15);
-  border: 1px solid rgba(96,165,250,.16);
-  font-size: 12px;
-  font-weight: 900;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .event-card-grid-v45 {
@@ -407,7 +383,7 @@ body {
   .events-command-card,
   .events-intro-card,
   .event-board-header,
-  .event-focus-grid {
+  .event-focus-strip {
     grid-template-columns: 1fr;
   }
 

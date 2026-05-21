@@ -375,9 +375,10 @@ App.auth = {
       return;
     }
 
-    const pending = App.auth.myTransferProposals.filter(item => item.status === "pending");
+    const received = App.auth.myTransferProposals.filter(item => item.proposal_role !== "sent" && item.status === "pending");
+    const sent = App.auth.myTransferProposals.filter(item => item.proposal_role === "sent").slice(0, 4);
 
-    if (!pending.length) {
+    if (!received.length && !sent.length) {
       panel.innerHTML = "";
       return;
     }
@@ -387,13 +388,24 @@ App.auth = {
         <div class="decision-header">
           <div>
             <span>Propostas de mercado</span>
-            <strong>${pending.length} proposta(s) pendente(s)</strong>
-            <p>${App.utils.escapeHtml(session.managerName)}, aceite ou recuse ofertas pelos seus jogadores.</p>
+            <strong>${received.length} recebida(s) · ${sent.length} enviada(s)</strong>
+            <p>${App.utils.escapeHtml(session.managerName)}, acompanhe ofertas enviadas e responda propostas recebidas.</p>
           </div>
           <span class="decision-auto-pill">Resposta do vendedor</span>
         </div>
-        <div class="decision-grid">
-          ${pending.map(item => App.auth.renderTransferProposalCard(item)).join("")}
+        <div class="proposal-columns">
+          <div>
+            <h3>Recebidas</h3>
+            <div class="decision-grid">
+              ${received.length ? received.map(item => App.auth.renderTransferProposalCard(item)).join("") : `<p class="calendar-muted">Nenhuma oferta para responder.</p>`}
+            </div>
+          </div>
+          <div>
+            <h3>Enviadas</h3>
+            <div class="proposal-sent-list">
+              ${sent.length ? sent.map(item => App.auth.renderTransferProposalSummary(item)).join("") : `<p class="calendar-muted">Nenhuma proposta enviada recentemente.</p>`}
+            </div>
+          </div>
         </div>
       </section>
     `;
@@ -488,7 +500,7 @@ App.auth = {
     const session = App.auth.getSession();
     if (!session || App.utils.normalizeText(session.managerName) !== App.utils.normalizeText(ownerName)) return "";
 
-    const pending = App.auth.myTransferProposals.filter(item => item.status === "pending");
+    const pending = App.auth.myTransferProposals.filter(item => item.proposal_role !== "sent" && item.status === "pending");
     if (!pending.length) return "";
 
     return `
@@ -580,6 +592,16 @@ App.auth = {
             <small>A proposta é encerrada sem movimentação.</small>
           </button>
         </div>
+      </article>
+    `;
+  },
+
+  renderTransferProposalSummary(item) {
+    return `
+      <article class="proposal-summary-item">
+        <span>${App.utils.escapeHtml(item.status || "pending")}</span>
+        <strong>${App.utils.escapeHtml(item.player)}</strong>
+        <small>${App.utils.escapeHtml(item.seller)} · ${App.utils.formatCurrency(item.proposed_value)}</small>
       </article>
     `;
   },

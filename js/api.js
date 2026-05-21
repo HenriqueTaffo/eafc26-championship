@@ -401,6 +401,7 @@ App.api = {
 
       App.state.apiLoaded = true;
       App.main.renderAll();
+      App.main?.markSynced?.();
       return data;
     } catch (error) {
       const hadPreviousData = App.state.apiLoaded && (
