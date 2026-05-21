@@ -10,7 +10,7 @@ App.config = {
   homeMatchBonus: 1250000,
   winBonus: 500000,
   baseDailyTransferLimit: 3,
-  eventSlots: [5, 8, 11, 14, 17, 20, 23],
+  eventSlots: [9, 12, 15, 18],
   calendarConfig: {
     championshipRoundsPerWeek: 3,
     startDate: "2026-05-19",
