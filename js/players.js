@@ -296,12 +296,12 @@ App.players = {
     const next = App.players.getNextMatchForTeam(activeTeam.team);
     const recentForm = App.players.getRecentForm(activeTeam.team);
     const todayCount = App.transfers.getTodayTransferCountByBuyer(activeTeam.owner);
-    const transferLimit = Number(budget.transferLimit ?? App.config.baseDailyTransferLimit);
+    const transferLimit = App.transfers.getTransferLimitForBuyer(activeTeam.owner);
+    const canViewPrivate = App.auth?.canViewManagerPrivate ? App.auth.canViewManagerPrivate(activeTeam.owner) : false;
     const alerts = App.players.getCoachAlerts(activeTeam, standing, budget, next, todayCount, canViewPrivate);
     const events = App.players.getCoachEvents(activeTeam.owner);
     const injuries = App.players.getActiveInjuriesForCoach(activeTeam.owner);
     const color = App.data.ownerColors[activeTeam.owner] || "#2563eb";
-    const canViewPrivate = App.auth?.canViewManagerPrivate ? App.auth.canViewManagerPrivate(activeTeam.owner) : false;
 
     const nextMatchCard = `
       <article class="coach-panel-card coach-next-match">
