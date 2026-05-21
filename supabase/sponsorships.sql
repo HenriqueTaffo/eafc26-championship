@@ -647,6 +647,137 @@ begin
 end;
 $$;
 
+create or replace function public.app_get_sponsorship_reward_totals()
+returns jsonb
+language sql
+stable
+as $$
+  select coalesce(jsonb_object_agg(manager_name, reward_total), '{}'::jsonb)
+  from (
+    select
+      manager_name,
+      sum(reward_value)::numeric as reward_total
+    from public.sponsorship_rewards
+    group by manager_name
+  ) totals;
+$$;
+
+create or replace function public.app_get_budget_reconciliation()
+returns jsonb
+language sql
+stable
+as $$
+  with data as (
+    select public.app_get_data()::jsonb as j
+  ),
+  config as (
+    select
+      coalesce((j ->> 'budget')::numeric, 65000000) as base_budget_default,
+      coalesce((j ->> 'homeMatchBonus')::numeric, 1250000) as home_match_bonus,
+      coalesce((j ->> 'winBonus')::numeric, 500000) as win_bonus
+    from data
+  ),
+  teams(manager_name, club_name) as (
+    values
+      ('Henrique', 'Coventry City'),
+      ('Willian', 'Birmingham City'),
+      ('Rafael', 'Middlesbrough'),
+      ('Renato', 'Southampton'),
+      ('Bruno Silva', 'Wrexham')
+  ),
+  results as (
+    select *
+    from jsonb_to_recordset(coalesce((select j -> 'results' from data), '[]'::jsonb)) as r(
+      "Mandante" text,
+      "Visitante" text,
+      "GolsMandante" integer,
+      "GolsVisitante" integer,
+      "Status" text,
+      "Competicao" text
+    )
+    where lower(coalesce("Status", '')) = 'aprovado'
+      and lower(coalesce("Competicao", '')) = 'championship'
+  ),
+  stats as (
+    select
+      t.manager_name,
+      count(*) filter (where lower(r."Mandante") = lower(t.club_name))::integer as home_matches,
+      count(*) filter (
+        where (
+          lower(r."Mandante") = lower(t.club_name)
+          and coalesce(r."GolsMandante", 0) > coalesce(r."GolsVisitante", 0)
+        ) or (
+          lower(r."Visitante") = lower(t.club_name)
+          and coalesce(r."GolsVisitante", 0) > coalesce(r."GolsMandante", 0)
+        )
+      )::integer as wins
+    from teams t
+    left join results r
+      on lower(r."Mandante") = lower(t.club_name)
+      or lower(r."Visitante") = lower(t.club_name)
+    group by t.manager_name
+  ),
+  reward_totals as (
+    select
+      manager_name,
+      sum(reward_value)::numeric as reward_total
+    from public.sponsorship_rewards
+    group by manager_name
+  ),
+  sponsorship_reward_events as (
+    select
+      "Jogador" as manager_name,
+      sum(coalesce("ImpactoFinanceiro", 0))::numeric as event_reward_total
+    from jsonb_to_recordset(coalesce((select j -> 'events' from data), '[]'::jsonb)) as e(
+      "Jogador" text,
+      "Titulo" text,
+      "ImpactoFinanceiro" numeric
+    )
+    where lower(coalesce("Titulo", '')) like '%bonus de patrocinio%'
+    group by "Jogador"
+  ),
+  raw_budgets as (
+    select key as manager_name, value as budget
+    from jsonb_each(coalesce((select j -> 'budgets' from data), '{}'::jsonb))
+  ),
+  reconciled as (
+    select
+      t.manager_name,
+      coalesce((rb.budget ->> 'baseBudget')::numeric, config.base_budget_default) as base_budget,
+      coalesce(s.home_matches, 0) as home_matches,
+      coalesce(s.wins, 0) as wins,
+      coalesce(s.home_matches, 0) * config.home_match_bonus as home_bonus,
+      coalesce(s.wins, 0) * config.win_bonus as win_bonus_value,
+      coalesce((rb.budget ->> 'eventTotal')::numeric, 0)
+        - coalesce(sre.event_reward_total, 0)
+        + coalesce(rt.reward_total, 0) as event_total,
+      coalesce(rt.reward_total, 0) as sponsorship_rewards,
+      coalesce((rb.budget ->> 'spentTotal')::numeric, 0) as spent_total
+    from teams t
+    cross join config
+    left join raw_budgets rb on rb.manager_name = t.manager_name
+    left join stats s on s.manager_name = t.manager_name
+    left join reward_totals rt on rt.manager_name = t.manager_name
+    left join sponsorship_reward_events sre on sre.manager_name = t.manager_name
+  )
+  select coalesce(jsonb_object_agg(
+    manager_name,
+    jsonb_build_object(
+      'baseBudget', base_budget,
+      'homeMatches', home_matches,
+      'wins', wins,
+      'homeBonus', home_bonus,
+      'winBonusValue', win_bonus_value,
+      'eventTotal', event_total,
+      'sponsorshipRewards', sponsorship_rewards,
+      'totalBudget', base_budget + home_bonus + win_bonus_value + event_total,
+      'spentTotal', spent_total,
+      'remainingBudget', base_budget + home_bonus + win_bonus_value + event_total - spent_total
+    )
+  ), '{}'::jsonb)
+  from reconciled;
+$$;
+
 create or replace function public.app_get_my_sponsorships(
   p_manager_id text,
   p_access_code text

@@ -121,6 +121,85 @@ App.api = {
     }
   },
 
+  async loadSponsorshipRewardTotals() {
+    try {
+      const totals = await App.api.rpc("app_get_sponsorship_reward_totals", {}, 30000);
+      return totals && typeof totals === "object" && !Array.isArray(totals) ? totals : {};
+    } catch (error) {
+      console.warn("Totais de patrocínio indisponíveis:", error);
+      return {};
+    }
+  },
+
+  getSponsorshipEventTotalByManager(events = []) {
+    return (events || []).reduce((acc, event) => {
+      const manager = event.Jogador || event.manager_name || "";
+      const title = App.utils.normalizeText(event.Titulo || event.title || "");
+      const isSponsorshipReward = title.includes("bonus de patrocinio");
+      if (!manager || !isSponsorshipReward) return acc;
+
+      acc[manager] = (acc[manager] || 0) + Number(event.ImpactoFinanceiro || event.financial_impact || 0);
+      return acc;
+    }, {});
+  },
+
+  getPerformanceBudgetStats(results = []) {
+    return App.utils.getHumanBuyers().reduce((acc, buyer) => {
+      acc[buyer] = { homeMatches: 0, wins: 0 };
+      return acc;
+    }, {});
+  },
+
+  reconcileApiBudgets(data, sponsorshipRewardTotals = {}) {
+    const budgets = data.budgets || {};
+    const stats = App.api.getPerformanceBudgetStats(data.results || []);
+    const sponsorshipEventTotals = App.api.getSponsorshipEventTotalByManager(data.events || []);
+
+    (data.results || [])
+      .filter(result => App.utils.normalizeText(result.Status) === "aprovado")
+      .filter(result => App.utils.normalizeText(result.Competicao) === "championship")
+      .forEach(result => {
+        const homeTeam = App.utils.getTeamByName(result.Mandante);
+        const awayTeam = App.utils.getTeamByName(result.Visitante);
+        const homeScore = Number(result.GolsMandante);
+        const awayScore = Number(result.GolsVisitante);
+        if (Number.isNaN(homeScore) || Number.isNaN(awayScore)) return;
+
+        if (homeTeam?.status === "Nosso" && stats[homeTeam.owner]) stats[homeTeam.owner].homeMatches += 1;
+        if (homeScore > awayScore && homeTeam?.status === "Nosso" && stats[homeTeam.owner]) stats[homeTeam.owner].wins += 1;
+        if (awayScore > homeScore && awayTeam?.status === "Nosso" && stats[awayTeam.owner]) stats[awayTeam.owner].wins += 1;
+      });
+
+    return App.utils.getHumanBuyers().reduce((acc, buyer) => {
+      const current = budgets[buyer] || {};
+      const buyerStats = stats[buyer] || { homeMatches: 0, wins: 0 };
+      const baseBudget = Number(current.baseBudget ?? data.budget ?? App.config.transferBudget);
+      const spentTotal = Number(current.spentTotal ?? 0);
+      const homeBonus = buyerStats.homeMatches * App.config.homeMatchBonus;
+      const winBonusValue = buyerStats.wins * App.config.winBonus;
+      const sponsorshipRewards = Number(sponsorshipRewardTotals[buyer] || 0);
+      const sponsorshipEvents = Number(sponsorshipEventTotals[buyer] || 0);
+      const eventTotal = Number(current.eventTotal ?? 0) - sponsorshipEvents + sponsorshipRewards;
+      const totalBudget = baseBudget + homeBonus + winBonusValue + eventTotal;
+
+      acc[buyer] = {
+        ...current,
+        baseBudget,
+        homeMatches: buyerStats.homeMatches,
+        wins: buyerStats.wins,
+        homeBonus,
+        winBonusValue,
+        sponsorshipRewards,
+        eventTotal,
+        totalBudget,
+        spentTotal,
+        remainingBudget: totalBudget - spentTotal
+      };
+
+      return acc;
+    }, {});
+  },
+
   getDbMatchEvents() {
     return (App.state.apiMatches || []).map(row => {
       const homeScore = row.home_score === null || row.home_score === undefined ? null : Number(row.home_score);
@@ -383,11 +462,18 @@ App.api = {
       const data = await App.api.rpc("app_get_data", {}, 45000);
       if (!data.ok) throw new Error(data.error || data.message || "Erro ao carregar Supabase.");
 
+      if (data.budget !== undefined) App.config.transferBudget = Number(data.budget);
+      if (data.homeMatchBonus !== undefined) App.config.homeMatchBonus = Number(data.homeMatchBonus);
+      if (data.winBonus !== undefined) App.config.winBonus = Number(data.winBonus);
+      if (data.dailyTransferLimit !== undefined) App.config.baseDailyTransferLimit = Number(data.dailyTransferLimit);
+
+      const sponsorshipRewardTotals = await App.api.loadSponsorshipRewardTotals();
+
       App.state.apiResults = data.results || [];
       App.state.apiTransfers = data.transfers || [];
       App.state.apiEvents = data.events || [];
       App.state.apiClubs = data.clubs || [];
-      App.state.apiBudgets = data.budgets || {};
+      App.state.apiBudgets = App.api.reconcileApiBudgets(data, sponsorshipRewardTotals);
       if (Array.isArray(data.eventSlots) && data.eventSlots.length) {
         App.config.eventSlots = data.eventSlots.map(Number);
       }
@@ -401,11 +487,6 @@ App.api = {
       await App.auth?.loadMyDecisions?.();
       await App.auth?.loadMyTransferProposals?.();
       await App.auth?.loadMySponsorships?.();
-
-      if (data.budget !== undefined) App.config.transferBudget = Number(data.budget);
-      if (data.homeMatchBonus !== undefined) App.config.homeMatchBonus = Number(data.homeMatchBonus);
-      if (data.winBonus !== undefined) App.config.winBonus = Number(data.winBonus);
-      if (data.dailyTransferLimit !== undefined) App.config.baseDailyTransferLimit = Number(data.dailyTransferLimit);
 
       App.state.apiLoaded = true;
       App.main.renderAll();
