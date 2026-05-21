@@ -198,6 +198,7 @@ as $$
           o.suggested_value,
           o.expires_at,
           o.status,
+          o.created_at,
           r.name as player_name,
           r.club,
           r.position,
