@@ -128,6 +128,114 @@ App.players = {
       .filter(event => Number(event.PartidasRestantes || 0) > 0 || App.events.isActiveOrDurationEvent(event));
   },
 
+  renderCoachAlertDeck(alerts) {
+    if (!alerts.length) {
+      return `
+        <div class="coach-empty-state">
+          <span>✅</span>
+          <strong>Sala tranquila</strong>
+          <p>Nenhum alerta urgente neste momento. O técnico pode focar no próximo jogo.</p>
+        </div>
+      `;
+    }
+
+    return `
+      <div class="coach-alert-deck">
+        ${alerts.map((alert, index) => {
+          const icon = index === 0 ? "🚨" : "📌";
+          return `
+            <div class="coach-alert-card">
+              <span>${icon}</span>
+              <p>${App.utils.escapeHtml(alert)}</p>
+            </div>
+          `;
+        }).join("")}
+      </div>
+    `;
+  },
+
+  renderCoachTransferDeck(transfers) {
+    if (!transfers.length) {
+      return `
+        <div class="coach-empty-state">
+          <span>🧾</span>
+          <strong>Mercado silencioso</strong>
+          <p>Nenhuma contratação aprovada para este técnico até agora.</p>
+        </div>
+      `;
+    }
+
+    const total = transfers.reduce((sum, item) => sum + Number(item.totalCost || 0), 0);
+    const topTransfer = transfers.reduce((best, item) => Number(item.totalCost || 0) > Number(best?.totalCost || 0) ? item : best, transfers[0]);
+
+    return `
+      <div class="coach-market-header">
+        <div>
+          <span>Pacote recente</span>
+          <strong>${transfers.length} jogador(es)</strong>
+        </div>
+        <div>
+          <span>Maior compra</span>
+          <strong>${App.utils.escapeHtml(topTransfer?.player || "-")}</strong>
+        </div>
+        <div>
+          <span>Total exibido</span>
+          <strong>${App.utils.formatCurrency(total)}</strong>
+        </div>
+      </div>
+
+      <div class="coach-transfer-timeline">
+        ${transfers.map((item, index) => `
+          <div class="coach-transfer-item">
+            <span class="transfer-rank">${index + 1}</span>
+            <div>
+              <strong>${App.utils.escapeHtml(item.player)}</strong>
+              <small>${App.utils.escapeHtml(item.fromClub || "Clube não informado")}</small>
+            </div>
+            <b>${App.utils.formatCurrency(item.totalCost)}</b>
+          </div>
+        `).join("")}
+      </div>
+    `;
+  },
+
+  renderCoachEventDeck(events) {
+    if (!events.length) {
+      return `
+        <div class="coach-empty-state">
+          <span>🎲</span>
+          <strong>Nada no radar</strong>
+          <p>Nenhum evento recente registrado para este técnico.</p>
+        </div>
+      `;
+    }
+
+    return `
+      <div class="coach-event-stack">
+        ${events.map(event => {
+          const presentation = App.events.getEventPresentation ? App.events.getEventPresentation(event) : {
+            title: event.Titulo || "Evento",
+            description: event.Descricao || "",
+            categoryLabel: event.Tipo || "Evento",
+            icon: "🎲"
+          };
+          const impact = App.events.getEventImpactLabel ? App.events.getEventImpactLabel(event) : "";
+          const duration = App.events.getEventDurationLabel ? App.events.getEventDurationLabel(event) : "";
+          return `
+            <div class="coach-event-item">
+              <span class="coach-event-icon">${presentation.icon}</span>
+              <div>
+                <strong>${App.utils.escapeHtml(presentation.title)}</strong>
+                <small>${App.utils.escapeHtml(presentation.categoryLabel)}${duration ? ` · ${App.utils.escapeHtml(duration)}` : ""}</small>
+              </div>
+              <b>${App.utils.escapeHtml(impact)}</b>
+            </div>
+          `;
+        }).join("")}
+      </div>
+    `;
+  },
+
   getCoachAlerts(team, standing, budget, next, transfersToday) {
     const alerts = [];
     const activeEvents = App.events.getActiveEventsForBuyer(team.owner);
@@ -249,23 +357,28 @@ App.players = {
             ` : `<p class="calendar-muted">Nenhum jogador lesionado no momento.</p>`}
           </article>
 
-          <article class="coach-panel-card">
-            <div class="home-panel-header"><h2>Alertas</h2></div>
-            ${alerts.length ? `<ul class="coach-alert-list">${alerts.map(alert => `<li>${App.utils.escapeHtml(alert)}</li>`).join("")}</ul>` : `<p class="calendar-muted">Nada urgente no momento.</p>`}
+          <article class="coach-panel-card coach-war-room-card">
+            <div class="home-panel-header">
+              <h2>Sala de guerra</h2>
+              <span class="coach-section-kicker">${alerts.length} alerta(s)</span>
+            </div>
+            ${App.players.renderCoachAlertDeck(alerts)}
           </article>
 
-          <article class="coach-panel-card">
-            <div class="home-panel-header"><h2>Transferências recentes</h2></div>
-            ${transfers.length ? `<div class="coach-list">${transfers.map(item => `
-              <div><strong>${App.utils.escapeHtml(item.player)}</strong><span>${App.utils.escapeHtml(item.fromClub || "-")} · ${App.utils.formatCurrency(item.totalCost)}</span></div>
-            `).join("")}</div>` : `<p class="calendar-muted">Nenhuma contratação aprovada.</p>`}
+          <article class="coach-panel-card coach-market-card">
+            <div class="home-panel-header">
+              <h2>Mercado do técnico</h2>
+              <span class="coach-section-kicker">${transfers.length} contratação(ões)</span>
+            </div>
+            ${App.players.renderCoachTransferDeck(transfers)}
           </article>
 
-          <article class="coach-panel-card">
-            <div class="home-panel-header"><h2>Eventos recentes</h2></div>
-            ${events.length ? `<div class="coach-list">${events.map(event => `
-              <div><strong>${App.utils.escapeHtml(event.Titulo || "Evento")}</strong><span>${App.utils.escapeHtml([event.Tipo, event.Status].filter(Boolean).join(" · "))}</span></div>
-            `).join("")}</div>` : `<p class="calendar-muted">Nenhum evento registrado.</p>`}
+          <article class="coach-panel-card coach-event-radar-card">
+            <div class="home-panel-header">
+              <h2>Radar de ocorrências</h2>
+              <span class="coach-section-kicker">${events.length} evento(s)</span>
+            </div>
+            ${App.players.renderCoachEventDeck(events)}
           </article>
         </section>
       </section>
@@ -273,12 +386,16 @@ App.players = {
   },
 
   renderComparison(ranking) {
+    const leader = ranking[0];
     return `
-      <section class="coach-comparison">
-        <div class="home-panel-header"><h2>Comparativo entre técnicos</h2></div>
-        <div class="coach-ranking-grid">
+      <section class="coach-comparison coach-comparison-v47">
+        <div class="home-panel-header">
+          <h2>Termômetro da Liga</h2>
+          ${leader ? `<span class="coach-section-kicker">Líder: ${App.utils.escapeHtml(leader.team.owner)} · ${leader.standing?.points || 0} pts</span>` : ""}
+        </div>
+        <div class="coach-podium-grid">
           ${ranking.map((item, index) => `
-            <article class="coach-ranking-card">
+            <article class="coach-podium-card rank-${index + 1}" style="--coach-color:${App.data.ownerColors[item.team.owner] || "#2563eb"}">
               <span class="rank-number">${index + 1}</span>
               ${App.clubs.getTeamBadgeHtml(item.team.team, "small")}
               <div>

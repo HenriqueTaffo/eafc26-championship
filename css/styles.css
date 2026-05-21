@@ -4928,3 +4928,354 @@ body {
     font-size: 11px;
   }
 }
+
+/* v46 — ajuste de densidade dos cards de Eventos
+   Remove o efeito de conteúdo "espalhado" dentro de cards altos. */
+.event-card-grid-v45 {
+  align-items: start;
+}
+
+.event-grid .event-card-v45,
+.event-card-v45 {
+  min-height: 0;
+  height: auto;
+  display: grid;
+  grid-template-rows: auto auto auto auto auto;
+  align-content: start;
+  gap: 12px;
+}
+
+.event-card-v45 .event-card-header {
+  align-items: start;
+}
+
+.event-card-v45 .event-flavor {
+  margin-top: 6px;
+}
+
+.event-effect-box {
+  margin-top: 0;
+}
+
+.event-card-v45 .event-meta {
+  margin-top: 0;
+  padding-top: 2px;
+}
+
+.event-card-v45 .event-impact {
+  align-self: start;
+  white-space: nowrap;
+}
+
+/* Em telas grandes, cards com textos longos não forçam os demais a ficarem com espaço vazio. */
+@media (min-width: 901px) {
+  .event-card-grid-v45 {
+    grid-auto-rows: auto;
+  }
+}
+
+/* Mobile: cards ainda mais compactos e legíveis. */
+@media (max-width: 640px) {
+  .event-grid .event-card-v45,
+  .event-card-v45 {
+    gap: 10px;
+  }
+
+  .event-card-v45 .event-flavor {
+    -webkit-line-clamp: initial;
+  }
+
+  .event-effect-box {
+    padding: 10px;
+  }
+}
+
+/* v47 — rework do painel do técnico após Lesões */
+.coach-detail-grid {
+  gap: 18px;
+  align-items: start;
+}
+
+.coach-section-kicker {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 6px 10px;
+  background: rgba(148,163,184,.12);
+  color: #c4b5fd;
+  border: 1px solid rgba(167,139,250,.18);
+  font-size: 11px;
+  font-weight: 1000;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+}
+
+.coach-war-room-card,
+.coach-market-card,
+.coach-event-radar-card {
+  min-height: 0;
+  background:
+    radial-gradient(circle at top left, rgba(59,130,246,.10), transparent 36%),
+    rgba(17,28,51,.86);
+}
+
+.coach-war-room-card {
+  border-color: rgba(251,191,36,.22);
+}
+
+.coach-market-card {
+  border-color: rgba(34,197,94,.22);
+}
+
+.coach-event-radar-card {
+  border-color: rgba(168,85,247,.22);
+}
+
+.coach-alert-deck,
+.coach-transfer-timeline,
+.coach-event-stack {
+  display: grid;
+  gap: 10px;
+}
+
+.coach-alert-card {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 10px;
+  align-items: start;
+  padding: 12px;
+  border-radius: 16px;
+  background: rgba(251,191,36,.09);
+  border: 1px solid rgba(251,191,36,.18);
+}
+
+.coach-alert-card span {
+  width: 30px;
+  height: 30px;
+  display: inline-grid;
+  place-items: center;
+  border-radius: 12px;
+  background: rgba(251,191,36,.14);
+}
+
+.coach-alert-card p {
+  margin: 0;
+  color: #f8fafc;
+  line-height: 1.4;
+}
+
+.coach-empty-state {
+  display: grid;
+  gap: 6px;
+  place-items: start;
+  padding: 16px;
+  border-radius: 18px;
+  border: 1px dashed rgba(148,163,184,.22);
+  background: rgba(2,6,23,.20);
+}
+
+.coach-empty-state span {
+  font-size: 28px;
+}
+
+.coach-empty-state strong {
+  color: #f8fafc;
+  font-size: 18px;
+}
+
+.coach-empty-state p {
+  color: #94a3b8;
+  margin: 0;
+  line-height: 1.4;
+}
+
+.coach-market-header {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.coach-market-header > div {
+  padding: 11px;
+  border-radius: 16px;
+  background: rgba(34,197,94,.08);
+  border: 1px solid rgba(34,197,94,.16);
+  min-width: 0;
+}
+
+.coach-market-header span {
+  display: block;
+  color: #86efac;
+  font-size: 10px;
+  font-weight: 1000;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+}
+
+.coach-market-header strong {
+  display: block;
+  margin-top: 4px;
+  color: #f8fafc;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.coach-transfer-item,
+.coach-event-item {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 16px;
+  background: rgba(2,6,23,.24);
+  border: 1px solid rgba(148,163,184,.10);
+}
+
+.transfer-rank,
+.coach-event-icon {
+  width: 34px;
+  height: 34px;
+  display: inline-grid;
+  place-items: center;
+  border-radius: 14px;
+  background: rgba(59,130,246,.16);
+  color: #bfdbfe;
+  font-weight: 1000;
+}
+
+.coach-transfer-item strong,
+.coach-event-item strong {
+  color: #f8fafc;
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.coach-transfer-item small,
+.coach-event-item small {
+  color: #94a3b8;
+  display: block;
+  margin-top: 3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.coach-transfer-item b {
+  color: #bbf7d0;
+  white-space: nowrap;
+}
+
+.coach-event-item b {
+  color: #ddd6fe;
+  white-space: nowrap;
+}
+
+.coach-comparison-v47 {
+  margin-top: 18px;
+  border-color: rgba(96,165,250,.20);
+  background:
+    radial-gradient(circle at top left, rgba(59,130,246,.12), transparent 36%),
+    rgba(17,28,51,.84);
+}
+
+.coach-podium-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.coach-podium-card {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto auto minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  padding: 14px;
+  border-radius: 18px;
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--coach-color) 14%, transparent), rgba(2,6,23,.18)),
+    rgba(15,23,42,.72);
+  border: 1px solid color-mix(in srgb, var(--coach-color) 28%, rgba(148,163,184,.12));
+  overflow: hidden;
+}
+
+.coach-podium-card::after {
+  content: "";
+  position: absolute;
+  inset: auto -34px -45px auto;
+  width: 90px;
+  height: 90px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--coach-color) 18%, transparent);
+}
+
+.coach-podium-card .rank-number {
+  width: 30px;
+  height: 30px;
+  display: inline-grid;
+  place-items: center;
+  border-radius: 12px;
+  background: rgba(255,255,255,.10);
+  color: #f8fafc;
+  font-weight: 1000;
+}
+
+.coach-podium-card strong,
+.coach-podium-card small {
+  display: block;
+}
+
+.coach-podium-card strong {
+  color: #f8fafc;
+}
+
+.coach-podium-card small {
+  color: #94a3b8;
+}
+
+.coach-podium-card b {
+  grid-column: 1 / -1;
+  color: #e9d5ff;
+  font-size: 18px;
+  z-index: 1;
+}
+
+@media (max-width: 1080px) {
+  .coach-podium-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .coach-market-header {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 680px) {
+  .coach-detail-grid {
+    gap: 14px;
+  }
+
+  .coach-transfer-item,
+  .coach-event-item {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .coach-transfer-item b,
+  .coach-event-item b {
+    grid-column: 2;
+    justify-self: start;
+  }
+
+  .coach-podium-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .coach-section-kicker {
+    width: fit-content;
+  }
+}
