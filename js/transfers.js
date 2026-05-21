@@ -357,7 +357,7 @@ App.transfers = {
     const sameBuyerAndSeller = Boolean(isInternal && buyer && seller && buyer === seller);
     const duplicateBlock = duplicate && (!isInternal || internalSellerMismatch);
     const remainingAfter = budget ? budget.remaining - finalValue : 0;
-    const limitReached = budget ? budget.transfersToday >= budget.transferLimit : false;
+    const limitReached = !isInternal && budget ? budget.transfersToday >= budget.transferLimit : false;
     const overBudget = budget ? finalValue > budget.remaining : false;
     const hardBlock = Boolean(hasEnoughData && (duplicateBlock || sameBuyerAndSeller || limitReached || overBudget));
 
@@ -413,6 +413,7 @@ App.transfers = {
 
     if (preview.isInternal && preview.duplicate && !preview.internalSellerMismatch) {
       messages.push(`Negociação interna saindo de ${preview.seller}.`);
+      messages.push("Propostas entre técnicos não consomem limite diário.");
     }
 
     if (preview.limitReached) {
@@ -442,7 +443,7 @@ App.transfers = {
         <span>Taxa <strong>${Math.round(preview.rate * 100)}%</strong></span>
         <span>${preview.isInternal ? "Valor negociado" : "Custo final"} <strong>${App.utils.formatCurrency(preview.finalValue)}</strong></span>
         <span>Saldo após compra <strong>${App.utils.formatCurrency(preview.remainingAfter)}</strong></span>
-        <span>Transferências hoje <strong>${preview.budget.transfersToday}/${preview.budget.transferLimit}</strong></span>
+        <span>${preview.isInternal ? "Limite diário" : "Transferências hoje"} <strong>${preview.isInternal ? "Não consome" : `${preview.budget.transfersToday}/${preview.budget.transferLimit}`}</strong></span>
       </div>
       <ul class="preview-alerts">
         ${messages.map(message => `<li>${App.utils.escapeHtml(message)}</li>`).join("")}

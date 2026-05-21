@@ -163,7 +163,7 @@ App.forms = {
     App.main.showLoader({
       variant: "market",
       title: "Processando transferência",
-      message: "Consultando orçamento, limite diário e possíveis travas de mercado."
+      message: "Consultando orçamento e possíveis travas de mercado. Propostas internas não consomem limite diário."
     });
 
     try {
