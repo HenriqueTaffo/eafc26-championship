@@ -330,7 +330,7 @@ App.players = {
           <article><span>Transfers hoje</span><strong>${todayCount}/${transferLimit}</strong><small>${transfers.length} totais válidas</small></article>
         </section>
 
-        <section class="coach-detail-grid">
+        <section class="coach-detail-grid coach-detail-grid-v53">
           <article class="coach-panel-card coach-next-match">
             <div class="home-panel-header"><h2>Próximo compromisso</h2></div>
             ${next ? `
@@ -359,32 +359,38 @@ App.players = {
 
           ${App.auth?.renderCoachDecisionCard ? App.auth.renderCoachDecisionCard(activeTeam.owner) : ""}
 
-          <article class="coach-panel-card coach-war-room-card">
-            <div class="home-panel-header">
-              <h2>Sala de guerra</h2>
-              <span class="coach-section-kicker">${alerts.length} alerta(s)</span>
-            </div>
-            ${App.players.renderCoachAlertDeck(alerts)}
-          </article>
+          <section class="coach-lower-layout">
+            <div class="coach-lower-stack">
+              <article class="coach-panel-card coach-war-room-card">
+                <div class="home-panel-header">
+                  <h2>Sala de guerra</h2>
+                  <span class="coach-section-kicker">${alerts.length} alerta(s)</span>
+                </div>
+                ${App.players.renderCoachAlertDeck(alerts)}
+              </article>
 
-          <article class="coach-panel-card coach-market-card">
-            <div class="home-panel-header">
-              <h2>Mercado do técnico</h2>
-              <span class="coach-section-kicker">${transfers.length} contratação(ões)</span>
+              <article class="coach-panel-card coach-event-radar-card">
+                <div class="home-panel-header">
+                  <h2>Radar de ocorrências</h2>
+                  <span class="coach-section-kicker">${events.length} evento(s)</span>
+                </div>
+                ${App.players.renderCoachEventDeck(events)}
+              </article>
             </div>
-            ${App.players.renderCoachTransferDeck(transfers)}
-          </article>
 
-          <article class="coach-panel-card coach-event-radar-card">
-            <div class="home-panel-header">
-              <h2>Radar de ocorrências</h2>
-              <span class="coach-section-kicker">${events.length} evento(s)</span>
+            <div class="coach-lower-stack">
+              <article class="coach-panel-card coach-market-card">
+                <div class="home-panel-header">
+                  <h2>Mercado do técnico</h2>
+                  <span class="coach-section-kicker">${transfers.length} contratação(ões)</span>
+                </div>
+                ${App.players.renderCoachTransferDeck(transfers)}
+              </article>
+
+              ${App.auth?.renderPinChangeCard ? App.auth.renderPinChangeCard() : ""}
             </div>
-            ${App.players.renderCoachEventDeck(events)}
-          </article>
-
-          ${App.auth?.renderPinChangeCard ? App.auth.renderPinChangeCard() : ""}
-        </section>
+          </section>
+        </section>        </section>
       </section>
     `;
   },

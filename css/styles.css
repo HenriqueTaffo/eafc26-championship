@@ -5774,3 +5774,119 @@ body {
     grid-column: auto;
   }
 }
+
+/* v53 — painel do técnico sem buracos no layout
+   Troca o grid solto por colunas empilhadas independentes. */
+.coach-detail-grid-v53 {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+  align-items: start;
+}
+
+.coach-detail-grid-v53 > .coach-decision-card,
+.coach-detail-grid-v53 > .coach-lower-layout {
+  grid-column: 1 / -1;
+}
+
+.coach-lower-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 18px;
+  align-items: start;
+}
+
+.coach-lower-stack {
+  display: grid;
+  gap: 18px;
+  align-content: start;
+  min-width: 0;
+}
+
+.coach-lower-stack > .coach-panel-card,
+.coach-detail-grid-v53 > .coach-panel-card {
+  height: auto !important;
+  min-height: 0;
+  align-self: start;
+}
+
+.coach-event-radar-card,
+.pin-change-card {
+  grid-column: auto;
+}
+
+/* PIN: deixa o formulário usável e com cara do app */
+.pin-change-card {
+  overflow: visible;
+}
+
+.pin-change-form {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) auto;
+  gap: 12px;
+  align-items: end;
+}
+
+.pin-change-form label {
+  display: grid;
+  gap: 7px;
+  min-width: 0;
+  color: #cbd5e1;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.pin-change-form input {
+  width: 100%;
+  min-width: 0;
+  height: 44px;
+  padding: 0 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(148,163,184,.18);
+  background: rgba(15,23,42,.76);
+  color: #f8fafc;
+  outline: none;
+}
+
+.pin-change-form input:focus {
+  border-color: rgba(96,165,250,.55);
+  box-shadow: 0 0 0 3px rgba(59,130,246,.14);
+}
+
+.pin-change-form .secondary-button {
+  height: 44px;
+  border: 0;
+  border-radius: 14px;
+  padding: 0 16px;
+  background: linear-gradient(135deg, #2563eb, #7c3aed);
+  color: #fff;
+  font-weight: 1000;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.pin-change-form .app-message {
+  grid-column: 1 / -1;
+}
+
+/* Central de decisões: reduz altura vazia quando bloqueada */
+.coach-decision-card.decision-locked,
+.coach-decision-card .coach-empty-state {
+  min-height: 0;
+}
+
+@media (max-width: 980px) {
+  .coach-detail-grid-v53,
+  .coach-lower-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .coach-detail-grid-v53 > .coach-decision-card,
+  .coach-detail-grid-v53 > .coach-lower-layout {
+    grid-column: auto;
+  }
+
+  .pin-change-form {
+    grid-template-columns: 1fr;
+  }
+}
