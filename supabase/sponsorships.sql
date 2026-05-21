@@ -650,6 +650,7 @@ $$;
 create or replace function public.app_get_sponsorship_reward_totals()
 returns jsonb
 language sql
+security definer
 stable
 as $$
   select coalesce(jsonb_object_agg(manager_name, reward_total), '{}'::jsonb)
@@ -665,6 +666,7 @@ $$;
 create or replace function public.app_get_budget_reconciliation()
 returns jsonb
 language sql
+security definer
 stable
 as $$
   with data as (

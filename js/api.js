@@ -131,6 +131,16 @@ App.api = {
     }
   },
 
+  async loadBudgetReconciliation() {
+    try {
+      const budgets = await App.api.rpc("app_get_budget_reconciliation", {}, 30000);
+      return budgets && typeof budgets === "object" && !Array.isArray(budgets) ? budgets : null;
+    } catch (error) {
+      console.warn("Reconciliação de orçamento indisponível:", error);
+      return null;
+    }
+  },
+
   getSponsorshipEventTotalByManager(events = []) {
     return (events || []).reduce((acc, event) => {
       const manager = event.Jogador || event.manager_name || "";
@@ -467,13 +477,16 @@ App.api = {
       if (data.winBonus !== undefined) App.config.winBonus = Number(data.winBonus);
       if (data.dailyTransferLimit !== undefined) App.config.baseDailyTransferLimit = Number(data.dailyTransferLimit);
 
-      const sponsorshipRewardTotals = await App.api.loadSponsorshipRewardTotals();
+      const [budgetReconciliation, sponsorshipRewardTotals] = await Promise.all([
+        App.api.loadBudgetReconciliation(),
+        App.api.loadSponsorshipRewardTotals()
+      ]);
 
       App.state.apiResults = data.results || [];
       App.state.apiTransfers = data.transfers || [];
       App.state.apiEvents = data.events || [];
       App.state.apiClubs = data.clubs || [];
-      App.state.apiBudgets = App.api.reconcileApiBudgets(data, sponsorshipRewardTotals);
+      App.state.apiBudgets = budgetReconciliation || App.api.reconcileApiBudgets(data, sponsorshipRewardTotals);
       if (Array.isArray(data.eventSlots) && data.eventSlots.length) {
         App.config.eventSlots = data.eventSlots.map(Number);
       }
