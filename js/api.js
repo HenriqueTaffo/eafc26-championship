@@ -382,6 +382,10 @@ App.api = {
       App.state.apiEvents = data.events || [];
       App.state.apiClubs = data.clubs || [];
       App.state.apiBudgets = data.budgets || {};
+      if (Array.isArray(data.eventSlots) && data.eventSlots.length) {
+        App.config.eventSlots = data.eventSlots.map(Number);
+      }
+
       await App.api.loadMatches();
       await App.api.loadMarketPlayers();
       await App.api.loadManagerOnboarding?.();
@@ -390,10 +394,6 @@ App.api = {
       await App.auth?.loadMyDecisions?.();
       await App.auth?.loadMyTransferProposals?.();
       await App.auth?.loadMySponsorships?.();
-
-      if (Array.isArray(data.eventSlots) && data.eventSlots.length) {
-        App.config.eventSlots = data.eventSlots.map(Number);
-      }
 
       if (data.budget !== undefined) App.config.transferBudget = Number(data.budget);
       if (data.homeMatchBonus !== undefined) App.config.homeMatchBonus = Number(data.homeMatchBonus);

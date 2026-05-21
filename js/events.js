@@ -26,6 +26,15 @@ App.events = {
     element.textContent = `${String(hours).padStart(2, "0")}h ${String(minutes).padStart(2, "0")}m ${String(seconds).padStart(2, "0")}s`;
   },
 
+  renderEventSlots() {
+    const element = document.getElementById("eventSlotList");
+    if (!element) return;
+
+    element.innerHTML = (App.config.eventSlots || [])
+      .map(hour => `<b>${String(Number(hour)).padStart(2, "0")}h</b>`)
+      .join("");
+  },
+
   getCurrentEventSlotKey() {
     const now = new Date();
     const currentHour = now.getHours();
@@ -452,6 +461,7 @@ App.events = {
   },
 
   render() {
+    App.events.renderEventSlots();
     App.events.updateEventCountdown();
 
     const summary = document.getElementById("eventsSummary");
@@ -463,6 +473,7 @@ App.events = {
     const todayEvents = dynamicEvents.filter(event => App.events.formatEventDate(event.Data || event.Timestamp) === todayText);
     const activeEvents = dynamicEvents.filter(event => App.events.isActiveOrDurationEvent(event));
     const totalImpact = App.state.apiEvents.reduce((sum, event) => sum + Number(event.ImpactoFinanceiro || 0), 0);
+    const lastSlot = Math.max(...App.config.eventSlots.map(Number));
     const pendingSlots = Math.max(0, (App.config.eventSlots.length * App.utils.getHumanBuyers().length) - todayEvents.length);
 
     summary.classList.add("events-summary-v45");
@@ -470,7 +481,7 @@ App.events = {
       ${App.ui.summaryCard("Última rodada", todayEvents.length, "eventos dinâmicos hoje", "event-summary-main")}
       ${App.ui.summaryCard("Ativos agora", activeEvents.length, "lesões, mercado ou duração")}
       ${App.ui.summaryCard("Impacto líquido", App.utils.formatCurrency(totalImpact), "somando histórico carregado")}
-      ${App.ui.summaryCard("Slots restantes", pendingSlots, "até 23h")}
+      ${App.ui.summaryCard("Slots restantes", pendingSlots, `até ${String(lastSlot).padStart(2, "0")}h`)}
     `;
 
     const events = App.events.getFilteredEvents();
