@@ -60,7 +60,6 @@ App.experience = {
   },
 
   getOpportunityRows() {
-    const ratings = (App.state.apiRatings || []).filter(item => Number(item.overall || 0) >= 72);
     const market = App.transfers.getMarketPlayers().map(item => {
       const rating = App.transfers.findEaRatingForMarketPlayer?.(item);
       return {
@@ -73,14 +72,7 @@ App.experience = {
       };
     });
 
-    const source = ratings.length ? ratings.map(item => ({
-      name: item.name,
-      club: item.club,
-      position: item.position,
-      overall: Number(item.overall || 0),
-      avatar_url: item.avatar_url || "",
-      value: Math.max(1000000, Number(item.market_value_eur || 0))
-    })) : market;
+    const source = market;
 
     return source
       .filter(item => item.name)

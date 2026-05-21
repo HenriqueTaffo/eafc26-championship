@@ -30,6 +30,7 @@ create table if not exists public.ea_player_ratings (
   avatar_url text,
   shield_url text,
   card_type text not null default 'Normal',
+  gender text,
   source_url text not null default 'https://www.ea.com/games/ea-sports-fc/ratings',
   source_name text not null default 'EA SPORTS FC official ratings',
   synced_at timestamptz not null default now(),
@@ -51,6 +52,9 @@ alter table public.ea_player_ratings
 
 alter table public.ea_player_ratings
   add column if not exists card_type text not null default 'Normal';
+
+alter table public.ea_player_ratings
+  add column if not exists gender text;
 
 create table if not exists public.league_opportunities (
   id bigserial primary key,
@@ -110,6 +114,7 @@ begin
     avatar_url,
     shield_url,
     card_type,
+    gender,
     source_url,
     source_name,
     synced_at,
@@ -132,6 +137,7 @@ begin
     coalesce(nullif(player ->> 'avatar_url', ''), nullif(player ->> 'avatarUrl', '')),
     coalesce(nullif(player ->> 'shield_url', ''), nullif(player ->> 'shieldUrl', '')),
     coalesce(nullif(player ->> 'card_type', ''), nullif(player ->> 'version', ''), 'Normal'),
+    coalesce(nullif(player ->> 'gender', ''), nullif(player ->> 'football_gender', '')),
     coalesce(nullif(player ->> 'source_url', ''), 'https://www.ea.com/games/ea-sports-fc/ratings'),
     coalesce(nullif(player ->> 'source_name', ''), 'EA SPORTS FC official ratings'),
     now(),
@@ -154,6 +160,7 @@ begin
          avatar_url = excluded.avatar_url,
          shield_url = excluded.shield_url,
          card_type = excluded.card_type,
+         gender = excluded.gender,
          source_url = excluded.source_url,
          source_name = excluded.source_name,
          synced_at = now(),
@@ -194,6 +201,7 @@ as $$
       avatar_url,
       shield_url,
       card_type,
+      gender,
       source_name,
       source_url,
       synced_at
@@ -206,6 +214,25 @@ as $$
     order by overall desc nulls last, name
     limit greatest(1, least(coalesce(p_limit, 12), 50))
   ) r;
+$$;
+
+create or replace function public.app_replace_ea_player_ratings(
+  p_players jsonb,
+  p_source_name text default 'EA SPORTS FC official ratings'
+)
+returns jsonb
+language plpgsql
+security definer
+as $$
+declare
+  v_result jsonb;
+begin
+  delete from public.ea_player_ratings
+  where source_name = p_source_name;
+
+  select public.app_upsert_ea_player_ratings(p_players) into v_result;
+  return v_result || jsonb_build_object('replacedSource', p_source_name);
+end;
 $$;
 
 create or replace function public.app_get_experience_data()

@@ -21,10 +21,11 @@ App.transfers = {
 
     const clubKey = App.utils.normalizeText(player?.club);
     const ratings = App.state.apiRatings || [];
-    return ratings.find(item =>
+    const matches = ratings.filter(item => App.utils.normalizeText(item.name) === key);
+    return matches.find(item =>
       App.utils.normalizeText(item.name) === key &&
       (!clubKey || !item.club || App.utils.normalizeText(item.club) === clubKey)
-    ) || ratings.find(item => App.utils.normalizeText(item.name) === key) || null;
+    ) || matches.find(item => item.avatar_url) || matches[0] || null;
   },
 
   renderPlayerPhoto(player, rating = null, className = "market-player-photo") {
@@ -750,12 +751,15 @@ App.transfers = {
     const target = document.getElementById("eaRatingResults");
     if (!target) return;
 
-    const ratings = query
-      ? await App.api.searchEaRatings(query, 8).catch(error => {
-        console.warn("Busca de rating EA indisponível:", error);
-        return [];
-      })
-      : await App.api.loadEaRatings("", 8);
+    if (!query) {
+      target.innerHTML = `<div class="market-empty">Digite o nome do jogador para conferir overall, posição, clube e foto na base importada.</div>`;
+      return;
+    }
+
+    const ratings = await App.api.searchEaRatings(query, 8).catch(error => {
+      console.warn("Busca de rating EA indisponível:", error);
+      return [];
+    });
 
     App.api.mergeEaRatings?.(ratings);
 
@@ -823,12 +827,13 @@ App.transfers = {
           ${App.transfers.renderPlayerPhoto(player, eaRating)}
           <span class="market-player-main">
             <strong>${App.utils.escapeHtml(player.name || "-")}</strong>
-            <small>${App.utils.escapeHtml([player.position, player.age ? `${player.age} anos` : "", player.league].filter(Boolean).join(" · "))}</small>
+            <small>${App.utils.escapeHtml([player.position, player.age ? `${player.age} anos` : "", player.league, player.club].filter(Boolean).join(" · "))}</small>
           </span>
-          <span class="market-player-club">${App.utils.escapeHtml(player.club || "Clube não informado")}</span>
-          ${overall ? `<span class="market-player-overall">OVR ${overall}</span>` : ""}
-          <span class="market-player-value">${App.utils.formatCurrency(Number(player.market_value_eur || 0))}</span>
-          ${isContracted ? `<span class="market-player-status">Já contratado</span>` : ""}
+          <span class="market-player-side">
+            ${overall ? `<span class="market-player-overall">OVR ${overall}</span>` : ""}
+            <span class="market-player-value">${App.utils.formatCurrency(Number(player.market_value_eur || 0))}</span>
+            ${isContracted ? `<span class="market-player-status">Já contratado</span>` : ""}
+          </span>
         </button>
       `;
     }).join("");

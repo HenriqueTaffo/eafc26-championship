@@ -38,6 +38,7 @@ function mapPlayer(player) {
     avatar_url: player.avatarUrl || "",
     shield_url: player.shieldUrl || "",
     card_type: "Normal",
+    gender: player.gender?.label || "",
     source_url: EA_RATINGS_URL,
     source_name: "EA SPORTS FC official ratings"
   };
@@ -61,7 +62,10 @@ async function main() {
 
   const pageData = JSON.parse(match[1]);
   const items = pageData?.props?.pageProps?.ratingDetails?.items || [];
-  const players = items.map(mapPlayer).filter(player => player.name && player.overall);
+  const players = items
+    .filter(player => Number(player.gender?.id) === 0 || String(player.gender?.label || "").toLowerCase().startsWith("men"))
+    .map(mapPlayer)
+    .filter(player => player.name && player.overall);
 
   if (!players.length) {
     throw new Error("Nenhum jogador encontrado no payload oficial da EA.");
@@ -78,15 +82,30 @@ async function main() {
     return;
   }
 
-  const rpcResponse = await fetch(`${supabaseUrl}/rest/v1/rpc/app_upsert_ea_player_ratings`, {
+  let rpcResponse = await fetch(`${supabaseUrl}/rest/v1/rpc/app_replace_ea_player_ratings`, {
     method: "POST",
     headers: {
       apikey: supabaseKey,
       Authorization: `Bearer ${supabaseKey}`,
       "Content-Type": "application/json"
     },
-    body: JSON.stringify({ p_players: players })
+    body: JSON.stringify({
+      p_players: players,
+      p_source_name: "EA SPORTS FC official ratings"
+    })
   });
+
+  if (rpcResponse.status === 404) {
+    rpcResponse = await fetch(`${supabaseUrl}/rest/v1/rpc/app_upsert_ea_player_ratings`, {
+      method: "POST",
+      headers: {
+        apikey: supabaseKey,
+        Authorization: `Bearer ${supabaseKey}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ p_players: players })
+    });
+  }
 
   const text = await rpcResponse.text();
   if (!rpcResponse.ok) {

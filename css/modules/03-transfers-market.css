@@ -572,6 +572,7 @@
   display: grid;
   gap: 8px;
   max-height: 330px;
+  overflow-x: hidden;
   overflow-y: auto;
   padding: 10px;
   border: 1px solid rgba(148,163,184,.16);
@@ -582,8 +583,8 @@
 .market-player-option {
   width: 100%;
   display: grid;
-  grid-template-columns: 42px minmax(180px, 1.2fr) minmax(140px, .9fr) auto auto auto;
-  gap: 10px;
+  grid-template-columns: 44px minmax(0, 1fr) auto;
+  gap: 12px;
   align-items: center;
   padding: 11px 12px;
   border: 1px solid rgba(148,163,184,.12);
@@ -632,9 +633,27 @@
   display: block;
 }
 
-.market-player-main small,
-.market-player-club {
+.market-player-main {
+  min-width: 0;
+}
+
+.market-player-main strong,
+.market-player-main small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.market-player-main small {
   color: #94a3b8;
+}
+
+.market-player-side {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  min-width: 0;
 }
 
 .market-player-value {
@@ -747,7 +766,7 @@
 }
 
 .market-player-option {
-  grid-template-columns: 42px minmax(220px, 1.4fr) minmax(150px, .9fr) auto minmax(110px, auto) auto;
+  grid-template-columns: 44px minmax(0, 1fr) auto;
 }
 
 .market-player-main strong {
@@ -765,6 +784,12 @@
   }
 
   .market-player-option {
-    grid-template-columns: 1fr;
+    grid-template-columns: 40px minmax(0, 1fr);
+  }
+
+  .market-player-side {
+    grid-column: 2;
+    justify-content: flex-start;
+    flex-wrap: wrap;
   }
 }
