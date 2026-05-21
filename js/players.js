@@ -380,6 +380,8 @@ App.players = {
             </div>
             ${App.players.renderCoachEventDeck(events)}
           </article>
+
+          ${App.auth?.renderPinChangeCard ? App.auth.renderPinChangeCard() : ""}
         </section>
       </section>
     `;

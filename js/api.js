@@ -368,6 +368,9 @@ App.api = {
       App.state.apiBudgets = data.budgets || {};
       await App.api.loadMatches();
       await App.api.loadMarketPlayers();
+      await App.auth?.generateDueDecisions?.();
+      await App.auth?.loadPublicNews?.();
+      await App.auth?.loadMyDecisions?.();
 
       if (Array.isArray(data.eventSlots) && data.eventSlots.length) {
         App.config.eventSlots = data.eventSlots.map(Number);

@@ -45,6 +45,7 @@ App.main = {
     App.players.render();
     App.transfers.render();
     App.forms.renderApiSummary();
+    App.auth?.renderAll?.();
   },
 
   renderCurrentView() {
@@ -58,6 +59,8 @@ App.main = {
     else if (activeView === "transfersView") App.transfers.render();
     else if (activeView === "submitView") App.forms.renderApiSummary();
     else App.main.renderAll();
+
+    App.auth?.renderAll?.();
   },
 
   getDefaultLoaderVariant() {
