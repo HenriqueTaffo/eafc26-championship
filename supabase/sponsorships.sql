@@ -51,6 +51,9 @@ alter table public.sponsorship_contracts
   add column if not exists category text not null default 'Patrocinio';
 
 alter table public.sponsorship_contracts
+  add column if not exists baseline_result_keys jsonb not null default '[]'::jsonb;
+
+alter table public.sponsorship_contracts
   alter column manager_id type text using manager_id::text;
 
 create unique index if not exists sponsorship_contracts_active_unique
@@ -314,6 +317,38 @@ begin
 end;
 $$;
 
+create or replace function public.app_get_sponsorship_baseline_result_keys(
+  p_club_name text
+)
+returns jsonb
+language sql
+stable
+security definer
+as $$
+  select coalesce(jsonb_agg(result_key), '[]'::jsonb)
+  from (
+    select concat_ws(
+      '|',
+      coalesce(r."Mandante"::text, ''),
+      coalesce(r."Visitante"::text, ''),
+      coalesce(r."GolsMandante"::text, ''),
+      coalesce(r."GolsVisitante"::text, '')
+    ) as result_key
+    from jsonb_to_recordset(coalesce(public.app_get_data()::jsonb -> 'results', '[]'::jsonb)) as r(
+      "Mandante" text,
+      "Visitante" text,
+      "GolsMandante" integer,
+      "GolsVisitante" integer,
+      "Status" text
+    )
+    where lower(coalesce(r."Status", '')) = lower('aprovado')
+      and (
+        lower(coalesce(r."Mandante", '')) = lower(p_club_name)
+        or lower(coalesce(r."Visitante", '')) = lower(p_club_name)
+      )
+  ) existing_results;
+$$;
+
 create or replace function public.app_accept_sponsorship(
   p_manager_id text,
   p_access_code text,
@@ -330,6 +365,7 @@ declare
   v_contract_id bigint;
   v_max_active integer := 2;
   v_active_count integer := 0;
+  v_club_name text;
 begin
   select id, display_name
     into v_manager
@@ -364,13 +400,15 @@ begin
     return jsonb_build_object('ok', false, 'message', 'Patrocinador nao encontrado.');
   end if;
 
+  v_club_name := coalesce(v_login #>> '{manager,club}', v_manager.display_name);
+
   insert into public.sponsorship_contracts (
     manager_id, manager_name, club_name, sponsor_id, sponsor_name, category, title,
-    description, condition_type, signing_bonus, reward_value, max_claims
+    description, condition_type, signing_bonus, reward_value, max_claims, baseline_result_keys
   ) values (
     v_manager.id,
     coalesce(v_login #>> '{manager,name}', v_manager.display_name),
-    coalesce(v_login #>> '{manager,club}', v_manager.display_name),
+    v_club_name,
     v_offer ->> 'id',
     v_offer ->> 'sponsorName',
     coalesce(v_offer ->> 'category', 'Patrocinio'),
@@ -379,7 +417,8 @@ begin
     v_offer ->> 'conditionType',
     coalesce((v_offer ->> 'signingBonus')::numeric, 0),
     coalesce((v_offer ->> 'rewardValue')::numeric, 0),
-    coalesce((v_offer ->> 'maxClaims')::integer, 3)
+    coalesce((v_offer ->> 'maxClaims')::integer, 3),
+    public.app_get_sponsorship_baseline_result_keys(v_club_name)
   )
   on conflict do nothing
   returning id into v_contract_id;
@@ -469,6 +508,11 @@ begin
         coalesce(v_result."GolsMandante"::text, ''),
         coalesce(v_result."GolsVisitante"::text, '')
       );
+
+      if coalesce(v_contract.baseline_result_keys, '[]'::jsonb) ? v_result_key then
+        continue;
+      end if;
+
       if exists (
         select 1
         from public.sponsorship_rewards
@@ -582,6 +626,11 @@ begin
         coalesce(v_result."GolsMandante"::text, ''),
         coalesce(v_result."GolsVisitante"::text, '')
       );
+
+      if coalesce(v_contract.baseline_result_keys, '[]'::jsonb) ? v_result_key then
+        continue;
+      end if;
+
       if exists (
         select 1
         from public.sponsorship_rewards
