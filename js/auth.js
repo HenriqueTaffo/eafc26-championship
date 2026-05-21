@@ -290,12 +290,97 @@ App.auth = {
       </section>
     `;
 
-    panel.querySelectorAll("[data-decision-answer]").forEach(button => {
+    App.auth.bindDecisionAnswerButtons(panel);
+  },
+
+
+  renderCoachDecisionCard(ownerName) {
+    const session = App.auth.getSession();
+    const owner = ownerName || "";
+
+    if (!session) {
+      return `
+        <article class="coach-panel-card coach-decision-card decision-locked">
+          <div class="home-panel-header">
+            <h2>Central de decisões</h2>
+            <span class="coach-section-kicker">Login necessário</span>
+          </div>
+          <div class="coach-empty-state">
+            <span>🔐</span>
+            <strong>Decisões privadas do técnico</strong>
+            <p>Faça login para ver e responder os eventos de Sim/Não. As consequências aparecem publicamente no Jornal da Liga.</p>
+          </div>
+        </article>
+      `;
+    }
+
+    if (App.utils.normalizeText(session.managerName) !== App.utils.normalizeText(owner)) {
+      return `
+        <article class="coach-panel-card coach-decision-card decision-locked">
+          <div class="home-panel-header">
+            <h2>Central de decisões</h2>
+            <span class="coach-section-kicker">Privado</span>
+          </div>
+          <div class="coach-empty-state">
+            <span>🧤</span>
+            <strong>Painel protegido</strong>
+            <p>Você está logado como ${App.utils.escapeHtml(session.managerName)}. Para decidir eventos de ${App.utils.escapeHtml(owner)}, entre com o PIN desse técnico.</p>
+          </div>
+        </article>
+      `;
+    }
+
+    const pending = App.auth.myDecisions.filter(item => item.status === "pending");
+    const resolved = App.auth.myDecisions.filter(item => item.status !== "pending").slice(0, 3);
+
+    return `
+      <article class="coach-panel-card coach-decision-card">
+        <div class="home-panel-header">
+          <div>
+            <h2>Central de decisões</h2>
+            <p class="coach-card-subtitle">Eventos privados de Sim/Não. Sorteio automático durante o dia; expira às 23:59.</p>
+          </div>
+          <span class="coach-section-kicker">${pending.length} pendente(s)</span>
+        </div>
+
+        ${pending.length ? `
+          <div class="coach-decision-grid">
+            ${pending.map(item => App.auth.renderDecisionCard(item)).join("")}
+          </div>
+        ` : `
+          <div class="coach-empty-state compact">
+            <span>🗞️</span>
+            <strong>Nenhuma decisão pendente</strong>
+            <p>Quando o sorteio automático cair para ${App.utils.escapeHtml(session.managerName)}, as opções aparecem aqui.</p>
+          </div>
+        `}
+
+        ${resolved.length ? `
+          <div class="coach-decision-history">
+            <strong>Últimas decisões</strong>
+            ${resolved.map(item => `
+              <div>
+                <span>${App.utils.escapeHtml(item.title)}</span>
+                <b>${item.status === "expired" ? "Expirou" : item.selected_option === "yes" ? "Sim" : "Não"}</b>
+              </div>
+            `).join("")}
+          </div>
+        ` : ""}
+      </article>
+    `;
+  },
+
+  bindDecisionAnswerButtons(root = document) {
+    root.querySelectorAll("[data-decision-answer]").forEach(button => {
+      if (button.dataset.bound === "true") return;
+      button.dataset.bound = "true";
+
       button.addEventListener("click", async event => {
         const target = event.currentTarget;
         const decisionId = target.dataset.decisionId;
         const choice = target.dataset.choice;
         const label = choice === "yes" ? "Sim" : "Não";
+
         if (!confirm(`Confirmar resposta "${label}"? A consequência será aplicada e publicada no Jornal da Liga.`)) return;
 
         try {

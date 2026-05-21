@@ -5633,3 +5633,144 @@ body {
     grid-template-columns: 1fr;
   }
 }
+
+/* v52 — decisões no Painel do Técnico + correções de alinhamento */
+.coach-detail-grid {
+  align-items: start;
+}
+
+.coach-detail-grid > .coach-panel-card {
+  align-self: start;
+}
+
+.coach-decision-card {
+  grid-column: 1 / -1;
+  border-color: rgba(167,139,250,.28);
+  background:
+    radial-gradient(circle at top left, rgba(124,58,237,.14), transparent 36%),
+    radial-gradient(circle at top right, rgba(59,130,246,.10), transparent 34%),
+    rgba(17,28,51,.86);
+}
+
+.coach-card-subtitle {
+  margin: 6px 0 0;
+  color: #94a3b8;
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.coach-decision-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.coach-decision-card .decision-card {
+  min-height: 0;
+}
+
+.coach-decision-history {
+  margin-top: 12px;
+  display: grid;
+  gap: 8px;
+}
+
+.coach-decision-history > strong {
+  color: #f8fafc;
+}
+
+.coach-decision-history div {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: rgba(2,6,23,.24);
+}
+
+.coach-decision-history div span {
+  color: #cbd5e1;
+  font-size: 13px;
+}
+
+.coach-decision-history div b {
+  color: #ddd6fe;
+}
+
+.coach-empty-state.compact {
+  min-height: 0;
+}
+
+.pin-change-card {
+  grid-column: 1 / -1;
+}
+
+.pin-change-form {
+  grid-template-columns: repeat(3, minmax(0, 1fr)) auto;
+  gap: 12px;
+  align-items: end;
+}
+
+.pin-change-form label {
+  display: grid;
+  gap: 7px;
+  color: #cbd5e1;
+  font-size: 13px;
+  font-weight: 800;
+  min-width: 0;
+}
+
+.pin-change-form input {
+  width: 100%;
+  min-width: 0;
+  height: 44px;
+  padding: 0 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(148,163,184,.18);
+  background: rgba(15,23,42,.72);
+  color: #f8fafc;
+  outline: none;
+}
+
+.pin-change-form input:focus {
+  border-color: rgba(96,165,250,.55);
+  box-shadow: 0 0 0 3px rgba(59,130,246,.14);
+}
+
+.pin-change-form .secondary-button {
+  height: 44px;
+  border: 0;
+  border-radius: 14px;
+  padding: 0 16px;
+  background: linear-gradient(135deg, #2563eb, #7c3aed);
+  color: white;
+  font-weight: 1000;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.pin-change-form .app-message {
+  grid-column: 1 / -1;
+}
+
+/* Evita cards com grandes vazios por esticamento de linha */
+.coach-war-room-card,
+.coach-market-card,
+.coach-event-radar-card,
+.pin-change-card {
+  height: auto;
+}
+
+@media (max-width: 980px) {
+  .coach-decision-grid,
+  .pin-change-form {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 680px) {
+  .coach-decision-card,
+  .pin-change-card {
+    grid-column: auto;
+  }
+}

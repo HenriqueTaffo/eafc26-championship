@@ -357,6 +357,8 @@ App.players = {
             ` : `<p class="calendar-muted">Nenhum jogador lesionado no momento.</p>`}
           </article>
 
+          ${App.auth?.renderCoachDecisionCard ? App.auth.renderCoachDecisionCard(activeTeam.owner) : ""}
+
           <article class="coach-panel-card coach-war-room-card">
             <div class="home-panel-header">
               <h2>Sala de guerra</h2>
@@ -480,6 +482,8 @@ App.players = {
     `;
 
     App.players.bindCoachActions();
+    App.auth?.bindPinChangeForm?.();
+    App.auth?.bindDecisionAnswerButtons?.(grid);
     App.players.renderLeaderboard(document.getElementById("topScorers"), App.players.getGoalsByHumanTeams(), "gols por time");
     App.players.renderLeaderboard(document.getElementById("topAssists"), App.players.getTopExpensiveTransfers(5), "transferências caras");
   }
