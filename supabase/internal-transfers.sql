@@ -15,6 +15,13 @@
 -- as colunas expostas pelo app: Comprador, Jogador, ClubeOrigem, Overall,
 -- ValorTransfermarkt, Status e Timestamp.
 
+drop function if exists public.app_create_internal_transfer_proposal(bigint, text, text, text, text, text, integer, numeric);
+drop function if exists public.app_get_my_internal_transfer_proposals(bigint, text);
+drop function if exists public.app_answer_internal_transfer_proposal(bigint, text, bigint, text);
+drop function if exists public.app_create_internal_transfer_proposal(text, text, text, text, text, text, integer, numeric);
+drop function if exists public.app_get_my_internal_transfer_proposals(text, text);
+drop function if exists public.app_answer_internal_transfer_proposal(text, text, bigint, text);
+
 create or replace function public.app_add_internal_transfer(
   p_pin text,
   p_buyer text,
@@ -245,7 +252,7 @@ create index if not exists internal_transfer_proposals_buyer_status_idx
   on public.internal_transfer_proposals (buyer, status, created_at desc);
 
 create or replace function public.app_create_internal_transfer_proposal(
-  p_manager_id bigint,
+  p_manager_id text,
   p_access_code text,
   p_buyer text,
   p_seller text,
@@ -260,20 +267,27 @@ security definer
 as $$
 declare
   v_manager_name text;
+  v_login jsonb;
   v_transfer_table regclass;
   v_current_owner text;
   v_existing_id bigint;
   v_proposal_id bigint;
 begin
-  select name
+  select display_name
     into v_manager_name
   from public.managers
-  where id = p_manager_id
-    and access_code = p_access_code;
+  where id = p_manager_id;
 
   if v_manager_name is null then
     return jsonb_build_object('ok', false, 'message', 'Login do comprador invalido.');
   end if;
+
+  v_login := public.app_login_manager(v_manager_name, p_access_code)::jsonb;
+  if coalesce((v_login ->> 'ok')::boolean, false) is false then
+    return jsonb_build_object('ok', false, 'message', 'Login do comprador invalido.');
+  end if;
+
+  v_manager_name := coalesce(v_login #>> '{manager,name}', v_manager_name);
 
   if lower(trim(v_manager_name)) <> lower(trim(p_buyer)) then
     return jsonb_build_object('ok', false, 'message', 'A proposta precisa ser enviada pelo comprador logado.');
@@ -363,7 +377,7 @@ end;
 $$;
 
 create or replace function public.app_get_my_internal_transfer_proposals(
-  p_manager_id bigint,
+  p_manager_id text,
   p_access_code text
 )
 returns jsonb
@@ -372,16 +386,23 @@ security definer
 as $$
 declare
   v_manager_name text;
+  v_login jsonb;
 begin
-  select name
+  select display_name
     into v_manager_name
   from public.managers
-  where id = p_manager_id
-    and access_code = p_access_code;
+  where id = p_manager_id;
 
   if v_manager_name is null then
     return '[]'::jsonb;
   end if;
+
+  v_login := public.app_login_manager(v_manager_name, p_access_code)::jsonb;
+  if coalesce((v_login ->> 'ok')::boolean, false) is false then
+    return '[]'::jsonb;
+  end if;
+
+  v_manager_name := coalesce(v_login #>> '{manager,name}', v_manager_name);
 
   return coalesce((
     select jsonb_agg(
@@ -403,7 +424,7 @@ end;
 $$;
 
 create or replace function public.app_answer_internal_transfer_proposal(
-  p_manager_id bigint,
+  p_manager_id text,
   p_access_code text,
   p_proposal_id bigint,
   p_decision text
@@ -414,19 +435,26 @@ security definer
 as $$
 declare
   v_manager_name text;
+  v_login jsonb;
   v_proposal public.internal_transfer_proposals%rowtype;
   v_transfer_result jsonb;
   v_status text;
 begin
-  select name
+  select display_name
     into v_manager_name
   from public.managers
-  where id = p_manager_id
-    and access_code = p_access_code;
+  where id = p_manager_id;
 
   if v_manager_name is null then
     return jsonb_build_object('ok', false, 'message', 'Login do vendedor invalido.');
   end if;
+
+  v_login := public.app_login_manager(v_manager_name, p_access_code)::jsonb;
+  if coalesce((v_login ->> 'ok')::boolean, false) is false then
+    return jsonb_build_object('ok', false, 'message', 'Login do vendedor invalido.');
+  end if;
+
+  v_manager_name := coalesce(v_login #>> '{manager,name}', v_manager_name);
 
   select *
     into v_proposal

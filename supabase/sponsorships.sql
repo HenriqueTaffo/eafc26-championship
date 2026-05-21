@@ -512,7 +512,11 @@ begin
       );
 
       update public.sponsorship_contracts
-         set claims_used = claims_used + 1
+         set claims_used = claims_used + 1,
+             status = case
+               when claims_used + 1 >= max_claims then 'completed'
+               else status
+             end
        where id = v_contract.id;
 
       v_contract.claims_used := v_contract.claims_used + 1;

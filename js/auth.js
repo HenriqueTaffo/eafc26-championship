@@ -448,7 +448,10 @@ App.auth = {
     }
 
     const received = App.auth.myTransferProposals.filter(item => item.proposal_role !== "sent" && item.status === "pending");
-    const sent = App.auth.myTransferProposals.filter(item => item.proposal_role === "sent").slice(0, 4);
+    const sentAll = App.auth.myTransferProposals.filter(item => item.proposal_role === "sent");
+    const sent = sentAll.slice(0, 4);
+    const accepted = App.auth.myTransferProposals.filter(item => item.status === "accepted").length;
+    const rejected = App.auth.myTransferProposals.filter(item => item.status === "rejected").length;
 
     if (!received.length && !sent.length) {
       panel.innerHTML = "";
@@ -459,11 +462,11 @@ App.auth = {
       <section class="decision-private-card transfer-proposal-card">
         <div class="decision-header">
           <div>
-            <span>Propostas de mercado</span>
-            <strong>${received.length} recebida(s) · ${sent.length} enviada(s)</strong>
-            <p>${App.utils.escapeHtml(session.managerName)}, acompanhe ofertas enviadas e responda propostas recebidas.</p>
+            <span>Central de negociação</span>
+            <strong>${received.length} recebida(s) · ${sentAll.length} enviada(s)</strong>
+            <p>${App.utils.escapeHtml(session.managerName)}, acompanhe pendências, aceite/recusa e histórico recente entre técnicos.</p>
           </div>
-          <span class="decision-auto-pill">Resposta do vendedor</span>
+          <span class="decision-auto-pill">${accepted} aceita(s) · ${rejected} recusada(s)</span>
         </div>
         <div class="proposal-columns">
           <div>

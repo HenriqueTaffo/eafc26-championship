@@ -317,6 +317,24 @@ App.transfers = {
     });
   },
 
+  getAuctionCandidates() {
+    return App.transfers.getValidTransfers()
+      .filter(item => Number(item.totalCost || 0) >= 25000000 || Number(item.overall || 0) >= 88)
+      .sort((a, b) => b.totalCost - a.totalCost)
+      .slice(0, 5);
+  },
+
+  getFairPlayWatchlist() {
+    return App.transfers.getSpendingSummary()
+      .map(item => {
+        const usage = item.totalBudget > 0 ? item.spent / item.totalBudget : 0;
+        const severity = item.remaining < 0 ? "Crítico" : usage >= .9 ? "Alto" : usage >= .75 ? "Atenção" : "OK";
+        return { ...item, usage, severity };
+      })
+      .filter(item => item.severity !== "OK")
+      .sort((a, b) => b.usage - a.usage || a.remaining - b.remaining);
+  },
+
   findExistingPlayer(playerName) {
     const key = App.utils.normalizeText(playerName);
     if (!key) return null;
@@ -426,6 +444,10 @@ App.transfers = {
 
     if (!messages.length) {
       messages.push("Contratação liberada para envio.");
+    }
+
+    if (!preview.isInternal && (preview.finalValue >= 25000000 || preview.overall >= 88)) {
+      messages.push("Jogador de alto impacto: considere abrir leilão/consulta no grupo antes de confirmar.");
     }
 
     if (submitButton && !submitButton.dataset.submitting) {
@@ -574,6 +596,8 @@ App.transfers = {
       .sort((a, b) => b.count - a.count || a.club.localeCompare(b.club))
       .slice(0, 5);
     const duplicateCount = App.transfers.getTransfersWithStats().filter(item => item.isBlockedDuplicate).length;
+    const auctionCandidates = App.transfers.getAuctionCandidates();
+    const fairPlayWatch = App.transfers.getFairPlayWatchlist();
 
     target.innerHTML = `
       <article class="transfer-insight-card">
@@ -616,6 +640,24 @@ App.transfers = {
             <strong>${duplicateCount}</strong>
           </div>
         `}
+      </article>
+      <article class="transfer-insight-card">
+        <h3>Radar de leilão</h3>
+        ${auctionCandidates.length ? auctionCandidates.map(item => `
+          <div class="insight-row">
+            <span>${App.utils.escapeHtml(item.player)}</span>
+            <strong>${App.utils.formatCurrency(item.totalCost)}</strong>
+          </div>
+        `).join("") : `<p class="calendar-muted">Nenhuma compra pesada no radar.</p>`}
+      </article>
+      <article class="transfer-insight-card">
+        <h3>Fair play</h3>
+        ${fairPlayWatch.length ? fairPlayWatch.map(item => `
+          <div class="insight-row">
+            <span>${App.utils.escapeHtml(item.buyer)} · ${item.severity}</span>
+            <strong>${App.utils.formatCurrency(item.remaining)}</strong>
+          </div>
+        `).join("") : `<p class="calendar-muted">Nenhum técnico em zona crítica.</p>`}
       </article>
     `;
   },

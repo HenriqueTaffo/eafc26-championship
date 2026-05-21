@@ -287,6 +287,113 @@ App.players = {
     return form.map(item => `<span class="form-dot ${item.result.toLowerCase()}" title="${item.row.Mandante} ${item.row.GolsMandante} x ${item.row.GolsVisitante} ${item.row.Visitante}">${item.result}</span>`).join("");
   },
 
+  getCoachObjectives(activeTeam, standing, budget, transfers) {
+    const remaining = Number(budget.remainingBudget ?? App.config.transferBudget);
+    const totalBudget = Number(budget.totalBudget ?? App.config.transferBudget);
+    const spent = Number(budget.spentTotal || 0);
+    const spendPct = totalBudget > 0 ? spent / totalBudget : 0;
+    const topSix = Number(standing?.position || 99) <= 6;
+    const positiveGoalDiff = Number(standing?.goalDifference || 0) >= 0;
+    const cashDiscipline = remaining >= 0 && spendPct <= .85;
+    const squadDepth = transfers.length >= 4;
+
+    return [
+      {
+        label: "Brigar pelo topo",
+        status: topSix ? "ok" : "risk",
+        detail: topSix ? "Dentro do G6." : `Atual: ${standing?.position || "-"}º. Diretoria quer G6.`
+      },
+      {
+        label: "Saldo competitivo",
+        status: positiveGoalDiff ? "ok" : "risk",
+        detail: `Saldo de gols ${App.utils.formatGoalDifference(standing?.goalDifference || 0)}.`
+      },
+      {
+        label: "Fair play financeiro",
+        status: cashDiscipline ? "ok" : "risk",
+        detail: cashDiscipline ? "Gasto sob controle." : "Orçamento pressionado ou negativo."
+      },
+      {
+        label: "Profundidade do elenco",
+        status: squadDepth ? "ok" : "warn",
+        detail: `${transfers.length} contratação(ões) válidas.`
+      }
+    ];
+  },
+
+  getCoachMorale(activeTeam, standing, budget, injuries, recentForm) {
+    let score = 55;
+    recentForm.forEach(item => {
+      if (item.result === "W") score += 8;
+      if (item.result === "D") score += 2;
+      if (item.result === "L") score -= 7;
+    });
+    score += Math.min(12, Math.max(-12, Number(standing?.goalDifference || 0) * 2));
+    score -= injuries.length * 10;
+    if (Number(budget.remainingBudget || 0) < 0) score -= 12;
+    score = Math.max(0, Math.min(100, score));
+
+    const label = score >= 75 ? "Vestiário em alta" : score >= 50 ? "Ambiente estável" : "Pressão no elenco";
+    return { score, label };
+  },
+
+  getFairPlayFlags(budget, transfers) {
+    const remaining = Number(budget.remainingBudget ?? App.config.transferBudget);
+    const totalBudget = Number(budget.totalBudget ?? App.config.transferBudget);
+    const spent = Number(budget.spentTotal || 0);
+    const flags = [];
+
+    if (remaining < 0) flags.push("Saldo negativo: risco de auditoria.");
+    if (totalBudget > 0 && spent / totalBudget >= .9) flags.push("Gasto acima de 90% do orçamento.");
+    if (transfers.some(item => Number(item.totalCost || 0) >= 30000000)) flags.push("Compra pesada no radar da liga.");
+    if (!flags.length) flags.push("Sem alerta financeiro grave.");
+
+    return flags;
+  },
+
+  renderCoachStrategyCards(activeTeam, standing, budget, transfers, injuries, recentForm) {
+    const objectives = App.players.getCoachObjectives(activeTeam, standing, budget, transfers);
+    const morale = App.players.getCoachMorale(activeTeam, standing, budget, injuries, recentForm);
+    const fairPlay = App.players.getFairPlayFlags(budget, transfers);
+
+    return `
+      <div class="coach-full-row-v54">
+        <article class="coach-panel-card coach-strategy-card">
+          <div class="home-panel-header">
+            <h2>Objetivos da diretoria</h2>
+            <span class="coach-section-kicker">${objectives.filter(item => item.status === "ok").length}/${objectives.length} em dia</span>
+          </div>
+          <div class="coach-objective-grid">
+            ${objectives.map(item => `
+              <div class="coach-objective-item ${item.status}">
+                <strong>${App.utils.escapeHtml(item.label)}</strong>
+                <span>${App.utils.escapeHtml(item.detail)}</span>
+              </div>
+            `).join("")}
+          </div>
+        </article>
+      </div>
+      <div class="coach-full-row-v54 coach-strategy-split">
+        <article class="coach-panel-card coach-morale-card">
+          <div class="home-panel-header">
+            <h2>Moral do elenco</h2>
+            <span class="coach-section-kicker">${Math.round(morale.score)}%</span>
+          </div>
+          <div class="morale-meter"><span style="width:${morale.score}%"></span></div>
+          <p class="calendar-muted">${App.utils.escapeHtml(morale.label)}. Forma, saldo, caixa e DM pesam nessa leitura.</p>
+        </article>
+        <article class="coach-panel-card coach-fairplay-card">
+          <div class="home-panel-header">
+            <h2>Fair play financeiro</h2>
+          </div>
+          <div class="fairplay-list">
+            ${fairPlay.map(item => `<span>${App.utils.escapeHtml(item)}</span>`).join("")}
+          </div>
+        </article>
+      </div>
+    `;
+  },
+
   renderCoachDashboard(activeTeam, standings, budgetInfo) {
     const standing = standings.find(item => App.utils.sameTeamName(item.team, activeTeam.team));
     const budget = budgetInfo[activeTeam.owner] || {};
@@ -337,6 +444,7 @@ App.players = {
     const proposalCard = App.auth?.renderCoachTransferProposalCard ? App.auth.renderCoachTransferProposalCard(activeTeam.owner) : "";
     const sponsorshipCard = App.auth?.renderCoachSponsorshipCard ? App.auth.renderCoachSponsorshipCard(activeTeam.owner) : "";
     const pinCard = App.auth?.renderPinChangeCard ? App.auth.renderPinChangeCard(activeTeam.owner) : "";
+    const strategyCards = canViewPrivate ? App.players.renderCoachStrategyCards(activeTeam, standing, budget, transfers, injuries, recentForm) : "";
 
     return `
       <section class="coach-dashboard" style="--coach-color:${color}">
@@ -377,6 +485,7 @@ App.players = {
           ${decisionCard ? `<div class="coach-full-row-v54">${decisionCard}</div>` : ""}
           ${proposalCard ? `<div class="coach-full-row-v54">${proposalCard}</div>` : ""}
           ${sponsorshipCard ? `<div class="coach-full-row-v54">${sponsorshipCard}</div>` : ""}
+          ${strategyCards}
 
           <div class="coach-flow-v55">
             <article class="coach-panel-card coach-war-room-card">
