@@ -6,6 +6,16 @@ const path = require("path");
 const ROOT_DIR = path.resolve(__dirname, "..");
 const DRY_RUN = process.argv.includes("--dry-run");
 const SOURCE_NAME = "FIFA Ratings normal FC ratings";
+const PLAYER_SLUG_ALIASES = {
+  "vinicius-junior": ["vinicius-jose-de-oliveira-junior", "vini-jr"],
+  "vinicius-jr": ["vinicius-jose-de-oliveira-junior", "vini-jr"],
+  "vini-jr": ["vinicius-jose-de-oliveira-junior"],
+  "mbappe": ["kylian-mbappe"],
+  "dembele": ["ousmane-dembele"],
+  "ruben-dias": ["ruben-santos-gato-alves-dias"],
+  "neymar": ["neymar-jr"],
+  "ronaldo": ["cristiano-ronaldo"]
+};
 
 function getConfigValue(source, key) {
   const match = source.match(new RegExp(`${key}:\\s*"([^"]+)"`));
@@ -99,12 +109,19 @@ async function fetchMarketPlayers(supabaseUrl, supabaseKey, limit) {
 async function fetchRatingForPlayer(player) {
   const slug = slugify(player.name);
   if (!slug) return null;
-  const url = `https://www.fifaratings.com/${slug}`;
-  const response = await fetch(url);
-  if (!response.ok) return null;
-  const html = await response.text();
-  if (!html.includes("FC 26 Rating")) return null;
-  return parseFifaRatingsPage(html, player.name, url);
+  const slugs = [...new Set([slug, ...(PLAYER_SLUG_ALIASES[slug] || [])])];
+
+  for (const candidate of slugs) {
+    const url = `https://www.fifaratings.com/${candidate}`;
+    const response = await fetch(url);
+    if (!response.ok) continue;
+    const html = await response.text();
+    if (!html.includes("FC 26 Rating")) continue;
+    const parsed = parseFifaRatingsPage(html, player.name, url);
+    if (parsed) return parsed;
+  }
+
+  return null;
 }
 
 async function main() {

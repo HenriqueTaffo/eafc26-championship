@@ -48,6 +48,22 @@ App.transfers = {
     return !App.transfers.femaleRatingNames.some(item => App.utils.normalizeText(item) === name);
   },
 
+  getPlayerSearchAliases(playerName) {
+    const normalized = App.utils.normalizeText(playerName);
+    const aliases = {
+      "vinicius junior": ["Vini Jr.", "Vinicius Jose de Oliveira Junior"],
+      "vinicius jr": ["Vini Jr.", "Vinicius Jose de Oliveira Junior"],
+      "mbappe": ["Kylian Mbappe", "Kylian Mbappé"],
+      "kylian mbappe": ["Kylian Mbappé"],
+      "dembele": ["Ousmane Dembele", "Ousmane Dembélé"],
+      "lautaro martinez": ["Lautaro Martínez"],
+      "ruben dias": ["Rúben Dias"],
+      "neymar": ["Neymar Jr."]
+    };
+
+    return [playerName, ...(aliases[normalized] || [])].filter(Boolean);
+  },
+
   getTransferRate(overall) {
     if (overall >= 89) return 0.25;
     if (overall >= 84) return 0.20;
@@ -68,7 +84,8 @@ App.transfers = {
 
     const clubKey = App.utils.normalizeText(player?.club);
     const ratings = (App.state.apiRatings || []).filter(App.transfers.isPlayableRating);
-    const matches = ratings.filter(item => App.utils.normalizeText(item.name) === key);
+    const aliasKeys = App.transfers.getPlayerSearchAliases(player?.name).map(App.utils.normalizeText);
+    const matches = ratings.filter(item => aliasKeys.includes(App.utils.normalizeText(item.name)));
     return matches.find(item =>
       App.utils.normalizeText(item.name) === key &&
       (!clubKey || !item.club || App.utils.normalizeText(item.club) === clubKey)
@@ -803,10 +820,13 @@ App.transfers = {
       return;
     }
 
-    const ratingsRaw = await App.api.searchEaRatings(query, 8).catch(error => {
-      console.warn("Busca de rating EA indisponível:", error);
-      return [];
-    });
+    const ratingGroups = await Promise.all(App.transfers.getPlayerSearchAliases(query).map(alias =>
+      App.api.searchEaRatings(alias, 8).catch(error => {
+        console.warn("Busca de rating EA indisponível:", error);
+        return [];
+      })
+    ));
+    const ratingsRaw = ratingGroups.flat();
     const ratings = ratingsRaw.filter(App.transfers.isPlayableRating);
 
     App.api.mergeEaRatings?.(ratings);
