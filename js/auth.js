@@ -599,15 +599,17 @@ App.auth = {
     const active = Array.isArray(data.active) ? data.active : [];
     const offers = Array.isArray(data.offers) ? data.offers : [];
     const rewards = Array.isArray(data.recentRewards) ? data.recentRewards : [];
+    const maxActive = Number(data.maxActiveContracts || 2);
+    const slotsLeft = Math.max(0, Number(data.activeSlotsLeft ?? (maxActive - active.length)));
 
     return `
       <article class="coach-panel-card sponsorship-card">
         <div class="home-panel-header">
           <div>
             <h2>Patrocínios</h2>
-            <p class="coach-card-subtitle">Assine metas comerciais para gerar renda extra por desempenho.</p>
+            <p class="coach-card-subtitle">Escolha até ${maxActive} contratos ativos. Cada categoria bloqueia as outras propostas da mesma linha.</p>
           </div>
-          <span class="coach-section-kicker">${active.length} ativo(s)</span>
+          <span class="coach-section-kicker">${active.length}/${maxActive} ativo(s)</span>
         </div>
 
         ${active.length ? `
@@ -620,9 +622,13 @@ App.auth = {
               </div>
             `).join("")}
           </div>
-        ` : `<p class="calendar-muted">Nenhum patrocinador ativo. Escolha uma oferta para começar a gerar caixa.</p>`}
+        ` : `<p class="calendar-muted">Nenhum patrocinador ativo. Escolha com cuidado: as luvas são menores e o dinheiro forte depende das metas.</p>`}
 
-        ${offers.length ? `
+        ${slotsLeft > 0 && offers.length ? `
+          <div class="sponsor-market-note">
+            <strong>${slotsLeft} vaga(s) comercial(is) livre(s)</strong>
+            <span>${offers.length} proposta(s) na mesa, mas você não consegue assinar todas.</span>
+          </div>
           <div class="sponsor-offer-grid">
             ${offers.map(offer => `
               <article class="sponsor-offer-card">
@@ -630,12 +636,12 @@ App.auth = {
                 <strong>${App.utils.escapeHtml(offer.title)}</strong>
                 <em>${App.utils.escapeHtml(offer.sponsorName)}</em>
                 <p>${App.utils.escapeHtml(offer.description)}</p>
-                <small>Assinatura ${App.utils.formatCurrency(offer.signingBonus)} · ${App.utils.escapeHtml(offer.conditionLabel || "Meta cumprida")} paga ${App.utils.formatCurrency(offer.rewardValue)}</small>
+                <small>${App.utils.escapeHtml(offer.riskLevel || "Meta comercial")} · Luvas ${App.utils.formatCurrency(offer.signingBonus)} · ${App.utils.escapeHtml(offer.conditionLabel || "Meta cumprida")} paga ${App.utils.formatCurrency(offer.rewardValue)}</small>
                 <button type="button" data-sponsor-offer="${App.utils.escapeHtml(offer.id)}">Assinar</button>
               </article>
             `).join("")}
           </div>
-        ` : ""}
+        ` : slotsLeft <= 0 ? `<p class="calendar-muted">Limite comercial preenchido. Novas propostas ficam bloqueadas enquanto houver ${maxActive} contratos ativos.</p>` : ""}
 
         ${rewards.length ? `
           <div class="sponsor-reward-list">

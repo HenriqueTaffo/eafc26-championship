@@ -195,6 +195,28 @@
   margin-bottom: 12px;
 }
 
+.sponsor-market-note {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 12px 0;
+  border: 1px solid rgba(134, 239, 172, .18);
+  border-radius: 12px;
+  padding: 10px 12px;
+  background: rgba(22, 101, 52, .12);
+  color: #cbd5e1;
+}
+
+.sponsor-market-note strong {
+  color: #86efac;
+}
+
+.sponsor-market-note span {
+  color: #94a3b8;
+  font-size: 12px;
+}
+
 .sponsor-active-item,
 .sponsor-offer-card,
 .sponsor-reward-list div {
@@ -290,6 +312,11 @@
   }
 
   .calendar-week-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .sponsor-market-note {
     align-items: flex-start;
     flex-direction: column;
   }
