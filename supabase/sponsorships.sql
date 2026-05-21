@@ -537,6 +537,122 @@ begin
 end;
 $$;
 
+create or replace function public.app_process_all_sponsorship_rewards()
+returns jsonb
+language plpgsql
+security definer
+as $$
+declare
+  v_result_table regclass;
+  v_contract record;
+  v_result record;
+  v_result_key text;
+  v_gf integer;
+  v_ga integer;
+  v_is_home boolean;
+  v_hit boolean;
+  v_created integer := 0;
+begin
+  select c.oid::regclass
+    into v_result_table
+  from pg_class c
+  join pg_namespace n on n.oid = c.relnamespace
+  where c.relkind = 'r'
+    and n.nspname = 'public'
+    and exists (select 1 from pg_attribute a where a.attrelid = c.oid and a.attname = 'Mandante' and not a.attisdropped)
+    and exists (select 1 from pg_attribute a where a.attrelid = c.oid and a.attname = 'Visitante' and not a.attisdropped)
+    and exists (select 1 from pg_attribute a where a.attrelid = c.oid and a.attname = 'GolsMandante' and not a.attisdropped)
+    and exists (select 1 from pg_attribute a where a.attrelid = c.oid and a.attname = 'GolsVisitante' and not a.attisdropped)
+    and exists (select 1 from pg_attribute a where a.attrelid = c.oid and a.attname = 'Status' and not a.attisdropped)
+  order by c.relname
+  limit 1;
+
+  if v_result_table is null then
+    return jsonb_build_object('ok', false, 'message', 'Tabela de resultados nao encontrada.', 'created', 0);
+  end if;
+
+  for v_contract in
+    select *
+    from public.sponsorship_contracts
+    where status = 'active'
+      and claims_used < max_claims
+  loop
+    for v_result in execute format(
+      'select *, concat_ws(''|'', coalesce("Mandante"::text, ''''), coalesce("Visitante"::text, ''''), coalesce("GolsMandante"::text, ''''), coalesce("GolsVisitante"::text, '''')) as result_key
+         from %s
+        where lower("Status"::text) = lower(''aprovado'')
+          and (lower("Mandante"::text) = lower($1) or lower("Visitante"::text) = lower($1))',
+      v_result_table
+    ) using v_contract.club_name
+    loop
+      exit when v_contract.claims_used >= v_contract.max_claims;
+
+      v_result_key := v_result.result_key;
+      if exists (
+        select 1
+        from public.sponsorship_rewards
+        where contract_id = v_contract.id
+          and result_key = v_result_key
+      ) then
+        continue;
+      end if;
+
+      if lower(v_result."Mandante"::text) = lower(v_contract.club_name) then
+        v_is_home := true;
+        v_gf := coalesce(v_result."GolsMandante", 0);
+        v_ga := coalesce(v_result."GolsVisitante", 0);
+      else
+        v_is_home := false;
+        v_gf := coalesce(v_result."GolsVisitante", 0);
+        v_ga := coalesce(v_result."GolsMandante", 0);
+      end if;
+
+      v_hit := case v_contract.condition_type
+        when 'clean_sheet' then v_ga = 0
+        when 'three_goals' then v_gf >= 3
+        when 'win_by_2' then (v_gf - v_ga) >= 2
+        when 'any_win' then v_gf > v_ga
+        when 'home_win' then v_is_home and v_gf > v_ga
+        when 'away_win' then not v_is_home and v_gf > v_ga
+        else false
+      end;
+
+      if not v_hit then
+        continue;
+      end if;
+
+      insert into public.sponsorship_rewards (
+        contract_id, manager_id, manager_name, result_key, reward_value
+      ) values (
+        v_contract.id, v_contract.manager_id, v_contract.manager_name, v_result_key, v_contract.reward_value
+      );
+
+      update public.sponsorship_contracts
+         set claims_used = claims_used + 1,
+             status = case
+               when claims_used + 1 >= max_claims then 'completed'
+               else status
+             end
+       where id = v_contract.id;
+
+      v_contract.claims_used := v_contract.claims_used + 1;
+      v_created := v_created + 1;
+
+      perform public.app_insert_financial_event(
+        v_contract.manager_name,
+        'Bonus de patrocinio: ' || v_contract.sponsor_name,
+        v_contract.title || ' cumprido por ' || v_contract.club_name || '.',
+        '+' || v_contract.reward_value::text || ' creditado por meta de patrocinio.',
+        'Patrocinio',
+        v_contract.reward_value
+      );
+    end loop;
+  end loop;
+
+  return jsonb_build_object('ok', true, 'created', v_created);
+end;
+$$;
+
 create or replace function public.app_get_my_sponsorships(
   p_manager_id text,
   p_access_code text

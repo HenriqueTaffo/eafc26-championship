@@ -374,6 +374,12 @@ App.api = {
     }
 
     try {
+      try {
+        await App.api.rpc("app_process_all_sponsorship_rewards", {}, 45000);
+      } catch (sponsorshipError) {
+        console.warn("Processamento automático de patrocínios indisponível:", sponsorshipError);
+      }
+
       const data = await App.api.rpc("app_get_data", {}, 45000);
       if (!data.ok) throw new Error(data.error || data.message || "Erro ao carregar Supabase.");
 
