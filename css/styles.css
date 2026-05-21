@@ -6255,21 +6255,7 @@ body {
   }
 }
 
-/* v59 — correção desktop estável
-   Baseada no v57, sem usar o layout quebrado do v58.
-   Mobile preservado: só aplica acima de 1100px. */
 @media (min-width: 1101px) {
-  /* Mantém largura confortável sem estourar o desenho */
-  #playersView .coach-tabs,
-  #playersView .summary,
-  #playersView .coach-dashboard,
-  #playersView .coach-comparison,
-  #playersView .stats-grid {
-    width: min(1320px, 100%);
-    max-width: 1320px;
-    margin-left: auto;
-    margin-right: auto;
-  }
 
   #playersView .coach-dashboard,
   #playersView .coach-layout-v54 {
