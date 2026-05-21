@@ -1,6 +1,53 @@
 window.App = window.App || {};
 
 App.transfers = {
+  femaleRatingNames: [
+    "Alexia Putellas",
+    "Aitana Bonmatí",
+    "Caroline Graham Hansen",
+    "Alessia Russo",
+    "Mariona",
+    "Patri Guijarro",
+    "Khadija Shaw",
+    "Mapi León",
+    "Marie Katoto",
+    "Kadidiatou Diani",
+    "Sophia Wilson",
+    "Guro Reiten",
+    "Ewa Pajor",
+    "Christiane Endler",
+    "Debinha",
+    "Irene Paredes",
+    "Chloe Kelly",
+    "Lindsey Heaps",
+    "Lucy Bronze",
+    "Rose Lavelle",
+    "Sakina Karchaoui",
+    "Leah Williamson",
+    "Beth Mead",
+    "Mallory Swanson",
+    "Ada Hegerberg",
+    "Lauren Hemp",
+    "Millie Bright",
+    "Katie McCabe",
+    "Sam Kerr",
+    "Ann-Katrin Berger",
+    "Grace Geyoro",
+    "Claudia Pina",
+    "Klara Bühl",
+    "Ona Batlle",
+    "Lea Schüller",
+    "Melchie Dumornay",
+    "Pernille Harder"
+  ],
+
+  isPlayableRating(player) {
+    const gender = App.utils.normalizeText(player?.gender || "");
+    const name = App.utils.normalizeText(player?.name || "");
+    if (gender.includes("women") || gender.includes("femin")) return false;
+    return !App.transfers.femaleRatingNames.some(item => App.utils.normalizeText(item) === name);
+  },
+
   getTransferRate(overall) {
     if (overall >= 89) return 0.25;
     if (overall >= 84) return 0.20;
@@ -20,7 +67,7 @@ App.transfers = {
     if (!key) return null;
 
     const clubKey = App.utils.normalizeText(player?.club);
-    const ratings = App.state.apiRatings || [];
+    const ratings = (App.state.apiRatings || []).filter(App.transfers.isPlayableRating);
     const matches = ratings.filter(item => App.utils.normalizeText(item.name) === key);
     return matches.find(item =>
       App.utils.normalizeText(item.name) === key &&
@@ -756,10 +803,11 @@ App.transfers = {
       return;
     }
 
-    const ratings = await App.api.searchEaRatings(query, 8).catch(error => {
+    const ratingsRaw = await App.api.searchEaRatings(query, 8).catch(error => {
       console.warn("Busca de rating EA indisponível:", error);
       return [];
     });
+    const ratings = ratingsRaw.filter(App.transfers.isPlayableRating);
 
     App.api.mergeEaRatings?.(ratings);
 

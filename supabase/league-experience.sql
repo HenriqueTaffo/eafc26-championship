@@ -56,6 +56,48 @@ alter table public.ea_player_ratings
 alter table public.ea_player_ratings
   add column if not exists gender text;
 
+delete from public.ea_player_ratings
+where lower(coalesce(gender, '')) like '%women%'
+   or lower(name) in (
+    'alexia putellas',
+    'aitana bonmatí',
+    'caroline graham hansen',
+    'alessia russo',
+    'mariona',
+    'patri guijarro',
+    'khadija shaw',
+    'mapi león',
+    'marie katoto',
+    'kadidiatou diani',
+    'sophia wilson',
+    'guro reiten',
+    'ewa pajor',
+    'christiane endler',
+    'debinha',
+    'irene paredes',
+    'chloe kelly',
+    'lindsey heaps',
+    'lucy bronze',
+    'rose lavelle',
+    'sakina karchaoui',
+    'leah williamson',
+    'beth mead',
+    'mallory swanson',
+    'ada hegerberg',
+    'lauren hemp',
+    'millie bright',
+    'katie mccabe',
+    'sam kerr',
+    'ann-katrin berger',
+    'grace geyoro',
+    'claudia pina',
+    'klara bühl',
+    'ona batlle',
+    'lea schüller',
+    'melchie dumornay',
+    'pernille harder'
+   );
+
 create table if not exists public.league_opportunities (
   id bigserial primary key,
   player_rating_id bigint references public.ea_player_ratings(id) on delete set null,
@@ -206,11 +248,53 @@ as $$
       source_url,
       synced_at
     from public.ea_player_ratings
-    where coalesce(trim(p_query), '') = ''
-       or to_tsvector('simple', coalesce(name, '') || ' ' || coalesce(club, '') || ' ' || coalesce(position, ''))
-          @@ plainto_tsquery('simple', p_query)
-       or lower(name) like '%' || lower(p_query) || '%'
-       or lower(club) like '%' || lower(p_query) || '%'
+    where (coalesce(gender, '') = '' or lower(gender) not like '%women%')
+      and lower(name) not in (
+        'alexia putellas',
+        'aitana bonmatí',
+        'caroline graham hansen',
+        'alessia russo',
+        'mariona',
+        'patri guijarro',
+        'khadija shaw',
+        'mapi león',
+        'marie katoto',
+        'kadidiatou diani',
+        'sophia wilson',
+        'guro reiten',
+        'ewa pajor',
+        'christiane endler',
+        'debinha',
+        'irene paredes',
+        'chloe kelly',
+        'lindsey heaps',
+        'lucy bronze',
+        'rose lavelle',
+        'sakina karchaoui',
+        'leah williamson',
+        'beth mead',
+        'mallory swanson',
+        'ada hegerberg',
+        'lauren hemp',
+        'millie bright',
+        'katie mccabe',
+        'sam kerr',
+        'ann-katrin berger',
+        'grace geyoro',
+        'claudia pina',
+        'klara bühl',
+        'ona batlle',
+        'lea schüller',
+        'melchie dumornay',
+        'pernille harder'
+      )
+      and (
+        coalesce(trim(p_query), '') = ''
+        or to_tsvector('simple', coalesce(name, '') || ' ' || coalesce(club, '') || ' ' || coalesce(position, ''))
+           @@ plainto_tsquery('simple', p_query)
+        or lower(name) like '%' || lower(p_query) || '%'
+        or lower(club) like '%' || lower(p_query) || '%'
+      )
     order by overall desc nulls last, name
     limit greatest(1, least(coalesce(p_limit, 12), 50))
   ) r;

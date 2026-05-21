@@ -222,7 +222,7 @@ App.experience = {
   },
 
   renderScoutBoard() {
-    const ratings = App.state.apiRatings || [];
+    const ratings = (App.state.apiRatings || []).filter(item => App.transfers.isPlayableRating?.(item) !== false);
     return `
       <article class="experience-card" id="eaScoutBoard">
         <span class="modal-kicker">Base oficial EA FC</span>
