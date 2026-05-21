@@ -18,6 +18,7 @@ App.auth = {
     }
 
     App.auth.renderAll();
+    App.auth.bootstrapSessionState();
     App.auth.generateDueDecisions();
   },
 
@@ -28,6 +29,19 @@ App.auth = {
   isLoggedIn() {
     const session = App.auth.getSession();
     return Boolean(session?.managerId && session?.accessCode);
+  },
+
+  async bootstrapSessionState() {
+    if (!App.auth.isLoggedIn()) return;
+
+    await Promise.all([
+      App.auth.loadMyDecisions(),
+      App.auth.loadMyTransferProposals(),
+      App.auth.loadMySponsorships(),
+      App.auth.loadPublicNews()
+    ]);
+
+    App.auth.renderAll();
   },
 
   canViewManagerPrivate(managerName) {

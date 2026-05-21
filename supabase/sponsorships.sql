@@ -21,9 +21,13 @@
 -- - home_win: bonus por vitoria como mandante.
 -- - away_win: bonus por vitoria como visitante.
 
+drop function if exists public.app_accept_sponsorship(bigint, text, text);
+drop function if exists public.app_process_sponsorship_rewards(bigint, text);
+drop function if exists public.app_get_my_sponsorships(bigint, text);
+
 create table if not exists public.sponsorship_contracts (
   id bigserial primary key,
-  manager_id bigint not null,
+  manager_id text not null,
   manager_name text not null,
   club_name text not null,
   sponsor_id text not null,
@@ -43,6 +47,9 @@ create table if not exists public.sponsorship_contracts (
 alter table public.sponsorship_contracts
   add column if not exists category text not null default 'Patrocinio';
 
+alter table public.sponsorship_contracts
+  alter column manager_id type text using manager_id::text;
+
 create unique index if not exists sponsorship_contracts_active_unique
   on public.sponsorship_contracts (manager_id, sponsor_id)
   where status = 'active';
@@ -54,12 +61,15 @@ create unique index if not exists sponsorship_contracts_active_category_unique
 create table if not exists public.sponsorship_rewards (
   id bigserial primary key,
   contract_id bigint not null references public.sponsorship_contracts(id) on delete cascade,
-  manager_id bigint not null,
+  manager_id text not null,
   manager_name text not null,
   result_key text not null,
   reward_value numeric not null,
   created_at timestamptz not null default now()
 );
+
+alter table public.sponsorship_rewards
+  alter column manager_id type text using manager_id::text;
 
 create unique index if not exists sponsorship_rewards_contract_result_unique
   on public.sponsorship_rewards (contract_id, result_key);
@@ -218,7 +228,7 @@ end;
 $$;
 
 create or replace function public.app_accept_sponsorship(
-  p_manager_id bigint,
+  p_manager_id text,
   p_access_code text,
   p_offer_id text
 )
@@ -228,16 +238,21 @@ security definer
 as $$
 declare
   v_manager record;
+  v_login jsonb;
   v_offer jsonb;
   v_contract_id bigint;
 begin
-  select id, name, club
+  select id, display_name
     into v_manager
   from public.managers
-  where id = p_manager_id
-    and access_code = p_access_code;
+  where id = p_manager_id;
 
   if v_manager.id is null then
+    return jsonb_build_object('ok', false, 'message', 'Login do tecnico invalido.');
+  end if;
+
+  v_login := public.app_login_manager(v_manager.display_name, p_access_code)::jsonb;
+  if coalesce((v_login ->> 'ok')::boolean, false) is false then
     return jsonb_build_object('ok', false, 'message', 'Login do tecnico invalido.');
   end if;
 
@@ -255,8 +270,8 @@ begin
     description, condition_type, signing_bonus, reward_value, max_claims
   ) values (
     v_manager.id,
-    v_manager.name,
-    coalesce(v_manager.club, ''),
+    coalesce(v_login #>> '{manager,name}', v_manager.display_name),
+    coalesce(v_login #>> '{manager,club}', v_manager.display_name),
     v_offer ->> 'id',
     v_offer ->> 'sponsorName',
     coalesce(v_offer ->> 'category', 'Patrocinio'),
@@ -275,9 +290,9 @@ begin
   end if;
 
   perform public.app_insert_financial_event(
-    v_manager.name,
+    coalesce(v_login #>> '{manager,name}', v_manager.display_name),
     'Patrocinio assinado: ' || (v_offer ->> 'sponsorName'),
-    coalesce(v_offer ->> 'category', 'Patrocinio') || ' fechado por ' || v_manager.name || '.',
+    coalesce(v_offer ->> 'category', 'Patrocinio') || ' fechado por ' || coalesce(v_login #>> '{manager,name}', v_manager.display_name) || '.',
     '+' || (v_offer ->> 'signingBonus') || ' creditado como bonus de assinatura.',
     'Patrocinio',
     coalesce((v_offer ->> 'signingBonus')::numeric, 0)
@@ -288,7 +303,7 @@ end;
 $$;
 
 create or replace function public.app_process_sponsorship_rewards(
-  p_manager_id bigint,
+  p_manager_id text,
   p_access_code text
 )
 returns jsonb
@@ -297,6 +312,7 @@ security definer
 as $$
 declare
   v_manager record;
+  v_login jsonb;
   v_result_table regclass;
   v_contract record;
   v_result record;
@@ -307,13 +323,17 @@ declare
   v_hit boolean;
   v_created integer := 0;
 begin
-  select id, name, club
+  select id, display_name
     into v_manager
   from public.managers
-  where id = p_manager_id
-    and access_code = p_access_code;
+  where id = p_manager_id;
 
   if v_manager.id is null then
+    return jsonb_build_object('ok', false, 'message', 'Login do tecnico invalido.');
+  end if;
+
+  v_login := public.app_login_manager(v_manager.display_name, p_access_code)::jsonb;
+  if coalesce((v_login ->> 'ok')::boolean, false) is false then
     return jsonb_build_object('ok', false, 'message', 'Login do tecnico invalido.');
   end if;
 
@@ -415,7 +435,7 @@ end;
 $$;
 
 create or replace function public.app_get_my_sponsorships(
-  p_manager_id bigint,
+  p_manager_id text,
   p_access_code text
 )
 returns jsonb
@@ -424,17 +444,22 @@ security definer
 as $$
 declare
   v_manager record;
+  v_login jsonb;
   v_active jsonb;
   v_rewards jsonb;
   v_offers jsonb;
 begin
-  select id, name, club
+  select id, display_name
     into v_manager
   from public.managers
-  where id = p_manager_id
-    and access_code = p_access_code;
+  where id = p_manager_id;
 
   if v_manager.id is null then
+    return jsonb_build_object('active', '[]'::jsonb, 'offers', '[]'::jsonb, 'recentRewards', '[]'::jsonb);
+  end if;
+
+  v_login := public.app_login_manager(v_manager.display_name, p_access_code)::jsonb;
+  if coalesce((v_login ->> 'ok')::boolean, false) is false then
     return jsonb_build_object('active', '[]'::jsonb, 'offers', '[]'::jsonb, 'recentRewards', '[]'::jsonb);
   end if;
 
