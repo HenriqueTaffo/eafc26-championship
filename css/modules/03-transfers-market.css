@@ -618,6 +618,120 @@
   font-weight: 900;
 }
 
+.player-identity,
+.movement-player-identity,
+.insight-player-identity,
+.table-player-identity,
+.mobile-player-identity,
+.coach-header-player-identity,
+.coach-transfer-player-identity,
+.experience-player-identity {
+  display: inline-grid;
+  grid-template-columns: 42px minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  max-width: 100%;
+  color: inherit;
+  text-align: left;
+}
+
+.event-player-identity,
+.injury-player-identity {
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr);
+  align-items: center;
+  gap: 9px;
+}
+
+.event-player-identity .player-avatar,
+.injury-player-identity .player-avatar {
+  width: 36px;
+  height: 36px;
+}
+
+.event-pill-player-identity {
+  display: inline-grid;
+  grid-template-columns: 24px minmax(0, auto);
+  align-items: center;
+  gap: 6px;
+}
+
+.event-pill-player-identity .player-avatar {
+  width: 24px;
+  height: 24px;
+}
+
+.event-pill-player-identity small {
+  display: none;
+}
+
+.player-avatar {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  overflow: hidden;
+  place-items: center;
+  border: 1px solid rgba(148, 163, 184, .18);
+  border-radius: 999px;
+  background: rgba(15, 23, 42, .76);
+}
+
+.player-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.player-avatar i {
+  color: #bfdbfe;
+  font-style: normal;
+  font-weight: 900;
+}
+
+.player-identity-copy {
+  display: block;
+  min-width: 0;
+}
+
+.player-identity-copy strong,
+.player-identity-copy small {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.player-identity-copy small {
+  color: #94a3b8;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.movement-player-identity,
+.mobile-player-identity,
+.coach-transfer-player-identity {
+  display: grid;
+}
+
+.insight-player-identity {
+  grid-template-columns: 28px minmax(0, 1fr);
+}
+
+.insight-player-identity .player-avatar {
+  width: 28px;
+  height: 28px;
+}
+
+.table-player-identity {
+  grid-template-columns: 34px minmax(0, 1fr);
+}
+
+.table-player-identity .player-avatar {
+  width: 34px;
+  height: 34px;
+}
+
 .market-player-option:hover {
   border-color: rgba(139, 92, 246, .55);
   transform: translateY(-1px);
@@ -791,5 +905,18 @@
     grid-column: 2;
     justify-content: flex-start;
     flex-wrap: wrap;
+  }
+
+  .table-player-identity,
+  .coach-transfer-player-identity,
+  .mobile-player-identity {
+    grid-template-columns: 38px minmax(0, 1fr);
+  }
+
+  .table-player-identity .player-avatar,
+  .coach-transfer-player-identity .player-avatar,
+  .mobile-player-identity .player-avatar {
+    width: 38px;
+    height: 38px;
   }
 }

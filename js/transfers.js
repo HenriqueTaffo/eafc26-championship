@@ -102,6 +102,23 @@ App.transfers = {
     `;
   },
 
+  getRatingForPlayerName(playerName) {
+    return App.transfers.findEaRatingForMarketPlayer({ name: playerName });
+  },
+
+  renderPlayerIdentity(playerName, detail = "", className = "player-identity") {
+    const rating = App.transfers.getRatingForPlayerName(playerName);
+    return `
+      <span class="${className}">
+        ${App.transfers.renderPlayerPhoto({ name: playerName }, rating, "player-avatar")}
+        <span class="player-identity-copy">
+          <strong>${App.utils.escapeHtml(playerName || "-")}</strong>
+          ${detail ? `<small>${App.utils.escapeHtml(detail)}</small>` : ""}
+        </span>
+      </span>
+    `;
+  },
+
   getAllTransfers() {
     const approvedApiTransfers = App.state.apiTransfers
       .filter(row => App.utils.normalizeText(row.Status) === "aprovado")
@@ -676,7 +693,7 @@ App.transfers = {
           </div>
           <div class="movement-player">
             <span>Contratação</span>
-            <strong>${App.utils.escapeHtml(item.player)}</strong>
+            ${App.transfers.renderPlayerIdentity(item.player, item.fromClub || "Clube não informado", "movement-player-identity")}
           </div>
           <div class="movement-meta">
             <span>${App.utils.escapeHtml(item.fromClub || "Clube não informado")}</span>
@@ -720,7 +737,7 @@ App.transfers = {
         <h3>Maiores compras</h3>
         ${biggest.length ? biggest.map(item => `
           <div class="insight-row">
-            <span>${App.utils.escapeHtml(item.player)}</span>
+            <span>${App.transfers.renderPlayerIdentity(item.player, item.buyer, "insight-player-identity")}</span>
             <strong>${App.utils.formatCurrency(item.totalCost)}</strong>
           </div>
         `).join("") : `<p class="calendar-muted">Nenhuma compra aprovada ainda.</p>`}
@@ -729,7 +746,7 @@ App.transfers = {
         <h3>Recentes</h3>
         ${recent.length ? recent.map(item => `
           <div class="insight-row">
-            <span>${App.utils.escapeHtml(item.player)}</span>
+            <span>${App.transfers.renderPlayerIdentity(item.player, item.buyer, "insight-player-identity")}</span>
             <strong>${App.utils.escapeHtml(item.buyer)}</strong>
           </div>
         `).join("") : `<p class="calendar-muted">Nenhuma movimentação recente.</p>`}
@@ -761,7 +778,7 @@ App.transfers = {
         <h3>Radar de leilão</h3>
         ${auctionCandidates.length ? auctionCandidates.map(item => `
           <div class="insight-row">
-            <span>${App.utils.escapeHtml(item.player)}</span>
+            <span>${App.transfers.renderPlayerIdentity(item.player, item.buyer, "insight-player-identity")}</span>
             <strong>${App.utils.formatCurrency(item.totalCost)}</strong>
           </div>
         `).join("") : `<p class="calendar-muted">Nenhuma compra pesada no radar.</p>`}
@@ -958,7 +975,7 @@ App.transfers = {
       const statusClass = App.transfers.getTransferStatusClass(item);
       return `
         <tr class="ours-row">
-          <td class="calendar-match">${App.utils.escapeHtml(item.player)}</td>
+          <td class="calendar-match">${App.transfers.renderPlayerIdentity(item.player, item.fromClub || "-", "table-player-identity")}</td>
           <td>${App.ui.ownerBadge(item.buyer, App.data.ownerColors["Livre / CPU"])}</td>
           <td>${App.utils.escapeHtml(item.fromClub || "-")}</td>
           <td class="numeric">${item.overall}</td>
@@ -974,8 +991,7 @@ App.transfers = {
       return `
         <article class="calendar-card ours-row">
           <div class="calendar-card-header">${App.ui.ownerBadge(item.buyer, App.data.ownerColors["Livre / CPU"])}<span class="transfer-status ${App.transfers.getTransferStatusClass(item)}">${App.transfers.getTransferStatusLabel(item)}</span></div>
-          <h3>${App.utils.escapeHtml(item.player)}</h3>
-          <p class="calendar-muted">${App.utils.escapeHtml(item.fromClub || "-")} · OVR ${item.overall}</p>
+          ${App.transfers.renderPlayerIdentity(item.player, `${item.fromClub || "-"} · OVR ${item.overall}`, "mobile-player-identity")}
           <p>Valor final: <strong>${App.utils.formatCurrency(item.totalCost)}</strong></p>
         </article>
       `;

@@ -128,6 +128,21 @@ App.api = {
     }
   },
 
+  async loadRatingsForPlayerNames(names = [], limitPerName = 3) {
+    const uniqueNames = [...new Set((names || []).map(name => String(name || "").trim()).filter(Boolean))].slice(0, 120);
+    if (!uniqueNames.length) return App.state.apiRatings || [];
+
+    const groups = await Promise.all(uniqueNames.map(name => {
+      const aliases = App.transfers?.getPlayerSearchAliases ? App.transfers.getPlayerSearchAliases(name) : [name];
+      return Promise.all(aliases.map(alias =>
+        App.api.searchEaRatings(alias, limitPerName).catch(() => [])
+      ));
+    }));
+
+    App.api.mergeEaRatings(groups.flat(2));
+    return App.state.apiRatings;
+  },
+
   async loadExperienceData() {
     try {
       const data = await App.api.rpc("app_get_experience_data", {}, 30000);
@@ -543,6 +558,10 @@ App.api = {
       await App.api.loadMatches();
       await App.api.loadMarketPlayers();
       await App.api.loadEaRatings("", 50);
+      await App.api.loadRatingsForPlayerNames([
+        ...(data.transfers || []).map(item => item.Jogador),
+        ...(App.data.transfers || []).map(item => item.player)
+      ]);
       await App.api.loadExperienceData();
       await App.api.loadManagerOnboarding?.();
       await App.governance?.loadData?.();

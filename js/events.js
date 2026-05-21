@@ -124,7 +124,11 @@ App.events = {
     return `
       <p class="legend-title" style="margin-top:12px;">Jogadores afetados</p>
       <ul class="player-list">
-        ${injuries.slice(0, 4).map(event => `<li>${event.JogadorAfetado} — ${App.events.getEventDurationLabel(event)}<br><span class="calendar-muted">${event.Titulo || "Evento ativo"}</span></li>`).join("")}
+        ${injuries.slice(0, 4).map(event => `
+          <li>
+            ${App.transfers.renderPlayerIdentity(event.JogadorAfetado, `${App.events.getEventDurationLabel(event)} · ${event.Titulo || "Evento ativo"}`, "event-player-identity")}
+          </li>
+        `).join("")}
       </ul>
     `;
   },
@@ -317,7 +321,7 @@ App.events = {
 
         <div class="event-badges">
           ${modifier !== 0 ? `<span class="limit-pill">${modifier > 0 ? "+" : ""}${modifier} transferência(s) hoje</span>` : ""}
-          ${event.JogadorAfetado ? `<span class="injury-pill">🚑 ${App.utils.escapeHtml(event.JogadorAfetado)}</span>` : ""}
+          ${event.JogadorAfetado ? `<span class="injury-pill">${App.transfers.renderPlayerIdentity(event.JogadorAfetado, "", "event-pill-player-identity")}</span>` : ""}
           ${durationLabel ? `<span class="duration-pill">${App.utils.escapeHtml(durationLabel)}</span>` : ""}
         </div>
 

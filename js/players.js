@@ -176,7 +176,7 @@ App.players = {
         </div>
         <div>
           <span>Maior compra</span>
-          <strong>${App.utils.escapeHtml(topTransfer?.player || "-")}</strong>
+          ${topTransfer ? App.transfers.renderPlayerIdentity(topTransfer.player, topTransfer.fromClub || "", "coach-header-player-identity") : `<strong>-</strong>`}
         </div>
         <div>
           <span>Total exibido</span>
@@ -187,11 +187,7 @@ App.players = {
       <div class="coach-transfer-timeline">
         ${transfers.map((item, index) => `
           <div class="coach-transfer-item">
-            <span class="transfer-rank">${index + 1}</span>
-            <div>
-              <strong>${App.utils.escapeHtml(item.player)}</strong>
-              <small>${App.utils.escapeHtml(item.fromClub || "Clube não informado")}</small>
-            </div>
+            ${App.transfers.renderPlayerIdentity(item.player, item.fromClub || "Clube não informado", "coach-transfer-player-identity")}
             <b>${App.utils.formatCurrency(item.totalCost)}</b>
           </div>
         `).join("")}
@@ -430,8 +426,7 @@ App.players = {
           <div class="coach-injury-list">
             ${injuries.map(event => `
               <div class="injury-chip">
-                <strong>${App.utils.escapeHtml(event.JogadorAfetado)}</strong>
-                <span>${App.utils.escapeHtml(event.Titulo || "Lesão ativa")}</span>
+                ${App.transfers.renderPlayerIdentity(event.JogadorAfetado, event.Titulo || "Lesão ativa", "injury-player-identity")}
                 <b>${App.events.getEventDurationLabel(event)}</b>
               </div>
             `).join("")}

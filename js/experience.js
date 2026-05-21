@@ -291,8 +291,7 @@ App.experience = {
         <div class="experience-list">
           ${auctions.length ? auctions.map(item => `
             <div>
-              <strong>${App.utils.escapeHtml(item.player)}</strong>
-              <span>${App.utils.escapeHtml(item.detail)} · ${App.utils.formatCurrency(item.value)}</span>
+              ${App.transfers.renderPlayerIdentity(item.player, `${item.detail} · ${App.utils.formatCurrency(item.value)}`, "experience-player-identity")}
               <b>${App.utils.escapeHtml(item.status)}</b>
             </div>
           `).join("") : `<p class="calendar-muted">Nenhuma disputa automática detectada.</p>`}
