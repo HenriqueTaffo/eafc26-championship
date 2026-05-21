@@ -1,0 +1,1596 @@
+/* v47 — rework do painel do técnico após Lesões */
+.coach-detail-grid {
+  gap: 18px;
+  align-items: start;
+}
+
+.coach-section-kicker {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 6px 10px;
+  background: rgba(148,163,184,.12);
+  color: #c4b5fd;
+  border: 1px solid rgba(167,139,250,.18);
+  font-size: 11px;
+  font-weight: 1000;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+}
+
+.coach-war-room-card,
+.coach-market-card,
+.coach-event-radar-card {
+  min-height: 0;
+  background:
+    radial-gradient(circle at top left, rgba(59,130,246,.10), transparent 36%),
+    rgba(17,28,51,.86);
+}
+
+.coach-war-room-card {
+  border-color: rgba(251,191,36,.22);
+}
+
+.coach-market-card {
+  border-color: rgba(34,197,94,.22);
+}
+
+.coach-event-radar-card {
+  border-color: rgba(168,85,247,.22);
+}
+
+.coach-alert-deck,
+.coach-transfer-timeline,
+.coach-event-stack {
+  display: grid;
+  gap: 10px;
+}
+
+.coach-alert-card {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 10px;
+  align-items: start;
+  padding: 12px;
+  border-radius: 16px;
+  background: rgba(251,191,36,.09);
+  border: 1px solid rgba(251,191,36,.18);
+}
+
+.coach-alert-card span {
+  width: 30px;
+  height: 30px;
+  display: inline-grid;
+  place-items: center;
+  border-radius: 12px;
+  background: rgba(251,191,36,.14);
+}
+
+.coach-alert-card p {
+  margin: 0;
+  color: #f8fafc;
+  line-height: 1.4;
+}
+
+.coach-empty-state {
+  display: grid;
+  gap: 6px;
+  place-items: start;
+  padding: 16px;
+  border-radius: 18px;
+  border: 1px dashed rgba(148,163,184,.22);
+  background: rgba(2,6,23,.20);
+}
+
+.coach-empty-state span {
+  font-size: 28px;
+}
+
+.coach-empty-state strong {
+  color: #f8fafc;
+  font-size: 18px;
+}
+
+.coach-empty-state p {
+  color: #94a3b8;
+  margin: 0;
+  line-height: 1.4;
+}
+
+.coach-market-header {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.coach-market-header > div {
+  padding: 11px;
+  border-radius: 16px;
+  background: rgba(34,197,94,.08);
+  border: 1px solid rgba(34,197,94,.16);
+  min-width: 0;
+}
+
+.coach-market-header span {
+  display: block;
+  color: #86efac;
+  font-size: 10px;
+  font-weight: 1000;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+}
+
+.coach-market-header strong {
+  display: block;
+  margin-top: 4px;
+  color: #f8fafc;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.coach-transfer-item,
+.coach-event-item {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 16px;
+  background: rgba(2,6,23,.24);
+  border: 1px solid rgba(148,163,184,.10);
+}
+
+.transfer-rank,
+.coach-event-icon {
+  width: 34px;
+  height: 34px;
+  display: inline-grid;
+  place-items: center;
+  border-radius: 14px;
+  background: rgba(59,130,246,.16);
+  color: #bfdbfe;
+  font-weight: 1000;
+}
+
+.coach-transfer-item strong,
+.coach-event-item strong {
+  color: #f8fafc;
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.coach-transfer-item small,
+.coach-event-item small {
+  color: #94a3b8;
+  display: block;
+  margin-top: 3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.coach-transfer-item b {
+  color: #bbf7d0;
+  white-space: nowrap;
+}
+
+.coach-event-item b {
+  color: #ddd6fe;
+  white-space: nowrap;
+}
+
+.coach-comparison-v47 {
+  margin-top: 18px;
+  border-color: rgba(96,165,250,.20);
+  background:
+    radial-gradient(circle at top left, rgba(59,130,246,.12), transparent 36%),
+    rgba(17,28,51,.84);
+}
+
+.coach-podium-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.coach-podium-card {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto auto minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  padding: 14px;
+  border-radius: 18px;
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--coach-color) 14%, transparent), rgba(2,6,23,.18)),
+    rgba(15,23,42,.72);
+  border: 1px solid color-mix(in srgb, var(--coach-color) 28%, rgba(148,163,184,.12));
+  overflow: hidden;
+}
+
+.coach-podium-card::after {
+  content: "";
+  position: absolute;
+  inset: auto -34px -45px auto;
+  width: 90px;
+  height: 90px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--coach-color) 18%, transparent);
+}
+
+.coach-podium-card .rank-number {
+  width: 30px;
+  height: 30px;
+  display: inline-grid;
+  place-items: center;
+  border-radius: 12px;
+  background: rgba(255,255,255,.10);
+  color: #f8fafc;
+  font-weight: 1000;
+}
+
+.coach-podium-card strong,
+.coach-podium-card small {
+  display: block;
+}
+
+.coach-podium-card strong {
+  color: #f8fafc;
+}
+
+.coach-podium-card small {
+  color: #94a3b8;
+}
+
+.coach-podium-card b {
+  grid-column: 1 / -1;
+  color: #e9d5ff;
+  font-size: 18px;
+  z-index: 1;
+}
+
+@media (max-width: 1080px) {
+  .coach-podium-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .coach-market-header {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 680px) {
+  .coach-detail-grid {
+    gap: 14px;
+  }
+
+  .coach-transfer-item,
+  .coach-event-item {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .coach-transfer-item b,
+  .coach-event-item b {
+    grid-column: 2;
+    justify-self: start;
+  }
+
+  .coach-podium-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .coach-section-kicker {
+    width: fit-content;
+  }
+}
+
+/* v49 — Login por técnico, decisões privadas e Jornal da Liga */
+.manager-login-panel {
+  margin: 14px 0 16px;
+}
+
+.manager-login-card,
+.manager-session-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(150px, .5fr) minmax(150px, .5fr) auto;
+  gap: 12px;
+  align-items: end;
+  padding: 16px;
+  border-radius: 22px;
+  border: 1px solid rgba(96,165,250,.20);
+  background:
+    radial-gradient(circle at top left, rgba(59,130,246,.14), transparent 32%),
+    rgba(15,23,42,.78);
+}
+
+.manager-session-card {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+}
+
+.manager-login-card span,
+.manager-session-card span,
+.decision-private-card span,
+.league-news-card span {
+  color: #c4b5fd;
+  font-size: 11px;
+  font-weight: 1000;
+  letter-spacing: .10em;
+  text-transform: uppercase;
+}
+
+.manager-login-card strong,
+.manager-session-card strong {
+  display: block;
+  color: #f8fafc;
+  font-size: 20px;
+  margin-top: 4px;
+}
+
+.manager-login-card small,
+.manager-session-card small {
+  color: #94a3b8;
+}
+
+.manager-session-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.ghost-button {
+  border: 1px solid rgba(148,163,184,.18);
+  background: rgba(15,23,42,.65);
+  color: #e2e8f0;
+  border-radius: 14px;
+  padding: 11px 14px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.league-news-panel {
+  margin: 16px 0;
+}
+
+.league-news-card,
+.decision-private-card {
+  padding: 18px;
+  border-radius: 24px;
+  border: 1px solid rgba(167,139,250,.22);
+  background:
+    radial-gradient(circle at top left, rgba(124,58,237,.16), transparent 34%),
+    radial-gradient(circle at top right, rgba(59,130,246,.12), transparent 30%),
+    rgba(17,28,51,.82);
+}
+
+.league-news-header,
+.decision-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  align-items: flex-start;
+  margin-bottom: 14px;
+}
+
+.league-news-header strong,
+.decision-header strong,
+.decision-private-card > div strong {
+  display: block;
+  color: #f8fafc;
+  font-size: 22px;
+  margin-top: 4px;
+}
+
+.league-news-header small,
+.decision-header p,
+.decision-locked p {
+  color: #94a3b8;
+  margin: 6px 0 0;
+  line-height: 1.45;
+}
+
+.league-news-list {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.league-news-list article {
+  min-height: 150px;
+  padding: 14px;
+  border-radius: 18px;
+  border: 1px solid rgba(148,163,184,.14);
+  background: rgba(2,6,23,.26);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.league-news-list article strong {
+  color: #f8fafc;
+  font-size: 16px;
+  line-height: 1.18;
+}
+
+.league-news-list article p {
+  color: #cbd5e1;
+  line-height: 1.38;
+  margin: 0;
+}
+
+.league-news-list article small {
+  margin-top: auto;
+  color: #bfdbfe;
+  font-weight: 800;
+}
+
+.league-news-empty,
+.decision-empty {
+  padding: 16px;
+  border-radius: 18px;
+  border: 1px dashed rgba(148,163,184,.22);
+  background: rgba(2,6,23,.22);
+}
+
+.decision-center {
+  margin-bottom: 18px;
+}
+
+.decision-locked {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+}
+
+.decision-locked b {
+  font-size: 38px;
+}
+
+.decision-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.decision-card {
+  padding: 16px;
+  border-radius: 20px;
+  border: 1px solid rgba(96,165,250,.22);
+  background:
+    linear-gradient(145deg, rgba(15,23,42,.92), rgba(2,6,23,.34));
+}
+
+.decision-card-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: center;
+}
+
+.decision-card-top b {
+  padding: 6px 9px;
+  border-radius: 999px;
+  background: rgba(34,197,94,.13);
+  color: #bbf7d0;
+  font-size: 11px;
+}
+
+.decision-card h3 {
+  margin: 12px 0 8px;
+  color: #f8fafc;
+  font-size: 22px;
+  line-height: 1.1;
+}
+
+.decision-card p {
+  color: #cbd5e1;
+  line-height: 1.45;
+}
+
+.decision-options {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.decision-options button {
+  text-align: left;
+  border: 1px solid rgba(148,163,184,.16);
+  background: rgba(15,23,42,.70);
+  color: #e2e8f0;
+  border-radius: 16px;
+  padding: 12px;
+  cursor: pointer;
+}
+
+.decision-options button:first-child {
+  border-color: rgba(34,197,94,.28);
+  background: rgba(34,197,94,.08);
+}
+
+.decision-options button:last-child {
+  border-color: rgba(248,113,113,.24);
+  background: rgba(248,113,113,.07);
+}
+
+.decision-options strong,
+.decision-options small {
+  display: block;
+}
+
+.decision-options small {
+  margin-top: 5px;
+  color: #94a3b8;
+  line-height: 1.35;
+}
+
+.decision-history {
+  margin-top: 14px;
+  display: grid;
+  gap: 8px;
+}
+
+.decision-history > strong {
+  color: #f8fafc;
+}
+
+.decision-history div {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: rgba(2,6,23,.22);
+}
+
+.decision-history div span {
+  color: #cbd5e1;
+  font-size: 13px;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.decision-history div b {
+  color: #ddd6fe;
+}
+
+@media (max-width: 1000px) {
+  .manager-login-card {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .league-news-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .decision-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 680px) {
+  .manager-login-card,
+  .manager-session-card,
+  .league-news-header,
+  .decision-header,
+  .decision-locked {
+    grid-template-columns: 1fr;
+    display: grid;
+  }
+
+  .manager-session-actions,
+  .league-news-header {
+    justify-content: flex-start;
+  }
+
+  .league-news-list {
+    grid-template-columns: 1fr;
+  }
+
+  .decision-options {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* v50 — decisões automáticas até 23:59 + troca de PIN */
+.decision-auto-pill {
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: rgba(34,197,94,.12);
+  border: 1px solid rgba(34,197,94,.24);
+  color: #bbf7d0;
+  font-size: 12px;
+  font-weight: 1000;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+}
+
+.pin-change-card {
+  border-color: rgba(96,165,250,.22);
+  background:
+    radial-gradient(circle at top left, rgba(59,130,246,.12), transparent 34%),
+    rgba(17,28,51,.86);
+}
+
+.pin-change-form {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) auto;
+  gap: 10px;
+  align-items: end;
+}
+
+.pin-change-form label {
+  min-width: 0;
+}
+
+.pin-change-form .app-message {
+  grid-column: 1 / -1;
+}
+
+@media (max-width: 980px) {
+  .pin-change-form {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* v52 — decisões no Painel do Técnico + correções de alinhamento */
+.coach-detail-grid {
+  align-items: start;
+}
+
+.coach-detail-grid > .coach-panel-card {
+  align-self: start;
+}
+
+.coach-decision-card {
+  grid-column: 1 / -1;
+  border-color: rgba(167,139,250,.28);
+  background:
+    radial-gradient(circle at top left, rgba(124,58,237,.14), transparent 36%),
+    radial-gradient(circle at top right, rgba(59,130,246,.10), transparent 34%),
+    rgba(17,28,51,.86);
+}
+
+.coach-card-subtitle {
+  margin: 6px 0 0;
+  color: #94a3b8;
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.coach-decision-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.coach-decision-card .decision-card {
+  min-height: 0;
+}
+
+.coach-decision-history {
+  margin-top: 12px;
+  display: grid;
+  gap: 8px;
+}
+
+.coach-decision-history > strong {
+  color: #f8fafc;
+}
+
+.coach-decision-history div {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: rgba(2,6,23,.24);
+}
+
+.coach-decision-history div span {
+  color: #cbd5e1;
+  font-size: 13px;
+}
+
+.coach-decision-history div b {
+  color: #ddd6fe;
+}
+
+.coach-empty-state.compact {
+  min-height: 0;
+}
+
+.pin-change-card {
+  grid-column: 1 / -1;
+}
+
+.pin-change-form {
+  grid-template-columns: repeat(3, minmax(0, 1fr)) auto;
+  gap: 12px;
+  align-items: end;
+}
+
+.pin-change-form label {
+  display: grid;
+  gap: 7px;
+  color: #cbd5e1;
+  font-size: 13px;
+  font-weight: 800;
+  min-width: 0;
+}
+
+.pin-change-form input {
+  width: 100%;
+  min-width: 0;
+  height: 44px;
+  padding: 0 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(148,163,184,.18);
+  background: rgba(15,23,42,.72);
+  color: #f8fafc;
+  outline: none;
+}
+
+.pin-change-form input:focus {
+  border-color: rgba(96,165,250,.55);
+  box-shadow: 0 0 0 3px rgba(59,130,246,.14);
+}
+
+.pin-change-form .secondary-button {
+  height: 44px;
+  border: 0;
+  border-radius: 14px;
+  padding: 0 16px;
+  background: linear-gradient(135deg, #2563eb, #7c3aed);
+  color: white;
+  font-weight: 1000;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.pin-change-form .app-message {
+  grid-column: 1 / -1;
+}
+
+/* Evita cards com grandes vazios por esticamento de linha */
+.coach-war-room-card,
+.coach-market-card,
+.coach-event-radar-card,
+.pin-change-card {
+  height: auto;
+}
+
+@media (max-width: 980px) {
+  .coach-decision-grid,
+  .pin-change-form {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 680px) {
+  .coach-decision-card,
+  .pin-change-card {
+    grid-column: auto;
+  }
+}
+
+/* v53 — painel do técnico sem buracos no layout
+   Troca o grid solto por colunas empilhadas independentes. */
+.coach-detail-grid-v53 {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+  align-items: start;
+}
+
+.coach-detail-grid-v53 > .coach-decision-card,
+.coach-detail-grid-v53 > .coach-lower-layout {
+  grid-column: 1 / -1;
+}
+
+.coach-lower-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 18px;
+  align-items: start;
+}
+
+.coach-lower-stack {
+  display: grid;
+  gap: 18px;
+  align-content: start;
+  min-width: 0;
+}
+
+.coach-lower-stack > .coach-panel-card,
+.coach-detail-grid-v53 > .coach-panel-card {
+  height: auto !important;
+  min-height: 0;
+  align-self: start;
+}
+
+.coach-event-radar-card,
+.pin-change-card {
+  grid-column: auto;
+}
+
+/* PIN: deixa o formulário usável e com cara do app */
+.pin-change-card {
+  overflow: visible;
+}
+
+.pin-change-form {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) auto;
+  gap: 12px;
+  align-items: end;
+}
+
+.pin-change-form label {
+  display: grid;
+  gap: 7px;
+  min-width: 0;
+  color: #cbd5e1;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.pin-change-form input {
+  width: 100%;
+  min-width: 0;
+  height: 44px;
+  padding: 0 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(148,163,184,.18);
+  background: rgba(15,23,42,.76);
+  color: #f8fafc;
+  outline: none;
+}
+
+.pin-change-form input:focus {
+  border-color: rgba(96,165,250,.55);
+  box-shadow: 0 0 0 3px rgba(59,130,246,.14);
+}
+
+.pin-change-form .secondary-button {
+  height: 44px;
+  border: 0;
+  border-radius: 14px;
+  padding: 0 16px;
+  background: linear-gradient(135deg, #2563eb, #7c3aed);
+  color: #fff;
+  font-weight: 1000;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.pin-change-form .app-message {
+  grid-column: 1 / -1;
+}
+
+/* Central de decisões: reduz altura vazia quando bloqueada */
+.coach-decision-card.decision-locked,
+.coach-decision-card .coach-empty-state {
+  min-height: 0;
+}
+
+@media (max-width: 980px) {
+  .coach-detail-grid-v53,
+  .coach-lower-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .coach-detail-grid-v53 > .coach-decision-card,
+  .coach-detail-grid-v53 > .coach-lower-layout {
+    grid-column: auto;
+  }
+
+  .pin-change-form {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* v54 — correção real do layout do painel do técnico
+   Remove o grid antigo quebrado e usa linhas/colunas controladas. */
+.coach-layout-v54 {
+  display: grid;
+  gap: 18px;
+  align-items: start;
+}
+
+.coach-top-row-v54,
+.coach-columns-v54 {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+  align-items: start;
+}
+
+.coach-full-row-v54 {
+  min-width: 0;
+}
+
+.coach-full-row-v54 > .coach-panel-card,
+.coach-column-v54 > .coach-panel-card,
+.coach-top-row-v54 > .coach-panel-card {
+  width: 100%;
+  min-height: 0;
+  height: auto !important;
+  align-self: start;
+  box-sizing: border-box;
+}
+
+.coach-column-v54 {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  min-width: 0;
+  align-self: start;
+}
+
+/* Neutraliza regras antigas que faziam PIN/decisões invadirem linha inteira. */
+.coach-layout-v54 .coach-decision-card,
+.coach-layout-v54 .pin-change-card,
+.coach-layout-v54 .coach-event-radar-card {
+  grid-column: auto !important;
+}
+
+.coach-layout-v54 .coach-decision-card {
+  width: 100%;
+}
+
+/* Deixa a Central mais baixa quando estiver bloqueada. */
+.coach-layout-v54 .coach-decision-card.decision-locked {
+  display: grid;
+  grid-template-columns: minmax(180px, .26fr) minmax(0, 1fr);
+  gap: 18px;
+  align-items: center;
+}
+
+.coach-layout-v54 .coach-decision-card.decision-locked .coach-empty-state {
+  min-height: 0;
+  padding: 16px;
+}
+
+/* PIN alinhado e sem aparência de HTML cru. */
+.coach-layout-v54 .pin-change-form {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+  align-items: stretch;
+}
+
+.coach-layout-v54 .pin-change-form label {
+  display: grid;
+  gap: 7px;
+  min-width: 0;
+  color: #cbd5e1;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.coach-layout-v54 .pin-change-form input {
+  width: 100%;
+  min-width: 0;
+  height: 44px;
+  padding: 0 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(148,163,184,.18);
+  background: rgba(15,23,42,.78);
+  color: #f8fafc;
+  outline: none;
+}
+
+.coach-layout-v54 .pin-change-form .secondary-button {
+  height: 44px;
+  border: 0;
+  border-radius: 14px;
+  padding: 0 16px;
+  background: linear-gradient(135deg, #2563eb, #7c3aed);
+  color: #fff;
+  font-weight: 1000;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.coach-layout-v54 .pin-change-form .app-message {
+  min-height: 18px;
+}
+
+@media (min-width: 981px) {
+  .coach-top-row-v54 > .coach-next-match,
+  .coach-top-row-v54 > .coach-injuries-card {
+    min-height: 0;
+  }
+}
+
+@media (max-width: 980px) {
+  .coach-top-row-v54,
+  .coach-columns-v54,
+  .coach-layout-v54 .coach-decision-card.decision-locked {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* v55 — correção real: fluxo único no Painel do Técnico, sem buracos */
+.coach-layout-v54 {
+  display: grid !important;
+  gap: 18px !important;
+}
+
+.coach-columns-v54 {
+  display: none !important;
+}
+
+.coach-flow-v55 {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 18px;
+  width: 100%;
+}
+
+.coach-flow-v55 > .coach-panel-card,
+.coach-flow-v55 > .pin-change-card {
+  width: 100%;
+  max-width: none;
+  min-height: 0 !important;
+  height: auto !important;
+  align-self: start;
+}
+
+/* Cards internos aproveitam largura total sem criar vazio lateral */
+.coach-flow-v55 .coach-alert-deck,
+.coach-flow-v55 .coach-event-stack {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.coach-flow-v55 .coach-market-header {
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+}
+
+.coach-flow-v55 .coach-transfer-timeline {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+/* Central de decisões sem caixa fantasma */
+.coach-decision-card,
+.coach-decision-locked-card {
+  min-height: 0 !important;
+  height: auto !important;
+}
+
+.coach-decision-card .coach-empty-state,
+.decision-empty-visible {
+  min-height: 0 !important;
+  display: grid !important;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 12px;
+  align-items: center;
+  padding: 14px 16px;
+  border-radius: 18px;
+}
+
+.decision-empty-visible > span {
+  font-size: 28px;
+  line-height: 1;
+}
+
+.decision-empty-visible strong {
+  display: block;
+  color: #f8fafc;
+}
+
+.decision-empty-visible p {
+  margin: 5px 0 0;
+  color: #94a3b8;
+}
+
+/* PIN fica integrado e sem desalinhamento */
+.coach-flow-v55 .pin-change-card {
+  grid-column: 1 / -1 !important;
+}
+
+.pin-change-form {
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) auto !important;
+  gap: 12px;
+  align-items: end;
+}
+
+.pin-change-form label {
+  display: grid !important;
+  gap: 7px;
+  min-width: 0;
+  color: #cbd5e1;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.pin-change-form input {
+  width: 100% !important;
+  min-width: 0 !important;
+  box-sizing: border-box;
+  height: 44px;
+}
+
+.pin-change-form .secondary-button {
+  min-height: 44px;
+  white-space: nowrap;
+}
+
+@media (max-width: 980px) {
+  .coach-top-row-v54,
+  .coach-flow-v55 .coach-alert-deck,
+  .coach-flow-v55 .coach-event-stack,
+  .coach-flow-v55 .coach-market-header,
+  .coach-flow-v55 .coach-transfer-timeline,
+  .pin-change-form {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* v56 — correção APENAS DESKTOP
+   Mobile preservado. Não altera regras abaixo de 1100px. */
+@media (min-width: 1101px) {
+  /* Área útil mais coerente no desktop, sem painel espremido no centro */
+  .app {
+    width: min(1520px, calc(100% - 64px));
+  }
+
+  #playersView .summary,
+  #playersView .coach-dashboard,
+  #playersView .coach-comparison,
+  #playersView .stats-grid,
+  #eventsView .events-summary-v45,
+  #eventsView .event-board-header,
+  #eventsView .event-card-grid-v45,
+  #eventsView .footer-note {
+    max-width: none;
+    width: 100%;
+  }
+
+  /* Painel do técnico: desktop com grid controlado e sem buracos */
+  #playersView .coach-dashboard {
+    display: grid;
+    gap: 18px;
+  }
+
+  #playersView .coach-layout-v54 {
+    display: grid !important;
+    gap: 18px !important;
+  }
+
+  #playersView .coach-top-row-v54 {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 18px;
+    align-items: start;
+  }
+
+  #playersView .coach-full-row-v54 {
+    width: 100%;
+  }
+
+  #playersView .coach-flow-v55 {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 18px;
+    align-items: start;
+    width: 100%;
+  }
+
+  #playersView .coach-flow-v55 > .coach-war-room-card {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  #playersView .coach-flow-v55 > .coach-market-card {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+  }
+
+  #playersView .coach-flow-v55 > .coach-event-radar-card {
+    grid-column: 1;
+    grid-row: 2;
+  }
+
+  #playersView .coach-flow-v55 > .pin-change-card {
+    grid-column: 1 / -1 !important;
+    grid-row: 3;
+  }
+
+  /* Evita que listas longas criem buracos absurdos no desktop */
+  #playersView .coach-market-card {
+    max-height: 620px;
+    overflow: hidden;
+  }
+
+  #playersView .coach-market-card .coach-transfer-timeline {
+    max-height: 430px;
+    overflow: auto;
+    padding-right: 4px;
+  }
+
+  #playersView .coach-flow-v55 .coach-alert-deck,
+  #playersView .coach-flow-v55 .coach-event-stack,
+  #playersView .coach-flow-v55 .coach-transfer-timeline {
+    grid-template-columns: 1fr !important;
+  }
+
+  #playersView .pin-change-form {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) auto !important;
+  }
+
+  /* Eventos: desktop com cards alinhados e sem “vazio” por altura de linha */
+  #eventsView .event-card-grid-v45 {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+    align-items: start !important;
+  }
+
+  #eventsView .event-card-v45 {
+    min-height: 0 !important;
+    height: auto !important;
+    align-self: start;
+  }
+
+  #eventsView .event-card-v45 .event-meta {
+    margin-top: 0 !important;
+  }
+}
+
+@media (min-width: 1500px) {
+  .app {
+    width: min(1600px, calc(100% - 96px));
+  }
+
+  #eventsView .event-card-grid-v45 {
+    grid-template-columns: repeat(2, minmax(520px, 1fr));
+  }
+}
+
+@media (min-width: 1101px) {
+
+  #playersView .coach-dashboard,
+  #playersView .coach-layout-v54 {
+    display: grid !important;
+    gap: 18px !important;
+  }
+
+  /* Topo em 2 colunas, mas sem “buraco” visível: cards esticam na mesma altura */
+  #playersView .coach-top-row-v54 {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important;
+    gap: 18px !important;
+    align-items: stretch !important;
+  }
+
+  #playersView .coach-top-row-v54 > .coach-panel-card {
+    height: 100% !important;
+    min-height: 0 !important;
+  }
+
+  /* Central de decisões compacta, sem caixa fantasma */
+  #playersView .coach-decision-card {
+    min-height: 0 !important;
+    height: auto !important;
+    padding: 18px !important;
+  }
+
+  #playersView .coach-decision-card .coach-empty-state,
+  #playersView .decision-empty-visible {
+    min-height: 0 !important;
+    display: grid !important;
+    grid-template-columns: auto minmax(0, 1fr) !important;
+    align-items: center !important;
+    gap: 12px !important;
+    padding: 14px 16px !important;
+  }
+
+  #playersView .coach-decision-card .coach-empty-state > span,
+  #playersView .decision-empty-visible > span {
+    font-size: 26px !important;
+    line-height: 1 !important;
+  }
+
+  #playersView .coach-decision-card .coach-empty-state p,
+  #playersView .decision-empty-visible p {
+    margin: 4px 0 0 !important;
+  }
+
+  /* Parte inferior em fluxo único: sem colunas de alturas diferentes, sem buracos */
+  #playersView .coach-columns-v54 {
+    display: none !important;
+  }
+
+  #playersView .coach-flow-v55 {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    gap: 18px !important;
+    width: 100% !important;
+    align-items: start !important;
+  }
+
+  #playersView .coach-flow-v55 > .coach-panel-card,
+  #playersView .coach-flow-v55 > .pin-change-card {
+    grid-column: 1 / -1 !important;
+    width: 100% !important;
+    max-width: none !important;
+    height: auto !important;
+    min-height: 0 !important;
+    align-self: start !important;
+  }
+
+  /* Os cards continuam ricos internamente, sem virar blocão pobre */
+  #playersView .coach-flow-v55 .coach-alert-deck,
+  #playersView .coach-flow-v55 .coach-event-stack {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 10px !important;
+  }
+
+  #playersView .coach-flow-v55 .coach-market-header {
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 10px !important;
+  }
+
+  #playersView .coach-flow-v55 .coach-transfer-timeline {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 10px !important;
+    max-height: none !important;
+    overflow: visible !important;
+    padding-right: 0 !important;
+  }
+
+  #playersView .coach-market-card {
+    max-height: none !important;
+    overflow: visible !important;
+  }
+
+  /* PIN: full-width no card, mas formulário compacto dentro dele */
+  #playersView .pin-change-card {
+    padding: 18px !important;
+  }
+
+  #playersView .pin-change-form {
+    display: grid !important;
+    grid-template-columns: minmax(0, 420px) minmax(0, 420px) minmax(0, 420px) auto !important;
+    gap: 12px !important;
+    align-items: end !important;
+    width: 100% !important;
+  }
+
+  #playersView .pin-change-form label {
+    display: grid !important;
+    gap: 7px !important;
+    min-width: 0 !important;
+  }
+
+  #playersView .pin-change-form input {
+    width: 100% !important;
+    min-width: 0 !important;
+    height: 44px !important;
+    box-sizing: border-box !important;
+  }
+
+  #playersView .pin-change-form .secondary-button {
+    height: 44px !important;
+    min-height: 44px !important;
+    padding: 0 18px !important;
+    white-space: nowrap !important;
+  }
+
+  #playersView .pin-change-form .app-message {
+    grid-column: 1 / -1 !important;
+  }
+
+  /* Eventos no desktop: não força altura de linhas */
+  #eventsView .event-card-grid-v45 {
+    align-items: start !important;
+  }
+
+  #eventsView .event-card-v45 {
+    height: auto !important;
+    min-height: 0 !important;
+    align-self: start !important;
+  }
+}
+
+@media (min-width: 1101px) and (max-width: 1350px) {
+  #playersView .pin-change-form {
+    grid-template-columns: 1fr 1fr !important;
+  }
+
+  #playersView .pin-change-form .secondary-button {
+    grid-column: 1 / -1 !important;
+    width: 100% !important;
+  }
+}
+
+/* v61 — correção APENAS DESKTOP do alinhamento da seção Painel.
+   Mobile preservado. Corrige o desalinhamento entre resumo, busca e seletor de técnicos. */
+@media (min-width: 1101px) {
+  #playersView .summary,
+  #playersView .controls,
+  #playersView .player-grid,
+  #playersView .leaderboard-grid,
+  #playersView .footer-note {
+  }
+
+  #playersView .controls {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) 230px !important;
+    gap: 10px !important;
+    align-items: center !important;
+  }
+
+  #playersView .controls input,
+  #playersView .controls select {
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  #playersView .player-grid {
+    display: block !important;
+  }
+
+  #playersView .coach-selector {
+    width: 100% !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+  }
+}
+
+/* v62 — corrige sobreposição Mercado/Radar no desktop.
+   Causa: regras antigas ainda deixavam grid-row fixo nos cards.
+   Mobile preservado. */
+@media (min-width: 1101px) {
+  #playersView .coach-flow-v55 {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    gap: 18px !important;
+    align-items: start !important;
+  }
+
+  #playersView .coach-flow-v55 > .coach-war-room-card,
+  #playersView .coach-flow-v55 > .coach-market-card,
+  #playersView .coach-flow-v55 > .coach-event-radar-card,
+  #playersView .coach-flow-v55 > .pin-change-card {
+    grid-column: 1 / -1 !important;
+    grid-row: auto !important;
+    position: relative !important;
+    z-index: auto !important;
+    width: 100% !important;
+    max-width: none !important;
+    height: auto !important;
+    min-height: 0 !important;
+    transform: none !important;
+  }
+
+  #playersView .coach-market-card {
+    max-height: none !important;
+    overflow: visible !important;
+  }
+
+  #playersView .coach-market-card .coach-transfer-timeline {
+    max-height: none !important;
+    overflow: visible !important;
+    padding-right: 0 !important;
+  }
+
+  #playersView .coach-flow-v55 .coach-market-header {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  }
+
+  #playersView .coach-flow-v55 .coach-transfer-timeline,
+  #playersView .coach-flow-v55 .coach-alert-deck,
+  #playersView .coach-flow-v55 .coach-event-stack {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+
+/* v63 — desktop: alinhamento final + card Lesões compacto.
+   Mobile preservado. */
+@media (min-width: 1101px) {
+  /* Todos os blocos principais do Painel usam exatamente o mesmo eixo/largura. */
+  #playersView > .summary,
+  #playersView > .controls,
+  #playersView > .player-grid,
+  #playersView > .leaderboard-grid,
+  #playersView > .footer-note,
+  #playersView .coach-tabs,
+  #playersView .coach-dashboard,
+  #playersView .coach-comparison {
+    box-sizing: border-box !important;
+  }
+
+  #playersView > .leaderboard-grid {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 18px !important;
+    align-items: start !important;
+  }
+
+  #playersView > .leaderboard-grid > .leaderboard-card {
+    width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  /* Lesões não deve esticar para acompanhar Próximo compromisso. */
+  #playersView .coach-top-row-v54 {
+    align-items: start !important;
+  }
+
+  #playersView .coach-top-row-v54 > .coach-panel-card {
+    height: auto !important;
+  }
+
+  #playersView .coach-injuries-card {
+    min-height: 0 !important;
+    height: auto !important;
+    align-self: start !important;
+    padding: 18px !important;
+  }
+
+  #playersView .coach-injuries-card .home-panel-header {
+    margin-bottom: 10px !important;
+  }
+
+  #playersView .coach-injuries-card .calendar-muted {
+    margin: 0 !important;
+    line-height: 1.35 !important;
+  }
+
+  #playersView .coach-injury-list {
+    display: grid !important;
+    gap: 8px !important;
+  }
+
+  #playersView .coach-injury-list .injury-chip {
+    min-height: 0 !important;
+    padding: 12px 14px !important;
+    border-radius: 14px !important;
+  }
+
+  #playersView .coach-injury-list .injury-chip strong,
+  #playersView .coach-injury-list .injury-chip span,
+  #playersView .coach-injury-list .injury-chip b {
+    line-height: 1.25 !important;
+  }
+}
+
+/* v65 — onboarding Bruno + privacidade de orçamento/lesões */
+.coach-quick-grid.public-only {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.coach-top-row-v54.public-only {
+  grid-template-columns: 1fr !important;
+}
+
+.coach-top-row-v54.public-only .coach-next-match {
+  width: 100%;
+}
+
+@media (max-width: 640px) {
+  .coach-quick-grid.public-only {
+    grid-template-columns: 1fr;
+  }
+}

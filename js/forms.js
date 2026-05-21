@@ -278,10 +278,10 @@ App.forms = {
     const events = App.state.apiEvents.length;
 
     container.innerHTML = `
-      <article class="summary-card"><span>Status Supabase</span><strong>${App.state.apiLoaded ? "Conectado" : "Carregando"}</strong></article>
-      <article class="summary-card"><span>Resultados</span><strong>${approvedResults}</strong></article>
-      <article class="summary-card"><span>Transfers</span><strong>${approvedTransfers}</strong></article>
-      <article class="summary-card"><span>Eventos</span><strong>${events}</strong></article>
+      ${App.ui.summaryCard("Status Supabase", App.state.apiLoaded ? "Conectado" : "Carregando")}
+      ${App.ui.summaryCard("Resultados", approvedResults)}
+      ${App.ui.summaryCard("Transfers", approvedTransfers)}
+      ${App.ui.summaryCard("Eventos", events)}
     `;
   },
 

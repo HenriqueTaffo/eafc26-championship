@@ -482,10 +482,10 @@ App.players = {
     }, 0);
 
     summary.innerHTML = `
-      <article class="summary-card"><span>Técnicos</span><strong>${teams.length}</strong></article>
-      <article class="summary-card"><span>Líder entre técnicos</span><strong>${ranking[0]?.team.owner || "-"}</strong></article>
-      <article class="summary-card"><span>Transferências</span><strong>${totalTransfers}</strong></article>
-      <article class="summary-card"><span>Alertas ativos</span><strong>${totalAlerts}</strong></article>
+      ${App.ui.summaryCard("Técnicos", teams.length)}
+      ${App.ui.summaryCard("Líder entre técnicos", ranking[0]?.team.owner || "-")}
+      ${App.ui.summaryCard("Transferências", totalTransfers)}
+      ${App.ui.summaryCard("Alertas ativos", totalAlerts)}
     `;
 
     if (!activeTeam) {

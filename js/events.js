@@ -467,26 +467,10 @@ App.events = {
 
     summary.classList.add("events-summary-v45");
     summary.innerHTML = `
-      <article class="summary-card event-summary-main">
-        <span>Última rodada</span>
-        <strong>${todayEvents.length}</strong>
-        <small>eventos dinâmicos hoje</small>
-      </article>
-      <article class="summary-card">
-        <span>Ativos agora</span>
-        <strong>${activeEvents.length}</strong>
-        <small>lesões, mercado ou duração</small>
-      </article>
-      <article class="summary-card">
-        <span>Impacto líquido</span>
-        <strong>${App.utils.formatCurrency(totalImpact)}</strong>
-        <small>somando histórico carregado</small>
-      </article>
-      <article class="summary-card">
-        <span>Slots restantes</span>
-        <strong>${pendingSlots}</strong>
-        <small>até 23h</small>
-      </article>
+      ${App.ui.summaryCard("Última rodada", todayEvents.length, "eventos dinâmicos hoje", "event-summary-main")}
+      ${App.ui.summaryCard("Ativos agora", activeEvents.length, "lesões, mercado ou duração")}
+      ${App.ui.summaryCard("Impacto líquido", App.utils.formatCurrency(totalImpact), "somando histórico carregado")}
+      ${App.ui.summaryCard("Slots restantes", pendingSlots, "até 23h")}
     `;
 
     const events = App.events.getFilteredEvents();

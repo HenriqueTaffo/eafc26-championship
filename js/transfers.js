@@ -422,12 +422,11 @@ App.transfers = {
     }
 
     target.innerHTML = data.map(item => {
-      const color = App.data.ownerColors[item.buyer] || "#2563eb";
       const date = item.timestamp ? App.utils.formatDateTime(item.timestamp) : "Sem data";
       return `
         <article class="transfer-movement-card">
           <div class="movement-card-header">
-            <span class="owner" style="background:${color}">${item.buyer}</span>
+            ${App.ui.ownerBadge(item.buyer)}
             <small>${App.utils.escapeHtml(date)}</small>
           </div>
           <div class="movement-player">
@@ -595,11 +594,11 @@ App.transfers = {
     const buyersActive = new Set(data.map(item => item.buyer)).size;
 
     summary.innerHTML = `
-      <article class="summary-card"><span>Contratações válidas</span><strong>${data.length}</strong></article>
-      <article class="summary-card"><span>Total movimentado</span><strong>${App.utils.formatCurrency(totalMoved)}</strong></article>
-      <article class="summary-card"><span>Maior compra</span><strong>${biggest ? App.utils.formatCurrency(biggest.totalCost) : "-"}</strong></article>
-      <article class="summary-card"><span>Compradores ativos</span><strong>${buyersActive}</strong></article>
-      <article class="summary-card"><span>Última movimentação</span><strong>${recent ? App.utils.escapeHtml(recent.player) : "-"}</strong></article>
+      ${App.ui.summaryCard("Contratações válidas", data.length)}
+      ${App.ui.summaryCard("Total movimentado", App.utils.formatCurrency(totalMoved))}
+      ${App.ui.summaryCard("Maior compra", biggest ? App.utils.formatCurrency(biggest.totalCost) : "-")}
+      ${App.ui.summaryCard("Compradores ativos", buyersActive)}
+      ${App.ui.summaryCard("Última movimentação", recent ? App.utils.escapeHtml(recent.player) : "-")}
     `;
   },
 
@@ -616,17 +615,16 @@ App.transfers = {
     const data = App.transfers.getFilteredTransfers(5);
     if (!data.length) {
       table.innerHTML = `<tr><td colspan="8" class="calendar-muted">Nenhuma transferência aprovada ainda.</td></tr>`;
-      mobile.innerHTML = `<article class="calendar-card"><h3>Nenhuma transferência cadastrada</h3><p class="calendar-muted">Use a aba Enviar dados para cadastrar contratações.</p></article>`;
+      mobile.innerHTML = App.ui.emptyCard("Nenhuma transferência cadastrada", "Use a aba Enviar dados para cadastrar contratações.");
       return;
     }
 
     table.innerHTML = data.map(item => {
-      const color = App.data.ownerColors[item.buyer] || App.data.ownerColors["Livre / CPU"];
       const statusClass = App.transfers.getTransferStatusClass(item);
       return `
         <tr class="ours-row">
           <td class="calendar-match">${App.utils.escapeHtml(item.player)}</td>
-          <td><span class="owner" style="background:${color}">${item.buyer}</span></td>
+          <td>${App.ui.ownerBadge(item.buyer, App.data.ownerColors["Livre / CPU"])}</td>
           <td>${App.utils.escapeHtml(item.fromClub || "-")}</td>
           <td class="numeric">${item.overall}</td>
           <td>${App.utils.formatCurrency(item.marketValue)}</td>
@@ -638,10 +636,9 @@ App.transfers = {
     }).join("");
 
     mobile.innerHTML = data.map(item => {
-      const color = App.data.ownerColors[item.buyer] || App.data.ownerColors["Livre / CPU"];
       return `
         <article class="calendar-card ours-row">
-          <div class="calendar-card-header"><span class="owner" style="background:${color}">${item.buyer}</span><span class="transfer-status ${App.transfers.getTransferStatusClass(item)}">${App.transfers.getTransferStatusLabel(item)}</span></div>
+          <div class="calendar-card-header">${App.ui.ownerBadge(item.buyer, App.data.ownerColors["Livre / CPU"])}<span class="transfer-status ${App.transfers.getTransferStatusClass(item)}">${App.transfers.getTransferStatusLabel(item)}</span></div>
           <h3>${App.utils.escapeHtml(item.player)}</h3>
           <p class="calendar-muted">${App.utils.escapeHtml(item.fromClub || "-")} · OVR ${item.overall}</p>
           <p>Valor final: <strong>${App.utils.formatCurrency(item.totalCost)}</strong></p>

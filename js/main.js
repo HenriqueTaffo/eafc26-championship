@@ -1,6 +1,17 @@
 window.App = window.App || {};
 
 App.main = {
+  get viewRenderers() {
+    return {
+      standingsView: App.standings.render,
+      calendarView: App.calendar.render,
+      cupsView: App.cups.render,
+      playersView: App.players.render,
+      eventsView: App.events.render,
+      transfersView: App.transfers.render
+    };
+  },
+
   LOADER_VARIANTS: {
     match: {
       cardClass: "loader-card-match",
@@ -38,25 +49,16 @@ App.main = {
   },
 
   renderAll() {
-    App.standings.render();
-    App.calendar.render();
-    App.cups.render();
-    App.events.render();
-    App.players.render();
-    App.transfers.render();
+    Object.values(App.main.viewRenderers).forEach(render => render());
     App.forms.renderApiSummary();
     App.auth?.renderAll?.();
   },
 
   renderCurrentView() {
     const activeView = document.querySelector(".view.active")?.id;
+    const render = App.main.viewRenderers[activeView];
 
-    if (activeView === "standingsView") App.standings.render();
-    else if (activeView === "calendarView") App.calendar.render();
-    else if (activeView === "cupsView") App.cups.render();
-    else if (activeView === "playersView") App.players.render();
-    else if (activeView === "eventsView") App.events.render();
-    else if (activeView === "transfersView") App.transfers.render();
+    if (render) render();
     else if (activeView === "submitView") App.forms.renderApiSummary();
     else App.main.renderAll();
 

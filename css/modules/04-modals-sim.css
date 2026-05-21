@@ -1,0 +1,357 @@
+/* v39 — modal global de resultado */
+#calendarResultModal.result-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 100000;
+}
+
+#calendarResultModal.result-modal.is-visible {
+  display: flex !important;
+}
+
+#calendarResultModal[aria-hidden="true"] {
+  display: none !important;
+}
+
+/* v40 — premiação das copas */
+.cup-prize-card {
+  display: grid;
+  grid-template-columns: minmax(240px, .8fr) minmax(0, 1.2fr);
+  gap: 14px;
+  align-items: center;
+  margin-bottom: 14px;
+  padding: 18px;
+  border-radius: 22px;
+  border: 1px solid rgba(251, 191, 36, .22);
+  background:
+    radial-gradient(circle at top left, rgba(251, 191, 36, .14), transparent 34%),
+    rgba(17, 28, 51, .88);
+  box-shadow: 0 18px 45px rgba(0,0,0,.18);
+}
+
+.cup-prize-card h2 {
+  margin: 6px 0;
+  font-size: clamp(24px, 3vw, 36px);
+  letter-spacing: -.04em;
+}
+
+.cup-prize-card p {
+  margin: 0;
+  color: #cbd5e1;
+  line-height: 1.45;
+}
+
+.cup-prize-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.cup-prize-grid span {
+  display: grid;
+  gap: 5px;
+  min-height: 74px;
+  align-content: center;
+  padding: 10px;
+  border-radius: 14px;
+  border: 1px solid rgba(148, 163, 184, .14);
+  background: rgba(2, 6, 23, .28);
+  color: #94a3b8;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.cup-prize-grid strong {
+  color: #fbbf24;
+  font-size: 16px;
+}
+
+@media (max-width: 980px) {
+  .cup-prize-card {
+    grid-template-columns: 1fr;
+  }
+
+  .cup-prize-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .cup-prize-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* v43 — simulador completo, confirmação de transferências e lesões no painel */
+.simulation-preview {
+  margin-top: 16px;
+  display: grid;
+  gap: 14px;
+}
+
+.sim-preview-empty,
+.sim-warning {
+  padding: 12px 14px;
+  border-radius: 16px;
+  border: 1px solid rgba(148,163,184,.16);
+  background: rgba(2,6,23,.22);
+  color: #cbd5e1;
+  font-size: 13px;
+}
+
+.sim-warning {
+  border-color: rgba(245,158,11,.35);
+  background: rgba(245,158,11,.10);
+  color: #fde68a;
+  font-weight: 800;
+}
+
+.sim-preview-summary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.sim-preview-summary article {
+  padding: 12px;
+  border-radius: 16px;
+  border: 1px solid rgba(148,163,184,.14);
+  background: rgba(15,23,42,.56);
+}
+
+.sim-preview-summary span {
+  display: block;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  font-size: 10px;
+  font-weight: 900;
+}
+
+.sim-preview-summary strong {
+  display: block;
+  margin-top: 4px;
+  font-size: 24px;
+}
+
+.sim-preview-grid {
+  display: grid;
+  gap: 12px;
+}
+
+.sim-competition-block {
+  padding: 12px;
+  border-radius: 18px;
+  border: 1px solid rgba(148,163,184,.16);
+  background: rgba(17,28,51,.78);
+}
+
+.sim-competition-header,
+.sim-match-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+}
+
+.sim-competition-header {
+  margin-bottom: 10px;
+}
+
+.sim-competition-header span {
+  color: #a78bfa;
+  font-weight: 900;
+}
+
+.sim-match-list {
+  display: grid;
+  gap: 8px;
+}
+
+.sim-match-row {
+  grid-template-columns: minmax(220px, 1fr) minmax(180px, .7fr) auto;
+  padding: 10px;
+  border-radius: 14px;
+  background: rgba(2,6,23,.25);
+  border: 1px solid rgba(148,163,184,.10);
+}
+
+.sim-match-row.is-cpu {
+  border-color: rgba(34,197,94,.22);
+}
+
+.sim-match-row.has-human {
+  border-color: rgba(245,158,11,.25);
+}
+
+.sim-match-row.is-done {
+  opacity: .65;
+}
+
+.sim-match-row small {
+  color: #94a3b8;
+}
+
+.sim-match-row b {
+  color: #e5e7eb;
+  font-size: 12px;
+  text-align: right;
+}
+
+.transfer-confirmation-row {
+  margin-top: 12px;
+  padding: 12px 14px;
+  border-radius: 16px;
+  border: 1px solid rgba(59,130,246,.25);
+  background: rgba(37,99,235,.10);
+}
+
+.coach-injuries-card {
+  border-color: rgba(248,113,113,.24);
+  background:
+    radial-gradient(circle at top left, rgba(239,68,68,.10), transparent 36%),
+    rgba(17,28,51,.86);
+}
+
+.coach-injury-list {
+  display: grid;
+  gap: 10px;
+}
+
+.injury-chip {
+  display: grid;
+  gap: 4px;
+  padding: 11px 12px;
+  border-radius: 14px;
+  background: rgba(127,29,29,.24);
+  border: 1px solid rgba(248,113,113,.24);
+}
+
+.injury-chip strong {
+  color: #fecaca;
+}
+
+.injury-chip span {
+  color: #cbd5e1;
+}
+
+.injury-chip b {
+  color: #fca5a5;
+  font-size: 12px;
+}
+
+@media (max-width: 760px) {
+  .sim-preview-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .sim-match-row {
+    grid-template-columns: 1fr;
+  }
+
+  .sim-match-row b {
+    text-align: left;
+  }
+}
+
+/* v44 — simulador ancorado no banco e auditoria visual */
+.sim-preview-shell {
+  display: grid;
+  gap: 14px;
+  padding: 14px;
+  border-radius: 22px;
+  border: 1px solid rgba(96,165,250,.20);
+  background:
+    radial-gradient(circle at top left, rgba(59,130,246,.14), transparent 36%),
+    radial-gradient(circle at top right, rgba(124,58,237,.12), transparent 34%),
+    rgba(2,6,23,.20);
+}
+
+.sim-preview-shell.is-loading {
+  color: #cbd5e1;
+}
+
+.sim-preview-title {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.sim-preview-title strong {
+  font-size: 18px;
+  color: #f8fafc;
+}
+
+.sim-preview-title span {
+  color: #94a3b8;
+  font-size: 13px;
+  text-align: right;
+}
+
+.sim-week-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.sim-week-pills button {
+  border: 1px solid rgba(167,139,250,.35);
+  background: rgba(124,58,237,.16);
+  color: #ddd6fe;
+  border-radius: 999px;
+  padding: 8px 12px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.sim-ok {
+  padding: 12px 14px;
+  border-radius: 16px;
+  border: 1px solid rgba(34,197,94,.32);
+  background: rgba(34,197,94,.12);
+  color: #bbf7d0;
+  font-weight: 900;
+}
+
+.sim-match-main {
+  display: grid;
+  gap: 3px;
+}
+
+.sim-match-main strong {
+  color: #f8fafc;
+}
+
+.sim-match-main strong span {
+  color: #94a3b8;
+  padding: 0 6px;
+}
+
+.sim-match-row b {
+  min-width: 120px;
+}
+
+.sim-match-row.is-cpu:not(.is-done) {
+  box-shadow: inset 3px 0 0 rgba(34,197,94,.9);
+}
+
+.sim-match-row.has-human:not(.is-done) {
+  box-shadow: inset 3px 0 0 rgba(245,158,11,.95);
+}
+
+@media (max-width: 760px) {
+  .sim-preview-title {
+    display: grid;
+  }
+
+  .sim-preview-title span {
+    text-align: left;
+  }
+
+  .sim-preview-shell {
+    padding: 10px;
+    border-radius: 18px;
+  }
+}
+

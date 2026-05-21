@@ -202,10 +202,10 @@ App.calendar = {
     const done = events.filter(event => App.calendar.getStatusClass(event) === "done").length;
 
     summary.innerHTML = `
-      <article class="summary-card"><span>Início</span><strong>19/05/2026</strong></article>
-      <article class="summary-card"><span>Jogos</span><strong>${events.length}</strong></article>
-      <article class="summary-card"><span>Realizados</span><strong>${done}</strong></article>
-      <article class="summary-card"><span>Técnicos pendentes</span><strong>${pendingTech}</strong></article>
+      ${App.ui.summaryCard("Início", "19/05/2026")}
+      ${App.ui.summaryCard("Jogos", events.length)}
+      ${App.ui.summaryCard("Realizados", done)}
+      ${App.ui.summaryCard("Técnicos pendentes", pendingTech)}
     `;
   },
 

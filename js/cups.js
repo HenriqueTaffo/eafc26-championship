@@ -222,10 +222,10 @@ App.cups = {
     const waiting = cupEvents.filter(event => String(event.status || "").includes("Aguardando")).length;
 
     summary.innerHTML = `
-      <article class="summary-card"><span>Jogos de copa</span><strong>${cupEvents.length}</strong></article>
-      <article class="summary-card"><span>Finalizados</span><strong>${finished}</strong></article>
-      <article class="summary-card"><span>Pendentes</span><strong>${pending}</strong></article>
-      <article class="summary-card"><span>Aguardando chave</span><strong>${waiting}</strong></article>
+      ${App.ui.summaryCard("Jogos de copa", cupEvents.length)}
+      ${App.ui.summaryCard("Finalizados", finished)}
+      ${App.ui.summaryCard("Pendentes", pending)}
+      ${App.ui.summaryCard("Aguardando chave", waiting)}
     `;
   },
 
