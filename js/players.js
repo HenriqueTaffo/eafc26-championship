@@ -302,6 +302,39 @@ App.players = {
     const injuries = App.players.getActiveInjuriesForCoach(activeTeam.owner);
     const color = App.data.ownerColors[activeTeam.owner] || "#2563eb";
 
+    const nextMatchCard = `
+      <article class="coach-panel-card coach-next-match">
+        <div class="home-panel-header"><h2>Próximo compromisso</h2></div>
+        ${next ? `
+          <div class="coach-match-preview">
+            ${App.clubs.getMatchupHtml(next.home, next.away, "card-match")}
+            <p>${next.competition} · ${next.phase} · ${App.utils.formatDate(next.date)}</p>
+            ${App.calendar.canSubmitResult(next) ? `<button class="mini-action-button" type="button" data-open-result-modal="${next.id}">Enviar resultado</button>` : `<span class="status-pill pending">${App.calendar.formatMatchResult(next)}</span>`}
+          </div>
+        ` : `<p class="calendar-muted">Nenhum compromisso pendente encontrado.</p>`}
+      </article>
+    `;
+
+    const injuriesCard = `
+      <article class="coach-panel-card coach-injuries-card">
+        <div class="home-panel-header"><h2>Lesões ativas</h2></div>
+        ${injuries.length ? `
+          <div class="coach-injury-list">
+            ${injuries.map(event => `
+              <div class="injury-chip">
+                <strong>${App.utils.escapeHtml(event.JogadorAfetado)}</strong>
+                <span>${App.utils.escapeHtml(event.Titulo || "Lesão ativa")}</span>
+                <b>${App.events.getEventDurationLabel(event)}</b>
+              </div>
+            `).join("")}
+          </div>
+        ` : `<p class="calendar-muted">Nenhum jogador lesionado no momento.</p>`}
+      </article>
+    `;
+
+    const decisionCard = App.auth?.renderCoachDecisionCard ? App.auth.renderCoachDecisionCard(activeTeam.owner) : "";
+    const pinCard = App.auth?.renderPinChangeCard ? App.auth.renderPinChangeCard() : "";
+
     return `
       <section class="coach-dashboard" style="--coach-color:${color}">
         <article class="coach-hero-card">
@@ -330,37 +363,16 @@ App.players = {
           <article><span>Transfers hoje</span><strong>${todayCount}/${transferLimit}</strong><small>${transfers.length} totais válidas</small></article>
         </section>
 
-        <section class="coach-detail-grid coach-detail-grid-v53">
-          <article class="coach-panel-card coach-next-match">
-            <div class="home-panel-header"><h2>Próximo compromisso</h2></div>
-            ${next ? `
-              <div class="coach-match-preview">
-                ${App.clubs.getMatchupHtml(next.home, next.away, "card-match")}
-                <p>${next.competition} · ${next.phase} · ${App.utils.formatDate(next.date)}</p>
-                ${App.calendar.canSubmitResult(next) ? `<button class="mini-action-button" type="button" data-open-result-modal="${next.id}">Enviar resultado</button>` : `<span class="status-pill pending">${App.calendar.formatMatchResult(next)}</span>`}
-              </div>
-            ` : `<p class="calendar-muted">Nenhum compromisso pendente encontrado.</p>`}
-          </article>
+        <section class="coach-layout-v54">
+          <div class="coach-top-row-v54">
+            ${nextMatchCard}
+            ${injuriesCard}
+          </div>
 
-          <article class="coach-panel-card coach-injuries-card">
-            <div class="home-panel-header"><h2>Lesões ativas</h2></div>
-            ${injuries.length ? `
-              <div class="coach-injury-list">
-                ${injuries.map(event => `
-                  <div class="injury-chip">
-                    <strong>${App.utils.escapeHtml(event.JogadorAfetado)}</strong>
-                    <span>${App.utils.escapeHtml(event.Titulo || "Lesão ativa")}</span>
-                    <b>${App.events.getEventDurationLabel(event)}</b>
-                  </div>
-                `).join("")}
-              </div>
-            ` : `<p class="calendar-muted">Nenhum jogador lesionado no momento.</p>`}
-          </article>
+          ${decisionCard ? `<div class="coach-full-row-v54">${decisionCard}</div>` : ""}
 
-          ${App.auth?.renderCoachDecisionCard ? App.auth.renderCoachDecisionCard(activeTeam.owner) : ""}
-
-          <section class="coach-lower-layout">
-            <div class="coach-lower-stack">
+          <div class="coach-columns-v54">
+            <div class="coach-column-v54">
               <article class="coach-panel-card coach-war-room-card">
                 <div class="home-panel-header">
                   <h2>Sala de guerra</h2>
@@ -378,7 +390,7 @@ App.players = {
               </article>
             </div>
 
-            <div class="coach-lower-stack">
+            <div class="coach-column-v54">
               <article class="coach-panel-card coach-market-card">
                 <div class="home-panel-header">
                   <h2>Mercado do técnico</h2>
@@ -387,10 +399,10 @@ App.players = {
                 ${App.players.renderCoachTransferDeck(transfers)}
               </article>
 
-              ${App.auth?.renderPinChangeCard ? App.auth.renderPinChangeCard() : ""}
+              ${pinCard}
             </div>
-          </section>
-        </section>        </section>
+          </div>
+        </section>
       </section>
     `;
   },
