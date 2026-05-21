@@ -412,7 +412,6 @@ as $$
 declare
   v_manager record;
   v_login jsonb;
-  v_result_table regclass;
   v_contract record;
   v_result record;
   v_result_key text;
@@ -421,6 +420,7 @@ declare
   v_is_home boolean;
   v_hit boolean;
   v_created integer := 0;
+  v_results jsonb;
 begin
   select id, display_name
     into v_manager
@@ -436,23 +436,7 @@ begin
     return jsonb_build_object('ok', false, 'message', 'Login do tecnico invalido.');
   end if;
 
-  select c.oid::regclass
-    into v_result_table
-  from pg_class c
-  join pg_namespace n on n.oid = c.relnamespace
-  where c.relkind = 'r'
-    and n.nspname = 'public'
-    and exists (select 1 from pg_attribute a where a.attrelid = c.oid and a.attname = 'Mandante' and not a.attisdropped)
-    and exists (select 1 from pg_attribute a where a.attrelid = c.oid and a.attname = 'Visitante' and not a.attisdropped)
-    and exists (select 1 from pg_attribute a where a.attrelid = c.oid and a.attname = 'GolsMandante' and not a.attisdropped)
-    and exists (select 1 from pg_attribute a where a.attrelid = c.oid and a.attname = 'GolsVisitante' and not a.attisdropped)
-    and exists (select 1 from pg_attribute a where a.attrelid = c.oid and a.attname = 'Status' and not a.attisdropped)
-  order by c.relname
-  limit 1;
-
-  if v_result_table is null then
-    return jsonb_build_object('ok', false, 'message', 'Tabela de resultados nao encontrada.');
-  end if;
+  v_results := coalesce(public.app_get_data()::jsonb -> 'results', '[]'::jsonb);
 
   for v_contract in
     select *
@@ -461,17 +445,30 @@ begin
       and status = 'active'
       and claims_used < max_claims
   loop
-    for v_result in execute format(
-      'select *, concat_ws(''|'', coalesce("Mandante"::text, ''''), coalesce("Visitante"::text, ''''), coalesce("GolsMandante"::text, ''''), coalesce("GolsVisitante"::text, '''')) as result_key
-         from %s
-        where lower("Status"::text) = lower(''aprovado'')
-          and (lower("Mandante"::text) = lower($1) or lower("Visitante"::text) = lower($1))',
-      v_result_table
-    ) using v_contract.club_name
+    for v_result in
+      select *
+      from jsonb_to_recordset(v_results) as r(
+        "Mandante" text,
+        "Visitante" text,
+        "GolsMandante" integer,
+        "GolsVisitante" integer,
+        "Status" text
+      )
+      where lower(coalesce(r."Status", '')) = lower('aprovado')
+        and (
+          lower(coalesce(r."Mandante", '')) = lower(v_contract.club_name)
+          or lower(coalesce(r."Visitante", '')) = lower(v_contract.club_name)
+        )
     loop
       exit when v_contract.claims_used >= v_contract.max_claims;
 
-      v_result_key := v_result.result_key;
+      v_result_key := concat_ws(
+        '|',
+        coalesce(v_result."Mandante"::text, ''),
+        coalesce(v_result."Visitante"::text, ''),
+        coalesce(v_result."GolsMandante"::text, ''),
+        coalesce(v_result."GolsVisitante"::text, '')
+      );
       if exists (
         select 1
         from public.sponsorship_rewards
@@ -543,7 +540,6 @@ language plpgsql
 security definer
 as $$
 declare
-  v_result_table regclass;
   v_contract record;
   v_result record;
   v_result_key text;
@@ -552,24 +548,9 @@ declare
   v_is_home boolean;
   v_hit boolean;
   v_created integer := 0;
+  v_results jsonb;
 begin
-  select c.oid::regclass
-    into v_result_table
-  from pg_class c
-  join pg_namespace n on n.oid = c.relnamespace
-  where c.relkind = 'r'
-    and n.nspname = 'public'
-    and exists (select 1 from pg_attribute a where a.attrelid = c.oid and a.attname = 'Mandante' and not a.attisdropped)
-    and exists (select 1 from pg_attribute a where a.attrelid = c.oid and a.attname = 'Visitante' and not a.attisdropped)
-    and exists (select 1 from pg_attribute a where a.attrelid = c.oid and a.attname = 'GolsMandante' and not a.attisdropped)
-    and exists (select 1 from pg_attribute a where a.attrelid = c.oid and a.attname = 'GolsVisitante' and not a.attisdropped)
-    and exists (select 1 from pg_attribute a where a.attrelid = c.oid and a.attname = 'Status' and not a.attisdropped)
-  order by c.relname
-  limit 1;
-
-  if v_result_table is null then
-    return jsonb_build_object('ok', false, 'message', 'Tabela de resultados nao encontrada.', 'created', 0);
-  end if;
+  v_results := coalesce(public.app_get_data()::jsonb -> 'results', '[]'::jsonb);
 
   for v_contract in
     select *
@@ -577,17 +558,30 @@ begin
     where status = 'active'
       and claims_used < max_claims
   loop
-    for v_result in execute format(
-      'select *, concat_ws(''|'', coalesce("Mandante"::text, ''''), coalesce("Visitante"::text, ''''), coalesce("GolsMandante"::text, ''''), coalesce("GolsVisitante"::text, '''')) as result_key
-         from %s
-        where lower("Status"::text) = lower(''aprovado'')
-          and (lower("Mandante"::text) = lower($1) or lower("Visitante"::text) = lower($1))',
-      v_result_table
-    ) using v_contract.club_name
+    for v_result in
+      select *
+      from jsonb_to_recordset(v_results) as r(
+        "Mandante" text,
+        "Visitante" text,
+        "GolsMandante" integer,
+        "GolsVisitante" integer,
+        "Status" text
+      )
+      where lower(coalesce(r."Status", '')) = lower('aprovado')
+        and (
+          lower(coalesce(r."Mandante", '')) = lower(v_contract.club_name)
+          or lower(coalesce(r."Visitante", '')) = lower(v_contract.club_name)
+        )
     loop
       exit when v_contract.claims_used >= v_contract.max_claims;
 
-      v_result_key := v_result.result_key;
+      v_result_key := concat_ws(
+        '|',
+        coalesce(v_result."Mandante"::text, ''),
+        coalesce(v_result."Visitante"::text, ''),
+        coalesce(v_result."GolsMandante"::text, ''),
+        coalesce(v_result."GolsVisitante"::text, '')
+      );
       if exists (
         select 1
         from public.sponsorship_rewards
