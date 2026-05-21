@@ -6012,3 +6012,124 @@ body {
     grid-template-columns: 1fr;
   }
 }
+
+/* v55 — correção real: fluxo único no Painel do Técnico, sem buracos */
+.coach-layout-v54 {
+  display: grid !important;
+  gap: 18px !important;
+}
+
+.coach-columns-v54 {
+  display: none !important;
+}
+
+.coach-flow-v55 {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 18px;
+  width: 100%;
+}
+
+.coach-flow-v55 > .coach-panel-card,
+.coach-flow-v55 > .pin-change-card {
+  width: 100%;
+  max-width: none;
+  min-height: 0 !important;
+  height: auto !important;
+  align-self: start;
+}
+
+/* Cards internos aproveitam largura total sem criar vazio lateral */
+.coach-flow-v55 .coach-alert-deck,
+.coach-flow-v55 .coach-event-stack {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.coach-flow-v55 .coach-market-header {
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+}
+
+.coach-flow-v55 .coach-transfer-timeline {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+/* Central de decisões sem caixa fantasma */
+.coach-decision-card,
+.coach-decision-locked-card {
+  min-height: 0 !important;
+  height: auto !important;
+}
+
+.coach-decision-card .coach-empty-state,
+.decision-empty-visible {
+  min-height: 0 !important;
+  display: grid !important;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 12px;
+  align-items: center;
+  padding: 14px 16px;
+  border-radius: 18px;
+}
+
+.decision-empty-visible > span {
+  font-size: 28px;
+  line-height: 1;
+}
+
+.decision-empty-visible strong {
+  display: block;
+  color: #f8fafc;
+}
+
+.decision-empty-visible p {
+  margin: 5px 0 0;
+  color: #94a3b8;
+}
+
+/* PIN fica integrado e sem desalinhamento */
+.coach-flow-v55 .pin-change-card {
+  grid-column: 1 / -1 !important;
+}
+
+.pin-change-form {
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) auto !important;
+  gap: 12px;
+  align-items: end;
+}
+
+.pin-change-form label {
+  display: grid !important;
+  gap: 7px;
+  min-width: 0;
+  color: #cbd5e1;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.pin-change-form input {
+  width: 100% !important;
+  min-width: 0 !important;
+  box-sizing: border-box;
+  height: 44px;
+}
+
+.pin-change-form .secondary-button {
+  min-height: 44px;
+  white-space: nowrap;
+}
+
+@media (max-width: 980px) {
+  .coach-top-row-v54,
+  .coach-flow-v55 .coach-alert-deck,
+  .coach-flow-v55 .coach-event-stack,
+  .coach-flow-v55 .coach-market-header,
+  .coach-flow-v55 .coach-transfer-timeline,
+  .pin-change-form {
+    grid-template-columns: 1fr !important;
+  }
+}

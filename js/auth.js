@@ -300,15 +300,17 @@ App.auth = {
 
     if (!session) {
       return `
-        <article class="coach-panel-card coach-decision-card decision-locked">
+        <article class="coach-panel-card coach-decision-card coach-decision-locked-card">
           <div class="home-panel-header">
             <h2>Central de decisões</h2>
             <span class="coach-section-kicker">Login necessário</span>
           </div>
-          <div class="coach-empty-state">
+          <div class="coach-empty-state decision-empty-visible">
             <span>🔐</span>
-            <strong>Decisões privadas do técnico</strong>
-            <p>Faça login para ver e responder os eventos de Sim/Não. As consequências aparecem publicamente no Jornal da Liga.</p>
+            <div>
+              <strong>Decisões privadas do técnico</strong>
+              <p>Faça login para ver e responder os eventos de Sim/Não. As consequências aparecem publicamente no Jornal da Liga.</p>
+            </div>
           </div>
         </article>
       `;
@@ -316,15 +318,17 @@ App.auth = {
 
     if (App.utils.normalizeText(session.managerName) !== App.utils.normalizeText(owner)) {
       return `
-        <article class="coach-panel-card coach-decision-card decision-locked">
+        <article class="coach-panel-card coach-decision-card coach-decision-locked-card">
           <div class="home-panel-header">
             <h2>Central de decisões</h2>
             <span class="coach-section-kicker">Privado</span>
           </div>
-          <div class="coach-empty-state">
+          <div class="coach-empty-state decision-empty-visible">
             <span>🧤</span>
-            <strong>Painel protegido</strong>
-            <p>Você está logado como ${App.utils.escapeHtml(session.managerName)}. Para decidir eventos de ${App.utils.escapeHtml(owner)}, entre com o PIN desse técnico.</p>
+            <div>
+              <strong>Painel protegido</strong>
+              <p>Você está logado como ${App.utils.escapeHtml(session.managerName)}. Para decidir eventos de ${App.utils.escapeHtml(owner)}, entre com o PIN desse técnico.</p>
+            </div>
           </div>
         </article>
       `;
@@ -348,10 +352,12 @@ App.auth = {
             ${pending.map(item => App.auth.renderDecisionCard(item)).join("")}
           </div>
         ` : `
-          <div class="coach-empty-state compact">
+          <div class="coach-empty-state decision-empty-visible">
             <span>🗞️</span>
-            <strong>Nenhuma decisão pendente</strong>
-            <p>Quando o sorteio automático cair para ${App.utils.escapeHtml(session.managerName)}, as opções aparecem aqui.</p>
+            <div>
+              <strong>Nenhuma decisão pendente</strong>
+              <p>Quando o sorteio automático cair para ${App.utils.escapeHtml(session.managerName)}, as opções aparecem aqui.</p>
+            </div>
           </div>
         `}
 

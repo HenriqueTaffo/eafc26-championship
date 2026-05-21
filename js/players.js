@@ -371,36 +371,32 @@ App.players = {
 
           ${decisionCard ? `<div class="coach-full-row-v54">${decisionCard}</div>` : ""}
 
-          <div class="coach-columns-v54">
-            <div class="coach-column-v54">
-              <article class="coach-panel-card coach-war-room-card">
-                <div class="home-panel-header">
-                  <h2>Sala de guerra</h2>
-                  <span class="coach-section-kicker">${alerts.length} alerta(s)</span>
-                </div>
-                ${App.players.renderCoachAlertDeck(alerts)}
-              </article>
+          <div class="coach-flow-v55">
+            <article class="coach-panel-card coach-war-room-card">
+              <div class="home-panel-header">
+                <h2>Sala de guerra</h2>
+                <span class="coach-section-kicker">${alerts.length} alerta(s)</span>
+              </div>
+              ${App.players.renderCoachAlertDeck(alerts)}
+            </article>
 
-              <article class="coach-panel-card coach-event-radar-card">
-                <div class="home-panel-header">
-                  <h2>Radar de ocorrências</h2>
-                  <span class="coach-section-kicker">${events.length} evento(s)</span>
-                </div>
-                ${App.players.renderCoachEventDeck(events)}
-              </article>
-            </div>
+            <article class="coach-panel-card coach-market-card">
+              <div class="home-panel-header">
+                <h2>Mercado do técnico</h2>
+                <span class="coach-section-kicker">${transfers.length} contratação(ões)</span>
+              </div>
+              ${App.players.renderCoachTransferDeck(transfers)}
+            </article>
 
-            <div class="coach-column-v54">
-              <article class="coach-panel-card coach-market-card">
-                <div class="home-panel-header">
-                  <h2>Mercado do técnico</h2>
-                  <span class="coach-section-kicker">${transfers.length} contratação(ões)</span>
-                </div>
-                ${App.players.renderCoachTransferDeck(transfers)}
-              </article>
+            <article class="coach-panel-card coach-event-radar-card">
+              <div class="home-panel-header">
+                <h2>Radar de ocorrências</h2>
+                <span class="coach-section-kicker">${events.length} evento(s)</span>
+              </div>
+              ${App.players.renderCoachEventDeck(events)}
+            </article>
 
-              ${pinCard}
-            </div>
+            ${pinCard}
           </div>
         </section>
       </section>
