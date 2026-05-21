@@ -6255,18 +6255,18 @@ body {
   }
 }
 
-/* v58 — correção APENAS DESKTOP do Painel do Técnico
-   Mobile preservado. Nada abaixo de 1100px é alterado aqui. */
+/* v59 — correção desktop estável
+   Baseada no v57, sem usar o layout quebrado do v58.
+   Mobile preservado: só aplica acima de 1100px. */
 @media (min-width: 1101px) {
-  /* Mantém o painel com largura confortável e consistente */
+  /* Mantém largura confortável sem estourar o desenho */
   #playersView .coach-tabs,
-  #playersView .coach-dashboard,
   #playersView .summary,
+  #playersView .coach-dashboard,
   #playersView .coach-comparison,
-  #playersView .stats-grid,
-  #playersView .footer-note {
-    width: min(1180px, 100%);
-    max-width: 1180px;
+  #playersView .stats-grid {
+    width: min(1320px, 100%);
+    max-width: 1320px;
     margin-left: auto;
     margin-right: auto;
   }
@@ -6277,22 +6277,23 @@ body {
     gap: 18px !important;
   }
 
+  /* Topo em 2 colunas, mas sem “buraco” visível: cards esticam na mesma altura */
   #playersView .coach-top-row-v54 {
     display: grid !important;
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important;
     gap: 18px !important;
-    align-items: start !important;
+    align-items: stretch !important;
   }
 
-  #playersView .coach-panel-card {
+  #playersView .coach-top-row-v54 > .coach-panel-card {
+    height: 100% !important;
     min-height: 0 !important;
-    height: auto !important;
-    align-self: start !important;
   }
 
-  /* Central de decisões: sem caixa fantasma gigante */
+  /* Central de decisões compacta, sem caixa fantasma */
   #playersView .coach-decision-card {
     min-height: 0 !important;
+    height: auto !important;
     padding: 18px !important;
   }
 
@@ -6304,10 +6305,9 @@ body {
     align-items: center !important;
     gap: 12px !important;
     padding: 14px 16px !important;
-    border-radius: 18px !important;
   }
 
-  #playersView .coach-decision-card .coach-empty-state span,
+  #playersView .coach-decision-card .coach-empty-state > span,
   #playersView .decision-empty-visible > span {
     font-size: 26px !important;
     line-height: 1 !important;
@@ -6316,106 +6316,115 @@ body {
   #playersView .coach-decision-card .coach-empty-state p,
   #playersView .decision-empty-visible p {
     margin: 4px 0 0 !important;
-    line-height: 1.35 !important;
   }
 
-  /* Área abaixo da decisão: desktop em 2 colunas controladas */
+  /* Parte inferior em fluxo único: sem colunas de alturas diferentes, sem buracos */
+  #playersView .coach-columns-v54 {
+    display: none !important;
+  }
+
   #playersView .coach-flow-v55 {
     display: grid !important;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important;
+    grid-template-columns: 1fr !important;
     gap: 18px !important;
-    align-items: start !important;
     width: 100% !important;
+    align-items: start !important;
   }
 
-  #playersView .coach-flow-v55 > .coach-war-room-card {
-    grid-column: 1 !important;
-    grid-row: 1 !important;
-  }
-
-  #playersView .coach-flow-v55 > .coach-market-card {
-    grid-column: 2 !important;
-    grid-row: 1 / span 2 !important;
-  }
-
-  #playersView .coach-flow-v55 > .coach-event-radar-card {
-    grid-column: 1 !important;
-    grid-row: 2 !important;
-  }
-
+  #playersView .coach-flow-v55 > .coach-panel-card,
   #playersView .coach-flow-v55 > .pin-change-card {
-    grid-column: 2 !important;
-    grid-row: 3 !important;
+    grid-column: 1 / -1 !important;
     width: 100% !important;
     max-width: none !important;
+    height: auto !important;
+    min-height: 0 !important;
+    align-self: start !important;
   }
 
-  /* Mercado: fica alto, mas sem explodir o layout inteiro */
-  #playersView .coach-market-card {
-    max-height: 620px !important;
-    overflow: hidden !important;
-  }
-
-  #playersView .coach-market-card .coach-transfer-timeline {
-    max-height: 430px !important;
-    overflow-y: auto !important;
-    overflow-x: hidden !important;
-    padding-right: 4px !important;
-    display: grid !important;
-    grid-template-columns: 1fr !important;
-    gap: 10px !important;
-  }
-
-  #playersView .coach-market-card .coach-market-header,
+  /* Os cards continuam ricos internamente, sem virar blocão pobre */
   #playersView .coach-flow-v55 .coach-alert-deck,
   #playersView .coach-flow-v55 .coach-event-stack {
     display: grid !important;
-    grid-template-columns: 1fr !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
     gap: 10px !important;
   }
 
-  /* PIN: card compacto, vertical e alinhado. Sem form espremido em linha gigante. */
+  #playersView .coach-flow-v55 .coach-market-header {
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 10px !important;
+  }
+
+  #playersView .coach-flow-v55 .coach-transfer-timeline {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 10px !important;
+    max-height: none !important;
+    overflow: visible !important;
+    padding-right: 0 !important;
+  }
+
+  #playersView .coach-market-card {
+    max-height: none !important;
+    overflow: visible !important;
+  }
+
+  /* PIN: full-width no card, mas formulário compacto dentro dele */
   #playersView .pin-change-card {
     padding: 18px !important;
-    min-height: 0 !important;
-    height: auto !important;
   }
 
   #playersView .pin-change-form {
     display: grid !important;
-    grid-template-columns: 1fr !important;
-    gap: 10px !important;
-    align-items: stretch !important;
-    margin-top: 12px !important;
+    grid-template-columns: minmax(0, 420px) minmax(0, 420px) minmax(0, 420px) auto !important;
+    gap: 12px !important;
+    align-items: end !important;
+    width: 100% !important;
   }
 
   #playersView .pin-change-form label {
     display: grid !important;
-    gap: 6px !important;
+    gap: 7px !important;
     min-width: 0 !important;
   }
 
   #playersView .pin-change-form input {
     width: 100% !important;
     min-width: 0 !important;
-    height: 42px !important;
+    height: 44px !important;
     box-sizing: border-box !important;
   }
 
   #playersView .pin-change-form .secondary-button {
-    width: 100% !important;
     height: 44px !important;
     min-height: 44px !important;
-    margin-top: 2px !important;
+    padding: 0 18px !important;
     white-space: nowrap !important;
   }
 
   #playersView .pin-change-form .app-message {
-    grid-column: 1 !important;
+    grid-column: 1 / -1 !important;
   }
 
-  /* Termômetro e blocos finais entram alinhados com o painel */
-  #playersView .coach-comparison {
-    margin-top: 18px !important;
+  /* Eventos no desktop: não força altura de linhas */
+  #eventsView .event-card-grid-v45 {
+    align-items: start !important;
+  }
+
+  #eventsView .event-card-v45 {
+    height: auto !important;
+    min-height: 0 !important;
+    align-self: start !important;
+  }
+}
+
+@media (min-width: 1101px) and (max-width: 1350px) {
+  #playersView .pin-change-form {
+    grid-template-columns: 1fr 1fr !important;
+  }
+
+  #playersView .pin-change-form .secondary-button {
+    grid-column: 1 / -1 !important;
+    width: 100% !important;
   }
 }
