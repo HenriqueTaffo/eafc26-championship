@@ -707,6 +707,52 @@
   text-align: left;
 }
 
+.ea-rating-photo,
+.scout-photo {
+  display: grid;
+  flex: 0 0 auto;
+  width: 42px;
+  height: 42px;
+  overflow: hidden;
+  place-items: center;
+  border: 1px solid rgba(148, 163, 184, .18);
+  border-radius: 999px;
+  background: rgba(15, 23, 42, .65);
+}
+
+.scout-photo {
+  margin-bottom: 10px;
+}
+
+.ea-rating-photo img,
+.scout-photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.ea-rating-photo i,
+.scout-photo i {
+  color: #bfdbfe;
+  font-style: normal;
+  font-weight: 900;
+}
+
+.scout-list > div {
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+}
+
+.scout-list .scout-photo {
+  margin-bottom: 0;
+}
+
+.scout-list p {
+  margin: 0;
+}
+
 .ea-rating-option:hover {
   border-color: rgba(56, 189, 248, .36);
 }

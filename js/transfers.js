@@ -737,6 +737,9 @@ App.transfers = {
 
     target.innerHTML = ratings.map(player => `
       <button class="ea-rating-option" type="button" data-ea-rating="${App.utils.escapeHtml(player.id || player.ea_id || player.name)}">
+        <span class="ea-rating-photo">
+          ${player.avatar_url ? `<img src="${App.utils.escapeHtml(player.avatar_url)}" alt="" loading="lazy" />` : `<i>${App.utils.escapeHtml(String(player.name || "?").charAt(0))}</i>`}
+        </span>
         <span>
           <strong>${App.utils.escapeHtml(player.name || "-")}</strong>
           <small>${App.utils.escapeHtml([player.position, player.club, player.nation].filter(Boolean).join(" · "))}</small>

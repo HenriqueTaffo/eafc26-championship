@@ -27,6 +27,8 @@ create table if not exists public.ea_player_ratings (
   dribbling integer,
   defending integer,
   physical integer,
+  avatar_url text,
+  shield_url text,
   source_url text not null default 'https://www.ea.com/games/ea-sports-fc/ratings',
   source_name text not null default 'EA SPORTS FC official ratings',
   synced_at timestamptz not null default now(),
@@ -39,6 +41,12 @@ create index if not exists ea_player_ratings_name_idx
 
 create index if not exists ea_player_ratings_overall_idx
   on public.ea_player_ratings (overall desc nulls last);
+
+alter table public.ea_player_ratings
+  add column if not exists avatar_url text;
+
+alter table public.ea_player_ratings
+  add column if not exists shield_url text;
 
 create table if not exists public.league_opportunities (
   id bigserial primary key,
@@ -95,6 +103,8 @@ begin
     dribbling,
     defending,
     physical,
+    avatar_url,
+    shield_url,
     source_url,
     synced_at,
     updated_at
@@ -113,6 +123,8 @@ begin
     nullif(player ->> 'dribbling', '')::integer,
     nullif(player ->> 'defending', '')::integer,
     nullif(player ->> 'physical', '')::integer,
+    coalesce(nullif(player ->> 'avatar_url', ''), nullif(player ->> 'avatarUrl', '')),
+    coalesce(nullif(player ->> 'shield_url', ''), nullif(player ->> 'shieldUrl', '')),
     coalesce(nullif(player ->> 'source_url', ''), 'https://www.ea.com/games/ea-sports-fc/ratings'),
     now(),
     now()
@@ -131,6 +143,8 @@ begin
          dribbling = excluded.dribbling,
          defending = excluded.defending,
          physical = excluded.physical,
+         avatar_url = excluded.avatar_url,
+         shield_url = excluded.shield_url,
          source_url = excluded.source_url,
          synced_at = now(),
          updated_at = now();
@@ -167,6 +181,8 @@ as $$
       dribbling,
       defending,
       physical,
+      avatar_url,
+      shield_url,
       source_url,
       synced_at
     from public.ea_player_ratings
@@ -202,7 +218,9 @@ as $$
           r.name as player_name,
           r.club,
           r.position,
-          r.overall
+          r.overall,
+          r.avatar_url,
+          r.shield_url
         from public.league_opportunities o
         left join public.ea_player_ratings r on r.id = o.player_rating_id
         where o.status = 'open'
