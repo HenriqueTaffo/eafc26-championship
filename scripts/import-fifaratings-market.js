@@ -16,11 +16,13 @@ const PLAYER_SLUG_ALIASES = {
   "rodrigo-de-paul": ["rodrigo-javier-de-paul"],
   "kyle-walker": ["kyle-andrew-walker"],
   "n-golo-kante": ["ngolo-kante"],
+  "malcom": ["malcom-filipe-silva-de-oliveira"],
   "neymar": ["neymar-jr"],
   "ronaldo": ["cristiano-ronaldo"]
 };
 const PLAYER_SLUG_REJECTS = {
-  "kyle-walker": ["kyle-walker-peters"]
+  "kyle-walker": ["kyle-walker-peters"],
+  "malcom": ["malcom-adu-ares-djalo"]
 };
 const MANUAL_RATINGS = {
   "kyle-walker": {
@@ -120,7 +122,7 @@ function parseFifaRatingsPage(html, fallbackName, url) {
   const titleSlug = slugify(title);
   if (!overall || !avatarUrl || /women|femin/i.test(html)) return null;
   if ((PLAYER_SLUG_REJECTS[fallbackSlug] || []).includes(titleSlug)) return null;
-  if (similarity(title, fallbackName) < 0.45) return null;
+  if (similarity(title, fallbackName) < 0.45 && !titleSlug.startsWith(`${fallbackSlug}-`)) return null;
 
   return {
     ea_id: `fifaratings:${slugify(title)}`,
