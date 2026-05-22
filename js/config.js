@@ -6,8 +6,8 @@ App.config = {
   SUPABASE_URL: "https://fdippspwpugnxwxmjnqf.supabase.co",
   SUPABASE_PUBLISHABLE_KEY: "sb_publishable_9YyrYEk9jH5CuatQK_Ejpg_VfQq6qCK",
   transferBudget: 65000000,
-  homeMatchBonus: 1250000,
-  winBonus: 500000,
+  homeMatchBonus: 1500000,
+  winBonus: 1250000,
   baseDailyTransferLimit: 3,
   eventSlots: [9, 12, 15, 18],
   calendarConfig: {

@@ -324,8 +324,8 @@ App.transfers = {
 
   getTransferRate(overall) {
     if (overall >= 89) return 0.25;
-    if (overall >= 84) return 0.20;
-    if (overall >= 80) return 0.15;
+    if (overall >= 84) return 0.15;
+    if (overall >= 80) return 0.10;
     if (overall >= 75) return 0.05;
     return 0;
   },

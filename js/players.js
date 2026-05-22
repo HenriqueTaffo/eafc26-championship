@@ -21,13 +21,16 @@ App.players = {
     const base = Number(budget.baseBudget ?? App.config.transferBudget);
     const homeBonus = Number(budget.homeBonus || 0);
     const winBonus = Number(budget.winBonusValue || budget.winBonus || 0);
+    const weeklyIncome = Number(budget.weeklyIncome || 0);
+    const formBonus = Number(budget.formBonus || 0);
+    const cupRebalanceBonus = Number(budget.cupRebalanceBonus || 0);
     const eventBonus = Number(budget.eventTotal || budget.eventBonus || 0);
     const sponsorshipRewards = Number(budget.sponsorshipRewards || 0);
     const totalAccumulated = Number(budget.totalBudget ?? (base + homeBonus + winBonus + eventBonus));
     const spentValue = Number(budget.spentTotal ?? spent ?? 0);
     const available = Number(budget.remainingBudget ?? (totalAccumulated - spentValue));
 
-    return { base, homeBonus, winBonus, eventBonus, sponsorshipRewards, totalAccumulated, spent: spentValue, available };
+    return { base, homeBonus, winBonus, weeklyIncome, formBonus, cupRebalanceBonus, eventBonus, sponsorshipRewards, totalAccumulated, spent: spentValue, available };
   },
 
   getCoachStatementEntries(owner, budget, breakdown) {
@@ -79,6 +82,30 @@ App.players = {
       amount: breakdown.winBonus,
       dateLabel: "Resultados aprovados",
       rank: 40
+    });
+
+    pushEntry({
+      label: "Receita semanal",
+      detail: "Distribuição fixa por semana ativa",
+      amount: breakdown.weeklyIncome,
+      dateLabel: "Temporada",
+      rank: 42
+    });
+
+    pushEntry({
+      label: "Bônus de campanha",
+      detail: `${Number(budget.points || 0)} ponto(s) em ${Number(budget.matchesPlayed || 0)} jogo(s)`,
+      amount: breakdown.formBonus,
+      dateLabel: "Blocos de 5 jogos",
+      rank: 44
+    });
+
+    pushEntry({
+      label: "Ajuste de copas",
+      detail: "Rebalanceamento de premiações de avanço",
+      amount: breakdown.cupRebalanceBonus,
+      dateLabel: "Copas",
+      rank: 46
     });
 
     pushEntry({

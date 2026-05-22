@@ -643,7 +643,7 @@ App.auth = {
         <div class="home-panel-header">
           <div>
             <h2>Patrocínios</h2>
-            <p class="coach-card-subtitle">Escolha até ${maxActive} contratos ativos. Cada categoria bloqueia as outras propostas da mesma linha.</p>
+            <p class="coach-card-subtitle">Escolha até ${maxActive} contratos ativos. Marcas da mesma categoria disputam espaço e podem substituir contrato com multa.</p>
           </div>
           <span class="coach-section-kicker">${active.length}/${maxActive} ativo(s)</span>
         </div>
@@ -657,16 +657,17 @@ App.auth = {
                 <small>${App.utils.escapeHtml(item.sponsor_name)} · ${Number(item.claims_used || 0)}/${Number(item.max_claims || 0)} bônus pagos · ${App.utils.formatCurrency(item.reward_value)}</small>
                 <p class="sponsor-condition-line">
                   Critério: ${App.utils.escapeHtml(App.auth.getSponsorshipConditionLabel(item))}
+                  ${Number(item.termination_fee || 0) > 0 ? ` · multa atual ${App.utils.formatCurrency(item.termination_fee)}` : ""}
                 </p>
               </div>
             `).join("")}
           </div>
         ` : `<p class="calendar-muted">Nenhum patrocinador ativo. Escolha com cuidado: as luvas são menores e o dinheiro forte depende das metas.</p>`}
 
-        ${slotsLeft > 0 && offers.length ? `
+        ${offers.length ? `
           <div class="sponsor-market-note">
             <strong>${active.length}/${maxActive} contratos ativos · ${slotsLeft} vaga(s) livre(s)</strong>
-            <span>${offers.length} proposta(s) em ${offerCategories.length} categoria(s). Ao assinar uma categoria, as concorrentes dela saem da mesa.</span>
+            <span>${offers.length} proposta(s) em ${offerCategories.length} categoria(s). Propostas da mesma categoria substituem o contrato atual e aplicam multa de rescisão.</span>
           </div>
           <div class="sponsor-category-list">
             ${offerCategories.map(category => `
@@ -682,15 +683,20 @@ App.auth = {
                       <strong>${App.utils.escapeHtml(offer.title)}</strong>
                       <em>${App.utils.escapeHtml(offer.sponsorName)}</em>
                       <p>${App.utils.escapeHtml(offer.description)}</p>
-                      <small>Luvas ${App.utils.formatCurrency(offer.signingBonus)} · ${App.utils.escapeHtml(offer.conditionLabel || "Meta cumprida")} paga ${App.utils.formatCurrency(offer.rewardValue)}</small>
-                      <button type="button" data-sponsor-offer="${App.utils.escapeHtml(offer.id)}">Assinar</button>
+                      <small>
+                        Luvas ${App.utils.formatCurrency(offer.signingBonus)} · ${App.utils.escapeHtml(offer.conditionLabel || "Meta cumprida")} paga ${App.utils.formatCurrency(offer.rewardValue)}
+                        ${offer.isReplacement ? ` · substitui ${App.utils.escapeHtml(offer.currentSponsorName || "contrato atual")} por ${App.utils.formatCurrency(offer.terminationFee || 0)}` : ""}
+                      </small>
+                      <button type="button" data-sponsor-offer="${App.utils.escapeHtml(offer.id)}" data-sponsor-fee="${Number(offer.terminationFee || 0)}" data-sponsor-replacement="${offer.isReplacement ? "true" : "false"}">
+                        ${offer.isReplacement ? "Trocar contrato" : "Assinar"}
+                      </button>
                     </article>
                   `).join("")}
                 </div>
               </section>
             `).join("")}
           </div>
-        ` : slotsLeft <= 0 ? `<p class="calendar-muted">Limite comercial preenchido. Novas propostas ficam bloqueadas enquanto houver ${maxActive} contratos ativos.</p>` : ""}
+        ` : slotsLeft <= 0 ? `<p class="calendar-muted">Limite comercial preenchido. Novas propostas aparecem quando houver categoria substituível ou vaga livre.</p>` : ""}
 
         ${rewards.length ? `
           <div class="sponsor-reward-list">
@@ -783,7 +789,12 @@ App.auth = {
 
       button.addEventListener("click", async event => {
         const offerId = event.currentTarget.dataset.sponsorOffer;
-        if (!confirm("Assinar este patrocínio? Ele ficará ativo e pagará bônus quando as metas forem cumpridas.")) return;
+        const isReplacement = event.currentTarget.dataset.sponsorReplacement === "true";
+        const fee = Number(event.currentTarget.dataset.sponsorFee || 0);
+        const message = isReplacement
+          ? `Trocar para este patrocínio? A multa de rescisão estimada é ${App.utils.formatCurrency(fee)} e será debitada do orçamento.`
+          : "Assinar este patrocínio? Ele ficará ativo e pagará bônus quando as metas forem cumpridas.";
+        if (!confirm(message)) return;
 
         try {
           event.currentTarget.disabled = true;
