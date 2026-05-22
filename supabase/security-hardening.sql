@@ -60,8 +60,71 @@ begin
     c.relname
   limit 1;
 
+  if v_transfer_table is not null then
+    return v_transfer_table;
+  end if;
+
+  v_transfer_table := coalesce(
+    to_regclass('public.transfers'),
+    to_regclass('public.transferencias'),
+    to_regclass('public.transfer_requests'),
+    to_regclass('public.transfer_submissions')
+  );
+
+  if v_transfer_table is not null then
+    return v_transfer_table;
+  end if;
+
+  select c.oid::regclass
+    into v_transfer_table
+  from pg_class c
+  join pg_namespace n on n.oid = c.relnamespace
+  where c.relkind in ('r', 'p')
+    and n.nspname = 'public'
+    and c.relname like '%transfer%'
+    and c.relname not like '%proposal%'
+    and c.relname not like '%contract%'
+    and c.relname not like '%sponsorship%'
+    and c.relname not like '%governance%'
+  order by c.relname
+  limit 1;
+
   return v_transfer_table;
 end;
+$$;
+
+create or replace function public.app_debug_transfer_tables()
+returns table (
+  table_name text,
+  columns text[]
+)
+language sql
+security definer
+stable
+set search_path = public
+as $$
+  select
+    c.relname::text as table_name,
+    array_agg(a.attname::text order by a.attnum) as columns
+  from pg_class c
+  join pg_namespace n on n.oid = c.relnamespace
+  join pg_attribute a on a.attrelid = c.oid
+  where c.relkind in ('r', 'p')
+    and n.nspname = 'public'
+    and not a.attisdropped
+    and a.attnum > 0
+    and (
+      c.relname like '%transfer%'
+      or exists (
+        select 1
+        from pg_attribute ax
+        where ax.attrelid = c.oid
+          and not ax.attisdropped
+          and lower(regexp_replace(ax.attname, '[^a-z0-9]', '', 'g')) in ('comprador', 'buyer', 'jogador', 'player')
+      )
+    )
+  group by c.relname
+  order by c.relname;
 $$;
 
 create or replace function public.app_transfer_column(

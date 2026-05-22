@@ -1235,11 +1235,17 @@
   }
 
   /* Eventos: desktop com cards alinhados e sem “vazio” por altura de linha */
-  #eventsView .event-card-grid-v45 {
+  #eventsView .event-card-grid-v45:not(.event-card-grid-v66) {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 16px;
     align-items: start !important;
+  }
+
+  #eventsView .event-card-grid-v66 {
+    display: block !important;
+    column-count: 2;
+    column-gap: 16px;
   }
 
   #eventsView .event-card-v45 {
@@ -1258,7 +1264,7 @@
     width: min(1600px, calc(100% - 96px));
   }
 
-  #eventsView .event-card-grid-v45 {
+  #eventsView .event-card-grid-v45:not(.event-card-grid-v66) {
     grid-template-columns: repeat(2, minmax(520px, 1fr));
   }
 }
@@ -1401,8 +1407,14 @@
   }
 
   /* Eventos no desktop: não força altura de linhas */
-  #eventsView .event-card-grid-v45 {
+  #eventsView .event-card-grid-v45:not(.event-card-grid-v66) {
     align-items: start !important;
+  }
+
+  #eventsView .event-card-grid-v66 {
+    display: block !important;
+    column-count: 2;
+    column-gap: 16px;
   }
 
   #eventsView .event-card-v45 {
