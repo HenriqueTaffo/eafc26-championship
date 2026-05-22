@@ -727,7 +727,10 @@ as $$
         - coalesce(sre.event_reward_total, 0)
         + coalesce(rt.reward_total, 0) as event_total,
       coalesce(rt.reward_total, 0) as sponsorship_rewards,
-      coalesce((ts.totals ->> t.manager_name)::numeric, (rb.budget ->> 'spentTotal')::numeric, 0) as spent_total,
+      coalesce((rb.budget ->> 'spentTotal')::numeric, 0) as legacy_spent_total,
+      coalesce((ts.totals ->> t.manager_name)::numeric, 0) as secure_spent_total,
+      coalesce((rb.budget ->> 'spentTotal')::numeric, 0)
+        + coalesce((ts.totals ->> t.manager_name)::numeric, 0) as spent_total,
       coalesce((rb.budget ->> 'transferLimit')::integer, 3) as transfer_limit
     from teams t
     cross join config
@@ -748,6 +751,8 @@ as $$
       'eventTotal', event_total,
       'sponsorshipRewards', sponsorship_rewards,
       'totalBudget', base_budget + home_bonus + win_bonus_value + event_total,
+      'legacySpentTotal', legacy_spent_total,
+      'secureSpentTotal', secure_spent_total,
       'spentTotal', spent_total,
       'remainingBudget', base_budget + home_bonus + win_bonus_value + event_total - spent_total,
       'transferLimit', transfer_limit,
