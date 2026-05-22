@@ -79,6 +79,18 @@ App.cups = {
     return match ? Number(match[1]) : null;
   },
 
+  cupPhasesAreCompatible(left = "", right = "") {
+    const leftPhase = App.cups.normalizeCupPhase(left);
+    const rightPhase = App.cups.normalizeCupPhase(right);
+    if (!leftPhase || !rightPhase) return false;
+    if (leftPhase === rightPhase) return true;
+    if (leftPhase.includes(rightPhase) || rightPhase.includes(leftPhase)) return true;
+
+    const leftBase = leftPhase.replace(/\bjogo\s*\d+\b/g, "").trim();
+    const rightBase = rightPhase.replace(/\bjogo\s*\d+\b/g, "").trim();
+    return Boolean(leftBase && rightBase && (leftBase === rightBase || leftBase.includes(rightBase) || rightBase.includes(leftBase)));
+  },
+
   sameCupTeams(aHome, aAway, bHome, bAway) {
     const ah = App.utils.normalizeTeamName(aHome);
     const aa = App.utils.normalizeTeamName(aAway);
@@ -238,7 +250,7 @@ App.cups = {
     dbCupEvents.forEach(dbEvent => {
       const exists = allEvents.some(event =>
         App.utils.normalizeText(event.competition) === App.utils.normalizeText(dbEvent.competition) &&
-        App.utils.normalizeText(event.phase) === App.utils.normalizeText(dbEvent.phase) &&
+        App.cups.cupPhasesAreCompatible(event.phase, dbEvent.phase) &&
         App.cups.sameCupTeams(event.home, event.away, dbEvent.home, dbEvent.away)
       );
 
