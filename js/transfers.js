@@ -590,7 +590,11 @@ App.transfers = {
     }
 
     if (preview.limitReached) {
-      messages.push(`${preview.buyer} já atingiu o limite diário (${preview.budget.transfersToday}/${preview.budget.transferLimit}).`);
+      if (Number(preview.budget.transferLimit || 0) <= 0) {
+        messages.push(`Transferências externas bloqueadas hoje para ${preview.buyer}.`);
+      } else {
+        messages.push(`${preview.buyer} já atingiu o limite diário (${preview.budget.transfersToday}/${preview.budget.transferLimit}).`);
+      }
     }
 
     if (preview.overBudget) {
