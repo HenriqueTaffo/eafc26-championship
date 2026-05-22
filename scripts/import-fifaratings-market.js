@@ -187,12 +187,12 @@ const MANUAL_RATINGS = {
     dribbling: null,
     defending: null,
     physical: null,
-    avatar_url: "https://cdn.sofifa.net/players/221/660/26_240.png",
+    avatar_url: "https://www.fifaratings.com/wp-content/uploads/lukas-klostermann-fc-rating.png",
     shield_url: null,
     card_type: "Normal",
     gender: "Men's Football",
-    source_url: "https://sofifa.com/player/221660/lukas-klostermann",
-    source_name: "EA SPORTS FC official ratings + SoFIFA headshot"
+    source_url: "https://www.fifaratings.com/lukas-klostermann",
+    source_name: "FIFA Ratings normal FC ratings"
   }
 };
 const SUPABASE_PAGE_SIZE = 1000;

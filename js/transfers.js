@@ -108,9 +108,9 @@ App.transfers = {
       nation: "Germany",
       overall: 79,
       gender: "Men's Football",
-      avatar_url: "https://cdn.sofifa.net/players/221/660/26_240.png",
-      source_url: "https://sofifa.com/player/221660/lukas-klostermann",
-      source_name: "EA SPORTS FC official ratings + SoFIFA headshot"
+      avatar_url: "https://www.fifaratings.com/wp-content/uploads/lukas-klostermann-fc-rating.png",
+      source_url: "https://www.fifaratings.com/lukas-klostermann",
+      source_name: "FIFA Ratings normal FC ratings"
     },
     "dybala": {
       name: "Paulo Dybala",
