@@ -402,19 +402,74 @@ declare
   v_type_col text;
   v_buyer_id_col text;
   v_buyer_id text;
+  v_player_name_col text;
+  v_origin_name_col text;
+  v_overall_raw_col text;
+  v_market_value_raw_col text;
+  v_final_value_raw_col text;
+  v_status_raw_col text;
+  v_type_raw_col text;
+  v_insert_cols text[] := array[]::text[];
+  v_insert_vals text[] := array[]::text[];
 begin
   v_transfer_table := public.app_ensure_transfer_table_schema();
 
   v_buyer_col := public.app_transfer_column(v_transfer_table, array['Comprador', 'buyer', 'comprador']);
   v_buyer_id_col := public.app_transfer_column(v_transfer_table, array['buyer_id', 'buyerId', 'CompradorId', 'comprador_id']);
   v_player_col := public.app_transfer_column(v_transfer_table, array['Jogador', 'player', 'jogador']);
+  v_player_name_col := public.app_transfer_column(v_transfer_table, array['player_name', 'playerName', 'NomeJogador', 'nome_jogador']);
   v_origin_col := public.app_transfer_column(v_transfer_table, array['ClubeOrigem', 'Clube Origem', 'fromClub', 'from_club']);
+  v_origin_name_col := public.app_transfer_column(v_transfer_table, array['from_club', 'fromClub', 'club_name', 'origin_club', 'source_club', 'clube_origem']);
   v_overall_col := public.app_transfer_column(v_transfer_table, array['Overall', 'overall']);
   v_market_value_col := public.app_transfer_column(v_transfer_table, array['ValorTransfermarkt', 'Valor Transfermarkt', 'marketValue', 'market_value']);
   v_final_value_col := public.app_transfer_column(v_transfer_table, array['ValorFinal', 'Valor Final', 'finalValue', 'final_value']);
   v_status_col := public.app_transfer_column(v_transfer_table, array['Status', 'status']);
   v_timestamp_col := public.app_transfer_column(v_transfer_table, array['Timestamp', 'created_at', 'createdAt', 'Data']);
   v_type_col := public.app_transfer_column(v_transfer_table, array['TipoTransferencia', 'Tipo Transferencia', 'transferType', 'transfer_type']);
+
+  select quote_ident(a.attname)
+    into v_overall_raw_col
+  from pg_attribute a
+  where a.attrelid = v_transfer_table
+    and not a.attisdropped
+    and a.attname in ('overall', 'rating', 'ovr')
+  order by array_position(array['overall', 'rating', 'ovr'], a.attname::text)
+  limit 1;
+
+  select quote_ident(a.attname)
+    into v_market_value_raw_col
+  from pg_attribute a
+  where a.attrelid = v_transfer_table
+    and not a.attisdropped
+    and a.attname in ('market_value', 'marketValue', 'market_value_eur')
+  order by array_position(array['market_value', 'marketValue', 'market_value_eur'], a.attname::text)
+  limit 1;
+
+  select quote_ident(a.attname)
+    into v_final_value_raw_col
+  from pg_attribute a
+  where a.attrelid = v_transfer_table
+    and not a.attisdropped
+    and a.attname in ('final_value', 'finalValue', 'total_cost')
+  order by array_position(array['final_value', 'finalValue', 'total_cost'], a.attname::text)
+  limit 1;
+
+  select quote_ident(a.attname)
+    into v_status_raw_col
+  from pg_attribute a
+  where a.attrelid = v_transfer_table
+    and not a.attisdropped
+    and a.attname = 'status'
+  limit 1;
+
+  select quote_ident(a.attname)
+    into v_type_raw_col
+  from pg_attribute a
+  where a.attrelid = v_transfer_table
+    and not a.attisdropped
+    and a.attname in ('transfer_type', 'transferType')
+  order by array_position(array['transfer_type', 'transferType'], a.attname::text)
+  limit 1;
 
   if v_buyer_col is null
      or v_player_col is null
@@ -465,71 +520,78 @@ begin
       return jsonb_build_object('ok', false, 'message', format('Nao encontrei o id do comprador %s.', p_buyer));
     end if;
 
-    execute format(
-      'insert into %s (
-         %s,
-         %s,
-         %s,
-         %s,
-         %s,
-         %s,
-         %s,
-         %s,
-         %s,
-         %s
-       ) values (%L, %L, %L, %L, %s, %s, %s, ''aprovado'', %s, ''market'')',
-      v_transfer_table,
-      v_buyer_id_col,
-      v_buyer_col,
-      v_player_col,
-      v_origin_col,
-      v_overall_col,
-      v_market_value_col,
-      v_final_value_col,
-      v_status_col,
-      v_timestamp_col,
-      v_type_col,
-      v_buyer_id,
-      p_buyer,
-      p_player,
-      p_from_club,
-      coalesce(p_overall, 0),
-      coalesce(p_market_value, 0),
-      coalesce(p_final_value, 0),
-      v_timestamp_value_expr
-    );
-  else
-    execute format(
-      'insert into %s (
-         %s,
-         %s,
-         %s,
-         %s,
-         %s,
-         %s,
-         %s,
-         %s,
-         %s
-       ) values (%L, %L, %L, %s, %s, %s, ''aprovado'', %s, ''market'')',
-      v_transfer_table,
-      v_buyer_col,
-      v_player_col,
-      v_origin_col,
-      v_overall_col,
-      v_market_value_col,
-      v_final_value_col,
-      v_status_col,
-      v_timestamp_col,
-      v_type_col,
-      p_buyer,
-      p_player,
-      p_from_club,
-      coalesce(p_overall, 0),
-      coalesce(p_market_value, 0),
-      coalesce(p_final_value, 0),
-      v_timestamp_value_expr
-    );
+    v_insert_cols := v_insert_cols || v_buyer_id_col;
+    v_insert_vals := v_insert_vals || quote_literal(v_buyer_id);
   end if;
+
+  v_insert_cols := v_insert_cols || v_buyer_col;
+  v_insert_vals := v_insert_vals || quote_literal(p_buyer);
+
+  if v_player_name_col is not null and v_player_name_col <> v_player_col then
+    v_insert_cols := v_insert_cols || v_player_name_col;
+    v_insert_vals := v_insert_vals || quote_literal(p_player);
+  end if;
+
+  v_insert_cols := v_insert_cols || v_player_col;
+  v_insert_vals := v_insert_vals || quote_literal(p_player);
+
+  if v_origin_name_col is not null and v_origin_name_col <> v_origin_col then
+    v_insert_cols := v_insert_cols || v_origin_name_col;
+    v_insert_vals := v_insert_vals || quote_literal(p_from_club);
+  end if;
+
+  v_insert_cols := v_insert_cols || v_origin_col;
+  v_insert_vals := v_insert_vals || quote_literal(p_from_club);
+
+  if v_overall_raw_col is not null and v_overall_raw_col <> v_overall_col then
+    v_insert_cols := v_insert_cols || v_overall_raw_col;
+    v_insert_vals := v_insert_vals || coalesce(p_overall, 0)::text;
+  end if;
+
+  v_insert_cols := v_insert_cols || v_overall_col;
+  v_insert_vals := v_insert_vals || coalesce(p_overall, 0)::text;
+
+  if v_market_value_raw_col is not null and v_market_value_raw_col <> v_market_value_col then
+    v_insert_cols := v_insert_cols || v_market_value_raw_col;
+    v_insert_vals := v_insert_vals || coalesce(p_market_value, 0)::text;
+  end if;
+
+  v_insert_cols := v_insert_cols || v_market_value_col;
+  v_insert_vals := v_insert_vals || coalesce(p_market_value, 0)::text;
+
+  if v_final_value_raw_col is not null and v_final_value_raw_col <> v_final_value_col then
+    v_insert_cols := v_insert_cols || v_final_value_raw_col;
+    v_insert_vals := v_insert_vals || coalesce(p_final_value, 0)::text;
+  end if;
+
+  v_insert_cols := v_insert_cols || v_final_value_col;
+  v_insert_vals := v_insert_vals || coalesce(p_final_value, 0)::text;
+
+  if v_status_raw_col is not null and v_status_raw_col <> v_status_col then
+    v_insert_cols := v_insert_cols || v_status_raw_col;
+    v_insert_vals := v_insert_vals || quote_literal('aprovado');
+  end if;
+
+  v_insert_cols := v_insert_cols || v_status_col;
+  v_insert_vals := v_insert_vals || quote_literal('aprovado');
+
+  v_insert_cols := v_insert_cols || v_timestamp_col;
+  v_insert_vals := v_insert_vals || v_timestamp_value_expr;
+
+  if v_type_raw_col is not null and v_type_raw_col <> v_type_col then
+    v_insert_cols := v_insert_cols || v_type_raw_col;
+    v_insert_vals := v_insert_vals || quote_literal('market');
+  end if;
+
+  v_insert_cols := v_insert_cols || v_type_col;
+  v_insert_vals := v_insert_vals || quote_literal('market');
+
+  execute format(
+    'insert into %s (%s) values (%s)',
+    v_transfer_table,
+    array_to_string(v_insert_cols, ', '),
+    array_to_string(v_insert_vals, ', ')
+  );
 
   return jsonb_build_object(
     'ok', true,

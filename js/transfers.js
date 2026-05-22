@@ -85,6 +85,28 @@ App.transfers = {
       avatar_url: "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a6/Dybala_2017.jpg/250px-Dybala_2017.jpg",
       source_url: "https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/paulo-dybala/211110",
       source_name: "EA SPORTS FC official ratings + Wikimedia photo"
+    },
+    "henrikh mkhitaryan": {
+      name: "Henrikh Mkhitaryan",
+      club: "Football Club Internazionale Milano S.p.A.",
+      position: "CAM",
+      nation: "Armenia",
+      overall: 83,
+      gender: "Men's Football",
+      avatar_url: "https://upload.wikimedia.org/wikipedia/commons/thumb/4/41/Henrikh_Mkhitaryan_2017.jpg/250px-Henrikh_Mkhitaryan_2017.jpg",
+      source_url: "https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/henrikh-mkhitaryan/192883",
+      source_name: "EA SPORTS FC official ratings + Wikimedia photo"
+    },
+    "mkhitaryan": {
+      name: "Henrikh Mkhitaryan",
+      club: "Football Club Internazionale Milano S.p.A.",
+      position: "CAM",
+      nation: "Armenia",
+      overall: 83,
+      gender: "Men's Football",
+      avatar_url: "https://upload.wikimedia.org/wikipedia/commons/thumb/4/41/Henrikh_Mkhitaryan_2017.jpg/250px-Henrikh_Mkhitaryan_2017.jpg",
+      source_url: "https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/henrikh-mkhitaryan/192883",
+      source_name: "EA SPORTS FC official ratings + Wikimedia photo"
     }
   },
 
@@ -148,7 +170,8 @@ App.transfers = {
       "davinson sanchez": ["Davinson Sanchez"],
       "cristiano ronaldo": ["Cristiano Ronaldo dos Santos Aveiro"],
       "leandro paredes": ["Leandro Paredes"],
-      "dybala": ["Paulo Dybala"]
+      "dybala": ["Paulo Dybala"],
+      "mkhitaryan": ["Henrikh Mkhitaryan"]
     };
 
     return [playerName, ...(aliases[normalized] || [])].filter(Boolean);
