@@ -100,6 +100,11 @@ App.calendar = {
     return typeof event.homeScore === "number" && typeof event.awayScore === "number" ? "done" : "pending";
   },
 
+  getCompetitionLabel(competition) {
+    if (competition === "Championship") return "Championship";
+    return App.cups?.getCompetitionDisplayName ? App.cups.getCompetitionDisplayName(competition) : competition;
+  },
+
   canSubmitResult(event) {
     if (!event) return false;
     if (App.calendar.getStatusClass(event) === "done") return false;
@@ -307,7 +312,7 @@ App.calendar = {
     }
 
     if (title) title.textContent = `${event.home} x ${event.away}`;
-    if (subtitle) subtitle.textContent = `${event.competition} · ${event.phase} · Semana ${event.week}`;
+    if (subtitle) subtitle.textContent = `${App.calendar.getCompetitionLabel(event.competition)} · ${event.phase} · Semana ${event.week}`;
 
     if (preview) {
       preview.innerHTML = `
@@ -366,7 +371,7 @@ App.calendar = {
     const confirmation = [
       "Desfazer este resultado?",
       "",
-      `${event.competition} · ${event.phase}`,
+      `${App.calendar.getCompetitionLabel(event.competition)} · ${event.phase}`,
       `${event.home} ${event.homeScore} x ${event.awayScore} ${event.away}`,
       "",
       "A partida voltará a ficar pendente e as premiações vinculadas a este placar serão removidas."
@@ -441,7 +446,7 @@ App.calendar = {
         <tr class="${rowClass} ${visualClass}">
           <td>${App.utils.formatDate(event.date)}</td>
           <td class="numeric">${event.week}</td>
-          <td><span class="competition-badge ${event.className}">${event.competition}</span></td>
+          <td><span class="competition-badge ${event.className}">${App.calendar.getCompetitionLabel(event.competition)}</span></td>
           <td>${event.phase}</td>
           <td class="calendar-match">${App.clubs.getMatchupHtml(event.home, event.away, "table-match")}</td>
           <td class="calendar-owner-cell">${owners.length ? owners.map(owner => `<span class="owner" style="background:${App.data.ownerColors[owner]}">${owner}</span>`).join(" ") : "<span class='calendar-muted'>CPU</span>"}</td>
@@ -456,7 +461,7 @@ App.calendar = {
       const visualClass = App.calendar.getStatusClass(event) === "done" ? "calendar-completed-row" : "calendar-pending-row";
       return `
         <article class="calendar-card ${App.calendar.involvesOurTeam(event) ? "ours-row" : ""} ${visualClass}">
-          <div class="calendar-card-header"><span class="competition-badge ${event.className}">${event.competition}</span><span class="calendar-muted">${App.utils.formatDate(event.date)}</span></div>
+          <div class="calendar-card-header"><span class="competition-badge ${event.className}">${App.calendar.getCompetitionLabel(event.competition)}</span><span class="calendar-muted">${App.utils.formatDate(event.date)}</span></div>
           <h3>${App.clubs.getMatchupHtml(event.home, event.away, "card-match")}</h3>
           <p class="calendar-muted">${event.phase} · Semana ${event.week} · ${App.calendar.getMatchType(event)}</p>
           <p>${owners.length ? owners.map(owner => `<span class="owner" style="background:${App.data.ownerColors[owner]}">${owner}</span>`).join(" ") : "<span class='calendar-muted'>CPU</span>"}</p>

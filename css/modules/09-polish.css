@@ -177,9 +177,9 @@
 }
 
 .cup-mark {
-  width: 54px;
-  height: 54px;
-  flex: 0 0 54px;
+  width: 64px;
+  height: 64px;
+  flex: 0 0 64px;
   display: grid;
   place-items: center;
   border-radius: 8px;
@@ -188,6 +188,14 @@
   letter-spacing: 0;
   background: linear-gradient(135deg, var(--cup-accent), var(--cup-accent-2));
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, .35), 0 16px 30px rgba(0, 0, 0, .28);
+  overflow: hidden;
+}
+
+.cup-mark img {
+  display: block;
+  max-width: 86%;
+  max-height: 86%;
+  object-fit: contain;
 }
 
 .cup-board-title h2 {

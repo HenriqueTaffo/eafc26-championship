@@ -5,6 +5,9 @@ App.cups = {
     return [
       {
         name: "Copa da Liga",
+        displayName: "Carabao Cup",
+        shortName: "Carabao",
+        mark: "https://www.efl.com/sponsors/carabao.png",
         className: "league-cup",
         rounds: [
           { phase: "Primeira fase", week: 2, matches: [
@@ -24,6 +27,9 @@ App.cups = {
       },
       {
         name: "FA Cup",
+        displayName: "The Emirates FA Cup",
+        shortName: "Emirates FA Cup",
+        mark: "https://commons.wikimedia.org/wiki/Special:FilePath/Emirates_FA_Cup_Logo_2020.jpg?width=240",
         className: "fa-cup",
         rounds: [
           { phase: "3ª fase", week: 5, matches: [
@@ -233,6 +239,22 @@ App.cups = {
     return competition === "Copa da Liga" ? "league-cup" : "fa-cup";
   },
 
+  getCompetitionMeta(competition) {
+    return App.cups.getCupDefinitions().find(cup =>
+      App.utils.normalizeText(cup.name) === App.utils.normalizeText(competition)
+    ) || {
+      name: competition,
+      displayName: competition,
+      shortName: competition,
+      mark: "",
+      className: App.cups.getCompetitionClass(competition)
+    };
+  },
+
+  getCompetitionDisplayName(competition) {
+    return App.cups.getCompetitionMeta(competition).displayName || competition;
+  },
+
   getRoundStatus(events = []) {
     const done = events.filter(event => App.calendar.getStatusClass(event) === "done").length;
     const waiting = events.filter(event => String(event.status || "").includes("Aguardando")).length;
@@ -264,7 +286,8 @@ App.cups = {
 
   renderCupHero(competition, events = []) {
     const stats = App.cups.getCompetitionStats(events);
-    const className = App.cups.getCompetitionClass(competition);
+    const meta = App.cups.getCompetitionMeta(competition);
+    const className = meta.className || App.cups.getCompetitionClass(competition);
     const nextLabel = stats.champion
       ? `Campeão: ${stats.champion}`
       : stats.next
@@ -274,9 +297,11 @@ App.cups = {
     return `
       <header class="cup-board-hero ${className}">
         <div class="cup-board-title">
-          <span class="cup-mark">${competition === "Copa da Liga" ? "LC" : "FA"}</span>
+          <span class="cup-mark">
+            ${meta.mark ? `<img src="${App.utils.escapeHtml(meta.mark)}" alt="${App.utils.escapeHtml(meta.displayName)}" loading="lazy" referrerpolicy="no-referrer" />` : App.utils.escapeHtml(meta.shortName || competition)}
+          </span>
           <div>
-            <span class="modal-kicker">${App.utils.escapeHtml(competition)}</span>
+            <span class="modal-kicker">${App.utils.escapeHtml(meta.shortName || meta.displayName)}</span>
             <h2>${stats.champion ? App.utils.escapeHtml(stats.champion) : `${stats.progress}% concluída`}</h2>
             <p>${App.utils.escapeHtml(nextLabel)}</p>
           </div>
@@ -351,7 +376,8 @@ App.cups = {
       });
 
       const rounds = [...new Set(events.map(event => event.phase.split(" - Jogo")[0]))];
-      const className = App.cups.getCompetitionClass(competition);
+      const meta = App.cups.getCompetitionMeta(competition);
+      const className = meta.className || App.cups.getCompetitionClass(competition);
 
       return `
         <section class="cup-board ${className}">
