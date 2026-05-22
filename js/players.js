@@ -454,7 +454,7 @@ App.players = {
         <form class="coach-target-form" data-private-target-form>
           <label>
             Jogador
-            <input name="player" type="text" placeholder="Nome do jogador" autocomplete="off" required />
+            <input name="player" type="text" placeholder="Buscar no mercado..." autocomplete="off" required data-private-target-search />
           </label>
           <label>
             Clube atual
@@ -479,6 +479,7 @@ App.players = {
           </label>
           <button type="submit" class="secondary-button">Pinar alvo</button>
         </form>
+        <div class="coach-target-search-results" data-private-target-results></div>
         <div class="coach-target-list">
           ${targets.length ? targets.map(target => {
             const marketPlayer = App.transfers.findMarketPlayerByName(target.player) || {
@@ -506,6 +507,76 @@ App.players = {
         </div>
       </article>
     `;
+  },
+
+  async renderPrivateTargetSearchResults(form) {
+    const card = form.closest("[data-private-target-owner]");
+    const target = card?.querySelector("[data-private-target-results]");
+    const input = form.elements.player;
+    if (!target || !input) return;
+
+    const query = String(input.value || "").trim();
+    if (query.length < 2) {
+      target.innerHTML = "";
+      target.classList.remove("is-visible");
+      return;
+    }
+
+    target.classList.add("is-visible");
+    target.innerHTML = `<div class="market-empty">Buscando jogadores no mercado...</div>`;
+
+    const players = await App.api.loadMarketPlayers(query, true, 8).catch(error => {
+      console.warn("Busca de alvos privados indisponível:", error);
+      return [];
+    });
+
+    if (String(input.value || "").trim() !== query) return;
+
+    if (!players.length) {
+      target.innerHTML = `<div class="market-empty">Nenhum jogador encontrado no mercado.</div>`;
+      return;
+    }
+
+    const ratingRows = await Promise.all(players.slice(0, 8).map(player =>
+      App.api.searchEaRatings(player.name || "", 2).catch(() => [])
+    ));
+    App.api.mergeEaRatings?.(ratingRows.flat());
+
+    target.innerHTML = `
+      <div class="market-player-results">
+        ${players.map(player => {
+      const eaRating = App.transfers.findEaRatingForMarketPlayer(player);
+      const marketValue = App.transfers.getMarketPlayerValue(player);
+      const overall = Number(eaRating?.overall || player.overall || 0);
+      return `
+        <button class="market-player-option private-target-option" type="button" data-private-target-player="${App.utils.escapeHtml(player.id || player.name)}">
+          ${App.transfers.renderPlayerPhoto(player, eaRating)}
+          <span class="market-player-main">
+            <strong>${App.utils.escapeHtml(player.name || "-")}</strong>
+            <small>${App.utils.escapeHtml([player.position, player.age ? `${player.age} anos` : "", player.league, player.club].filter(Boolean).join(" · "))}</small>
+          </span>
+          <span class="market-player-side">
+            ${overall ? `<span class="market-player-overall">OVR ${overall}</span>` : ""}
+            <span class="market-player-value">${App.utils.formatCurrency(marketValue)}</span>
+          </span>
+        </button>
+      `;
+    }).join("")}
+      </div>
+    `;
+
+    target.querySelectorAll("[data-private-target-player]").forEach(button => {
+      button.addEventListener("click", () => {
+        const player = players.find(item => String(item.id || item.name) === String(button.dataset.privateTargetPlayer));
+        if (!player) return;
+        form.elements.player.value = player.name || "";
+        form.elements.club.value = player.club || "";
+        form.elements.value.value = Math.round(App.transfers.getMarketPlayerValue(player));
+        form.elements.player.dataset.marketPlayerId = player.id || "";
+        target.innerHTML = "";
+        target.classList.remove("is-visible");
+      });
+    });
   },
 
   getCoachAlerts(team, standing, budget, next, transfersToday, canViewPrivate = false) {
@@ -837,6 +908,13 @@ App.players = {
     document.querySelectorAll("[data-private-target-form]").forEach(form => {
       if (form.dataset.bound === "true") return;
       form.dataset.bound = "true";
+      const searchInput = form.querySelector("[data-private-target-search]");
+      let searchTimeout = null;
+      searchInput?.addEventListener("input", () => {
+        window.clearTimeout(searchTimeout);
+        searchTimeout = window.setTimeout(() => App.players.renderPrivateTargetSearchResults(form), 220);
+      });
+      searchInput?.addEventListener("focus", () => App.players.renderPrivateTargetSearchResults(form));
       form.addEventListener("submit", async event => {
         event.preventDefault();
         const card = form.closest("[data-private-target-owner]");

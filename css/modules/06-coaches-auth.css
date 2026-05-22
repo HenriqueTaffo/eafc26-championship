@@ -196,6 +196,23 @@
   margin-bottom: 12px;
 }
 
+.coach-target-search-results {
+  display: none;
+  margin: -4px 0 12px;
+}
+
+.coach-target-search-results.is-visible {
+  display: grid;
+}
+
+.coach-target-search-results .market-player-results {
+  max-height: 290px;
+}
+
+.coach-target-search-results .private-target-option {
+  grid-template-columns: 44px minmax(0, 1fr) auto;
+}
+
 .coach-target-form label {
   display: grid;
   gap: 7px;
