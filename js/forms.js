@@ -94,6 +94,7 @@ App.forms = {
     const button = form.querySelector("button");
     const message = document.getElementById("resultMessage");
     const payload = Object.fromEntries(new FormData(form).entries());
+    const session = App.auth?.getSession ? App.auth.getSession() : null;
 
     button.disabled = true;
     App.utils.setMessage(message, "Enviando resultado...", "warning");
@@ -104,6 +105,13 @@ App.forms = {
     });
 
     try {
+      if (!session) throw new Error("Faça login como técnico ou comissário antes de enviar resultado.");
+      if (!App.auth?.isCommissioner?.() && ![payload.home, payload.away].some(team => App.utils.sameTeamName(team, session.clubName))) {
+        throw new Error("Você só pode enviar resultado de jogos do seu próprio clube.");
+      }
+      payload.managerId = session.managerId;
+      payload.accessCode = session.accessCode;
+      payload.submittedBy = payload.submittedBy || session.managerName;
       await App.forms.submitResultPayload(payload, message);
       form.reset();
       App.forms.updatePenaltyVisibility(form);
@@ -124,6 +132,7 @@ App.forms = {
     const button = form.querySelector("button");
     const message = document.getElementById("calendarResultMessage");
     const payload = Object.fromEntries(new FormData(form).entries());
+    const session = App.auth?.getSession ? App.auth.getSession() : null;
 
     button.disabled = true;
     App.utils.setMessage(message, "Salvando resultado...", "warning");
@@ -134,6 +143,13 @@ App.forms = {
     });
 
     try {
+      if (!session) throw new Error("Faça login como técnico ou comissário antes de salvar resultado.");
+      if (!App.auth?.isCommissioner?.() && ![payload.home, payload.away].some(team => App.utils.sameTeamName(team, session.clubName))) {
+        throw new Error("Você só pode enviar resultado de jogos do seu próprio clube.");
+      }
+      payload.managerId = session.managerId;
+      payload.accessCode = session.accessCode;
+      payload.submittedBy = payload.submittedBy || session.managerName;
       await App.forms.submitResultPayload(payload, message, {
         refreshMessage: "Placar salvo. Atualizando calendário, classificação e central da rodada..."
       });
@@ -183,6 +199,13 @@ App.forms = {
         if (!payload.seller) throw new Error("Selecione o técnico vendedor.");
         if (payload.buyer === payload.seller) throw new Error("Comprador e vendedor precisam ser técnicos diferentes.");
         payload.fromClub = `Negociação interna: ${payload.seller}`;
+        payload.managerId = session.managerId;
+        payload.accessCode = session.accessCode;
+      } else {
+        if (!session) throw new Error("Faça login como comprador antes de enviar transferência.");
+        if (!App.auth?.isCommissioner?.() && App.utils.normalizeText(session.managerName) !== App.utils.normalizeText(payload.buyer)) {
+          throw new Error("A transferência precisa ser enviada pelo comprador logado.");
+        }
         payload.managerId = session.managerId;
         payload.accessCode = session.accessCode;
       }
@@ -266,6 +289,9 @@ App.forms = {
     });
 
     try {
+      if (!App.auth?.isCommissioner?.()) {
+        throw new Error("Apenas o Comissário da Liga pode simular jogos CPU x CPU.");
+      }
       const data = await App.api.postToApi({
         action: "simulateCpuWeek",
         week: Number(payload.week),

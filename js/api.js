@@ -610,9 +610,30 @@ App.api = {
     }
   },
 
-  mapResultPayload(payload) {
+  getAuthPayload() {
+    const session = App.auth?.getSession ? App.auth.getSession() : null;
     return {
-      p_pin: App.config.API_PIN,
+      p_manager_id: session?.managerId || "",
+      p_access_code: session?.accessCode || ""
+    };
+  },
+
+  requireSession(message = "Faça login antes de executar esta ação.") {
+    const session = App.auth?.getSession ? App.auth.getSession() : null;
+    if (!session?.managerId || !session?.accessCode) throw new Error(message);
+    return session;
+  },
+
+  requireCommissioner(message = "Apenas o Comissário da Liga pode executar esta ação.") {
+    const session = App.api.requireSession("Faça login como Comissário da Liga.");
+    if (!App.auth?.isCommissioner?.()) throw new Error(message);
+    return session;
+  },
+
+  mapResultPayload(payload) {
+    const authPayload = App.api.getAuthPayload();
+    return {
+      ...authPayload,
       p_competition: payload.competition,
       p_week: Number(payload.week),
       p_phase: payload.phase,
@@ -630,6 +651,7 @@ App.api = {
 
   async postToApi(payload) {
     if (payload.action === "addResult") {
+      App.api.requireSession("Faça login como técnico ou comissário antes de enviar resultado.");
       return App.api.rpc("app_add_result", App.api.mapResultPayload(payload), 45000);
     }
 
@@ -647,8 +669,13 @@ App.api = {
         }, 45000);
       }
 
+      const session = App.api.requireSession("Faça login como comprador antes de enviar transferência.");
+      if (!App.auth?.isCommissioner?.() && App.utils.normalizeText(session.managerName) !== App.utils.normalizeText(payload.buyer)) {
+        throw new Error("A transferência precisa ser enviada pelo comprador logado.");
+      }
+
       return App.api.rpc("app_add_transfer", {
-        p_pin: App.config.API_PIN,
+        ...App.api.getAuthPayload(),
         p_buyer: payload.buyer,
         p_player: payload.player,
         p_from_club: payload.fromClub,
@@ -658,8 +685,9 @@ App.api = {
     }
 
     if (payload.action === "generateDueEvents") {
+      App.api.requireCommissioner();
       return App.api.rpc("app_generate_due_events", {
-        p_pin: App.config.API_PIN
+        ...App.api.getAuthPayload()
       }, 45000);
     }
 
@@ -700,8 +728,9 @@ App.api = {
       return { ok: false, created: 0, message: "Informe uma semana válida para simular." };
     }
 
+    App.api.requireCommissioner("Apenas o Comissário da Liga pode simular rodadas CPU x CPU.");
     return App.api.rpc("app_simulate_cpu_week", {
-      p_pin: App.config.API_PIN,
+      ...App.api.getAuthPayload(),
       p_week: week,
       p_submitted_by: submittedBy
     }, 120000);

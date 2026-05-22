@@ -3,7 +3,6 @@ window.App = window.App || {};
 
 App.config = {
   API_URL: "https://fdippspwpugnxwxmjnqf.supabase.co",
-  API_PIN: "eafc26",
   SUPABASE_URL: "https://fdippspwpugnxwxmjnqf.supabase.co",
   SUPABASE_PUBLISHABLE_KEY: "sb_publishable_9YyrYEk9jH5CuatQK_Ejpg_VfQq6qCK",
   transferBudget: 65000000,
