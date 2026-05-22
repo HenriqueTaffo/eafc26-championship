@@ -1227,6 +1227,12 @@ tr.calendar-completed-row.is-hidden-by-default,
   transform: translateY(-1px);
 }
 
+.mini-action-button.danger {
+  border-color: rgba(248, 113, 113, .55);
+  background: linear-gradient(135deg, rgba(185, 28, 28, .92), rgba(239, 68, 68, .9));
+  box-shadow: 0 8px 20px rgba(185, 28, 28, .2);
+}
+
 .mobile-card-footer {
   margin-top: 10px;
 }
@@ -1385,4 +1391,3 @@ body.modal-active {
     justify-self: stretch;
   }
 }
-

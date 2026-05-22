@@ -229,6 +229,111 @@ App.cups = {
     `;
   },
 
+  getCompetitionClass(competition) {
+    return competition === "Copa da Liga" ? "league-cup" : "fa-cup";
+  },
+
+  getRoundStatus(events = []) {
+    const done = events.filter(event => App.calendar.getStatusClass(event) === "done").length;
+    const waiting = events.filter(event => String(event.status || "").includes("Aguardando")).length;
+    if (done === events.length) return "done";
+    if (waiting === events.length) return "waiting";
+    if (done > 0) return "live";
+    return "pending";
+  },
+
+  getCompetitionStats(events = []) {
+    const total = events.length;
+    const done = events.filter(event => App.calendar.getStatusClass(event) === "done").length;
+    const pending = events.filter(event => event.status === "Pendente").length;
+    const waiting = events.filter(event => String(event.status || "").includes("Aguardando")).length;
+    const next = events.find(event => event.status === "Pendente") || events.find(event => String(event.status || "").includes("Aguardando"));
+    const final = events.find(event => App.cups.normalizeCupPhase(event.phase).startsWith("final"));
+    const champion = final && App.calendar.getStatusClass(final) === "done" ? App.cups.getCupWinner(final) : "";
+
+    return {
+      total,
+      done,
+      pending,
+      waiting,
+      next,
+      champion,
+      progress: total ? Math.round((done / total) * 100) : 0
+    };
+  },
+
+  renderCupHero(competition, events = []) {
+    const stats = App.cups.getCompetitionStats(events);
+    const className = App.cups.getCompetitionClass(competition);
+    const nextLabel = stats.champion
+      ? `Campeão: ${stats.champion}`
+      : stats.next
+        ? `${stats.next.phase}: ${stats.next.home} x ${stats.next.away}`
+        : "Chave completa";
+
+    return `
+      <header class="cup-board-hero ${className}">
+        <div class="cup-board-title">
+          <span class="cup-mark">${competition === "Copa da Liga" ? "LC" : "FA"}</span>
+          <div>
+            <span class="modal-kicker">${App.utils.escapeHtml(competition)}</span>
+            <h2>${stats.champion ? App.utils.escapeHtml(stats.champion) : `${stats.progress}% concluída`}</h2>
+            <p>${App.utils.escapeHtml(nextLabel)}</p>
+          </div>
+        </div>
+        <div class="cup-board-metrics">
+          <span><b>${stats.done}</b> finalizados</span>
+          <span><b>${stats.pending}</b> pendentes</span>
+          <span><b>${stats.waiting}</b> aguardando</span>
+        </div>
+        <div class="cup-progress" aria-label="Progresso da copa">
+          <span style="width:${stats.progress}%"></span>
+        </div>
+      </header>
+    `;
+  },
+
+  renderCupTeamRow(event, side, winner) {
+    const isHome = side === "home";
+    const teamName = isHome ? event.home : event.away;
+    const score = isHome ? event.homeScore : event.awayScore;
+    const isWinner = winner && App.utils.sameTeamName(winner, teamName);
+    const isLoser = winner && !isWinner && typeof event.homeScore === "number" && typeof event.awayScore === "number";
+
+    return `
+      <div class="cup-match-team ${isWinner ? "is-winner" : ""} ${isLoser ? "is-loser" : ""}">
+        ${App.clubs.getTeamBadgeHtml(teamName, "cup-team-badge")}
+        <span>${App.utils.escapeHtml(teamName)}</span>
+        <strong>${typeof score === "number" ? score : "-"}</strong>
+      </div>
+    `;
+  },
+
+  renderCupMatch(event) {
+    const winner = App.cups.getCupWinner(event);
+    const statusClass = App.calendar.getStatusClass(event);
+    const statusLabel = statusClass === "done"
+      ? (winner ? `${winner} avança` : "Finalizado")
+      : event.status || "Pendente";
+
+    return `
+      <article class="cup-match-card ${statusClass}">
+        <div class="cup-match-topline">
+          <span>${App.utils.escapeHtml(event.phase.replace(/^.*- /, ""))}</span>
+          <b>${App.utils.escapeHtml(statusLabel)}</b>
+        </div>
+        <div class="cup-match-teams">
+          ${App.cups.renderCupTeamRow(event, "home", winner)}
+          ${App.cups.renderCupTeamRow(event, "away", winner)}
+        </div>
+        <div class="cup-match-foot">
+          <span>${App.utils.formatDate(event.date)} · Semana ${event.week}</span>
+          ${App.calendar.getReverseResultButtonHtml(event)}
+        </div>
+      </article>
+    `;
+  },
+
   renderBracket() {
     const container = document.getElementById("cupsBracket");
     if (!container) return;
@@ -246,33 +351,34 @@ App.cups = {
       });
 
       const rounds = [...new Set(events.map(event => event.phase.split(" - Jogo")[0]))];
+      const className = App.cups.getCompetitionClass(competition);
 
       return `
-        <section class="legend-block">
-          <p class="legend-title">${competition}</p>
-          <div class="bracket-grid">
+        <section class="cup-board ${className}">
+          ${App.cups.renderCupHero(competition, events)}
+          <div class="cup-rounds">
             ${rounds.map(round => {
               const roundEvents = events.filter(event => event.phase.startsWith(round));
+              const roundStatus = App.cups.getRoundStatus(roundEvents);
+              const done = roundEvents.filter(event => App.calendar.getStatusClass(event) === "done").length;
               return `
-                <article class="bracket-round">
-                  <h2>${round}</h2>
-                  ${roundEvents.map(event => {
-                    const winner = App.cups.getCupWinner(event);
-                    return `
-                      <div class="bracket-match">
-                        <div class="bracket-team ${winner && App.utils.sameTeamName(winner, event.home) ? "winner" : ""}"><span>${App.clubs.getTeamIdentityHtml(event.home, "bracket-identity")}</span><span>${typeof event.homeScore === "number" ? event.homeScore : "-"}</span></div>
-                        <div class="bracket-team ${winner && App.utils.sameTeamName(winner, event.away) ? "winner" : ""}"><span>${App.clubs.getTeamIdentityHtml(event.away, "bracket-identity")}</span><span>${typeof event.awayScore === "number" ? event.awayScore : "-"}</span></div>
-                        <div class="bracket-meta">${App.utils.formatDate(event.date)} · ${event.phase}<br>${App.calendar.formatMatchResult(event)}</div>
-                      </div>
-                    `;
-                  }).join("")}
-                </article>
+                <div class="cup-round-column ${roundStatus}">
+                  <div class="cup-round-header">
+                    <span>${App.utils.escapeHtml(round)}</span>
+                    <b>${done}/${roundEvents.length}</b>
+                  </div>
+                  <div class="cup-match-stack">
+                    ${roundEvents.map(event => App.cups.renderCupMatch(event)).join("")}
+                  </div>
+                </div>
               `;
             }).join("")}
           </div>
         </section>
       `;
     }).join("");
+
+    App.calendar.bindCalendarActions();
   },
 
   render() {

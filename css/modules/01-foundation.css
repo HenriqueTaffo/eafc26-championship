@@ -558,6 +558,10 @@ tr.calendar-pending-row {
   line-height: 1.4;
 }
 
+.bracket-match .mini-action-button {
+  margin-top: 10px;
+}
+
 .event-card {
   border-left: 5px solid var(--event-color, var(--free));
 }
@@ -2084,5 +2088,4 @@ body.loader-active {
     font-size: 23px;
   }
 }
-
 

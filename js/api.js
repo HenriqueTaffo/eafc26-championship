@@ -687,10 +687,25 @@ App.api = {
     };
   },
 
+  mapReverseResultPayload(payload) {
+    return {
+      ...App.api.getAuthPayload(),
+      p_competition: payload.competition,
+      p_phase: payload.phase,
+      p_home: payload.home,
+      p_away: payload.away
+    };
+  },
+
   async postToApi(payload) {
     if (payload.action === "addResult") {
       App.api.requireSession("Faça login como técnico ou comissário antes de enviar resultado.");
       return App.api.rpc("app_add_result", App.api.mapResultPayload(payload), 45000);
+    }
+
+    if (payload.action === "reverseResult") {
+      App.api.requireCommissioner("Apenas o Comissário da Liga pode desfazer resultados.");
+      return App.api.rpc("app_reverse_match_result", App.api.mapReverseResultPayload(payload), 45000);
     }
 
     if (payload.action === "addTransfer") {

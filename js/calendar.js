@@ -107,6 +107,14 @@ App.calendar = {
     return App.calendar.involvesOurTeam(event);
   },
 
+  canReverseResult(event) {
+    return Boolean(
+      event &&
+      App.auth?.isCommissioner?.() &&
+      App.calendar.getStatusClass(event) === "done"
+    );
+  },
+
   formatMatchResult(event) {
     if (typeof event.homeScore === "number" && typeof event.awayScore === "number") {
       const winner = event.competition !== "Championship" ? App.cups.getCupWinner(event) : null;
@@ -118,6 +126,15 @@ App.calendar = {
   },
 
   getResultActionHtml(event) {
+    if (App.calendar.canReverseResult(event)) {
+      return `
+        <div class="calendar-action-cell">
+          <span class="status-pill done">${App.calendar.formatMatchResult(event)}</span>
+          <button class="mini-action-button danger" type="button" data-reverse-result="${App.utils.escapeHtml(event.id)}">Desfazer</button>
+        </div>
+      `;
+    }
+
     if (!App.calendar.canSubmitResult(event)) {
       return `<span class="status-pill ${App.calendar.getStatusClass(event)}">${App.calendar.formatMatchResult(event)}</span>`;
     }
@@ -128,6 +145,11 @@ App.calendar = {
         <button class="mini-action-button" type="button" data-open-result-modal="${App.utils.escapeHtml(event.id)}">Enviar placar</button>
       </div>
     `;
+  },
+
+  getReverseResultButtonHtml(event) {
+    if (!App.calendar.canReverseResult(event)) return "";
+    return `<button class="mini-action-button danger" type="button" data-reverse-result="${App.utils.escapeHtml(event.id)}">Desfazer resultado</button>`;
   },
 
   getFilteredEvents() {
@@ -325,6 +347,62 @@ App.calendar = {
         App.calendar.openResultModal(button.dataset.openResultModal);
       });
     });
+
+    document.querySelectorAll("[data-reverse-result]").forEach(button => {
+      if (button.dataset.bound === "true") return;
+      button.dataset.bound = "true";
+      button.addEventListener("click", event => {
+        event.stopPropagation();
+        App.calendar.handleReverseResult(button.dataset.reverseResult, button);
+      });
+    });
+  },
+
+  async handleReverseResult(eventId, button) {
+    const event = App.calendar.getEventById(eventId);
+    const message = document.getElementById("resultMessage") || document.getElementById("calendarResultMessage");
+    if (!event) return;
+
+    const confirmation = [
+      "Desfazer este resultado?",
+      "",
+      `${event.competition} · ${event.phase}`,
+      `${event.home} ${event.homeScore} x ${event.awayScore} ${event.away}`,
+      "",
+      "A partida voltará a ficar pendente e as premiações vinculadas a este placar serão removidas."
+    ].join("\n");
+
+    if (!window.confirm(confirmation)) return;
+
+    if (button) button.disabled = true;
+    App.main.showLoader({
+      variant: "match",
+      title: "Desfazendo resultado",
+      message: "Removendo placar, avanço indevido e premiações associadas."
+    });
+
+    try {
+      const data = await App.api.postToApi({
+        action: "reverseResult",
+        competition: event.competition,
+        phase: event.phase,
+        home: event.home,
+        away: event.away
+      });
+
+      if (!data.ok) throw new Error(data.message || data.error || "Não foi possível desfazer o resultado.");
+      App.utils.setMessage(message, data.message || "Resultado desfeito.", "success");
+      await App.api.loadApiData({
+        variant: "match",
+        title: "Atualizando dados",
+        message: "Resultado desfeito. Atualizando calendário, copas e orçamento..."
+      });
+    } catch (error) {
+      App.utils.setMessage(message, error.message, "error");
+    } finally {
+      App.main.hideLoader();
+      if (button) button.disabled = false;
+    }
   },
 
   render() {
