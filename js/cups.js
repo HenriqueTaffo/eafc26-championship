@@ -42,7 +42,16 @@ App.cups = {
             { home: "Blackburn Rovers", away: "Wigan Athletic" },
             { home: "Bristol City", away: "Barnsley" }
           ]},
-          { phase: "Oitavas", week: 7 },
+          { phase: "Oitavas", week: 7, entrants: [
+            "Manchester City",
+            "Liverpool",
+            "Arsenal",
+            "Chelsea",
+            "Manchester United",
+            "Tottenham Hotspur",
+            "Newcastle United",
+            "Aston Villa"
+          ]},
           { phase: "Quartas", week: 9 },
           { phase: "Semifinal", week: 11 },
           { phase: "Final", week: 13 }
@@ -162,6 +171,32 @@ App.cups = {
               phase: phaseLabel,
               bracketCode: `${round.phase} Jogo ${index + 1}`,
               status: typeof hydrated.homeScore === "number" && typeof hydrated.awayScore === "number" ? "Finalizado" : "Pendente"
+            };
+          });
+        } else if (Array.isArray(round.entrants) && round.entrants.length) {
+          currentRoundMatches = previousRoundMatches.map((match, index) => {
+            const previousWinner = match ? App.cups.getCupWinner(match) : null;
+            const entrant = round.entrants[index] || `Cabeça de chave ${index + 1}`;
+            const phaseLabel = `${round.phase} - Jogo ${index + 1}`;
+            const baseMatch = {
+              home: previousWinner || `Vencedor ${match?.bracketCode || ""}`,
+              away: entrant,
+              homeScore: null,
+              awayScore: null,
+              penaltyWinner: "",
+              penaltyScore: ""
+            };
+            const hydrated = App.cups.hydrateCupMatchWithApiResult(baseMatch, cup.name, phaseLabel);
+            return {
+              ...hydrated,
+              id: `${cup.name}-${round.phase}-${index + 1}`,
+              date: App.utils.getCupDate(round.week),
+              week: round.week,
+              competition: cup.name,
+              className: cup.className,
+              phase: phaseLabel,
+              bracketCode: `${round.phase} Jogo ${index + 1}`,
+              status: typeof hydrated.homeScore === "number" && typeof hydrated.awayScore === "number" ? "Finalizado" : previousWinner ? "Pendente" : "Aguardando classificados"
             };
           });
         } else {
