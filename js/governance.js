@@ -66,6 +66,22 @@ App.governance = {
   },
 
   getEconomyRows() {
+    if (Array.isArray(App.state.apiFinanceForecast) && App.state.apiFinanceForecast.length) {
+      return App.state.apiFinanceForecast.map(item => ({
+        buyer: item.manager_name,
+        totalBudget: Number(item.total_budget || 0),
+        spent: Number(item.spent_total || 0),
+        remaining: Number(item.remaining_budget || 0),
+        payrollWeekly: Number(item.payroll_weekly || 0),
+        projectedMonth: Number(item.payroll_monthly || 0),
+        runwayWeeks: item.runway_weeks === null ? null : Number(item.runway_weeks),
+        risk: item.risk || "Saudável",
+        burnRate: Number(item.total_budget || 0) > 0
+          ? (Number(item.spent_total || 0) + Number(item.payroll_monthly || 0)) / Number(item.total_budget || 1)
+          : 0
+      })).sort((a, b) => b.burnRate - a.burnRate || a.remaining - b.remaining);
+    }
+
     return App.transfers.getSpendingSummary()
       .map(item => {
         const projectedMonth = item.payrollWeekly * 4;
@@ -316,6 +332,13 @@ App.governance = {
           <div class="commissioner-sublist">
             <strong>Correção sugerida</strong>
             <span>Use as migrações de seed/geração de copa para gravar essas partidas em public.matches antes de simular.</span>
+          </div>
+        ` : ""}
+        ${canAct ? `
+          <div class="commissioner-actions audit-actions">
+            <button type="button" data-audit-action="process_sponsorships">Reprocessar patrocínios</button>
+            <button type="button" data-audit-action="refresh_finance">Atualizar previsão financeira</button>
+            <button type="button" data-audit-action="expire_completed_sponsorships">Encerrar contratos completos</button>
           </div>
         ` : ""}
       </article>
@@ -583,6 +606,32 @@ App.governance = {
         }
       });
     }
+
+    root.querySelectorAll("[data-audit-action]").forEach(button => {
+      if (button.dataset.bound === "true") return;
+      button.dataset.bound = "true";
+      button.addEventListener("click", async () => {
+        const session = App.auth?.getSession?.();
+        if (!session) return;
+        try {
+          button.disabled = true;
+          const result = await App.api.rpc("app_run_audit_action", {
+            p_manager_id: session.managerId,
+            p_access_code: session.accessCode,
+            p_action: button.dataset.auditAction,
+            p_payload: {}
+          }, 45000);
+          if (result?.ok === false) throw new Error(result.message || "Ação recusada.");
+          await App.api.loadFinanceRulesAndForecast?.();
+          await App.api.loadApiData({ showLoader: false });
+          App.utils.setMessage(message, result.message || "Auditoria executada.", "success");
+        } catch (error) {
+          App.utils.setMessage(message, error.message, "error");
+        } finally {
+          button.disabled = false;
+        }
+      });
+    });
   },
 
   render() {

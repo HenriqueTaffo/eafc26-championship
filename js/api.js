@@ -780,6 +780,23 @@ App.api = {
     }
   },
 
+  async loadFinanceRulesAndForecast() {
+    try {
+      const [rules, forecast] = await Promise.all([
+        App.api.rpc("app_get_finance_rules", {}, 30000),
+        App.api.rpc("app_get_manager_finance_forecast", {}, 30000)
+      ]);
+      App.state.apiFinanceRules = rules || null;
+      App.state.apiFinanceForecast = Array.isArray(forecast) ? forecast : [];
+      return App.state.apiFinanceForecast;
+    } catch (error) {
+      console.warn("Previsão financeira persistente indisponível:", error);
+      App.state.apiFinanceRules = null;
+      App.state.apiFinanceForecast = [];
+      return [];
+    }
+  },
+
   async loadApiData(options = {}) {
     const {
       showLoader = true,
@@ -853,11 +870,13 @@ App.api = {
       ]);
       await App.api.loadExperienceData();
       await App.api.loadManagerOnboarding?.();
+      await App.api.loadFinanceRulesAndForecast?.();
       await App.governance?.loadData?.();
       await App.auth?.generateDueDecisions?.();
       await App.auth?.loadPublicNews?.();
       await App.auth?.loadMyDecisions?.();
       await App.auth?.loadMyTransferProposals?.();
+      await App.auth?.loadMyQoL?.();
       await App.auth?.loadMySponsorships?.();
 
       App.state.apiLoaded = true;

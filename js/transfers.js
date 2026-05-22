@@ -968,14 +968,16 @@ App.transfers = {
   estimateWeeklySalary(item = {}) {
     const overall = Number(item.overall || item.displayOverall || 0);
     const value = Number(item.marketValue || item.totalCost || 0);
-    const valueBase = value * 0.006;
+    const rules = App.state.apiFinanceRules || {};
+    const valueBase = value * Number(rules.market_value_salary_rate || 0.006);
+    const floorSalary = Number(rules.base_weekly_salary || 45000);
     const overallMultiplier =
       overall >= 88 ? 1.85 :
         overall >= 84 ? 1.45 :
           overall >= 80 ? 1.18 :
             overall >= 75 ? 1 :
               0.82;
-    return Math.round(Math.max(45000, valueBase * overallMultiplier) / 5000) * 5000;
+    return Math.round(Math.max(floorSalary, valueBase * overallMultiplier) / 5000) * 5000;
   },
 
   getAuctionCandidates() {
@@ -1082,6 +1084,9 @@ App.transfers = {
       totalCost: finalValue
     });
     const payrollAfter = Number(budget?.payrollWeekly || 0) + weeklySalary;
+    const maxPayrollRatio = Number(App.state.apiFinanceRules?.max_payroll_to_budget_ratio || 0.22);
+    const payrollCeiling = Number(budget?.totalBudget || App.config.transferBudget) * maxPayrollRatio / 4;
+    const payrollBlocked = payrollAfter > payrollCeiling;
     const runwayWeeksAfter = payrollAfter > 0
       ? Math.floor(Math.max(0, remainingAfter) / payrollAfter)
       : null;
@@ -1092,7 +1097,7 @@ App.transfers = {
     const overBudget = budget ? finalValue > budget.remaining : false;
     const hardBlock = Boolean(
       hasEnoughData &&
-      (duplicateBlock || sameBuyerAndSeller || limitReached || overBudget),
+      (duplicateBlock || sameBuyerAndSeller || limitReached || overBudget || payrollBlocked),
     );
 
     return {
@@ -1114,6 +1119,8 @@ App.transfers = {
       remainingAfter,
       weeklySalary,
       payrollAfter,
+      payrollCeiling,
+      payrollBlocked,
       runwayWeeksAfter,
       limitReached,
       overBudget,
@@ -1205,6 +1212,12 @@ App.transfers = {
     if (preview.overBudget) {
       messages.push(
         `Saldo insuficiente: faltam ${App.utils.formatCurrency(Math.abs(preview.remainingAfter))}.`,
+      );
+    }
+
+    if (preview.payrollBlocked) {
+      messages.push(
+        `Folha acima do teto financeiro: limite recomendado ${App.utils.formatCurrency(preview.payrollCeiling)}/sem.`,
       );
     }
 

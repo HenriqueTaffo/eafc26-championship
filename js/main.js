@@ -244,6 +244,15 @@ App.main = {
       filterValue: event.JogadorAfetado || event.Titulo || event.Jogador || ""
     }));
 
+    (App.auth?.myFavorites || []).forEach(item => add({
+      type: "Favorito",
+      title: item.title,
+      detail: item.detail || item.item_type || "Atalho privado",
+      view: "playersView",
+      filterId: "playersSearchInput",
+      filterValue: item.title
+    }));
+
     return items;
   },
 

@@ -9,6 +9,9 @@ App.auth = {
   myTransferTargets: [],
   myTransferTargetsLoaded: false,
   mySponsorships: null,
+  myQoL: null,
+  myFavorites: [],
+  myNotifications: [],
   autoDecisionRunning: false,
 
   init() {
@@ -47,6 +50,7 @@ App.auth = {
         App.auth.loadMyTransferProposals(),
         App.auth.loadMyTransferTargets(),
         App.auth.loadMySponsorships(),
+        App.auth.loadMyQoL(),
         App.auth.loadPublicNews()
       ]);
     }
@@ -98,6 +102,7 @@ App.auth = {
       await App.auth.loadMyTransferProposals();
       await App.auth.loadMyTransferTargets();
       await App.auth.loadMySponsorships();
+      await App.auth.loadMyQoL();
     }
     await App.governance?.loadData?.();
     await App.auth.loadPublicNews();
@@ -113,6 +118,9 @@ App.auth = {
     App.auth.myTransferTargets = [];
     App.auth.myTransferTargetsLoaded = false;
     App.auth.mySponsorships = null;
+    App.auth.myQoL = null;
+    App.auth.myFavorites = [];
+    App.auth.myNotifications = [];
     localStorage.removeItem(App.auth.storageKey);
     App.auth.renderAll();
   },
@@ -264,6 +272,103 @@ App.auth = {
     }
   },
 
+  async loadMyQoL() {
+    const session = App.auth.getSession();
+    if (!session?.managerId || !session?.accessCode || session.isCommissioner) {
+      App.auth.myQoL = null;
+      App.auth.myFavorites = [];
+      App.auth.myNotifications = [];
+      return null;
+    }
+
+    try {
+      const result = await App.api.rpc("app_get_manager_qol", {
+        p_manager_id: session.managerId,
+        p_access_code: session.accessCode
+      }, 30000);
+
+      if (result?.ok === false) throw new Error(result.message || "Central privada indisponível.");
+      App.auth.myQoL = result || null;
+      App.auth.myFavorites = Array.isArray(result?.favorites) ? result.favorites : [];
+      App.auth.myNotifications = Array.isArray(result?.notifications) ? result.notifications : [];
+      if (Array.isArray(result?.financeForecast)) App.state.apiFinanceForecast = result.financeForecast;
+      if (result?.financeRules) App.state.apiFinanceRules = result.financeRules;
+      return App.auth.myQoL;
+    } catch (error) {
+      console.warn("Central privada/QoL indisponível:", error);
+      App.auth.myQoL = null;
+      App.auth.myFavorites = [];
+      App.auth.myNotifications = [];
+      return null;
+    }
+  },
+
+  getFavoriteKey(type, key) {
+    return `${App.utils.normalizeText(type)}|${App.utils.normalizeText(key)}`;
+  },
+
+  isFavorite(type, key) {
+    const favoriteKey = App.auth.getFavoriteKey(type, key);
+    return (App.auth.myFavorites || []).some(item => App.auth.getFavoriteKey(item.item_type, item.item_key) === favoriteKey);
+  },
+
+  async upsertFavorite(payload = {}) {
+    const session = App.auth.getSession();
+    if (!session || session.isCommissioner) throw new Error("Faça login como técnico para favoritar.");
+
+    const result = await App.api.rpc("app_upsert_manager_favorite", {
+      p_manager_id: session.managerId,
+      p_access_code: session.accessCode,
+      p_item_type: payload.type || "item",
+      p_item_key: payload.key || payload.title || "",
+      p_title: payload.title || "Favorito",
+      p_detail: payload.detail || "",
+      p_payload: payload.payload || {}
+    }, 30000);
+
+    if (result?.ok === false) throw new Error(result.message || "Não consegui favoritar.");
+    App.auth.myQoL = result;
+    App.auth.myFavorites = Array.isArray(result?.favorites) ? result.favorites : [];
+    App.auth.myNotifications = Array.isArray(result?.notifications) ? result.notifications : [];
+    return result;
+  },
+
+  async deleteFavorite(type, key) {
+    const session = App.auth.getSession();
+    if (!session || session.isCommissioner) throw new Error("Faça login como técnico para remover favorito.");
+
+    const result = await App.api.rpc("app_delete_manager_favorite", {
+      p_manager_id: session.managerId,
+      p_access_code: session.accessCode,
+      p_item_type: type,
+      p_item_key: key
+    }, 30000);
+
+    if (result?.ok === false) throw new Error(result.message || "Não consegui remover favorito.");
+    App.auth.myQoL = result;
+    App.auth.myFavorites = Array.isArray(result?.favorites) ? result.favorites : [];
+    App.auth.myNotifications = Array.isArray(result?.notifications) ? result.notifications : [];
+    return result;
+  },
+
+  async markNotificationsRead() {
+    const session = App.auth.getSession();
+    if (!session || session.isCommissioner) return null;
+
+    const result = await App.api.rpc("app_mark_manager_notifications_read", {
+      p_manager_id: session.managerId,
+      p_access_code: session.accessCode
+    }, 30000);
+
+    if (result?.ok !== false) {
+      App.auth.myQoL = result;
+      App.auth.myFavorites = Array.isArray(result?.favorites) ? result.favorites : [];
+      App.auth.myNotifications = Array.isArray(result?.notifications) ? result.notifications : [];
+    }
+    App.auth.renderAll();
+    return result;
+  },
+
   async acceptSponsorship(offerId) {
     const session = App.auth.getSession();
     if (!session) throw new Error("Faça login como técnico antes de assinar patrocínio.");
@@ -387,6 +492,7 @@ App.auth = {
       App.auth.loadMyDecisions(),
       App.auth.loadMyTransferProposals(),
       App.auth.loadMySponsorships(),
+      App.auth.loadMyQoL(),
       App.auth.loadPublicNews()
     ]);
 
@@ -398,6 +504,7 @@ App.auth = {
     App.auth.renderLoginPanel();
     App.auth.renderDecisionCenter();
     App.auth.renderTransferProposalPanel();
+    App.auth.renderNotificationCenter();
     App.auth.renderLeagueNews();
   },
 
@@ -421,6 +528,7 @@ App.auth = {
             <button type="button" class="ghost-button" data-auth-action="logout">Sair</button>
           </div>
         </div>
+        <div id="managerNotificationCenter"></div>
       `;
 
       panel.querySelector('[data-auth-action="logout"]')?.addEventListener("click", () => App.auth.logout());
@@ -1014,6 +1122,47 @@ App.auth = {
       } catch (error) {
         App.utils.setMessage(message, error.message, "error");
       }
+    });
+  },
+
+  renderNotificationCenter() {
+    const target = document.getElementById("managerNotificationCenter");
+    if (!target) return;
+
+    const notifications = App.auth.myNotifications || [];
+    const unread = notifications.filter(item => !item.is_read);
+    const favorites = App.auth.myFavorites || [];
+
+    target.innerHTML = `
+      <section class="manager-qol-card">
+        <div class="manager-qol-header">
+          <div>
+            <span>Central privada</span>
+            <strong>${unread.length} aviso(s) novo(s)</strong>
+          </div>
+          ${unread.length ? `<button type="button" class="ghost-button" data-mark-notifications-read>Marcar lidos</button>` : ""}
+        </div>
+        <div class="manager-qol-grid">
+          <div>
+            <strong>Notificações</strong>
+            ${notifications.length ? notifications.slice(0, 4).map(item => `
+              <span class="manager-qol-pill ${App.utils.escapeHtml(item.tone || "info")} ${item.is_read ? "is-read" : ""}">
+                ${App.utils.escapeHtml(item.title)} · ${App.utils.escapeHtml(item.body || "")}
+              </span>
+            `).join("") : `<span class="calendar-muted">Nenhum aviso privado agora.</span>`}
+          </div>
+          <div>
+            <strong>Favoritos</strong>
+            ${favorites.length ? favorites.slice(0, 5).map(item => `
+              <span class="manager-qol-pill info">${App.utils.escapeHtml(item.title)} · ${App.utils.escapeHtml(item.detail || item.item_type || "")}</span>
+            `).join("") : `<span class="calendar-muted">Favorite alvos e atalhos no painel do técnico.</span>`}
+          </div>
+        </div>
+      </section>
+    `;
+
+    target.querySelector("[data-mark-notifications-read]")?.addEventListener("click", async () => {
+      await App.auth.markNotificationsRead().catch(error => console.warn("Não consegui marcar notificações:", error));
     });
   },
 

@@ -487,6 +487,8 @@ App.players = {
               club: target.club
             };
             const rating = App.transfers.getRatingForPlayerName(target.player);
+            const favoriteKey = `target:${target.id || target.player}`;
+            const isFavorite = App.auth?.isFavorite?.("transfer_target", favoriteKey);
             return `
               <div class="coach-target-item">
                 ${App.transfers.renderPlayerPhoto(marketPlayer, rating, "player-avatar")}
@@ -495,6 +497,15 @@ App.players = {
                   <small>${App.utils.escapeHtml([target.priority, target.club, target.value ? App.utils.formatCurrency(target.value) : ""].filter(Boolean).join(" · "))}</small>
                   ${target.note ? `<span>${App.utils.escapeHtml(target.note)}</span>` : ""}
                 </div>
+                <button
+                  type="button"
+                  class="icon-action-button ${isFavorite ? "is-active" : ""}"
+                  title="${isFavorite ? "Remover dos favoritos" : "Favoritar alvo"}"
+                  aria-label="${isFavorite ? "Remover dos favoritos" : "Favoritar alvo"}"
+                  data-favorite-target="${App.utils.escapeHtml(favoriteKey)}"
+                  data-favorite-title="${App.utils.escapeHtml(target.player)}"
+                  data-favorite-detail="${App.utils.escapeHtml([target.priority, target.club].filter(Boolean).join(" · "))}"
+                >★</button>
                 <button type="button" class="icon-action-button" title="Remover alvo" aria-label="Remover alvo" data-remove-private-target="${App.utils.escapeHtml(target.id)}">×</button>
               </div>
             `;
@@ -763,6 +774,35 @@ App.players = {
     `;
   },
 
+  renderPrivateFavoritesCard(owner) {
+    const session = App.auth?.getSession?.();
+    if (!session || App.utils.normalizeText(session.managerName) !== App.utils.normalizeText(owner)) return "";
+    const favorites = App.auth.myFavorites || [];
+
+    return `
+      <article class="coach-panel-card coach-favorites-card">
+        <div class="home-panel-header">
+          <h2>Favoritos privados</h2>
+          <span class="coach-section-kicker">${favorites.length} item(ns)</span>
+        </div>
+        <div class="coach-favorite-list">
+          ${favorites.length ? favorites.map(item => `
+            <div class="coach-favorite-item">
+              <strong>${App.utils.escapeHtml(item.title)}</strong>
+              <span>${App.utils.escapeHtml(item.detail || item.item_type || "")}</span>
+              <button type="button" class="icon-action-button" data-remove-favorite-type="${App.utils.escapeHtml(item.item_type)}" data-remove-favorite-key="${App.utils.escapeHtml(item.item_key)}">×</button>
+            </div>
+          `).join("") : `
+            <div class="coach-empty-state compact">
+              <strong>Nenhum favorito salvo</strong>
+              <p>Use a estrela nos alvos privados para criar atalhos persistentes.</p>
+            </div>
+          `}
+        </div>
+      </article>
+    `;
+  },
+
   renderCoachStrategyCards(activeTeam, standing, budget, transfers, injuries, recentForm) {
     const objectives = App.players.getCoachObjectives(activeTeam, standing, budget, transfers);
     const morale = App.players.getCoachMorale(activeTeam, standing, budget, injuries, recentForm);
@@ -865,6 +905,7 @@ App.players = {
     const privateBoardCard = canViewPrivate ? App.players.renderPrivateBoardObjectives(activeTeam, standing, budget, transfers, recentForm) : "";
     const statementCard = canViewPrivate ? App.players.renderCoachFinancialStatement(activeTeam.owner, budget, breakdown) : "";
     const targetsCard = canViewPrivate ? App.players.renderPrivateTransferTargets(activeTeam.owner) : "";
+    const favoritesCard = canViewPrivate ? App.players.renderPrivateFavoritesCard(activeTeam.owner) : "";
 
     return `
       <section class="coach-dashboard" style="--coach-color:${color}">
@@ -936,6 +977,7 @@ App.players = {
             </article>
 
             ${pinCard || ""}
+            ${favoritesCard}
             ${targetsCard}
           </div>
         </section>
@@ -1034,6 +1076,43 @@ App.players = {
           }
         }
         App.players.render();
+      });
+    });
+
+    document.querySelectorAll("[data-favorite-target]").forEach(button => {
+      if (button.dataset.bound === "true") return;
+      button.dataset.bound = "true";
+      button.addEventListener("click", async () => {
+        const key = button.dataset.favoriteTarget;
+        const isFavorite = App.auth?.isFavorite?.("transfer_target", key);
+        try {
+          if (isFavorite) await App.auth.deleteFavorite("transfer_target", key);
+          else await App.auth.upsertFavorite({
+            type: "transfer_target",
+            key,
+            title: button.dataset.favoriteTitle || "Alvo privado",
+            detail: button.dataset.favoriteDetail || "",
+            payload: { source: "private-target" }
+          });
+        } catch (error) {
+          console.warn("Favorito privado indisponível:", error);
+        }
+        App.players.render();
+        App.auth?.renderAll?.();
+      });
+    });
+
+    document.querySelectorAll("[data-remove-favorite-type]").forEach(button => {
+      if (button.dataset.bound === "true") return;
+      button.dataset.bound = "true";
+      button.addEventListener("click", async () => {
+        try {
+          await App.auth.deleteFavorite(button.dataset.removeFavoriteType, button.dataset.removeFavoriteKey);
+        } catch (error) {
+          console.warn("Não consegui remover favorito:", error);
+        }
+        App.players.render();
+        App.auth?.renderAll?.();
       });
     });
   },

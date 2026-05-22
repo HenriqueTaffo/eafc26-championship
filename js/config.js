@@ -38,6 +38,8 @@ App.state = {
     medicalActions: [],
     weeklyReviews: []
   },
+  apiFinanceForecast: [],
+  apiFinanceRules: null,
   apiLoaded: false,
   loadingCount: 0,
   silentSyncRunning: false,
