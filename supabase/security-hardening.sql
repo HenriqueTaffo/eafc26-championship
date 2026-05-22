@@ -228,7 +228,14 @@ begin
 
   v_buyer_col := public.app_transfer_column(v_transfer_table, array['Comprador', 'buyer', 'comprador']);
   v_player_col := public.app_transfer_column(v_transfer_table, array['Jogador', 'player', 'jogador']);
-  v_status_col := public.app_transfer_column(v_transfer_table, array['Status', 'status']);
+  select quote_ident(a.attname)
+    into v_status_col
+  from pg_attribute a
+  where a.attrelid = v_transfer_table
+    and not a.attisdropped
+    and a.attname in ('Status', 'status')
+  order by case when a.attname = 'Status' then 0 else 1 end
+  limit 1;
   v_timestamp_col := public.app_transfer_column(v_transfer_table, array['Timestamp', 'created_at', 'createdAt', 'Data']);
   v_market_value_col := public.app_transfer_column(v_transfer_table, array['ValorTransfermarkt', 'Valor Transfermarkt', 'marketValue', 'market_value']);
   v_overall_col := public.app_transfer_column(v_transfer_table, array['Overall', 'overall']);
@@ -272,7 +279,7 @@ begin
            order by %6$s desc nulls last, ctid desc
          ) as rn
        from %2$s
-       where lower(coalesce(%7$s::text, '''')) = ''aprovado''
+       where lower(coalesce(%7$s::text, '''')) in (''aprovado'', ''approved'')
          %3$s
      ),
      totals as (
@@ -323,7 +330,14 @@ begin
   end if;
 
   v_buyer_col := public.app_transfer_column(v_transfer_table, array['Comprador', 'buyer', 'comprador']);
-  v_status_col := public.app_transfer_column(v_transfer_table, array['Status', 'status']);
+  select quote_ident(a.attname)
+    into v_status_col
+  from pg_attribute a
+  where a.attrelid = v_transfer_table
+    and not a.attisdropped
+    and a.attname in ('Status', 'status')
+  order by case when a.attname = 'Status' then 0 else 1 end
+  limit 1;
   v_timestamp_col := public.app_transfer_column(v_transfer_table, array['Timestamp', 'created_at', 'createdAt', 'Data']);
   v_type_col := public.app_transfer_column(v_transfer_table, array['TipoTransferencia', 'Tipo Transferencia', 'transferType', 'transfer_type']);
 
@@ -354,7 +368,7 @@ begin
   execute format(
     'select count(*)::integer
        from %s
-      where lower(coalesce(%s::text, '''')) = ''aprovado''
+      where lower(coalesce(%s::text, '''')) in (''aprovado'', ''approved'')
         and lower(%s::text) = lower($1)
         %s
         %s',
@@ -423,7 +437,14 @@ begin
   v_overall_col := public.app_transfer_column(v_transfer_table, array['Overall', 'overall']);
   v_market_value_col := public.app_transfer_column(v_transfer_table, array['ValorTransfermarkt', 'Valor Transfermarkt', 'marketValue', 'market_value']);
   v_final_value_col := public.app_transfer_column(v_transfer_table, array['ValorFinal', 'Valor Final', 'finalValue', 'final_value']);
-  v_status_col := public.app_transfer_column(v_transfer_table, array['Status', 'status']);
+  select quote_ident(a.attname)
+    into v_status_col
+  from pg_attribute a
+  where a.attrelid = v_transfer_table
+    and not a.attisdropped
+    and a.attname in ('Status', 'status')
+  order by case when a.attname = 'Status' then 0 else 1 end
+  limit 1;
   v_timestamp_col := public.app_transfer_column(v_transfer_table, array['Timestamp', 'created_at', 'createdAt', 'Data']);
   v_type_col := public.app_transfer_column(v_transfer_table, array['TipoTransferencia', 'Tipo Transferencia', 'transferType', 'transfer_type']);
 
@@ -574,11 +595,11 @@ begin
 
   if v_status_raw_col is not null and v_status_raw_col <> v_status_col then
     v_insert_cols := v_insert_cols || v_status_raw_col;
-    v_insert_vals := v_insert_vals || quote_literal('aprovado');
+    v_insert_vals := v_insert_vals || quote_literal('approved');
   end if;
 
   v_insert_cols := v_insert_cols || v_status_col;
-  v_insert_vals := v_insert_vals || quote_literal('aprovado');
+  v_insert_vals := v_insert_vals || quote_literal(case when v_status_col = quote_ident('status') then 'approved' else 'aprovado' end);
 
   v_insert_cols := v_insert_cols || v_timestamp_col;
   v_insert_vals := v_insert_vals || v_timestamp_value_expr;
