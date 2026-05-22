@@ -154,6 +154,52 @@ as $$
   limit 1;
 $$;
 
+create or replace function public.app_ensure_transfer_table_schema()
+returns regclass
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_transfer_table regclass;
+begin
+  v_transfer_table := public.app_find_transfer_table();
+
+  if v_transfer_table is null then
+    create table if not exists public.transfers (
+      id bigserial primary key,
+      "Comprador" text,
+      "Jogador" text,
+      "ClubeOrigem" text,
+      "Overall" integer,
+      "ValorTransfermarkt" numeric,
+      "ValorFinal" numeric,
+      "Status" text default 'pendente',
+      "Timestamp" timestamptz default now(),
+      "TipoTransferencia" text default 'market',
+      "Vendedor" text,
+      "ValorNegociado" numeric
+    );
+
+    v_transfer_table := 'public.transfers'::regclass;
+  end if;
+
+  execute format('alter table %s add column if not exists "Comprador" text', v_transfer_table);
+  execute format('alter table %s add column if not exists "Jogador" text', v_transfer_table);
+  execute format('alter table %s add column if not exists "ClubeOrigem" text', v_transfer_table);
+  execute format('alter table %s add column if not exists "Overall" integer', v_transfer_table);
+  execute format('alter table %s add column if not exists "ValorTransfermarkt" numeric', v_transfer_table);
+  execute format('alter table %s add column if not exists "ValorFinal" numeric', v_transfer_table);
+  execute format('alter table %s add column if not exists "Status" text default ''pendente''', v_transfer_table);
+  execute format('alter table %s add column if not exists "Timestamp" timestamptz default now()', v_transfer_table);
+  execute format('alter table %s add column if not exists "TipoTransferencia" text default ''market''', v_transfer_table);
+  execute format('alter table %s add column if not exists "Vendedor" text', v_transfer_table);
+  execute format('alter table %s add column if not exists "ValorNegociado" numeric', v_transfer_table);
+
+  return v_transfer_table;
+end;
+$$;
+
 create or replace function public.app_get_transfer_spend_totals()
 returns jsonb
 language plpgsql
@@ -355,18 +401,7 @@ declare
   v_timestamp_value_expr text := 'now()';
   v_type_col text;
 begin
-  v_transfer_table := public.app_find_transfer_table();
-  if v_transfer_table is null then
-    return jsonb_build_object('ok', false, 'message', 'Nao encontrei a tabela de transferencias.');
-  end if;
-
-  execute format('alter table %s add column if not exists "TipoTransferencia" text default ''market''', v_transfer_table);
-  execute format('alter table %s add column if not exists "Vendedor" text', v_transfer_table);
-  execute format('alter table %s add column if not exists "ValorNegociado" numeric', v_transfer_table);
-  execute format('alter table %s add column if not exists "ValorFinal" numeric', v_transfer_table);
-  execute format('alter table %s add column if not exists "ClubeOrigem" text', v_transfer_table);
-  execute format('alter table %s add column if not exists "Overall" integer', v_transfer_table);
-  execute format('alter table %s add column if not exists "ValorTransfermarkt" numeric', v_transfer_table);
+  v_transfer_table := public.app_ensure_transfer_table_schema();
 
   v_buyer_col := public.app_transfer_column(v_transfer_table, array['Comprador', 'buyer', 'comprador']);
   v_player_col := public.app_transfer_column(v_transfer_table, array['Jogador', 'player', 'jogador']);
@@ -387,7 +422,22 @@ begin
      or v_status_col is null
      or v_timestamp_col is null
      or v_type_col is null then
-    return jsonb_build_object('ok', false, 'message', 'Tabela de transferencias encontrada, mas faltam colunas esperadas.');
+    return jsonb_build_object(
+      'ok', false,
+      'message', 'Tabela de transferencias encontrada, mas faltam colunas esperadas.',
+      'table', v_transfer_table::text,
+      'missing', jsonb_strip_nulls(jsonb_build_object(
+        'buyer', case when v_buyer_col is null then 'Comprador' end,
+        'player', case when v_player_col is null then 'Jogador' end,
+        'origin', case when v_origin_col is null then 'ClubeOrigem' end,
+        'overall', case when v_overall_col is null then 'Overall' end,
+        'marketValue', case when v_market_value_col is null then 'ValorTransfermarkt' end,
+        'finalValue', case when v_final_value_col is null then 'ValorFinal' end,
+        'status', case when v_status_col is null then 'Status' end,
+        'timestamp', case when v_timestamp_col is null then 'Timestamp' end,
+        'type', case when v_type_col is null then 'TipoTransferencia' end
+      ))
+    );
   end if;
 
   select format_type(a.atttypid, a.atttypmod)
@@ -847,6 +897,26 @@ begin
 
   if to_regprocedure('public.app_add_internal_transfer(text,text,text,text,text,integer,numeric)') is not null then
     revoke execute on function public.app_add_internal_transfer(text, text, text, text, text, integer, numeric) from public, anon, authenticated;
+  end if;
+
+  if to_regprocedure('public.app_record_external_transfer(text,text,text,integer,numeric,numeric)') is not null then
+    revoke execute on function public.app_record_external_transfer(text, text, text, integer, numeric, numeric) from public, anon, authenticated;
+  end if;
+
+  if to_regprocedure('public.app_ensure_transfer_table_schema()') is not null then
+    revoke execute on function public.app_ensure_transfer_table_schema() from public, anon, authenticated;
+  end if;
+
+  if to_regprocedure('public.app_find_transfer_table()') is not null then
+    revoke execute on function public.app_find_transfer_table() from public, anon, authenticated;
+  end if;
+
+  if to_regprocedure('public.app_transfer_column(regclass,text[])') is not null then
+    revoke execute on function public.app_transfer_column(regclass, text[]) from public, anon, authenticated;
+  end if;
+
+  if to_regprocedure('public.app_debug_transfer_tables()') is not null then
+    revoke execute on function public.app_debug_transfer_tables() from public, anon, authenticated;
   end if;
 end;
 $$;
