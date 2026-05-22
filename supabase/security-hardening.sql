@@ -400,10 +400,13 @@ declare
   v_timestamp_type text := '';
   v_timestamp_value_expr text := 'now()';
   v_type_col text;
+  v_buyer_id_col text;
+  v_buyer_id text;
 begin
   v_transfer_table := public.app_ensure_transfer_table_schema();
 
   v_buyer_col := public.app_transfer_column(v_transfer_table, array['Comprador', 'buyer', 'comprador']);
+  v_buyer_id_col := public.app_transfer_column(v_transfer_table, array['buyer_id', 'buyerId', 'CompradorId', 'comprador_id']);
   v_player_col := public.app_transfer_column(v_transfer_table, array['Jogador', 'player', 'jogador']);
   v_origin_col := public.app_transfer_column(v_transfer_table, array['ClubeOrigem', 'Clube Origem', 'fromClub', 'from_club']);
   v_overall_col := public.app_transfer_column(v_transfer_table, array['Overall', 'overall']);
@@ -451,36 +454,82 @@ begin
     v_timestamp_value_expr := quote_literal(to_char(now(), 'DD/MM/YYYY, HH24:MI'));
   end if;
 
-  execute format(
-    'insert into %s (
-       %s,
-       %s,
-       %s,
-       %s,
-       %s,
-       %s,
-       %s,
-       %s,
-       %s
-     ) values (%L, %L, %L, %s, %s, %s, ''aprovado'', %s, ''market'')',
-    v_transfer_table,
-    v_buyer_col,
-    v_player_col,
-    v_origin_col,
-    v_overall_col,
-    v_market_value_col,
-    v_final_value_col,
-    v_status_col,
-    v_timestamp_col,
-    v_type_col,
-    p_buyer,
-    p_player,
-    p_from_club,
-    coalesce(p_overall, 0),
-    coalesce(p_market_value, 0),
-    coalesce(p_final_value, 0),
-    v_timestamp_value_expr
-  );
+  if v_buyer_id_col is not null then
+    select id::text
+      into v_buyer_id
+    from public.managers
+    where lower(display_name) = lower(p_buyer)
+    limit 1;
+
+    if v_buyer_id is null then
+      return jsonb_build_object('ok', false, 'message', format('Nao encontrei o id do comprador %s.', p_buyer));
+    end if;
+
+    execute format(
+      'insert into %s (
+         %s,
+         %s,
+         %s,
+         %s,
+         %s,
+         %s,
+         %s,
+         %s,
+         %s,
+         %s
+       ) values (%L, %L, %L, %L, %s, %s, %s, ''aprovado'', %s, ''market'')',
+      v_transfer_table,
+      v_buyer_id_col,
+      v_buyer_col,
+      v_player_col,
+      v_origin_col,
+      v_overall_col,
+      v_market_value_col,
+      v_final_value_col,
+      v_status_col,
+      v_timestamp_col,
+      v_type_col,
+      v_buyer_id,
+      p_buyer,
+      p_player,
+      p_from_club,
+      coalesce(p_overall, 0),
+      coalesce(p_market_value, 0),
+      coalesce(p_final_value, 0),
+      v_timestamp_value_expr
+    );
+  else
+    execute format(
+      'insert into %s (
+         %s,
+         %s,
+         %s,
+         %s,
+         %s,
+         %s,
+         %s,
+         %s,
+         %s
+       ) values (%L, %L, %L, %s, %s, %s, ''aprovado'', %s, ''market'')',
+      v_transfer_table,
+      v_buyer_col,
+      v_player_col,
+      v_origin_col,
+      v_overall_col,
+      v_market_value_col,
+      v_final_value_col,
+      v_status_col,
+      v_timestamp_col,
+      v_type_col,
+      p_buyer,
+      p_player,
+      p_from_club,
+      coalesce(p_overall, 0),
+      coalesce(p_market_value, 0),
+      coalesce(p_final_value, 0),
+      v_timestamp_value_expr
+    );
+  end if;
 
   return jsonb_build_object(
     'ok', true,

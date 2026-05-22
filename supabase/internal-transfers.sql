@@ -44,6 +44,10 @@ declare
   v_from_club text;
   v_today text := to_char(now(), 'DD/MM/YYYY');
   v_time text := to_char(now(), 'HH24:MI');
+  v_buyer_id_col text;
+  v_seller_id_col text;
+  v_buyer_id text;
+  v_seller_id text;
 begin
   if p_pin is distinct from 'eafc26' then
     return jsonb_build_object('ok', false, 'message', 'PIN invalido.');
@@ -139,30 +143,159 @@ begin
   v_final_value := coalesce(p_market_value, 0);
   v_from_club := coalesce(nullif(trim(p_from_club), ''), 'Negociacao interna: ' || p_seller);
 
-  execute format(
-    'insert into %s (
-       "Comprador",
-       "Jogador",
-       "ClubeOrigem",
-       "Overall",
-       "ValorTransfermarkt",
-       "ValorFinal",
-       "Status",
-       "Timestamp",
-       "TipoTransferencia",
-       "Vendedor",
-       "ValorNegociado"
-     ) values (%L, %L, %L, %s, %s, %s, ''aprovado'', now(), ''internal'', %L, %s)',
-    v_transfer_table,
-    p_buyer,
-    p_player,
-    v_from_club,
-    coalesce(p_overall, 0),
-    coalesce(p_market_value, 0),
-    v_final_value,
-    p_seller,
-    coalesce(p_market_value, 0)
-  );
+  select quote_ident(a.attname)
+    into v_buyer_id_col
+  from pg_attribute a
+  where a.attrelid = v_transfer_table
+    and not a.attisdropped
+    and lower(regexp_replace(a.attname, '[^a-z0-9]', '', 'g')) in ('buyerid', 'compradorid')
+  limit 1;
+
+  select quote_ident(a.attname)
+    into v_seller_id_col
+  from pg_attribute a
+  where a.attrelid = v_transfer_table
+    and not a.attisdropped
+    and lower(regexp_replace(a.attname, '[^a-z0-9]', '', 'g')) in ('sellerid', 'vendedorid')
+  limit 1;
+
+  if v_buyer_id_col is not null then
+    select id::text
+      into v_buyer_id
+    from public.managers
+    where lower(display_name) = lower(p_buyer)
+    limit 1;
+
+    if v_buyer_id is null then
+      return jsonb_build_object('ok', false, 'message', format('Nao encontrei o id do comprador %s.', p_buyer));
+    end if;
+  end if;
+
+  if v_seller_id_col is not null then
+    select id::text
+      into v_seller_id
+    from public.managers
+    where lower(display_name) = lower(p_seller)
+    limit 1;
+
+    if v_seller_id is null then
+      return jsonb_build_object('ok', false, 'message', format('Nao encontrei o id do vendedor %s.', p_seller));
+    end if;
+  end if;
+
+  if v_buyer_id_col is not null and v_seller_id_col is not null then
+    execute format(
+      'insert into %s (
+         %s,
+         %s,
+         "Comprador",
+         "Jogador",
+         "ClubeOrigem",
+         "Overall",
+         "ValorTransfermarkt",
+         "ValorFinal",
+         "Status",
+         "Timestamp",
+         "TipoTransferencia",
+         "Vendedor",
+         "ValorNegociado"
+       ) values (%L, %L, %L, %L, %L, %s, %s, %s, ''aprovado'', now(), ''internal'', %L, %s)',
+      v_transfer_table,
+      v_buyer_id_col,
+      v_seller_id_col,
+      v_buyer_id,
+      v_seller_id,
+      p_buyer,
+      p_player,
+      v_from_club,
+      coalesce(p_overall, 0),
+      coalesce(p_market_value, 0),
+      v_final_value,
+      p_seller,
+      coalesce(p_market_value, 0)
+    );
+  elsif v_buyer_id_col is not null then
+    execute format(
+      'insert into %s (
+         %s,
+         "Comprador",
+         "Jogador",
+         "ClubeOrigem",
+         "Overall",
+         "ValorTransfermarkt",
+         "ValorFinal",
+         "Status",
+         "Timestamp",
+         "TipoTransferencia",
+         "Vendedor",
+         "ValorNegociado"
+       ) values (%L, %L, %L, %L, %s, %s, %s, ''aprovado'', now(), ''internal'', %L, %s)',
+      v_transfer_table,
+      v_buyer_id_col,
+      v_buyer_id,
+      p_buyer,
+      p_player,
+      v_from_club,
+      coalesce(p_overall, 0),
+      coalesce(p_market_value, 0),
+      v_final_value,
+      p_seller,
+      coalesce(p_market_value, 0)
+    );
+  elsif v_seller_id_col is not null then
+    execute format(
+      'insert into %s (
+         %s,
+         "Comprador",
+         "Jogador",
+         "ClubeOrigem",
+         "Overall",
+         "ValorTransfermarkt",
+         "ValorFinal",
+         "Status",
+         "Timestamp",
+         "TipoTransferencia",
+         "Vendedor",
+         "ValorNegociado"
+       ) values (%L, %L, %L, %L, %s, %s, %s, ''aprovado'', now(), ''internal'', %L, %s)',
+      v_transfer_table,
+      v_seller_id_col,
+      v_seller_id,
+      p_buyer,
+      p_player,
+      v_from_club,
+      coalesce(p_overall, 0),
+      coalesce(p_market_value, 0),
+      v_final_value,
+      p_seller,
+      coalesce(p_market_value, 0)
+    );
+  else
+    execute format(
+      'insert into %s (
+         "Comprador",
+         "Jogador",
+         "ClubeOrigem",
+         "Overall",
+         "ValorTransfermarkt",
+         "ValorFinal",
+         "Status",
+         "Timestamp",
+         "TipoTransferencia",
+         "Vendedor",
+         "ValorNegociado"
+       ) values (%L, %L, %L, %s, %s, %s, ''aprovado'', now(), ''internal'', %L, %s)',
+      v_transfer_table,
+      p_buyer,
+      p_player,
+      v_from_club,
+      coalesce(p_overall, 0),
+      coalesce(p_market_value, 0),
+      v_final_value,
+      p_seller,
+      coalesce(p_market_value, 0)
+    );
+  end if;
 
   if v_event_table is not null then
     execute format(

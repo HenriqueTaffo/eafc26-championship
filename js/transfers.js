@@ -63,6 +63,28 @@ App.transfers = {
       avatar_url: "https://upload.wikimedia.org/wikipedia/commons/a/ab/David_de_Gea_2018.png",
       source_url: "https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/de-gea/193080",
       source_name: "EA SPORTS FC official ratings + Wikimedia photo"
+    },
+    "dybala": {
+      name: "Paulo Dybala",
+      club: "Roma",
+      position: "CAM",
+      nation: "Argentina",
+      overall: 86,
+      gender: "Men's Football",
+      avatar_url: "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a6/Dybala_2017.jpg/250px-Dybala_2017.jpg",
+      source_url: "https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/paulo-dybala/211110",
+      source_name: "EA SPORTS FC official ratings + Wikimedia photo"
+    },
+    "paulo dybala": {
+      name: "Paulo Dybala",
+      club: "Roma",
+      position: "CAM",
+      nation: "Argentina",
+      overall: 86,
+      gender: "Men's Football",
+      avatar_url: "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a6/Dybala_2017.jpg/250px-Dybala_2017.jpg",
+      source_url: "https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/paulo-dybala/211110",
+      source_name: "EA SPORTS FC official ratings + Wikimedia photo"
     }
   },
 
@@ -125,7 +147,8 @@ App.transfers = {
       "roger ibanez": ["Roger Ibanez Da Silva"],
       "davinson sanchez": ["Davinson Sanchez"],
       "cristiano ronaldo": ["Cristiano Ronaldo dos Santos Aveiro"],
-      "leandro paredes": ["Leandro Paredes"]
+      "leandro paredes": ["Leandro Paredes"],
+      "dybala": ["Paulo Dybala"]
     };
 
     return [playerName, ...(aliases[normalized] || [])].filter(Boolean);
