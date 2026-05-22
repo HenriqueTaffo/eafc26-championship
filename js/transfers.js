@@ -445,7 +445,7 @@ App.transfers = {
       ? rating.avatar_url
       : App.transfers.isUsablePlayerAvatar(player?.avatar_url)
         ? player.avatar_url
-        : "";
+        : App.transfers.getMarketPlayerAvatar(player);
     const name = player?.name || rating?.name || "?";
     const fallback = App.utils.escapeHtml(String(name).charAt(0));
     return `
@@ -456,18 +456,32 @@ App.transfers = {
     `;
   },
 
+  getMarketPlayerAvatar(player) {
+    const transfermarktId =
+      String(player?.transfermarkt_id || player?.transfermarktId || "").trim() ||
+      String(player?.transfermarkt_url || player?.transfermarktUrl || "").match(
+        /\/spieler\/(\d+)/,
+      )?.[1] ||
+      "";
+    if (!transfermarktId) return "";
+
+    const avatar = App.data?.marketPlayerAvatars?.[transfermarktId] || "";
+    return App.transfers.isUsablePlayerAvatar(avatar) ? avatar : "";
+  },
+
   getRatingForPlayerName(playerName) {
     const marketPlayer = App.transfers.findMarketPlayerByName(playerName);
+    const marketAvatar = App.transfers.getMarketPlayerAvatar(marketPlayer);
     return (
       App.transfers.findEaRatingForMarketPlayer(
         marketPlayer || { name: playerName },
       ) ||
-      (marketPlayer?.avatar_url
+      (marketPlayer?.avatar_url || marketAvatar
         ? {
             name: marketPlayer.name,
             club: marketPlayer.club,
             position: marketPlayer.position,
-            avatar_url: marketPlayer.avatar_url,
+            avatar_url: marketPlayer.avatar_url || marketAvatar,
           }
         : null)
     );

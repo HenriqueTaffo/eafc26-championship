@@ -11,6 +11,7 @@
     "sync:futbin-ratings:dry": "node scripts/import-futbin-ratings.js --dry-run",
     "sync:fifaratings-market": "node scripts/import-fifaratings-market.js",
     "sync:fifaratings-market:dry": "node scripts/import-fifaratings-market.js --dry-run",
+    "sync:market-avatar-cache": "node scripts/generate-market-avatar-cache.js",
     "sync:market-avatars": "node scripts/backfill-player-avatars.js",
     "sync:market-avatars:dry": "node scripts/backfill-player-avatars.js --dry-run",
     "format": "prettier --write \"**/*.{html,css,js,json,md}\"",
