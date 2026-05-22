@@ -1,24 +1,28 @@
 window.App = window.App || {};
 
 App.api = {
-  reversedTransferKeys: [
-    "rafael|ayoze perez|villarreal club de futbol s.a.d."
-  ],
+  reversedTransferKeys: ["rafael|ayoze perez|villarreal club de futbol s.a.d."],
 
   getTransferStateKey(item = {}) {
     return [
       item.Comprador || item.buyer || "",
       item.Jogador || item.player || item.name || "",
-      item.ClubeOrigem || item.fromClub || item.club || ""
-    ].map(value => App.utils.normalizeText(value)).join("|");
+      item.ClubeOrigem || item.fromClub || item.club || "",
+    ]
+      .map((value) => App.utils.normalizeText(value))
+      .join("|");
   },
 
   isReversedTransfer(item = {}) {
-    return App.api.reversedTransferKeys.includes(App.api.getTransferStateKey(item));
+    return App.api.reversedTransferKeys.includes(
+      App.api.getTransferStateKey(item),
+    );
   },
 
   isApprovedTransfer(item = {}) {
-    return ["aprovado", "approved"].includes(App.utils.normalizeText(item.Status || item.status));
+    return ["aprovado", "approved"].includes(
+      App.utils.normalizeText(item.Status || item.status),
+    );
   },
 
   async fetchWithTimeout(url, options = {}, timeoutMs = 45000) {
@@ -28,7 +32,7 @@ App.api = {
     try {
       return await fetch(url, {
         ...options,
-        signal: controller.signal
+        signal: controller.signal,
       });
     } finally {
       clearTimeout(timeoutId);
@@ -37,9 +41,9 @@ App.api = {
 
   getSupabaseHeaders() {
     return {
-      "apikey": App.config.SUPABASE_PUBLISHABLE_KEY,
-      "Authorization": `Bearer ${App.config.SUPABASE_PUBLISHABLE_KEY}`,
-      "Content-Type": "application/json"
+      apikey: App.config.SUPABASE_PUBLISHABLE_KEY,
+      Authorization: `Bearer ${App.config.SUPABASE_PUBLISHABLE_KEY}`,
+      "Content-Type": "application/json",
     };
   },
 
@@ -49,9 +53,9 @@ App.api = {
       {
         method: "POST",
         headers: App.api.getSupabaseHeaders(),
-        body: JSON.stringify(payload)
+        body: JSON.stringify(payload),
       },
-      timeoutMs
+      timeoutMs,
     );
 
     const text = await response.text();
@@ -64,45 +68,51 @@ App.api = {
     }
 
     if (!response.ok) {
-      const message = data?.message || data?.hint || data?.details || text || `Erro Supabase ${response.status}`;
+      const message =
+        data?.message ||
+        data?.hint ||
+        data?.details ||
+        text ||
+        `Erro Supabase ${response.status}`;
       throw new Error(message);
     }
 
     return data;
   },
 
-
   async loadMarketPlayers(query = "", showContracted = false, limit = 12) {
     try {
-      const data = await App.api.rpc("app_search_market_players", {
-        p_query: query || "",
-        p_show_contracted: Boolean(showContracted),
-        p_limit: Number(limit || 12)
-      }, 30000);
+      const data = await App.api.rpc(
+        "app_search_market_players",
+        {
+          p_query: query || "",
+          p_show_contracted: Boolean(showContracted),
+          p_limit: Number(limit || 12),
+        },
+        30000,
+      );
 
-      App.state.apiMarketPlayers = App.api.applyMarketPlayerOverrides(Array.isArray(data) ? data : []);
-      return App.state.apiMarketPlayers;
+      const rows = App.api.applyMarketPlayerOverrides(
+        Array.isArray(data) ? data : [],
+      );
+      App.api.mergeMarketPlayers(rows);
+      return rows;
     } catch (rpcError) {
-      console.warn("Busca RPC players_market indisponível, tentando leitura direta:", rpcError);
+      console.warn(
+        "Busca RPC players_market indisponível, tentando leitura direta:",
+        rpcError,
+      );
 
       try {
-        const response = await App.api.fetchWithTimeout(
-          `${App.config.SUPABASE_URL}/rest/v1/players_market?select=id,name,club,league,country,position,age,market_value_eur,transfermarkt_url,source,last_synced_at&order=name.asc&limit=200`,
-          {
-            method: "GET",
-            headers: App.api.getSupabaseHeaders()
-          },
-          30000
+        const data = await App.api.fetchMarketPlayersDirect(
+          query,
+          Number(limit || 12),
         );
-
-        if (!response.ok) {
-          App.state.apiMarketPlayers = [];
-          return [];
-        }
-
-        const data = await response.json();
-        App.state.apiMarketPlayers = App.api.applyMarketPlayerOverrides(Array.isArray(data) ? data : []);
-        return App.state.apiMarketPlayers;
+        const rows = App.api.applyMarketPlayerOverrides(
+          Array.isArray(data) ? data : [],
+        );
+        App.api.mergeMarketPlayers(rows);
+        return rows;
       } catch (error) {
         console.warn("Não consegui carregar players_market:", error);
         App.state.apiMarketPlayers = [];
@@ -111,32 +121,87 @@ App.api = {
     }
   },
 
+  async fetchMarketPlayersDirect(query = "", limit = 12) {
+    const selectWithAvatar =
+      "id,name,club,league,country,position,age,market_value_eur,transfermarkt_url,avatar_url,source,last_synced_at";
+    const selectWithoutAvatar =
+      "id,name,club,league,country,position,age,market_value_eur,transfermarkt_url,source,last_synced_at";
+    const normalizedLimit = Math.max(1, Math.min(Number(limit || 12), 200));
+    const queryText = String(query || "").trim();
+    const filters = queryText
+      ? `&or=(name.ilike.*${encodeURIComponent(queryText)}*,club.ilike.*${encodeURIComponent(queryText)}*,position.ilike.*${encodeURIComponent(queryText)}*)`
+      : "";
+
+    const request = async (select) =>
+      App.api.fetchWithTimeout(
+        `${App.config.SUPABASE_URL}/rest/v1/players_market?select=${select}${filters}&order=name.asc&limit=${normalizedLimit}`,
+        {
+          method: "GET",
+          headers: App.api.getSupabaseHeaders(),
+        },
+        30000,
+      );
+
+    let response = await request(selectWithAvatar);
+    if (!response.ok) response = await request(selectWithoutAvatar);
+    if (!response.ok) return [];
+    return await response.json();
+  },
+
+  mergeMarketPlayers(rows = []) {
+    const current = Array.isArray(App.state.apiMarketPlayers)
+      ? App.state.apiMarketPlayers
+      : [];
+    const byKey = current.reduce((acc, item) => {
+      const key = String(item.id || item.name || "").toLowerCase();
+      if (key) acc[key] = item;
+      return acc;
+    }, {});
+
+    App.api.applyMarketPlayerOverrides(rows).forEach((item) => {
+      const key = String(item.id || item.name || "").toLowerCase();
+      if (key) byKey[key] = { ...(byKey[key] || {}), ...item };
+    });
+
+    App.state.apiMarketPlayers = Object.values(byKey);
+    return App.state.apiMarketPlayers;
+  },
+
   applyMarketPlayerOverrides(players = []) {
-    return players.map(player => {
-      if (!App.api.isReversedTransfer({
-        Comprador: "Rafael",
-        Jogador: player.name,
-        ClubeOrigem: player.club
-      })) return player;
+    return players.map((player) => {
+      if (
+        !App.api.isReversedTransfer({
+          Comprador: "Rafael",
+          Jogador: player.name,
+          ClubeOrigem: player.club,
+        })
+      )
+        return player;
 
       return {
         ...player,
         alreadyContracted: false,
-        is_contracted: false
+        is_contracted: false,
       };
     });
   },
 
   mergeEaRatings(rows = []) {
-    const current = Array.isArray(App.state.apiRatings) ? App.state.apiRatings : [];
+    const current = Array.isArray(App.state.apiRatings)
+      ? App.state.apiRatings
+      : [];
     const byKey = current.reduce((acc, item) => {
-      const key = String(item.id || item.ea_id || item.name || "").toLowerCase();
+      const key = String(
+        item.id || item.ea_id || item.name || "",
+      ).toLowerCase();
       if (key) acc[key] = item;
       return acc;
     }, {});
 
-    rows.forEach(item => {
-      const key = String(item.id || item.ea_id || item.name || "").toLowerCase();
+    rows.forEach((item) => {
+      const key = String(
+        item.id || item.ea_id || item.name || "",
+      ).toLowerCase();
       if (key) byKey[key] = item;
     });
 
@@ -145,10 +210,14 @@ App.api = {
   },
 
   async searchEaRatings(query = "", limit = 12) {
-    const data = await App.api.rpc("app_search_ea_player_ratings", {
-      p_query: query || "",
-      p_limit: Number(limit || 12)
-    }, 30000);
+    const data = await App.api.rpc(
+      "app_search_ea_player_ratings",
+      {
+        p_query: query || "",
+        p_limit: Number(limit || 12),
+      },
+      30000,
+    );
 
     return Array.isArray(data) ? data : [];
   },
@@ -165,36 +234,73 @@ App.api = {
   },
 
   async loadRatingsForPlayerNames(names = [], limitPerName = 3) {
-    const uniqueNames = [...new Set((names || []).map(name => String(name || "").trim()).filter(Boolean))].slice(0, 120);
+    const uniqueNames = [
+      ...new Set(
+        (names || []).map((name) => String(name || "").trim()).filter(Boolean),
+      ),
+    ].slice(0, 120);
     if (!uniqueNames.length) return App.state.apiRatings || [];
 
-    const groups = await Promise.all(uniqueNames.map(name => {
-      const aliases = App.transfers?.getPlayerSearchAliases ? App.transfers.getPlayerSearchAliases(name) : [name];
-      const normalizedAlias = App.transfers?.normalizePlayerRatingKey
-        ? App.transfers.normalizePlayerRatingKey(name)
-        : App.utils.normalizeText(name);
-      const searchAliases = [...new Set([...aliases, normalizedAlias].filter(Boolean))];
-      return Promise.all(searchAliases.map(alias =>
-        App.api.searchEaRatings(alias, limitPerName).catch(() => [])
-      ));
-    }));
+    const groups = await Promise.all(
+      uniqueNames.map((name) => {
+        const aliases = App.transfers?.getPlayerSearchAliases
+          ? App.transfers.getPlayerSearchAliases(name)
+          : [name];
+        const normalizedAlias = App.transfers?.normalizePlayerRatingKey
+          ? App.transfers.normalizePlayerRatingKey(name)
+          : App.utils.normalizeText(name);
+        const searchAliases = [
+          ...new Set([...aliases, normalizedAlias].filter(Boolean)),
+        ];
+        return Promise.all(
+          searchAliases.map((alias) =>
+            App.api.searchEaRatings(alias, limitPerName).catch(() => []),
+          ),
+        );
+      }),
+    );
 
     App.api.mergeEaRatings(groups.flat(2));
     return App.state.apiRatings;
   },
 
+  async loadMarketPlayersForNames(names = [], limitPerName = 3) {
+    const uniqueNames = [
+      ...new Set(
+        (names || []).map((name) => String(name || "").trim()).filter(Boolean),
+      ),
+    ].slice(0, 150);
+    if (!uniqueNames.length) return App.state.apiMarketPlayers || [];
+
+    const groups = await Promise.all(
+      uniqueNames.map((name) =>
+        App.api.loadMarketPlayers(name, true, limitPerName).catch(() => []),
+      ),
+    );
+
+    App.api.mergeMarketPlayers(groups.flat());
+    return App.state.apiMarketPlayers;
+  },
+
   async loadExperienceData() {
     try {
       const data = await App.api.rpc("app_get_experience_data", {}, 30000);
-      App.state.apiExperience = data || { opportunities: [], auctions: [], news: [] };
+      App.state.apiExperience = data || {
+        opportunities: [],
+        auctions: [],
+        news: [],
+      };
       return App.state.apiExperience;
     } catch (error) {
       console.warn("Camada de experiência indisponível:", error);
-      App.state.apiExperience = App.state.apiExperience || { opportunities: [], auctions: [], news: [] };
+      App.state.apiExperience = App.state.apiExperience || {
+        opportunities: [],
+        auctions: [],
+        news: [],
+      };
       return App.state.apiExperience;
     }
   },
-
 
   async loadMatches() {
     try {
@@ -202,7 +308,10 @@ App.api = {
       App.state.apiMatches = Array.isArray(data) ? data : [];
       return App.state.apiMatches;
     } catch (error) {
-      console.warn("Não consegui carregar public.matches via app_get_matches:", error);
+      console.warn(
+        "Não consegui carregar public.matches via app_get_matches:",
+        error,
+      );
       App.state.apiMatches = [];
       return [];
     }
@@ -210,9 +319,13 @@ App.api = {
 
   async loadMatchAudit(week = null) {
     try {
-      return await App.api.rpc("app_get_match_audit", {
-        p_week: week ? Number(week) : null
-      }, 45000);
+      return await App.api.rpc(
+        "app_get_match_audit",
+        {
+          p_week: week ? Number(week) : null,
+        },
+        45000,
+      );
     } catch (error) {
       console.warn("Auditoria de partidas indisponível:", error);
       return {
@@ -220,15 +333,22 @@ App.api = {
         week: week || null,
         summary: {},
         matches: [],
-        message: error.message || "Não consegui carregar auditoria de partidas."
+        message:
+          error.message || "Não consegui carregar auditoria de partidas.",
       };
     }
   },
 
   async loadSponsorshipRewardTotals() {
     try {
-      const totals = await App.api.rpc("app_get_sponsorship_reward_totals", {}, 30000);
-      return totals && typeof totals === "object" && !Array.isArray(totals) ? totals : {};
+      const totals = await App.api.rpc(
+        "app_get_sponsorship_reward_totals",
+        {},
+        30000,
+      );
+      return totals && typeof totals === "object" && !Array.isArray(totals)
+        ? totals
+        : {};
     } catch (error) {
       console.warn("Totais de patrocínio indisponíveis:", error);
       return {};
@@ -237,8 +357,14 @@ App.api = {
 
   async loadBudgetReconciliation() {
     try {
-      const budgets = await App.api.rpc("app_get_budget_reconciliation", {}, 30000);
-      return budgets && typeof budgets === "object" && !Array.isArray(budgets) ? budgets : null;
+      const budgets = await App.api.rpc(
+        "app_get_budget_reconciliation",
+        {},
+        30000,
+      );
+      return budgets && typeof budgets === "object" && !Array.isArray(budgets)
+        ? budgets
+        : null;
     } catch (error) {
       console.warn("Reconciliação de orçamento indisponível:", error);
       return null;
@@ -252,7 +378,9 @@ App.api = {
       const isSponsorshipReward = title.includes("bonus de patrocinio");
       if (!manager || !isSponsorshipReward) return acc;
 
-      acc[manager] = (acc[manager] || 0) + Number(event.ImpactoFinanceiro || event.financial_impact || 0);
+      acc[manager] =
+        (acc[manager] || 0) +
+        Number(event.ImpactoFinanceiro || event.financial_impact || 0);
       return acc;
     }, {});
   },
@@ -267,33 +395,54 @@ App.api = {
   reconcileApiBudgets(data, sponsorshipRewardTotals = {}) {
     const budgets = data.budgets || {};
     const stats = App.api.getPerformanceBudgetStats(data.results || []);
-    const sponsorshipEventTotals = App.api.getSponsorshipEventTotalByManager(data.events || []);
+    const sponsorshipEventTotals = App.api.getSponsorshipEventTotalByManager(
+      data.events || [],
+    );
 
     (data.results || [])
-      .filter(result => App.utils.normalizeText(result.Status) === "aprovado")
-      .filter(result => App.utils.normalizeText(result.Competicao) === "championship")
-      .forEach(result => {
+      .filter((result) => App.utils.normalizeText(result.Status) === "aprovado")
+      .filter(
+        (result) =>
+          App.utils.normalizeText(result.Competicao) === "championship",
+      )
+      .forEach((result) => {
         const homeTeam = App.utils.getTeamByName(result.Mandante);
         const awayTeam = App.utils.getTeamByName(result.Visitante);
         const homeScore = Number(result.GolsMandante);
         const awayScore = Number(result.GolsVisitante);
         if (Number.isNaN(homeScore) || Number.isNaN(awayScore)) return;
 
-        if (homeTeam?.status === "Nosso" && stats[homeTeam.owner]) stats[homeTeam.owner].homeMatches += 1;
-        if (homeScore > awayScore && homeTeam?.status === "Nosso" && stats[homeTeam.owner]) stats[homeTeam.owner].wins += 1;
-        if (awayScore > homeScore && awayTeam?.status === "Nosso" && stats[awayTeam.owner]) stats[awayTeam.owner].wins += 1;
+        if (homeTeam?.status === "Nosso" && stats[homeTeam.owner])
+          stats[homeTeam.owner].homeMatches += 1;
+        if (
+          homeScore > awayScore &&
+          homeTeam?.status === "Nosso" &&
+          stats[homeTeam.owner]
+        )
+          stats[homeTeam.owner].wins += 1;
+        if (
+          awayScore > homeScore &&
+          awayTeam?.status === "Nosso" &&
+          stats[awayTeam.owner]
+        )
+          stats[awayTeam.owner].wins += 1;
       });
 
     return App.utils.getHumanBuyers().reduce((acc, buyer) => {
       const current = budgets[buyer] || {};
       const buyerStats = stats[buyer] || { homeMatches: 0, wins: 0 };
-      const baseBudget = Number(current.baseBudget ?? data.budget ?? App.config.transferBudget);
+      const baseBudget = Number(
+        current.baseBudget ?? data.budget ?? App.config.transferBudget,
+      );
       const spentTotal = Number(current.spentTotal ?? 0);
       const homeBonus = buyerStats.homeMatches * App.config.homeMatchBonus;
       const winBonusValue = buyerStats.wins * App.config.winBonus;
       const sponsorshipRewards = Number(sponsorshipRewardTotals[buyer] || 0);
       const sponsorshipEvents = Number(sponsorshipEventTotals[buyer] || 0);
-      const eventTotal = Number(current.eventTotal ?? 0) - sponsorshipEvents + sponsorshipRewards;
+      const eventTotal =
+        Number(current.eventTotal ?? 0) -
+        sponsorshipEvents +
+        sponsorshipRewards;
       const totalBudget = baseBudget + homeBonus + winBonusValue + eventTotal;
 
       acc[buyer] = {
@@ -307,7 +456,7 @@ App.api = {
         eventTotal,
         totalBudget,
         spentTotal,
-        remainingBudget: totalBudget - spentTotal
+        remainingBudget: totalBudget - spentTotal,
       };
 
       return acc;
@@ -315,11 +464,19 @@ App.api = {
   },
 
   getDbMatchEvents() {
-    return (App.state.apiMatches || []).map(row => {
-      const homeScore = row.home_score === null || row.home_score === undefined ? null : Number(row.home_score);
-      const awayScore = row.away_score === null || row.away_score === undefined ? null : Number(row.away_score);
+    return (App.state.apiMatches || []).map((row) => {
+      const homeScore =
+        row.home_score === null || row.home_score === undefined
+          ? null
+          : Number(row.home_score);
+      const awayScore =
+        row.away_score === null || row.away_score === undefined
+          ? null
+          : Number(row.away_score);
       const competition = row.competition || "Championship";
-      const matchDate = row.match_date ? new Date(`${row.match_date}T12:00:00`) : App.utils.getCupDate(Number(row.week || 1));
+      const matchDate = row.match_date
+        ? new Date(`${row.match_date}T12:00:00`)
+        : App.utils.getCupDate(Number(row.week || 1));
 
       return {
         id: `db-match-${row.id}`,
@@ -327,18 +484,27 @@ App.api = {
         date: matchDate,
         week: Number(row.week || 0),
         competition,
-        className: competition === "Championship" ? "championship" : competition === "Copa da Liga" ? "league-cup" : "fa-cup",
+        className:
+          competition === "Championship"
+            ? "championship"
+            : competition === "Copa da Liga"
+              ? "league-cup"
+              : "fa-cup",
         phase: row.phase || "",
-        matchOrder: row.match_order === null || row.match_order === undefined ? null : Number(row.match_order),
+        matchOrder:
+          row.match_order === null || row.match_order === undefined
+            ? null
+            : Number(row.match_order),
         home: row.home || "",
         away: row.away || "",
         homeScore,
         awayScore,
         penaltyWinner: row.penalty_winner || "",
         penaltyScore: row.penalty_score || "",
-        status: typeof homeScore === "number" && typeof awayScore === "number"
-          ? "Finalizado"
-          : (row.status_pt || row.status || "Pendente")
+        status:
+          typeof homeScore === "number" && typeof awayScore === "number"
+            ? "Finalizado"
+            : row.status_pt || row.status || "Pendente",
       };
     });
   },
@@ -351,7 +517,12 @@ App.api = {
     if (!event) return false;
     if (!event.home || !event.away) return false;
     if (App.cups?.hasPlaceholderTeam?.(event)) return false;
-    if (String(event.status || "").toLowerCase().includes("aguardando")) return false;
+    if (
+      String(event.status || "")
+        .toLowerCase()
+        .includes("aguardando")
+    )
+      return false;
     return App.calendar.getStatusClass(event) !== "done";
   },
 
@@ -363,58 +534,84 @@ App.api = {
     const byKey = new Map();
 
     source
-      .filter(event => Number(event.week) === targetWeek)
-      .forEach(event => {
+      .filter((event) => Number(event.week) === targetWeek)
+      .forEach((event) => {
         const key = [
           App.utils.normalizeText(event.competition),
           App.utils.normalizeText(event.phase),
           App.utils.normalizeTeamName(event.home),
-          App.utils.normalizeTeamName(event.away)
+          App.utils.normalizeTeamName(event.away),
         ].join("|");
         byKey.set(key, event);
       });
 
     calendarEvents
-      .filter(event => Number(event.week) === targetWeek)
-      .forEach(event => {
+      .filter((event) => Number(event.week) === targetWeek)
+      .forEach((event) => {
         const key = [
           App.utils.normalizeText(event.competition),
           App.utils.normalizeText(event.phase),
           App.utils.normalizeTeamName(event.home),
-          App.utils.normalizeTeamName(event.away)
+          App.utils.normalizeTeamName(event.away),
         ].join("|");
         if (!byKey.has(key)) byKey.set(key, event);
       });
 
-    return [...byKey.values()].sort((a, b) =>
-      (a.competition || "").localeCompare(b.competition || "") ||
-      Number(a.matchOrder || 999) - Number(b.matchOrder || 999) ||
-      String(a.phase || "").localeCompare(String(b.phase || ""))
+    return [...byKey.values()].sort(
+      (a, b) =>
+        (a.competition || "").localeCompare(b.competition || "") ||
+        Number(a.matchOrder || 999) - Number(b.matchOrder || 999) ||
+        String(a.phase || "").localeCompare(String(b.phase || "")),
     );
   },
 
   getCpuSimulationReport(week) {
     const events = App.api.getSimulationWeekEvents(week);
-    const playable = events.filter(event => App.api.isPlayablePendingMatch(event));
-    const humanPending = playable.filter(event => App.calendar.getMatchOwners(event).length > 0);
-    const cpuPending = playable.filter(event => App.calendar.getMatchOwners(event).length === 0);
-    const done = events.filter(event => App.calendar.getStatusClass(event) === "done");
-    const waiting = events.filter(event => !App.api.isPlayablePendingMatch(event) && App.calendar.getStatusClass(event) !== "done");
-    const competitions = [...new Set(events.map(event => event.competition).filter(Boolean))];
+    const playable = events.filter((event) =>
+      App.api.isPlayablePendingMatch(event),
+    );
+    const humanPending = playable.filter(
+      (event) => App.calendar.getMatchOwners(event).length > 0,
+    );
+    const cpuPending = playable.filter(
+      (event) => App.calendar.getMatchOwners(event).length === 0,
+    );
+    const done = events.filter(
+      (event) => App.calendar.getStatusClass(event) === "done",
+    );
+    const waiting = events.filter(
+      (event) =>
+        !App.api.isPlayablePendingMatch(event) &&
+        App.calendar.getStatusClass(event) !== "done",
+    );
+    const competitions = [
+      ...new Set(events.map((event) => event.competition).filter(Boolean)),
+    ];
 
-    return { events, playable, humanPending, cpuPending, done, waiting, competitions };
+    return {
+      events,
+      playable,
+      humanPending,
+      cpuPending,
+      done,
+      waiting,
+      competitions,
+    };
   },
 
   generatePenaltyShootout(home, away) {
     const homeWins = Math.random() >= 0.5;
     const winnerPens = 4 + Math.floor(Math.random() * 3);
-    const loserPens = Math.max(0, winnerPens - 1 - Math.floor(Math.random() * 2));
+    const loserPens = Math.max(
+      0,
+      winnerPens - 1 - Math.floor(Math.random() * 2),
+    );
     const homePens = homeWins ? winnerPens : loserPens;
     const awayPens = homeWins ? loserPens : winnerPens;
 
     return {
       winner: homeWins ? home : away,
-      score: `${homePens} x ${awayPens}`
+      score: `${homePens} x ${awayPens}`,
     };
   },
 
@@ -447,34 +644,42 @@ App.api = {
     }
 
     const summary = audit.summary || {};
-    const pendingWeeks = [...new Set(matches
-      .filter(match => match.status !== "approved")
-      .map(match => match.week)
-      .filter(Boolean)
-    )].sort((a, b) => Number(a) - Number(b));
+    const pendingWeeks = [
+      ...new Set(
+        matches
+          .filter((match) => match.status !== "approved")
+          .map((match) => match.week)
+          .filter(Boolean),
+      ),
+    ].sort((a, b) => Number(a) - Number(b));
 
     const grouped = matches.reduce((acc, match) => {
-      const key = week ? match.competition : `Semana ${match.week || "-"} · ${match.competition}`;
+      const key = week
+        ? match.competition
+        : `Semana ${match.week || "-"} · ${match.competition}`;
       if (!acc[key]) acc[key] = [];
       acc[key].push(match);
       return acc;
     }, {});
 
-    const blocks = Object.entries(grouped).map(([title, items]) => `
+    const blocks = Object.entries(grouped)
+      .map(
+        ([title, items]) => `
       <article class="sim-competition-block">
         <div class="sim-competition-header">
           <strong>${App.utils.escapeHtml(title)}</strong>
           <span>${items.length} jogo(s)</span>
         </div>
         <div class="sim-match-list">
-          ${items.map(match => {
-            const isDone = match.status === "approved";
-            const isCpu = match.match_type === "CPU x CPU";
-            const statusLabel = isDone
-              ? `${match.home_score} x ${match.away_score}${match.penalty_winner ? ` · Pên.: ${match.penalty_winner} ${match.penalty_score || ""}` : ""}`
-              : match.status_label || "Pendente";
+          ${items
+            .map((match) => {
+              const isDone = match.status === "approved";
+              const isCpu = match.match_type === "CPU x CPU";
+              const statusLabel = isDone
+                ? `${match.home_score} x ${match.away_score}${match.penalty_winner ? ` · Pên.: ${match.penalty_winner} ${match.penalty_score || ""}` : ""}`
+                : match.status_label || "Pendente";
 
-            return `
+              return `
               <div class="sim-match-row ${isCpu ? "is-cpu" : "has-human"} ${isDone ? "is-done" : ""}">
                 <div class="sim-match-main">
                   <strong>${App.utils.escapeHtml(match.home)} <span>x</span> ${App.utils.escapeHtml(match.away)}</strong>
@@ -483,12 +688,17 @@ App.api = {
                 <b>${App.utils.escapeHtml(statusLabel)}</b>
               </div>
             `;
-          }).join("")}
+            })
+            .join("")}
         </div>
       </article>
-    `).join("");
+    `,
+      )
+      .join("");
 
-    const canSimulate = Number(summary.human_pending || 0) === 0 && Number(summary.cpu_pending || 0) > 0;
+    const canSimulate =
+      Number(summary.human_pending || 0) === 0 &&
+      Number(summary.cpu_pending || 0) > 0;
 
     container.innerHTML = `
       <div class="sim-preview-shell">
@@ -497,11 +707,15 @@ App.api = {
           <span>${week ? "Auditoria oficial do Supabase antes da simulação." : "Informe uma semana para simular; abaixo está o mapa geral."}</span>
         </div>
 
-        ${!week && pendingWeeks.length ? `
+        ${
+          !week && pendingWeeks.length
+            ? `
           <div class="sim-week-pills">
-            ${pendingWeeks.map(item => `<button type="button" data-fill-sim-week="${item}">Semana ${item}</button>`).join("")}
+            ${pendingWeeks.map((item) => `<button type="button" data-fill-sim-week="${item}">Semana ${item}</button>`).join("")}
           </div>
-        ` : ""}
+        `
+            : ""
+        }
 
         <div class="sim-preview-summary">
           <article><span>Total</span><strong>${Number(summary.total || matches.length)}</strong></article>
@@ -510,23 +724,37 @@ App.api = {
           <article><span>Finalizados</span><strong>${Number(summary.approved || 0)}</strong></article>
         </div>
 
-        ${week && canSimulate ? `
+        ${
+          week && canSimulate
+            ? `
           <div class="sim-ok">Semana pronta: ${Number(summary.cpu_pending || 0)} jogo(s) CPU x CPU podem ser simulados agora.</div>
-        ` : ""}
+        `
+            : ""
+        }
 
-        ${week && Number(summary.human_pending || 0) > 0 ? `
+        ${
+          week && Number(summary.human_pending || 0) > 0
+            ? `
           <div class="sim-warning">A simulação está bloqueada: ainda existe(m) ${Number(summary.human_pending || 0)} jogo(s) com técnico pendente nessa semana.</div>
-        ` : ""}
+        `
+            : ""
+        }
 
-        ${week && Number(summary.cpu_pending || 0) === 0 && Number(summary.human_pending || 0) === 0 ? `
+        ${
+          week &&
+          Number(summary.cpu_pending || 0) === 0 &&
+          Number(summary.human_pending || 0) === 0
+            ? `
           <div class="sim-preview-empty">Não há jogos CPU x CPU pendentes para simular nessa semana.</div>
-        ` : ""}
+        `
+            : ""
+        }
 
         <div class="sim-preview-grid">${blocks}</div>
       </div>
     `;
 
-    container.querySelectorAll("[data-fill-sim-week]").forEach(button => {
+    container.querySelectorAll("[data-fill-sim-week]").forEach((button) => {
       button.addEventListener("click", () => {
         const form = document.getElementById("cpuSimulationForm");
         if (!form?.elements.week) return;
@@ -535,8 +763,6 @@ App.api = {
       });
     });
   },
-
-
 
   async loadManagerOnboarding() {
     try {
@@ -557,9 +783,11 @@ App.api = {
   async loadApiData(options = {}) {
     const {
       showLoader = true,
-      variant = App.main?.getDefaultLoaderVariant ? App.main.getDefaultLoaderVariant() : "match",
+      variant = App.main?.getDefaultLoaderVariant
+        ? App.main.getDefaultLoaderVariant()
+        : "match",
       title = "Atualizando dados",
-      message = "Aguarde enquanto os dados mais recentes são consultados."
+      message = "Aguarde enquanto os dados mais recentes são consultados.",
     } = options;
 
     if (showLoader && App.main?.showLoader) {
@@ -570,39 +798,58 @@ App.api = {
       try {
         await App.api.rpc("app_process_all_sponsorship_rewards", {}, 45000);
       } catch (sponsorshipError) {
-        console.warn("Processamento automático de patrocínios indisponível:", sponsorshipError);
+        console.warn(
+          "Processamento automático de patrocínios indisponível:",
+          sponsorshipError,
+        );
       }
 
       const data = await App.api.rpc("app_get_data", {}, 45000);
-      if (!data.ok) throw new Error(data.error || data.message || "Erro ao carregar Supabase.");
+      if (!data.ok)
+        throw new Error(
+          data.error || data.message || "Erro ao carregar Supabase.",
+        );
 
-      if (data.budget !== undefined) App.config.transferBudget = Number(data.budget);
-      if (data.homeMatchBonus !== undefined) App.config.homeMatchBonus = Number(data.homeMatchBonus);
-      if (data.winBonus !== undefined) App.config.winBonus = Number(data.winBonus);
-      if (data.dailyTransferLimit !== undefined) App.config.baseDailyTransferLimit = Number(data.dailyTransferLimit);
+      if (data.budget !== undefined)
+        App.config.transferBudget = Number(data.budget);
+      if (data.homeMatchBonus !== undefined)
+        App.config.homeMatchBonus = Number(data.homeMatchBonus);
+      if (data.winBonus !== undefined)
+        App.config.winBonus = Number(data.winBonus);
+      if (data.dailyTransferLimit !== undefined)
+        App.config.baseDailyTransferLimit = Number(data.dailyTransferLimit);
 
-      const [budgetReconciliation, sponsorshipRewardTotals] = await Promise.all([
-        App.api.loadBudgetReconciliation(),
-        App.api.loadSponsorshipRewardTotals()
-      ]);
+      const [budgetReconciliation, sponsorshipRewardTotals] = await Promise.all(
+        [
+          App.api.loadBudgetReconciliation(),
+          App.api.loadSponsorshipRewardTotals(),
+        ],
+      );
 
       App.state.apiResults = data.results || [];
-      App.state.apiTransfers = (data.transfers || []).filter(item =>
-        App.api.isApprovedTransfer(item) && !App.api.isReversedTransfer(item)
+      App.state.apiTransfers = (data.transfers || []).filter(
+        (item) =>
+          App.api.isApprovedTransfer(item) && !App.api.isReversedTransfer(item),
       );
       App.state.apiEvents = data.events || [];
       App.state.apiClubs = data.clubs || [];
-      App.state.apiBudgets = budgetReconciliation || App.api.reconcileApiBudgets(data, sponsorshipRewardTotals);
+      App.state.apiBudgets =
+        budgetReconciliation ||
+        App.api.reconcileApiBudgets(data, sponsorshipRewardTotals);
       if (Array.isArray(data.eventSlots) && data.eventSlots.length) {
         App.config.eventSlots = data.eventSlots.map(Number);
       }
 
       await App.api.loadMatches();
       await App.api.loadMarketPlayers();
+      await App.api.loadMarketPlayersForNames([
+        ...(data.transfers || []).map((item) => item.Jogador),
+        ...(App.data.transfers || []).map((item) => item.player),
+      ]);
       await App.api.loadEaRatings("", 50);
       await App.api.loadRatingsForPlayerNames([
-        ...(data.transfers || []).map(item => item.Jogador),
-        ...(App.data.transfers || []).map(item => item.player)
+        ...(data.transfers || []).map((item) => item.Jogador),
+        ...(App.data.transfers || []).map((item) => item.player),
       ]);
       await App.api.loadExperienceData();
       await App.api.loadManagerOnboarding?.();
@@ -618,11 +865,11 @@ App.api = {
       App.main?.markSynced?.();
       return data;
     } catch (error) {
-      const hadPreviousData = App.state.apiLoaded && (
-        (App.state.apiResults || []).length ||
-        (App.state.apiTransfers || []).length ||
-        (App.state.apiEvents || []).length
-      );
+      const hadPreviousData =
+        App.state.apiLoaded &&
+        ((App.state.apiResults || []).length ||
+          (App.state.apiTransfers || []).length ||
+          (App.state.apiEvents || []).length);
 
       if (!hadPreviousData) {
         App.state.apiLoaded = false;
@@ -635,9 +882,10 @@ App.api = {
       }
 
       const resultMessage = document.getElementById("resultMessage");
-      const errorMessage = error.name === "AbortError"
-        ? "O Supabase demorou demais para responder. Tente novamente em alguns segundos."
-        : `Não consegui carregar o Supabase: ${error.message}`;
+      const errorMessage =
+        error.name === "AbortError"
+          ? "O Supabase demorou demais para responder. Tente novamente em alguns segundos."
+          : `Não consegui carregar o Supabase: ${error.message}`;
 
       App.utils.setMessage(resultMessage, errorMessage, "error");
       throw error;
@@ -652,7 +900,7 @@ App.api = {
     const session = App.auth?.getSession ? App.auth.getSession() : null;
     return {
       p_manager_id: session?.managerId || "",
-      p_access_code: session?.accessCode || ""
+      p_access_code: session?.accessCode || "",
     };
   },
 
@@ -662,8 +910,12 @@ App.api = {
     return session;
   },
 
-  requireCommissioner(message = "Apenas o Comissário da Liga pode executar esta ação.") {
-    const session = App.api.requireSession("Faça login como Comissário da Liga.");
+  requireCommissioner(
+    message = "Apenas o Comissário da Liga pode executar esta ação.",
+  ) {
+    const session = App.api.requireSession(
+      "Faça login como Comissário da Liga.",
+    );
     if (!App.auth?.isCommissioner?.()) throw new Error(message);
     return session;
   },
@@ -683,7 +935,7 @@ App.api = {
       p_assist_details: payload.assistDetails || "",
       p_penalty_winner: payload.penaltyWinner || "",
       p_penalty_score: payload.penaltyScore || "",
-      p_submitted_by: payload.submittedBy || ""
+      p_submitted_by: payload.submittedBy || "",
     };
   },
 
@@ -693,55 +945,87 @@ App.api = {
       p_competition: payload.competition,
       p_phase: payload.phase,
       p_home: payload.home,
-      p_away: payload.away
+      p_away: payload.away,
     };
   },
 
   async postToApi(payload) {
     if (payload.action === "addResult") {
-      App.api.requireSession("Faça login como técnico ou comissário antes de enviar resultado.");
-      return App.api.rpc("app_add_result", App.api.mapResultPayload(payload), 45000);
+      App.api.requireSession(
+        "Faça login como técnico ou comissário antes de enviar resultado.",
+      );
+      return App.api.rpc(
+        "app_add_result",
+        App.api.mapResultPayload(payload),
+        45000,
+      );
     }
 
     if (payload.action === "reverseResult") {
-      App.api.requireCommissioner("Apenas o Comissário da Liga pode desfazer resultados.");
-      return App.api.rpc("app_reverse_match_result", App.api.mapReverseResultPayload(payload), 45000);
+      App.api.requireCommissioner(
+        "Apenas o Comissário da Liga pode desfazer resultados.",
+      );
+      return App.api.rpc(
+        "app_reverse_match_result",
+        App.api.mapReverseResultPayload(payload),
+        45000,
+      );
     }
 
     if (payload.action === "addTransfer") {
       if (payload.transferType === "internal") {
-        return App.api.rpc("app_create_internal_transfer_proposal", {
-          p_manager_id: payload.managerId,
-          p_access_code: payload.accessCode,
+        return App.api.rpc(
+          "app_create_internal_transfer_proposal",
+          {
+            p_manager_id: payload.managerId,
+            p_access_code: payload.accessCode,
+            p_buyer: payload.buyer,
+            p_seller: payload.seller || "",
+            p_player: payload.player,
+            p_from_club: payload.fromClub,
+            p_overall: Number(payload.overall),
+            p_market_value: Number(payload.marketValue),
+          },
+          45000,
+        );
+      }
+
+      const session = App.api.requireSession(
+        "Faça login como comprador antes de enviar transferência.",
+      );
+      if (
+        !App.auth?.isCommissioner?.() &&
+        App.utils.normalizeText(session.managerName) !==
+          App.utils.normalizeText(payload.buyer)
+      ) {
+        throw new Error(
+          "A transferência precisa ser enviada pelo comprador logado.",
+        );
+      }
+
+      return App.api.rpc(
+        "app_add_transfer",
+        {
+          ...App.api.getAuthPayload(),
           p_buyer: payload.buyer,
-          p_seller: payload.seller || "",
           p_player: payload.player,
           p_from_club: payload.fromClub,
           p_overall: Number(payload.overall),
-          p_market_value: Number(payload.marketValue)
-        }, 45000);
-      }
-
-      const session = App.api.requireSession("Faça login como comprador antes de enviar transferência.");
-      if (!App.auth?.isCommissioner?.() && App.utils.normalizeText(session.managerName) !== App.utils.normalizeText(payload.buyer)) {
-        throw new Error("A transferência precisa ser enviada pelo comprador logado.");
-      }
-
-      return App.api.rpc("app_add_transfer", {
-        ...App.api.getAuthPayload(),
-        p_buyer: payload.buyer,
-        p_player: payload.player,
-        p_from_club: payload.fromClub,
-        p_overall: Number(payload.overall),
-        p_market_value: Number(payload.marketValue)
-      }, 45000);
+          p_market_value: Number(payload.marketValue),
+        },
+        45000,
+      );
     }
 
     if (payload.action === "generateDueEvents") {
       App.api.requireCommissioner();
-      return App.api.rpc("app_generate_due_events", {
-        ...App.api.getAuthPayload()
-      }, 45000);
+      return App.api.rpc(
+        "app_generate_due_events",
+        {
+          ...App.api.getAuthPayload(),
+        },
+        45000,
+      );
     }
 
     if (payload.action === "simulateCpuWeek") {
@@ -750,12 +1034,14 @@ App.api = {
 
     return {
       ok: false,
-      message: "Ação inválida."
+      message: "Ação inválida.",
     };
   },
 
   getTeamStrength(teamName) {
-    const club = (App.state.apiClubs || []).find(item => App.utils.sameTeamName(item.Time, teamName));
+    const club = (App.state.apiClubs || []).find((item) =>
+      App.utils.sameTeamName(item.Time, teamName),
+    );
     return Number(club?.Forca || 70);
   },
 
@@ -764,12 +1050,19 @@ App.api = {
     const awayStrength = App.api.getTeamStrength(away);
     const homeAdvantage = 3;
 
-    const homeExpected = 1.2 + ((homeStrength + homeAdvantage - awayStrength) / 18);
-    const awayExpected = 1.0 + ((awayStrength - homeStrength) / 18);
+    const homeExpected =
+      1.2 + (homeStrength + homeAdvantage - awayStrength) / 18;
+    const awayExpected = 1.0 + (awayStrength - homeStrength) / 18;
 
     return {
-      homeScore: Math.max(0, Math.min(5, Math.round(homeExpected + Math.random() * 2.2 - 0.7))),
-      awayScore: Math.max(0, Math.min(5, Math.round(awayExpected + Math.random() * 2.0 - 0.6)))
+      homeScore: Math.max(
+        0,
+        Math.min(5, Math.round(homeExpected + Math.random() * 2.2 - 0.7)),
+      ),
+      awayScore: Math.max(
+        0,
+        Math.min(5, Math.round(awayExpected + Math.random() * 2.0 - 0.6)),
+      ),
     };
   },
 
@@ -778,14 +1071,24 @@ App.api = {
     const submittedBy = payload.submittedBy || "Liga";
 
     if (!week) {
-      return { ok: false, created: 0, message: "Informe uma semana válida para simular." };
+      return {
+        ok: false,
+        created: 0,
+        message: "Informe uma semana válida para simular.",
+      };
     }
 
-    App.api.requireCommissioner("Apenas o Comissário da Liga pode simular rodadas CPU x CPU.");
-    return App.api.rpc("app_simulate_cpu_week", {
-      ...App.api.getAuthPayload(),
-      p_week: week,
-      p_submitted_by: submittedBy
-    }, 120000);
-  }
+    App.api.requireCommissioner(
+      "Apenas o Comissário da Liga pode simular rodadas CPU x CPU.",
+    );
+    return App.api.rpc(
+      "app_simulate_cpu_week",
+      {
+        ...App.api.getAuthPayload(),
+        p_week: week,
+        p_submitted_by: submittedBy,
+      },
+      120000,
+    );
+  },
 };
