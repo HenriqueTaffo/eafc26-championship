@@ -655,6 +655,9 @@ App.auth = {
                 <span>${App.utils.escapeHtml(item.category || "Patrocínio")}</span>
                 <strong>${App.utils.escapeHtml(item.title)}</strong>
                 <small>${App.utils.escapeHtml(item.sponsor_name)} · ${Number(item.claims_used || 0)}/${Number(item.max_claims || 0)} bônus pagos · ${App.utils.formatCurrency(item.reward_value)}</small>
+                <p class="sponsor-condition-line">
+                  Critério: ${App.utils.escapeHtml(App.auth.getSponsorshipConditionLabel(item))}
+                </p>
               </div>
             `).join("")}
           </div>
@@ -702,6 +705,23 @@ App.auth = {
         ` : ""}
       </article>
     `;
+  },
+
+  getSponsorshipConditionLabel(item = {}) {
+    const fromContract = item.condition_label || item.conditionLabel;
+    if (fromContract) return fromContract;
+
+    const condition = App.utils.normalizeText(item.condition_type || item.conditionType || "");
+    const labels = {
+      "win_by_2": "Vencer por 2+ gols",
+      "any_win": "Vencer qualquer partida",
+      "home_win": "Vencer como mandante",
+      "clean_sheet": "Não sofrer gols",
+      "three_goals": "Marcar 3+ gols",
+      "away_win": "Vencer como visitante"
+    };
+
+    return labels[condition] || "Meta comercial cumprida";
   },
 
   bindDecisionAnswerButtons(root = document) {

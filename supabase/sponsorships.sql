@@ -862,9 +862,26 @@ begin
 
   select coalesce(jsonb_agg(to_jsonb(c) order by c.created_at desc), '[]'::jsonb)
     into v_active
-  from public.sponsorship_contracts c
-  where c.manager_id = v_manager.id
-    and c.status = 'active';
+  from (
+    select
+      c.*,
+      coalesce(o.offer ->> 'conditionLabel',
+        case c.condition_type
+          when 'win_by_2' then 'Vencer por 2+ gols'
+          when 'any_win' then 'Vencer qualquer partida'
+          when 'home_win' then 'Vencer como mandante'
+          when 'clean_sheet' then 'Nao sofrer gols'
+          when 'three_goals' then 'Marcar 3+ gols'
+          when 'away_win' then 'Vencer como visitante'
+          else 'Meta comercial cumprida'
+        end
+      ) as condition_label
+    from public.sponsorship_contracts c
+    left join jsonb_array_elements(public.app_sponsorship_offers()) as o(offer)
+      on o.offer ->> 'id' = c.sponsor_id
+    where c.manager_id = v_manager.id
+      and c.status = 'active'
+  ) c;
 
   select count(*)
     into v_active_count
