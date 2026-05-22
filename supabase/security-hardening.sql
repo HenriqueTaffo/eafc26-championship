@@ -304,6 +304,123 @@ begin
 end;
 $$;
 
+create or replace function public.app_get_transfer_spend_breakdown()
+returns jsonb
+language plpgsql
+security definer
+stable
+set search_path = public
+as $$
+declare
+  v_transfer_table regclass;
+  v_buyer_col text;
+  v_player_col text;
+  v_status_col text;
+  v_timestamp_col text;
+  v_market_value_col text;
+  v_overall_col text;
+  v_final_value_col text;
+  v_type_col text;
+  v_final_expr text;
+  v_type_filter text := '';
+  v_totals jsonb := '{}'::jsonb;
+begin
+  v_transfer_table := public.app_find_transfer_table();
+  if v_transfer_table is null then
+    return '{}'::jsonb;
+  end if;
+
+  v_buyer_col := public.app_transfer_column(v_transfer_table, array['Comprador', 'buyer', 'comprador']);
+  v_player_col := public.app_transfer_column(v_transfer_table, array['Jogador', 'player', 'jogador']);
+  select quote_ident(a.attname)
+    into v_status_col
+  from pg_attribute a
+  where a.attrelid = v_transfer_table
+    and not a.attisdropped
+    and a.attname in ('Status', 'status')
+  order by case when a.attname = 'Status' then 0 else 1 end
+  limit 1;
+  v_timestamp_col := public.app_transfer_column(v_transfer_table, array['Timestamp', 'created_at', 'createdAt', 'Data']);
+  v_market_value_col := public.app_transfer_column(v_transfer_table, array['ValorTransfermarkt', 'Valor Transfermarkt', 'marketValue', 'market_value']);
+  v_overall_col := public.app_transfer_column(v_transfer_table, array['Overall', 'overall']);
+  v_final_value_col := public.app_transfer_column(v_transfer_table, array['ValorFinal', 'Valor Final', 'finalValue', 'final_value']);
+  v_type_col := public.app_transfer_column(v_transfer_table, array['TipoTransferencia', 'Tipo Transferencia', 'transferType', 'transfer_type']);
+
+  if v_buyer_col is null or v_player_col is null or v_status_col is null or v_timestamp_col is null or v_market_value_col is null then
+    return '{}'::jsonb;
+  end if;
+
+  v_final_expr := format('coalesce((%s)::numeric, 0) * (1 + case
+      when coalesce((%s)::integer, 0) >= 89 then 0.25
+      when coalesce((%s)::integer, 0) >= 84 then 0.20
+      when coalesce((%s)::integer, 0) >= 80 then 0.15
+      when coalesce((%s)::integer, 0) >= 75 then 0.05
+      else 0
+    end)',
+    v_market_value_col,
+    coalesce(v_overall_col, '0'),
+    coalesce(v_overall_col, '0'),
+    coalesce(v_overall_col, '0'),
+    coalesce(v_overall_col, '0')
+  );
+
+  if v_final_value_col is not null then
+    v_final_expr := format('coalesce((%s)::numeric, %s)', v_final_value_col, v_final_expr);
+  end if;
+
+  if v_type_col is not null then
+    v_type_filter := format('and lower(coalesce(%s::text, ''market'')) <> ''internal''', v_type_col);
+  end if;
+
+  execute format(
+    'with approved as (
+       select
+         %4$s::text as buyer,
+         lower(%5$s::text) as player_key,
+         coalesce((%1$s)::numeric, 0) as market_value,
+         %2$s as final_value,
+         row_number() over (
+           partition by lower(%5$s::text)
+           order by %6$s desc nulls last, ctid desc
+         ) as rn
+       from %3$s
+       where lower(coalesce(%7$s::text, '''')) in (''aprovado'', ''approved'')
+         %8$s
+     ),
+     totals as (
+       select
+         buyer,
+         sum(market_value)::numeric as market_total,
+         sum(final_value)::numeric as final_total,
+         sum(greatest(final_value - market_value, 0))::numeric as delta_total
+       from approved
+       where rn = 1
+       group by buyer
+     )
+     select coalesce(jsonb_object_agg(
+       buyer,
+       jsonb_build_object(
+         ''marketTotal'', market_total,
+         ''finalTotal'', final_total,
+         ''deltaTotal'', delta_total
+       )
+     ), ''{}''::jsonb)
+     from totals',
+    v_market_value_col,
+    v_final_expr,
+    v_transfer_table,
+    v_buyer_col,
+    v_player_col,
+    v_timestamp_col,
+    v_status_col,
+    v_type_filter
+  )
+  into v_totals;
+
+  return coalesce(v_totals, '{}'::jsonb);
+end;
+$$;
+
 create or replace function public.app_get_external_transfer_today_count(
   p_buyer text
 )
@@ -713,7 +830,7 @@ as $$
     from jsonb_each(coalesce((select j -> 'budgets' from data), '{}'::jsonb))
   ),
   transfer_spend as (
-    select public.app_get_transfer_spend_totals() as totals
+    select public.app_get_transfer_spend_breakdown() as totals
   ),
   reconciled as (
     select
@@ -728,9 +845,11 @@ as $$
         + coalesce(rt.reward_total, 0) as event_total,
       coalesce(rt.reward_total, 0) as sponsorship_rewards,
       coalesce((rb.budget ->> 'spentTotal')::numeric, 0) as legacy_spent_total,
-      coalesce((ts.totals ->> t.manager_name)::numeric, 0) as secure_spent_total,
+      coalesce((ts.totals -> t.manager_name ->> 'marketTotal')::numeric, 0) as secure_market_total,
+      coalesce((ts.totals -> t.manager_name ->> 'finalTotal')::numeric, 0) as secure_spent_total,
+      coalesce((ts.totals -> t.manager_name ->> 'deltaTotal')::numeric, 0) as secure_delta_total,
       coalesce((rb.budget ->> 'spentTotal')::numeric, 0)
-        + coalesce((ts.totals ->> t.manager_name)::numeric, 0) as spent_total,
+        + coalesce((ts.totals -> t.manager_name ->> 'deltaTotal')::numeric, 0) as spent_total,
       coalesce((rb.budget ->> 'transferLimit')::integer, 3) as transfer_limit
     from teams t
     cross join config
@@ -752,7 +871,9 @@ as $$
       'sponsorshipRewards', sponsorship_rewards,
       'totalBudget', base_budget + home_bonus + win_bonus_value + event_total,
       'legacySpentTotal', legacy_spent_total,
+      'secureMarketTotal', secure_market_total,
       'secureSpentTotal', secure_spent_total,
+      'secureDeltaTotal', secure_delta_total,
       'spentTotal', spent_total,
       'remainingBudget', base_budget + home_bonus + win_bonus_value + event_total - spent_total,
       'transferLimit', transfer_limit,
