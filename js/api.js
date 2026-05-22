@@ -551,7 +551,10 @@ App.api = {
       ]);
 
       App.state.apiResults = data.results || [];
-      App.state.apiTransfers = data.transfers || [];
+      App.state.apiTransfers = (data.transfers || []).filter(item =>
+        App.utils.normalizeText(item.Status || item.status) === "aprovado" ||
+        App.utils.normalizeText(item.Status || item.status) === "approved"
+      );
       App.state.apiEvents = data.events || [];
       App.state.apiClubs = data.clubs || [];
       App.state.apiBudgets = budgetReconciliation || App.api.reconcileApiBudgets(data, sponsorshipRewardTotals);

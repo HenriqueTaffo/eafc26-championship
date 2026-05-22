@@ -373,21 +373,27 @@ begin
   end if;
 
   execute format(
-    'with approved as (
+    'with rows as (
        select
          %4$s::text as buyer,
          lower(%5$s::text) as player_key,
          coalesce((%1$s)::numeric, 0) as market_value,
          %2$s as final_value,
+         lower(coalesce(%7$s::text, '''')) as status_key,
          row_number() over (
            partition by lower(%5$s::text)
            order by %6$s desc nulls last, ctid desc
          ) as rn
        from %3$s
-       where lower(coalesce(%7$s::text, '''')) in (''aprovado'', ''approved'')
+       where true
          %8$s
      ),
-     totals as (
+     approved as (
+       select *
+       from rows
+       where status_key in (''aprovado'', ''approved'')
+     ),
+     approved_totals as (
        select
          buyer,
          sum(market_value)::numeric as market_total,
@@ -396,16 +402,26 @@ begin
        from approved
        where rn = 1
        group by buyer
+     ),
+     non_approved_totals as (
+       select
+         buyer,
+         sum(market_value)::numeric as non_approved_market_total
+       from rows
+       where status_key not in (''aprovado'', ''approved'')
+       group by buyer
      )
      select coalesce(jsonb_object_agg(
-       buyer,
+       coalesce(a.buyer, n.buyer),
        jsonb_build_object(
-         ''marketTotal'', market_total,
-         ''finalTotal'', final_total,
-         ''deltaTotal'', delta_total
+         ''marketTotal'', coalesce(a.market_total, 0),
+         ''finalTotal'', coalesce(a.final_total, 0),
+         ''deltaTotal'', coalesce(a.delta_total, 0),
+         ''nonApprovedMarketTotal'', coalesce(n.non_approved_market_total, 0)
        )
      ), ''{}''::jsonb)
-     from totals',
+     from approved_totals a
+     full outer join non_approved_totals n on n.buyer = a.buyer',
     v_market_value_col,
     v_final_expr,
     v_transfer_table,
@@ -848,7 +864,13 @@ as $$
       coalesce((ts.totals -> t.manager_name ->> 'marketTotal')::numeric, 0) as secure_market_total,
       coalesce((ts.totals -> t.manager_name ->> 'finalTotal')::numeric, 0) as secure_spent_total,
       coalesce((ts.totals -> t.manager_name ->> 'deltaTotal')::numeric, 0) as secure_delta_total,
-      coalesce((ts.totals -> t.manager_name ->> 'finalTotal')::numeric, 0) as spent_total,
+      coalesce((ts.totals -> t.manager_name ->> 'nonApprovedMarketTotal')::numeric, 0) as non_approved_market_total,
+      greatest(
+        0,
+        coalesce((rb.budget ->> 'spentTotal')::numeric, 0)
+        - coalesce((ts.totals -> t.manager_name ->> 'nonApprovedMarketTotal')::numeric, 0)
+        + coalesce((ts.totals -> t.manager_name ->> 'deltaTotal')::numeric, 0)
+      ) as spent_total,
       coalesce((rb.budget ->> 'transferLimit')::integer, 3) as transfer_limit
     from teams t
     cross join config
@@ -873,6 +895,7 @@ as $$
       'secureMarketTotal', secure_market_total,
       'secureSpentTotal', secure_spent_total,
       'secureDeltaTotal', secure_delta_total,
+      'nonApprovedMarketTotal', non_approved_market_total,
       'spentTotal', spent_total,
       'remainingBudget', base_budget + home_bonus + win_bonus_value + event_total - spent_total,
       'transferLimit', transfer_limit,
