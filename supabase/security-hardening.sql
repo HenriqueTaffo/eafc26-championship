@@ -392,6 +392,7 @@ begin
        select *
        from rows
        where status_key in (''aprovado'', ''approved'')
+         and coalesce(trim(buyer), '''') <> ''''
      ),
      approved_totals as (
        select
@@ -409,6 +410,7 @@ begin
          sum(market_value)::numeric as non_approved_market_total
        from rows
        where status_key not in (''aprovado'', ''approved'')
+         and coalesce(trim(buyer), '''') <> ''''
        group by buyer
      )
      select coalesce(jsonb_object_agg(
