@@ -199,15 +199,19 @@
 }
 
 .cup-board.fa-cup .cup-mark {
-  width: 124px;
-  height: 86px;
-  flex-basis: 124px;
+  width: 152px;
+  height: 92px;
+  flex-basis: 152px;
   align-self: center;
 }
 
 .cup-board.fa-cup .cup-mark img {
-  max-width: 118px;
-  max-height: 78px;
+  max-width: 148px;
+  max-height: 88px;
+}
+
+.cup-board.fa-cup .cup-board-title {
+  gap: 8px;
 }
 
 .cup-board-title h2 {
