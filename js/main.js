@@ -184,6 +184,137 @@ App.main = {
     });
   },
 
+  switchToView(viewId) {
+    const button = document.querySelector(`.tab-button[data-view="${viewId}"]`);
+    const view = document.getElementById(viewId);
+    if (!button || !view) return;
+
+    document.querySelectorAll(".tab-button").forEach(item => item.classList.remove("active"));
+    document.querySelectorAll(".view").forEach(item => item.classList.remove("active"));
+    button.classList.add("active");
+    view.classList.add("active");
+    App.main.renderCurrentView();
+  },
+
+  getGlobalSearchItems() {
+    const items = [];
+    const add = item => {
+      if (!item?.title) return;
+      items.push({
+        ...item,
+        haystack: App.utils.normalizeText(`${item.title} ${item.detail || ""} ${item.meta || ""}`)
+      });
+    };
+
+    App.data.teams.forEach(team => add({
+      type: "Clube",
+      title: team.team,
+      detail: `${team.owner || "Sem técnico"} · ${team.status || "Liga"}`,
+      view: "playersView",
+      filterId: "playersSearchInput",
+      filterValue: team.team
+    }));
+
+    (App.calendar.getCalendarEvents?.() || []).forEach(match => add({
+      type: match.competition === "Championship" ? "Jogo" : "Copa",
+      title: `${match.home} x ${match.away}`,
+      detail: `${match.competition} · ${match.phase} · ${App.utils.formatDate(match.date)}`,
+      meta: `${match.homeScore ?? ""} ${match.awayScore ?? ""}`,
+      view: match.competition === "Championship" ? "calendarView" : "cupsView",
+      filterId: match.competition === "Championship" ? "calendarSearchInput" : "cupsSearchInput",
+      filterValue: `${match.home} ${match.away}`
+    }));
+
+    App.transfers.getValidTransfers().forEach(item => add({
+      type: "Transferência",
+      title: item.player,
+      detail: `${item.buyer} · ${item.fromClub || "Mercado"} · ${App.utils.formatCurrency(item.totalCost)}`,
+      meta: `${item.overall || ""}`,
+      view: "transfersView",
+      filterId: "transferSearchInput",
+      filterValue: item.player
+    }));
+
+    (App.state.apiEvents || []).forEach(event => add({
+      type: event.Tipo || "Evento",
+      title: event.Titulo || event.JogadorAfetado || "Evento da liga",
+      detail: `${event.Jogador || "Liga"} · ${event.JogadorAfetado || event.Descricao || ""}`,
+      view: "eventsView",
+      filterId: "eventsSearchInput",
+      filterValue: event.JogadorAfetado || event.Titulo || event.Jogador || ""
+    }));
+
+    return items;
+  },
+
+  renderGlobalSearchResults(query = "") {
+    const input = document.getElementById("globalSearchInput");
+    const target = document.getElementById("globalSearchResults");
+    if (!input || !target) return;
+
+    const normalized = App.utils.normalizeText(query);
+    if (normalized.length < 2) {
+      target.classList.remove("is-visible");
+      target.innerHTML = "";
+      return;
+    }
+
+    const results = App.main.getGlobalSearchItems()
+      .filter(item => item.haystack.includes(normalized))
+      .slice(0, 10);
+
+    target.classList.add("is-visible");
+    target.innerHTML = results.length ? results.map((item, index) => `
+      <button
+        type="button"
+        class="global-search-item"
+        role="option"
+        data-global-search-index="${index}"
+      >
+        <span>${App.utils.escapeHtml(item.type)}</span>
+        <strong>${App.utils.escapeHtml(item.title)}</strong>
+        <small>${App.utils.escapeHtml(item.detail || "")}</small>
+      </button>
+    `).join("") : `<div class="global-search-empty">Nenhum resultado encontrado.</div>`;
+
+    target.querySelectorAll("[data-global-search-index]").forEach(button => {
+      button.addEventListener("click", () => {
+        const item = results[Number(button.dataset.globalSearchIndex || 0)];
+        if (!item) return;
+        if (item.filterId) {
+          const filter = document.getElementById(item.filterId);
+          if (filter) {
+            filter.value = item.filterValue || item.title;
+            localStorage.setItem(`mml-filter-${item.filterId}`, filter.value);
+          }
+        }
+        input.value = item.title;
+        target.classList.remove("is-visible");
+        App.main.switchToView(item.view);
+      });
+    });
+  },
+
+  setupGlobalSearch() {
+    const input = document.getElementById("globalSearchInput");
+    const target = document.getElementById("globalSearchResults");
+    if (!input || !target || input.dataset.bound === "true") return;
+    input.dataset.bound = "true";
+
+    input.addEventListener("input", () => App.main.renderGlobalSearchResults(input.value));
+    input.addEventListener("focus", () => App.main.renderGlobalSearchResults(input.value));
+    input.addEventListener("keydown", event => {
+      if (event.key === "Escape") {
+        input.value = "";
+        target.classList.remove("is-visible");
+        target.innerHTML = "";
+      }
+    });
+    document.addEventListener("click", event => {
+      if (!event.target.closest("[data-global-search]")) target.classList.remove("is-visible");
+    });
+  },
+
   setupFilters() {
     [
       "calendarSearchInput", "calendarCompetitionFilter", "calendarOwnerFilter", "calendarWeekFilter", "calendarStatusFilter",
@@ -257,6 +388,7 @@ App.main = {
   init() {
     App.main.setupTabs();
     App.main.setupManualSync();
+    App.main.setupGlobalSearch();
     App.forms.populateTeamOptions();
     App.forms.setupForms();
     App.main.setupFilters();

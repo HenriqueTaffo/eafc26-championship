@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Mistura Managers League</title>
-    <link rel="stylesheet" href="./css/styles.css?v=20260522-league-intelligence" />
+    <link rel="stylesheet" href="./css/styles.css?v=20260522-complete-league-pack" />
   </head>
   <body>
     <div
@@ -115,6 +115,21 @@
 
       <section class="app-status-bar" aria-live="polite">
         <span id="syncStatusText">Sincronizando dados da liga...</span>
+        <div class="global-search" data-global-search>
+          <input
+            id="globalSearchInput"
+            type="search"
+            placeholder="Buscar jogo, técnico, jogador..."
+            autocomplete="off"
+            aria-label="Busca global da liga"
+          />
+          <div
+            id="globalSearchResults"
+            class="global-search-results"
+            role="listbox"
+            aria-label="Resultados da busca global"
+          ></div>
+        </div>
         <button type="button" data-manual-sync>Sincronizar agora</button>
       </section>
 

@@ -1076,6 +1076,15 @@ App.transfers = {
     );
     const duplicateBlock = duplicate && (!isInternal || internalSellerMismatch);
     const remainingAfter = budget ? budget.remaining - finalValue : 0;
+    const weeklySalary = App.transfers.estimateWeeklySalary({
+      overall,
+      marketValue,
+      totalCost: finalValue
+    });
+    const payrollAfter = Number(budget?.payrollWeekly || 0) + weeklySalary;
+    const runwayWeeksAfter = payrollAfter > 0
+      ? Math.floor(Math.max(0, remainingAfter) / payrollAfter)
+      : null;
     const limitReached =
       !isInternal && budget
         ? budget.transfersToday >= budget.transferLimit
@@ -1103,6 +1112,9 @@ App.transfers = {
       sameBuyerAndSeller,
       budget,
       remainingAfter,
+      weeklySalary,
+      payrollAfter,
+      runwayWeeksAfter,
       limitReached,
       overBudget,
       hardBlock,
@@ -1209,6 +1221,10 @@ App.transfers = {
       );
     }
 
+    if (preview.runwayWeeksAfter !== null && preview.runwayWeeksAfter < 3) {
+      messages.push("A folha pós-compra deixa pouco fôlego de caixa para as próximas semanas.");
+    }
+
     if (submitButton && !submitButton.dataset.submitting) {
       submitButton.disabled = preview.hardBlock;
     }
@@ -1224,7 +1240,10 @@ App.transfers = {
         <span>Taxa <strong>${Math.round(preview.rate * 100)}%</strong></span>
         <span>${preview.isInternal ? "Valor negociado" : "Custo final"} <strong>${App.utils.formatCurrency(preview.finalValue)}</strong></span>
         <span>Saldo após compra <strong>${App.utils.formatCurrency(preview.remainingAfter)}</strong></span>
+        <span>Salário estimado <strong>${App.utils.formatCurrency(preview.weeklySalary)}/sem</strong></span>
+        <span>Folha pós-compra <strong>${App.utils.formatCurrency(preview.payrollAfter)}/sem</strong></span>
         <span>${preview.isInternal ? "Limite diário" : "Transferências hoje"} <strong>${preview.isInternal ? "Não consome" : `${preview.budget.transfersToday}/${preview.budget.transferLimit}`}</strong></span>
+        <span>Fôlego de caixa <strong>${preview.runwayWeeksAfter === null ? "Sem folha" : `${preview.runwayWeeksAfter} sem.`}</strong></span>
       </div>
       <ul class="preview-alerts">
         ${messages.map((message) => `<li>${App.utils.escapeHtml(message)}</li>`).join("")}

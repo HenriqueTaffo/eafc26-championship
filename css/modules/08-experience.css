@@ -385,6 +385,16 @@
   border-color: rgba(245, 158, 11, .32);
 }
 
+.coach-private-board-card {
+  background:
+    radial-gradient(circle at top right, rgba(168, 85, 247, .12), transparent 34%),
+    rgba(15, 23, 42, .84);
+}
+
+.private-board-grid .coach-objective-item {
+  border-style: dashed;
+}
+
 .coach-objective-item.risk,
 .fairplay-list span:first-child:not(:only-child) {
   border-color: rgba(248, 113, 113, .28);
@@ -524,10 +534,26 @@
 }
 
 .commissioner-integrity-card,
-.commissioner-radar-card {
+.commissioner-radar-card,
+.commissioner-economy-card,
+.commissioner-rumor-card {
   background:
     radial-gradient(circle at top left, rgba(45, 212, 191, .10), transparent 32%),
     rgba(15, 23, 42, .84);
+}
+
+.economy-row.critico,
+.economy-row.muito-alto {
+  border-color: rgba(248, 113, 113, .34);
+}
+
+.economy-row.atencao,
+.economy-row.folha-curta {
+  border-color: rgba(245, 158, 11, .34);
+}
+
+.economy-row.saudavel {
+  border-color: rgba(34, 197, 94, .22);
 }
 
 .commissioner-sublist {

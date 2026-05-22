@@ -65,6 +65,70 @@ App.governance = {
     });
   },
 
+  getEconomyRows() {
+    return App.transfers.getSpendingSummary()
+      .map(item => {
+        const projectedMonth = item.payrollWeekly * 4;
+        const burnRate = item.totalBudget > 0 ? (item.spent + projectedMonth) / item.totalBudget : 0;
+        const risk =
+          item.remaining < 0 ? "Crítico" :
+            burnRate >= .95 ? "Muito alto" :
+              burnRate >= .78 ? "Atenção" :
+                item.payrollWeekly > 0 && item.runwayWeeks !== null && item.runwayWeeks < 4 ? "Folha curta" :
+                  "Saudável";
+
+        return {
+          ...item,
+          projectedMonth,
+          burnRate,
+          risk
+        };
+      })
+      .sort((a, b) => b.burnRate - a.burnRate || a.remaining - b.remaining);
+  },
+
+  getPublicRumors() {
+    const transfers = App.transfers.getValidTransfers();
+    const fairPlay = App.transfers.getFairPlayWatchlist();
+    const auctions = App.state.apiGovernance?.auctions || [];
+    const rows = [];
+
+    transfers
+      .filter(item => Number(item.totalCost || 0) >= 22000000 || Number(item.overall || 0) >= 84)
+      .slice(-5)
+      .reverse()
+      .forEach(item => rows.push({
+        tone: "active",
+        title: `${item.buyer} mira impacto imediato`,
+        detail: `${item.player} chegou por ${App.utils.formatCurrency(item.totalCost)}.`
+      }));
+
+    auctions
+      .filter(item => item.status === "open")
+      .slice(0, 3)
+      .forEach(item => rows.push({
+        tone: "deadline",
+        title: "Disputa pública no mercado",
+        detail: `${item.player_name} tem leilão aberto a partir de ${App.utils.formatCurrency(item.opening_value)}.`
+      }));
+
+    fairPlay.slice(0, 3).forEach(item => rows.push({
+      tone: item.remaining < 0 ? "critical" : "warn",
+      title: `${item.buyer} sob observação financeira`,
+      detail: `${item.severity} · saldo ${App.utils.formatCurrency(item.remaining)}.`
+    }));
+
+    if (!rows.length) {
+      rows.push({
+        tone: "calm",
+        title: "Mercado sem vazamentos relevantes",
+        detail: "Nenhum alvo privado entra neste radar público."
+      });
+    }
+
+    return rows.slice(0, 8);
+  },
+
   getWeeklyObjectiveRows() {
     const standings = App.standings.getStandings();
     const budgets = App.transfers.getBudgetInfoByBuyer();
@@ -281,6 +345,52 @@ App.governance = {
     `;
   },
 
+  renderEconomyControl() {
+    const rows = App.governance.getEconomyRows();
+    return `
+      <article class="commissioner-card commissioner-economy-card">
+        <div class="home-panel-header">
+          <div>
+            <span class="modal-kicker">Orçamento e folha</span>
+            <h2>Controle financeiro</h2>
+          </div>
+          <span class="coach-section-kicker">${rows.filter(item => item.risk !== "Saudável").length} alerta(s)</span>
+        </div>
+        <div class="commissioner-list economy-list">
+          ${rows.map(item => `
+            <div class="economy-row ${App.utils.normalizeText(item.risk).replace(/\s+/g, "-")}">
+              <strong>${App.utils.escapeHtml(item.buyer)} · ${App.utils.escapeHtml(item.risk)}</strong>
+              <span>Saldo ${App.utils.formatCurrency(item.remaining)} · folha ${App.utils.formatCurrency(item.payrollWeekly)}/sem · mês projetado ${App.utils.formatCurrency(item.projectedMonth)}</span>
+            </div>
+          `).join("")}
+        </div>
+      </article>
+    `;
+  },
+
+  renderRumorDesk() {
+    const rows = App.governance.getPublicRumors();
+    return `
+      <article class="commissioner-card commissioner-rumor-card">
+        <div class="home-panel-header">
+          <div>
+            <span class="modal-kicker">Boatos públicos</span>
+            <h2>Central de rumores</h2>
+          </div>
+          <span class="coach-section-kicker">Sem alvos privados</span>
+        </div>
+        <div class="league-radar-list">
+          ${rows.map(item => `
+            <div class="league-radar-item ${App.utils.escapeHtml(item.tone || "info")}">
+              <strong>${App.utils.escapeHtml(item.title)}</strong>
+              <span>${App.utils.escapeHtml(item.detail)}</span>
+            </div>
+          `).join("")}
+        </div>
+      </article>
+    `;
+  },
+
   renderAuctions() {
     const auctions = App.state.apiGovernance?.auctions || [];
     const candidates = App.transfers.getAuctionCandidates();
@@ -483,6 +593,8 @@ App.governance = {
     target.innerHTML = `
       ${App.governance.renderIntegrityAudit()}
       ${App.governance.renderLeagueRadar()}
+      ${App.governance.renderEconomyControl()}
+      ${App.governance.renderRumorDesk()}
       ${App.governance.renderAuctions()}
       ${App.governance.renderMedical()}
       ${App.governance.renderWeekly()}

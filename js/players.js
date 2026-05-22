@@ -697,6 +697,72 @@ App.players = {
     return flags;
   },
 
+  getPrivateBoardObjectives(activeTeam, standing, budget, transfers, recentForm) {
+    const next = App.players.getNextMatchForTeam(activeTeam.team);
+    const remaining = Number(budget.remainingBudget ?? App.config.transferBudget);
+    const totalBudget = Number(budget.totalBudget ?? App.config.transferBudget);
+    const payrollWeekly = transfers.reduce((sum, item) => sum + App.transfers.estimateWeeklySalary(item), 0);
+    const lastFive = recentForm.slice(0, 5);
+    const wins = lastFive.filter(item => item.result === "W").length;
+    const hasValueBuy = transfers.some(item => Number(item.overall || 0) >= 78 && Number(item.totalCost || 0) <= 14000000);
+    const hasBigBuy = transfers.some(item => Number(item.totalCost || 0) >= 25000000 || Number(item.overall || 0) >= 86);
+    const spendRatio = totalBudget > 0 ? 1 - (remaining / totalBudget) : 0;
+
+    return [
+      {
+        label: "Alvo de mercado",
+        status: hasValueBuy || hasBigBuy ? "ok" : "warn",
+        detail: hasBigBuy
+          ? "Contratação de impacto já entrou no elenco."
+          : hasValueBuy
+            ? "Boa compra custo-benefício registrada."
+            : "Mapeie um titular acessível antes do próximo deadline."
+      },
+      {
+        label: "Próximo jogo",
+        status: next ? "warn" : "ok",
+        detail: next
+          ? `${next.competition} contra ${App.utils.sameTeamName(next.home, activeTeam.team) ? next.away : next.home}.`
+          : "Sem compromisso pendente no calendário."
+      },
+      {
+        label: "Controle de caixa",
+        status: remaining >= 0 && spendRatio < .82 && payrollWeekly * 4 < totalBudget * .18 ? "ok" : "risk",
+        detail: `${App.utils.formatCurrency(remaining)} livres · folha ${App.utils.formatCurrency(payrollWeekly)}/sem.`
+      },
+      {
+        label: "Momento competitivo",
+        status: wins >= 2 || Number(standing?.points || 0) >= 10 ? "ok" : "warn",
+        detail: `${wins} vitória(s) nos últimos ${lastFive.length || 0} jogos rastreados.`
+      }
+    ];
+  },
+
+  renderPrivateBoardObjectives(activeTeam, standing, budget, transfers, recentForm) {
+    const objectives = App.players.getPrivateBoardObjectives(activeTeam, standing, budget, transfers, recentForm);
+    return `
+      <div class="coach-full-row-v54">
+        <article class="coach-panel-card coach-private-board-card">
+          <div class="home-panel-header">
+            <div>
+              <span class="modal-kicker">Só você vê</span>
+              <h2>Metas secretas</h2>
+            </div>
+            <span class="coach-section-kicker">${objectives.filter(item => item.status === "ok").length}/${objectives.length}</span>
+          </div>
+          <div class="coach-objective-grid private-board-grid">
+            ${objectives.map(item => `
+              <div class="coach-objective-item ${item.status}">
+                <strong>${App.utils.escapeHtml(item.label)}</strong>
+                <span>${App.utils.escapeHtml(item.detail)}</span>
+              </div>
+            `).join("")}
+          </div>
+        </article>
+      </div>
+    `;
+  },
+
   renderCoachStrategyCards(activeTeam, standing, budget, transfers, injuries, recentForm) {
     const objectives = App.players.getCoachObjectives(activeTeam, standing, budget, transfers);
     const morale = App.players.getCoachMorale(activeTeam, standing, budget, injuries, recentForm);
@@ -796,6 +862,7 @@ App.players = {
     const sponsorshipCard = App.auth?.renderCoachSponsorshipCard ? App.auth.renderCoachSponsorshipCard(activeTeam.owner) : "";
     const pinCard = App.auth?.renderPinChangeCard ? App.auth.renderPinChangeCard(activeTeam.owner) : "";
     const strategyCards = canViewPrivate ? App.players.renderCoachStrategyCards(activeTeam, standing, budget, transfers, injuries, recentForm) : "";
+    const privateBoardCard = canViewPrivate ? App.players.renderPrivateBoardObjectives(activeTeam, standing, budget, transfers, recentForm) : "";
     const statementCard = canViewPrivate ? App.players.renderCoachFinancialStatement(activeTeam.owner, budget, breakdown) : "";
     const targetsCard = canViewPrivate ? App.players.renderPrivateTransferTargets(activeTeam.owner) : "";
 
@@ -840,6 +907,7 @@ App.players = {
           ${proposalCard ? `<div class="coach-full-row-v54">${proposalCard}</div>` : ""}
           ${sponsorshipCard ? `<div class="coach-full-row-v54">${sponsorshipCard}</div>` : ""}
           ${statementCard}
+          ${privateBoardCard}
           ${strategyCards}
 
           <div class="coach-flow-v55">
