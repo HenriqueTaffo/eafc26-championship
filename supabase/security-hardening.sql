@@ -883,6 +883,64 @@ as $$
   from reconciled;
 $$;
 
+create table if not exists public.commissioner_admins (
+  id text primary key,
+  display_name text not null,
+  access_code text not null,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+insert into public.commissioner_admins (id, display_name, access_code)
+values ('comissario', 'Comissario da Liga', 'MML-2026')
+on conflict (id) do update
+   set display_name = excluded.display_name,
+       access_code = excluded.access_code,
+       updated_at = now();
+
+create or replace function public.app_login_commissioner(
+  p_manager_name text,
+  p_access_code text
+)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_admin public.commissioner_admins%rowtype;
+  v_manager_name text;
+begin
+  v_manager_name := lower(trim(coalesce(p_manager_name, '')));
+
+  select *
+    into v_admin
+  from public.commissioner_admins
+  where id = 'comissario'
+    and v_manager_name in (
+      lower(trim(display_name)),
+      lower('comissario da liga'),
+      lower('comissário da liga'),
+      lower('comissario')
+    )
+  limit 1;
+
+  if not found or v_admin.access_code is distinct from p_access_code then
+    return jsonb_build_object('ok', false, 'message', 'Login do comissario invalido.');
+  end if;
+
+  return jsonb_build_object(
+    'ok', true,
+    'manager', jsonb_build_object(
+      'id', v_admin.id,
+      'name', 'Comissário da Liga',
+      'club', 'Governança da Liga',
+      'isCommissioner', true
+    )
+  );
+end;
+$$;
+
 create or replace function public.app_security_login(
   p_manager_id text,
   p_access_code text
@@ -1184,6 +1242,7 @@ begin
 end;
 $$;
 
+grant execute on function public.app_login_commissioner(text, text) to anon, authenticated;
 grant execute on function public.app_security_login(text, text) to anon, authenticated;
 grant execute on function public.app_get_budget_reconciliation() to anon, authenticated;
 grant execute on function public.app_add_result(text, text, text, integer, text, text, text, integer, integer, text, text, text, text, text) to anon, authenticated;
@@ -1206,3 +1265,5 @@ begin
   end if;
 end;
 $$;
+
+notify pgrst, 'reload schema';
