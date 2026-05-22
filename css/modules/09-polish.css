@@ -161,7 +161,7 @@
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   gap: 18px;
-  padding: 18px;
+  padding: 20px 18px;
   color: var(--cup-text);
   background:
     linear-gradient(135deg, color-mix(in srgb, var(--cup-accent) 22%, transparent), transparent 48%),
@@ -188,7 +188,7 @@
   letter-spacing: 0;
   background: transparent;
   box-shadow: none;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .cup-mark img {
@@ -199,10 +199,15 @@
 }
 
 .cup-board.fa-cup .cup-mark {
-  width: 132px;
-  height: 58px;
-  flex-basis: 132px;
+  width: 124px;
+  height: 86px;
+  flex-basis: 124px;
   align-self: center;
+}
+
+.cup-board.fa-cup .cup-mark img {
+  max-width: 118px;
+  max-height: 78px;
 }
 
 .cup-board-title h2 {
