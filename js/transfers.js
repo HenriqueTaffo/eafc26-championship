@@ -101,6 +101,17 @@ App.transfers = {
       source_url: "https://sofifa.com/player/223959/lucas-torreira",
       source_name: "EA SPORTS FC official ratings + SoFIFA headshot"
     },
+    "lukas klostermann": {
+      name: "Lukas Klostermann",
+      club: "RasenBallsport Leipzig",
+      position: "CB",
+      nation: "Germany",
+      overall: 79,
+      gender: "Men's Football",
+      avatar_url: "https://cdn.sofifa.net/players/221/660/26_240.png",
+      source_url: "https://sofifa.com/player/221660/lukas-klostermann",
+      source_name: "EA SPORTS FC official ratings + SoFIFA headshot"
+    },
     "dybala": {
       name: "Paulo Dybala",
       club: "Roma",

@@ -1,6 +1,26 @@
 window.App = window.App || {};
 
 App.api = {
+  reversedTransferKeys: [
+    "rafael|ayoze perez|villarreal club de futbol s.a.d."
+  ],
+
+  getTransferStateKey(item = {}) {
+    return [
+      item.Comprador || item.buyer || "",
+      item.Jogador || item.player || item.name || "",
+      item.ClubeOrigem || item.fromClub || item.club || ""
+    ].map(value => App.utils.normalizeText(value)).join("|");
+  },
+
+  isReversedTransfer(item = {}) {
+    return App.api.reversedTransferKeys.includes(App.api.getTransferStateKey(item));
+  },
+
+  isApprovedTransfer(item = {}) {
+    return ["aprovado", "approved"].includes(App.utils.normalizeText(item.Status || item.status));
+  },
+
   async fetchWithTimeout(url, options = {}, timeoutMs = 45000) {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
@@ -60,7 +80,7 @@ App.api = {
         p_limit: Number(limit || 12)
       }, 30000);
 
-      App.state.apiMarketPlayers = Array.isArray(data) ? data : [];
+      App.state.apiMarketPlayers = App.api.applyMarketPlayerOverrides(Array.isArray(data) ? data : []);
       return App.state.apiMarketPlayers;
     } catch (rpcError) {
       console.warn("Busca RPC players_market indisponível, tentando leitura direta:", rpcError);
@@ -81,7 +101,7 @@ App.api = {
         }
 
         const data = await response.json();
-        App.state.apiMarketPlayers = Array.isArray(data) ? data : [];
+        App.state.apiMarketPlayers = App.api.applyMarketPlayerOverrides(Array.isArray(data) ? data : []);
         return App.state.apiMarketPlayers;
       } catch (error) {
         console.warn("Não consegui carregar players_market:", error);
@@ -89,6 +109,22 @@ App.api = {
         return [];
       }
     }
+  },
+
+  applyMarketPlayerOverrides(players = []) {
+    return players.map(player => {
+      if (!App.api.isReversedTransfer({
+        Comprador: "Rafael",
+        Jogador: player.name,
+        ClubeOrigem: player.club
+      })) return player;
+
+      return {
+        ...player,
+        alreadyContracted: false,
+        is_contracted: false
+      };
+    });
   },
 
   mergeEaRatings(rows = []) {
@@ -552,8 +588,7 @@ App.api = {
 
       App.state.apiResults = data.results || [];
       App.state.apiTransfers = (data.transfers || []).filter(item =>
-        App.utils.normalizeText(item.Status || item.status) === "aprovado" ||
-        App.utils.normalizeText(item.Status || item.status) === "approved"
+        App.api.isApprovedTransfer(item) && !App.api.isReversedTransfer(item)
       );
       App.state.apiEvents = data.events || [];
       App.state.apiClubs = data.clubs || [];

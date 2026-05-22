@@ -172,6 +172,27 @@ const MANUAL_RATINGS = {
     gender: "Men's Football",
     source_url: "https://sofifa.com/player/223959/lucas-torreira",
     source_name: "EA SPORTS FC official ratings + SoFIFA headshot"
+  },
+  "lukas-klostermann": {
+    ea_id: "221660",
+    rank: null,
+    name: "Lukas Klostermann",
+    nation: "Germany",
+    club: "RasenBallsport Leipzig",
+    position: "CB",
+    overall: 79,
+    pace: null,
+    shooting: null,
+    passing: null,
+    dribbling: null,
+    defending: null,
+    physical: null,
+    avatar_url: "https://cdn.sofifa.net/players/221/660/26_240.png",
+    shield_url: null,
+    card_type: "Normal",
+    gender: "Men's Football",
+    source_url: "https://sofifa.com/player/221660/lukas-klostermann",
+    source_name: "EA SPORTS FC official ratings + SoFIFA headshot"
   }
 };
 const SUPABASE_PAGE_SIZE = 1000;
