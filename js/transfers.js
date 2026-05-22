@@ -64,6 +64,28 @@ App.transfers = {
       source_url: "https://sofifa.com/player/193080/david-de-gea",
       source_name: "EA SPORTS FC official ratings + SoFIFA headshot"
     },
+    "leonardo spinazzola": {
+      name: "Leonardo Spinazzola",
+      club: "Società Sportiva Calcio Napoli",
+      position: "LB",
+      nation: "Italy",
+      overall: 80,
+      gender: "Men's Football",
+      avatar_url: "https://cdn.sofifa.net/players/202/884/26_240.png",
+      source_url: "https://sofifa.com/player/202884/leonardo-spinazzola",
+      source_name: "EA SPORTS FC official ratings + SoFIFA headshot"
+    },
+    "stefan de vrij": {
+      name: "Stefan de Vrij",
+      club: "Football Club Internazionale Milano S.p.A.",
+      position: "CB",
+      nation: "Netherlands",
+      overall: 80,
+      gender: "Men's Football",
+      avatar_url: "https://cdn.sofifa.net/players/198/176/26_240.png",
+      source_url: "https://sofifa.com/player/198176/stefan-de-vrij",
+      source_name: "EA SPORTS FC official ratings + SoFIFA headshot"
+    },
     "dybala": {
       name: "Paulo Dybala",
       club: "Roma",

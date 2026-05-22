@@ -109,6 +109,48 @@ const MANUAL_RATINGS = {
     gender: "Men's Football",
     source_url: "https://sofifa.com/player/193080/david-de-gea",
     source_name: "EA SPORTS FC official ratings + SoFIFA headshot"
+  },
+  "leonardo-spinazzola": {
+    ea_id: "202884",
+    rank: null,
+    name: "Leonardo Spinazzola",
+    nation: "Italy",
+    club: "Società Sportiva Calcio Napoli",
+    position: "LB",
+    overall: 80,
+    pace: null,
+    shooting: null,
+    passing: null,
+    dribbling: null,
+    defending: null,
+    physical: null,
+    avatar_url: "https://cdn.sofifa.net/players/202/884/26_240.png",
+    shield_url: null,
+    card_type: "Normal",
+    gender: "Men's Football",
+    source_url: "https://sofifa.com/player/202884/leonardo-spinazzola",
+    source_name: "EA SPORTS FC official ratings + SoFIFA headshot"
+  },
+  "stefan-de-vrij": {
+    ea_id: "198176",
+    rank: null,
+    name: "Stefan de Vrij",
+    nation: "Netherlands",
+    club: "Football Club Internazionale Milano S.p.A.",
+    position: "CB",
+    overall: 80,
+    pace: null,
+    shooting: null,
+    passing: null,
+    dribbling: null,
+    defending: null,
+    physical: null,
+    avatar_url: "https://cdn.sofifa.net/players/198/176/26_240.png",
+    shield_url: null,
+    card_type: "Normal",
+    gender: "Men's Football",
+    source_url: "https://sofifa.com/player/198176/stefan-de-vrij",
+    source_name: "EA SPORTS FC official ratings + SoFIFA headshot"
   }
 };
 const SUPABASE_PAGE_SIZE = 1000;
