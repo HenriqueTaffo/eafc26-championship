@@ -198,6 +198,12 @@
   object-fit: contain;
 }
 
+.cup-board.fa-cup .cup-mark {
+  width: 116px;
+  height: 82px;
+  flex-basis: 116px;
+}
+
 .cup-board-title h2 {
   margin: 2px 0 4px;
   color: var(--cup-text);

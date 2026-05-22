@@ -29,7 +29,7 @@ App.cups = {
         name: "FA Cup",
         displayName: "The Emirates FA Cup",
         shortName: "Emirates FA Cup",
-        mark: "https://commons.wikimedia.org/wiki/Special:FilePath/Emirates_FA_Cup_Logo_2020.jpg?width=240",
+        mark: "https://brandlogos.net/wp-content/uploads/2022/02/emirates_fa_cup-logo-brandlogos.net_-512x512.png",
         className: "fa-cup",
         rounds: [
           { phase: "3ª fase", week: 5, matches: [
