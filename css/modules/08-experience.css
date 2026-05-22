@@ -462,7 +462,8 @@
 
 .commissioner-list > div,
 .commissioner-sublist,
-.commissioner-split-list > div {
+.commissioner-split-list > div,
+.league-radar-item {
   border: 1px solid rgba(148, 163, 184, .14);
   border-radius: 12px;
   padding: 10px;
@@ -474,22 +475,59 @@
 .commissioner-sublist strong,
 .commissioner-sublist span,
 .commissioner-split-list strong,
-.commissioner-split-list span {
+.commissioner-split-list span,
+.league-radar-item strong,
+.league-radar-item span {
   display: block;
 }
 
 .commissioner-list strong,
 .commissioner-sublist strong,
-.commissioner-split-list strong {
+.commissioner-split-list strong,
+.league-radar-item strong {
   color: #e2e8f0;
 }
 
 .commissioner-list span,
 .commissioner-sublist span,
-.commissioner-split-list span {
+.commissioner-split-list span,
+.league-radar-item span {
   margin-top: 4px;
   color: #94a3b8;
   font-size: 12px;
+}
+
+.league-radar-list {
+  display: grid;
+  gap: 9px;
+}
+
+.league-radar-item.critical,
+.integrity-row.critical {
+  border-color: rgba(248, 113, 113, .36);
+}
+
+.league-radar-item.warn,
+.integrity-row.warn {
+  border-color: rgba(245, 158, 11, .34);
+}
+
+.league-radar-item.deadline {
+  border-color: rgba(168, 85, 247, .34);
+}
+
+.league-radar-item.active,
+.league-radar-item.calm,
+.league-radar-item.info,
+.integrity-row.info {
+  border-color: rgba(45, 212, 191, .26);
+}
+
+.commissioner-integrity-card,
+.commissioner-radar-card {
+  background:
+    radial-gradient(circle at top left, rgba(45, 212, 191, .10), transparent 32%),
+    rgba(15, 23, 42, .84);
 }
 
 .commissioner-sublist {

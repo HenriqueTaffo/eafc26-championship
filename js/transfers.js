@@ -937,6 +937,12 @@ App.transfers = {
         totalBudget > 0
           ? Math.min(100, Math.max(0, (spent / totalBudget) * 100))
           : 0;
+      const payrollWeekly = transfers.reduce(
+        (sum, item) => sum + App.transfers.estimateWeeklySalary(item),
+        0,
+      );
+      const payrollPressure = totalBudget > 0 ? (payrollWeekly * 4) / totalBudget : 0;
+      const runwayWeeks = payrollWeekly > 0 ? Math.floor(Math.max(0, remaining) / payrollWeekly) : null;
 
       return {
         buyer,
@@ -952,8 +958,24 @@ App.transfers = {
         activeInjuries: Number(budget.activeInjuries || 0),
         homeBonus: Number(budget.homeBonus || 0),
         winBonusValue: Number(budget.winBonusValue || 0),
+        payrollWeekly,
+        payrollPressure,
+        runwayWeeks,
       };
     });
+  },
+
+  estimateWeeklySalary(item = {}) {
+    const overall = Number(item.overall || item.displayOverall || 0);
+    const value = Number(item.marketValue || item.totalCost || 0);
+    const valueBase = value * 0.006;
+    const overallMultiplier =
+      overall >= 88 ? 1.85 :
+        overall >= 84 ? 1.45 :
+          overall >= 80 ? 1.18 :
+            overall >= 75 ? 1 :
+              0.82;
+    return Math.round(Math.max(45000, valueBase * overallMultiplier) / 5000) * 5000;
   },
 
   getAuctionCandidates() {
@@ -976,6 +998,8 @@ App.transfers = {
         const severity =
           item.remaining < 0
             ? "Crítico"
+            : item.payrollPressure >= 0.18
+              ? "Folha alta"
             : usage >= 0.9
               ? "Alto"
               : usage >= 0.75

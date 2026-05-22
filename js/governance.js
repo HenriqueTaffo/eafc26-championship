@@ -81,6 +81,110 @@ App.governance = {
       });
   },
 
+  getEventKey(event = {}) {
+    return [
+      App.utils.normalizeText(event.competition),
+      App.cups?.normalizeCupPhase ? App.cups.normalizeCupPhase(event.phase || "") : App.utils.normalizeText(event.phase),
+      App.utils.normalizeTeamName(event.home),
+      App.utils.normalizeTeamName(event.away)
+    ].join("|");
+  },
+
+  isSameCompetition(left = "", right = "") {
+    return App.utils.normalizeText(left) === App.utils.normalizeText(right);
+  },
+
+  findDbMatchForEvent(event, dbEvents = []) {
+    return dbEvents.find(dbEvent =>
+      App.governance.isSameCompetition(event.competition, dbEvent.competition) &&
+      (
+        App.utils.normalizeText(event.phase) === App.utils.normalizeText(dbEvent.phase) ||
+        App.cups?.cupPhasesAreCompatible?.(event.phase, dbEvent.phase)
+      ) &&
+      App.cups?.sameCupTeams?.(event.home, event.away, dbEvent.home, dbEvent.away)
+    ) || null;
+  },
+
+  getIntegrityAudit() {
+    const dbEvents = App.api.getDbMatchEvents ? App.api.getDbMatchEvents() : [];
+    const cupEvents = App.cups?.getCupEvents ? App.cups.getCupEvents().filter(event => event.competition !== "Championship") : [];
+    const approvedResults = App.standings.getApprovedApiResults ? App.standings.getApprovedApiResults() : [];
+    const issues = [];
+
+    const missingCupMatches = cupEvents
+      .filter(event => App.api.isPlayablePendingMatch?.(event))
+      .filter(event => !App.governance.findDbMatchForEvent(event, dbEvents));
+
+    missingCupMatches.forEach(event => {
+      issues.push({
+        severity: "critical",
+        title: "Copa fora da simulação",
+        detail: `${event.competition} · ${event.phase} · ${event.home} x ${event.away} não existe em matches.`
+      });
+    });
+
+    const resultGroups = approvedResults
+      .filter(row => App.utils.normalizeText(row.Competicao) !== "championship")
+      .reduce((acc, row) => {
+        const key = [
+          App.utils.normalizeText(row.Competicao),
+          App.cups?.normalizeCupPhase ? App.cups.normalizeCupPhase(row.RodadaFase || "") : App.utils.normalizeText(row.RodadaFase),
+          [App.utils.normalizeTeamName(row.Mandante), App.utils.normalizeTeamName(row.Visitante)].sort().join("~")
+        ].join("|");
+        acc[key] = acc[key] || [];
+        acc[key].push(row);
+        return acc;
+      }, {});
+
+    Object.values(resultGroups).filter(group => group.length > 1).forEach(group => {
+      const first = group[0];
+      issues.push({
+        severity: "warn",
+        title: "Resultado de copa duplicado",
+        detail: `${first.Competicao} · ${first.RodadaFase} · ${first.Mandante} x ${first.Visitante} aparece ${group.length} vezes.`
+      });
+    });
+
+    App.transfers.getFairPlayWatchlist().forEach(item => {
+      issues.push({
+        severity: item.remaining < 0 ? "critical" : "warn",
+        title: `Fair play: ${item.buyer}`,
+        detail: `${item.severity} · saldo ${App.utils.formatCurrency(item.remaining)} · folha ${App.utils.formatCurrency(item.payrollWeekly || 0)}/sem.`
+      });
+    });
+
+    const avatarTotal = Object.keys(App.data?.marketPlayerAvatars || {}).length;
+    if (avatarTotal < 20000) {
+      issues.push({
+        severity: "info",
+        title: "Fotos do mercado",
+        detail: `${avatarTotal} fotos em cache. Rode sync:market-avatar-cache periodicamente.`
+      });
+    }
+
+    return {
+      issues,
+      missingCupMatches,
+      score: Math.max(0, 100 - issues.filter(item => item.severity === "critical").length * 25 - issues.filter(item => item.severity === "warn").length * 10)
+    };
+  },
+
+  getLeagueRadarItems() {
+    const audit = App.governance.getIntegrityAudit();
+    const phase = App.governance.getMarketPhase();
+    const auctions = App.state.apiGovernance?.auctions || [];
+    const injuries = App.governance.getActiveInjuries();
+    const targets = App.auth?.myTransferTargets || [];
+
+    return [
+      { tone: phase.tone, title: phase.name, detail: phase.detail },
+      ...audit.issues.slice(0, 4).map(issue => ({ tone: issue.severity, title: issue.title, detail: issue.detail })),
+      ...auctions.filter(item => item.status === "open").slice(0, 2).map(item => ({ tone: "deadline", title: "Leilão aberto", detail: `${item.player_name} · ${App.utils.formatCurrency(item.opening_value)}` })),
+      ...(injuries.length ? [{ tone: "warn", title: "DM movimentado", detail: `${injuries.length} lesão(ões) ativa(s) na liga.` }] : []),
+      ...(targets.length ? [{ tone: "calm", title: "Shortlist privada", detail: `${targets.length} alvo(s) no seu radar privado.` }] : [])
+    ];
+  },
+
   async runAction(action, payload = {}) {
     const session = App.auth?.getSession ? App.auth.getSession() : null;
     if (!session) throw new Error("Faça login como técnico antes de usar a mesa do comissário.");
@@ -112,12 +216,68 @@ App.governance = {
     const injuries = App.governance.getActiveInjuries();
     const auctions = App.state.apiGovernance?.auctions || [];
     const fairPlay = App.transfers.getFairPlayWatchlist();
+    const audit = App.governance.getIntegrityAudit();
 
     target.innerHTML = `
       ${App.ui.summaryCard("Fase do mercado", phase.name, phase.detail)}
       ${App.ui.summaryCard("Lesões ativas", injuries.length)}
       ${App.ui.summaryCard("Leilões abertos", auctions.filter(item => item.status === "open").length)}
       ${App.ui.summaryCard("Fair play", fairPlay.length ? `${fairPlay.length} alerta(s)` : "OK")}
+      ${App.ui.summaryCard("Integridade", `${audit.score}%`, audit.issues.length ? `${audit.issues.length} ponto(s) para revisar` : "Liga sincronizada")}
+    `;
+  },
+
+  renderIntegrityAudit() {
+    const audit = App.governance.getIntegrityAudit();
+    const canAct = App.auth?.isCommissioner?.();
+
+    return `
+      <article class="commissioner-card commissioner-integrity-card" id="commissionerIntegrity">
+        <div class="home-panel-header">
+          <div>
+            <span class="modal-kicker">Auditoria automática</span>
+            <h2>Saúde da liga</h2>
+          </div>
+          <span class="coach-section-kicker">${audit.score}% íntegra</span>
+        </div>
+        <div class="commissioner-list integrity-list">
+          ${audit.issues.length ? audit.issues.slice(0, 8).map(issue => `
+            <div class="integrity-row ${issue.severity}">
+              <strong>${App.utils.escapeHtml(issue.title)}</strong>
+              <span>${App.utils.escapeHtml(issue.detail)}</span>
+            </div>
+          `).join("") : `<p class="calendar-muted">Nenhuma inconsistência crítica detectada.</p>`}
+        </div>
+        ${audit.missingCupMatches.length && canAct ? `
+          <div class="commissioner-sublist">
+            <strong>Correção sugerida</strong>
+            <span>Use as migrações de seed/geração de copa para gravar essas partidas em public.matches antes de simular.</span>
+          </div>
+        ` : ""}
+      </article>
+    `;
+  },
+
+  renderLeagueRadar() {
+    const items = App.governance.getLeagueRadarItems();
+
+    return `
+      <article class="commissioner-card commissioner-radar-card">
+        <div class="home-panel-header">
+          <div>
+            <span class="modal-kicker">Central operacional</span>
+            <h2>Radar da liga</h2>
+          </div>
+        </div>
+        <div class="league-radar-list">
+          ${items.map(item => `
+            <div class="league-radar-item ${App.utils.escapeHtml(item.tone || "info")}">
+              <strong>${App.utils.escapeHtml(item.title)}</strong>
+              <span>${App.utils.escapeHtml(item.detail)}</span>
+            </div>
+          `).join("")}
+        </div>
+      </article>
     `;
   },
 
@@ -321,6 +481,8 @@ App.governance = {
     if (!target) return;
 
     target.innerHTML = `
+      ${App.governance.renderIntegrityAudit()}
+      ${App.governance.renderLeagueRadar()}
       ${App.governance.renderAuctions()}
       ${App.governance.renderMedical()}
       ${App.governance.renderWeekly()}

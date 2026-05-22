@@ -684,10 +684,13 @@ App.players = {
     const remaining = Number(budget.remainingBudget ?? App.config.transferBudget);
     const totalBudget = Number(budget.totalBudget ?? App.config.transferBudget);
     const spent = Number(budget.spentTotal || 0);
+    const payrollWeekly = transfers.reduce((sum, item) => sum + App.transfers.estimateWeeklySalary(item), 0);
+    const payrollPressure = totalBudget > 0 ? (payrollWeekly * 4) / totalBudget : 0;
     const flags = [];
 
     if (remaining < 0) flags.push("Saldo negativo: risco de auditoria.");
     if (totalBudget > 0 && spent / totalBudget >= .9) flags.push("Gasto acima de 90% do orçamento.");
+    if (payrollPressure >= .18) flags.push(`Folha pesada: ${App.utils.formatCurrency(payrollWeekly)} por semana.`);
     if (transfers.some(item => Number(item.totalCost || 0) >= 30000000)) flags.push("Compra pesada no radar da liga.");
     if (!flags.length) flags.push("Sem alerta financeiro grave.");
 
@@ -698,6 +701,10 @@ App.players = {
     const objectives = App.players.getCoachObjectives(activeTeam, standing, budget, transfers);
     const morale = App.players.getCoachMorale(activeTeam, standing, budget, injuries, recentForm);
     const fairPlay = App.players.getFairPlayFlags(budget, transfers);
+    const payrollWeekly = transfers.reduce((sum, item) => sum + App.transfers.estimateWeeklySalary(item), 0);
+    const runwayWeeks = payrollWeekly > 0
+      ? Math.floor(Math.max(0, Number(budget.remainingBudget ?? App.config.transferBudget)) / payrollWeekly)
+      : null;
 
     return `
       <div class="coach-full-row-v54">
@@ -728,9 +735,11 @@ App.players = {
         <article class="coach-panel-card coach-fairplay-card">
           <div class="home-panel-header">
             <h2>Fair play financeiro</h2>
+            <span class="coach-section-kicker">Folha ${App.utils.formatCurrency(payrollWeekly)}/sem</span>
           </div>
           <div class="fairplay-list">
             ${fairPlay.map(item => `<span>${App.utils.escapeHtml(item)}</span>`).join("")}
+            ${runwayWeeks !== null ? `<span>Fôlego estimado de caixa: ${runwayWeeks} semana(s) de folha.</span>` : ""}
           </div>
         </article>
       </div>
@@ -817,6 +826,7 @@ App.players = {
           ${canViewPrivate ? `
             <article><span>Saldo mercado</span><strong>${App.utils.formatCurrency(breakdown.available)}</strong><small>Gasto ${App.utils.formatCurrency(breakdown.spent)}</small></article>
             <article><span>Transfers hoje</span><strong>${todayCount}/${transferLimit}</strong><small>${transfers.length} totais válidas</small></article>
+            <article><span>Folha semanal</span><strong>${App.utils.formatCurrency(transfers.reduce((sum, item) => sum + App.transfers.estimateWeeklySalary(item), 0))}</strong><small>Estimativa por elenco contratado</small></article>
           ` : ""}
         </section>
 
