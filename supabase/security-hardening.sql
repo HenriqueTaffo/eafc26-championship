@@ -156,8 +156,6 @@ declare
   v_login jsonb;
   v_is_commissioner boolean;
   v_manager_name text;
-  v_transfer_table regclass;
-  v_existing_owner text;
   v_rate numeric := 0;
   v_final_value numeric := 0;
   v_budget jsonb;
@@ -175,55 +173,6 @@ begin
 
   if not v_is_commissioner and lower(trim(v_manager_name)) <> lower(trim(p_buyer)) then
     return jsonb_build_object('ok', false, 'message', 'A transferencia precisa ser enviada pelo comprador logado.');
-  end if;
-
-  select c.oid::regclass
-    into v_transfer_table
-  from pg_class c
-  join pg_namespace n on n.oid = c.relnamespace
-  where c.relkind = 'r'
-    and n.nspname = 'public'
-    and exists (select 1 from pg_attribute a where a.attrelid = c.oid and a.attname = 'Comprador' and not a.attisdropped)
-    and exists (select 1 from pg_attribute a where a.attrelid = c.oid and a.attname = 'Jogador' and not a.attisdropped)
-    and exists (select 1 from pg_attribute a where a.attrelid = c.oid and a.attname = 'ClubeOrigem' and not a.attisdropped)
-    and exists (select 1 from pg_attribute a where a.attrelid = c.oid and a.attname = 'Overall' and not a.attisdropped)
-    and exists (select 1 from pg_attribute a where a.attrelid = c.oid and a.attname = 'ValorTransfermarkt' and not a.attisdropped)
-    and exists (select 1 from pg_attribute a where a.attrelid = c.oid and a.attname = 'Status' and not a.attisdropped)
-    and exists (select 1 from pg_attribute a where a.attrelid = c.oid and a.attname = 'Timestamp' and not a.attisdropped)
-  order by c.relname
-  limit 1;
-
-  if v_transfer_table is null then
-    return jsonb_build_object('ok', false, 'message', 'Nao encontrei a tabela de transferencias.');
-  end if;
-
-  if coalesce(trim(p_buyer), '') = '' or coalesce(trim(p_player), '') = '' then
-    return jsonb_build_object('ok', false, 'message', 'Informe comprador e jogador.');
-  end if;
-
-  if coalesce(p_market_value, 0) <= 0 then
-    return jsonb_build_object('ok', false, 'message', 'Informe um valor de mercado maior que zero.');
-  end if;
-
-  execute format('alter table %s add column if not exists "TipoTransferencia" text default ''market''', v_transfer_table);
-  execute format('alter table %s add column if not exists "Vendedor" text', v_transfer_table);
-  execute format('alter table %s add column if not exists "ValorNegociado" numeric', v_transfer_table);
-  execute format('alter table %s add column if not exists "ValorFinal" numeric', v_transfer_table);
-
-  execute format(
-    'select "Comprador"::text
-       from %s
-      where lower("Jogador"::text) = lower($1)
-        and lower("Status"::text) = lower(''aprovado'')
-      order by "Timestamp" desc nulls last
-      limit 1',
-    v_transfer_table
-  )
-  into v_existing_owner
-  using p_player;
-
-  if v_existing_owner is not null then
-    return jsonb_build_object('ok', false, 'message', format('Jogador ja contratado por %s.', v_existing_owner));
   end if;
 
   v_rate := case
@@ -257,37 +206,13 @@ begin
     );
   end if;
 
-  execute format(
-    'insert into %s (
-       "Comprador",
-       "Jogador",
-       "ClubeOrigem",
-       "Overall",
-       "ValorTransfermarkt",
-       "ValorFinal",
-       "Status",
-       "Timestamp",
-       "TipoTransferencia",
-       "Vendedor",
-       "ValorNegociado"
-     ) values (%L, %L, %L, %s, %s, %s, ''aprovado'', now(), ''market'', null, null)',
-    v_transfer_table,
+  return public.app_add_transfer(
+    'eafc26'::text,
     p_buyer,
     p_player,
-    coalesce(nullif(trim(p_from_club), ''), 'Mercado externo'),
-    coalesce(p_overall, 0),
-    coalesce(p_market_value, 0),
-    v_final_value
-  );
-
-  return jsonb_build_object(
-    'ok', true,
-    'message', format('%s contratado por %s.', p_player, p_buyer),
-    'transferType', 'market',
-    'buyer', p_buyer,
-    'player', p_player,
-    'value', v_final_value,
-    'remainingBudget', v_remaining - v_final_value
+    p_from_club,
+    p_overall,
+    p_market_value
   );
 end;
 $$;
