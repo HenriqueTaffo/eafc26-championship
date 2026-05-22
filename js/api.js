@@ -134,7 +134,11 @@ App.api = {
 
     const groups = await Promise.all(uniqueNames.map(name => {
       const aliases = App.transfers?.getPlayerSearchAliases ? App.transfers.getPlayerSearchAliases(name) : [name];
-      return Promise.all(aliases.map(alias =>
+      const normalizedAlias = App.transfers?.normalizePlayerRatingKey
+        ? App.transfers.normalizePlayerRatingKey(name)
+        : App.utils.normalizeText(name);
+      const searchAliases = [...new Set([...aliases, normalizedAlias].filter(Boolean))];
+      return Promise.all(searchAliases.map(alias =>
         App.api.searchEaRatings(alias, limitPerName).catch(() => [])
       ));
     }));
