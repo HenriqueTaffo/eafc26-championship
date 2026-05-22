@@ -25,6 +25,27 @@ const PLAYER_SLUG_REJECTS = {
   "malcom": ["malcom-adu-ares-djalo"]
 };
 const MANUAL_RATINGS = {
+  "cristiano-ronaldo": {
+    ea_id: "20801",
+    rank: null,
+    name: "Cristiano Ronaldo",
+    nation: "Portugal",
+    club: "Al Nassr",
+    position: "ST",
+    overall: 85,
+    pace: 76,
+    shooting: 88,
+    passing: 76,
+    dribbling: 80,
+    defending: 34,
+    physical: 76,
+    avatar_url: "https://ratings-images-prod.pulse.ea.com/FC25/full/player-portraits/p20801.png?padding=0.7",
+    shield_url: "https://ratings-images-prod.pulse.ea.com/FC25/full/player-shields/en/20801.png?width=265",
+    card_type: "Normal",
+    gender: "Men's Football",
+    source_url: "https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/cristiano-ronaldo/20801",
+    source_name: "EA SPORTS FC official ratings"
+  },
   "kyle-walker": {
     ea_id: "188377",
     rank: null,
