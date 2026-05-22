@@ -270,4 +270,10 @@ alter table if exists public.governance_medical_actions enable row level securit
 alter table if exists public.governance_weekly_reviews enable row level security;
 alter table if exists public.commissioner_admins enable row level security;
 
-revoke all on table public.commissioner_admins from anon, authenticated;
+do $$
+begin
+  if to_regclass('public.commissioner_admins') is not null then
+    revoke all on table public.commissioner_admins from anon, authenticated;
+  end if;
+end;
+$$;
