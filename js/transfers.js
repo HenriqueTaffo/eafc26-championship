@@ -59,10 +59,16 @@ App.transfers = {
       "lautaro martinez": ["Lautaro Martínez"],
       "ruben dias": ["Rúben Dias"],
       "neymar": ["Neymar Jr."],
-      "kyle walker": ["Kyle Andrew Walker"]
+      "kyle walker": ["Kyle Andrew Walker"],
+      "heung-min son": ["Heung Min Son"],
+      "heung min son": ["Heung-Min Son"]
     };
 
     return [playerName, ...(aliases[normalized] || [])].filter(Boolean);
+  },
+
+  normalizePlayerRatingKey(value) {
+    return App.utils.normalizeText(value).replace(/[^a-z0-9]+/g, " ").trim();
   },
 
   getTransferRate(overall) {
@@ -74,21 +80,21 @@ App.transfers = {
   },
 
   findEaRatingByName(playerName) {
-    const key = App.utils.normalizeText(playerName);
+    const key = App.transfers.normalizePlayerRatingKey(playerName);
     if (!key) return null;
-    return (App.state.apiRatings || []).find(item => App.utils.normalizeText(item.name) === key) || null;
+    return (App.state.apiRatings || []).find(item => App.transfers.normalizePlayerRatingKey(item.name) === key) || null;
   },
 
   findEaRatingForMarketPlayer(player) {
-    const key = App.utils.normalizeText(player?.name);
+    const key = App.transfers.normalizePlayerRatingKey(player?.name);
     if (!key) return null;
 
     const clubKey = App.utils.normalizeText(player?.club);
     const ratings = (App.state.apiRatings || []).filter(App.transfers.isPlayableRating);
-    const aliasKeys = App.transfers.getPlayerSearchAliases(player?.name).map(App.utils.normalizeText);
-    const matches = ratings.filter(item => aliasKeys.includes(App.utils.normalizeText(item.name)));
+    const aliasKeys = App.transfers.getPlayerSearchAliases(player?.name).map(App.transfers.normalizePlayerRatingKey);
+    const matches = ratings.filter(item => aliasKeys.includes(App.transfers.normalizePlayerRatingKey(item.name)));
     return matches.find(item =>
-      App.utils.normalizeText(item.name) === key &&
+      App.transfers.normalizePlayerRatingKey(item.name) === key &&
       (!clubKey || !item.club || App.utils.normalizeText(item.club) === clubKey)
     ) || matches.find(item => item.avatar_url) || matches[0] || null;
   },
