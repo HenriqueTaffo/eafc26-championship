@@ -151,6 +151,27 @@ const MANUAL_RATINGS = {
     gender: "Men's Football",
     source_url: "https://sofifa.com/player/198176/stefan-de-vrij",
     source_name: "EA SPORTS FC official ratings + SoFIFA headshot"
+  },
+  "lucas-torreira": {
+    ea_id: "223959",
+    rank: null,
+    name: "Lucas Torreira",
+    nation: "Uruguay",
+    club: "Galatasaray Spor Kulübü",
+    position: "CDM",
+    overall: 82,
+    pace: null,
+    shooting: null,
+    passing: null,
+    dribbling: null,
+    defending: null,
+    physical: null,
+    avatar_url: "https://cdn.sofifa.net/players/223/959/26_240.png",
+    shield_url: null,
+    card_type: "Normal",
+    gender: "Men's Football",
+    source_url: "https://sofifa.com/player/223959/lucas-torreira",
+    source_name: "EA SPORTS FC official ratings + SoFIFA headshot"
   }
 };
 const SUPABASE_PAGE_SIZE = 1000;

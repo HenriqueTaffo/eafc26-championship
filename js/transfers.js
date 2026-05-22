@@ -41,6 +41,10 @@ App.transfers = {
     "Pernille Harder"
   ],
 
+  manualMarketValues: {
+    "lucas torreira": 10000000
+  },
+
   manualPlayerRatings: {
     "david de gea": {
       name: "David De Gea Quintana",
@@ -84,6 +88,17 @@ App.transfers = {
       gender: "Men's Football",
       avatar_url: "https://cdn.sofifa.net/players/198/176/26_240.png",
       source_url: "https://sofifa.com/player/198176/stefan-de-vrij",
+      source_name: "EA SPORTS FC official ratings + SoFIFA headshot"
+    },
+    "lucas torreira": {
+      name: "Lucas Torreira",
+      club: "Galatasaray Spor Kulübü",
+      position: "CDM",
+      nation: "Uruguay",
+      overall: 82,
+      gender: "Men's Football",
+      avatar_url: "https://cdn.sofifa.net/players/223/959/26_240.png",
+      source_url: "https://sofifa.com/player/223959/lucas-torreira",
       source_name: "EA SPORTS FC official ratings + SoFIFA headshot"
     },
     "dybala": {
@@ -287,6 +302,13 @@ App.transfers = {
 
   normalizePlayerRatingKey(value) {
     return App.utils.normalizeText(value).replace(/[^a-z0-9]+/g, " ").trim();
+  },
+
+  getMarketPlayerValue(player) {
+    const key = App.transfers.normalizePlayerRatingKey(player?.name);
+    const override = App.transfers.manualMarketValues[key];
+    if (override !== undefined) return Number(override);
+    return Number(player?.market_value_eur || player?.marketValue || 0);
   },
 
   getTransferRate(overall) {
@@ -981,6 +1003,11 @@ App.transfers = {
       const date = item.timestamp ? App.utils.formatDateTime(item.timestamp) : "Sem data";
       const overall = App.transfers.getTransferOverall(item);
       const isImpact = overall > 88;
+      const marketValue = Number(item.marketValue || 0);
+      const feePercent = Math.round(Number(item.feeRate || 0) * 100);
+      const valueBreakdown = marketValue
+        ? `Base ${App.utils.formatCurrency(marketValue)}${feePercent ? ` + ${feePercent}% OVR` : ""}`
+        : "Base não informada";
       return `
         <article class="transfer-movement-card ${isImpact ? "is-impact-transfer" : ""}">
           <div class="movement-card-header">
@@ -997,7 +1024,10 @@ App.transfers = {
           </div>
           <div class="movement-value">
             <span>Valor final</span>
-            <strong>${App.utils.formatCurrency(item.totalCost)}</strong>
+            <div class="movement-value-copy">
+              <small>${App.utils.escapeHtml(valueBreakdown)}</small>
+              <strong>${App.utils.formatCurrency(item.totalCost)}</strong>
+            </div>
           </div>
         </article>
       `;
@@ -1113,7 +1143,7 @@ App.transfers = {
 
     if (form.elements.player) form.elements.player.value = player.name || "";
     if (form.elements.fromClub) form.elements.fromClub.value = player.club || "";
-    if (form.elements.marketValue) form.elements.marketValue.value = Math.round(Number(player.market_value_eur || 0));
+    if (form.elements.marketValue) form.elements.marketValue.value = Math.round(App.transfers.getMarketPlayerValue(player));
 
     const eaRating = App.transfers.findEaRatingForMarketPlayer(player);
     if (eaRating && form.elements.overall) form.elements.overall.value = Number(eaRating.overall || player.overall || "");
@@ -1213,6 +1243,7 @@ App.transfers = {
       const isContracted = Boolean(player.alreadyContracted || player.is_contracted);
       const eaRating = App.transfers.findEaRatingForMarketPlayer(player);
       const overall = Number(eaRating?.overall || player.overall || 0);
+      const marketValue = App.transfers.getMarketPlayerValue(player);
       return `
         <button class="market-player-option ${isContracted ? "is-contracted" : ""}" type="button" data-market-player="${player.id}" ${isContracted ? "disabled" : ""}>
           ${App.transfers.renderPlayerPhoto(player, eaRating)}
@@ -1222,7 +1253,7 @@ App.transfers = {
           </span>
           <span class="market-player-side">
             ${overall ? `<span class="market-player-overall">OVR ${overall}</span>` : ""}
-            <span class="market-player-value">${App.utils.formatCurrency(Number(player.market_value_eur || 0))}</span>
+            <span class="market-player-value">${App.utils.formatCurrency(marketValue)}</span>
             ${isContracted ? `<span class="market-player-status">Já contratado</span>` : ""}
           </span>
         </button>
