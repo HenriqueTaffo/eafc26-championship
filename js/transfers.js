@@ -71,9 +71,9 @@ App.transfers = {
       nation: "Argentina",
       overall: 86,
       gender: "Men's Football",
-      avatar_url: "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a6/Dybala_2017.jpg/250px-Dybala_2017.jpg",
-      source_url: "https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/paulo-dybala/211110",
-      source_name: "EA SPORTS FC official ratings + Wikimedia photo"
+      avatar_url: "https://www.fifaratings.com/wp-content/uploads/paulo-dybala-fc-rating-300x300.png",
+      source_url: "https://www.fifaratings.com/paulo-dybala",
+      source_name: "FIFA Ratings normal FC ratings"
     },
     "paulo dybala": {
       name: "Paulo Dybala",
@@ -82,9 +82,9 @@ App.transfers = {
       nation: "Argentina",
       overall: 86,
       gender: "Men's Football",
-      avatar_url: "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a6/Dybala_2017.jpg/250px-Dybala_2017.jpg",
-      source_url: "https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/paulo-dybala/211110",
-      source_name: "EA SPORTS FC official ratings + Wikimedia photo"
+      avatar_url: "https://www.fifaratings.com/wp-content/uploads/paulo-dybala-fc-rating-300x300.png",
+      source_url: "https://www.fifaratings.com/paulo-dybala",
+      source_name: "FIFA Ratings normal FC ratings"
     },
     "henrikh mkhitaryan": {
       name: "Henrikh Mkhitaryan",
@@ -93,9 +93,9 @@ App.transfers = {
       nation: "Armenia",
       overall: 83,
       gender: "Men's Football",
-      avatar_url: "https://upload.wikimedia.org/wikipedia/commons/thumb/4/41/Henrikh_Mkhitaryan_2017.jpg/250px-Henrikh_Mkhitaryan_2017.jpg",
-      source_url: "https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/henrikh-mkhitaryan/192883",
-      source_name: "EA SPORTS FC official ratings + Wikimedia photo"
+      avatar_url: "https://www.fifaratings.com/wp-content/uploads/henrikh-mkhitaryan-fc-rating-300x300.png",
+      source_url: "https://www.fifaratings.com/henrikh-mkhitaryan",
+      source_name: "FIFA Ratings normal FC ratings"
     },
     "mkhitaryan": {
       name: "Henrikh Mkhitaryan",
@@ -104,9 +104,9 @@ App.transfers = {
       nation: "Armenia",
       overall: 83,
       gender: "Men's Football",
-      avatar_url: "https://upload.wikimedia.org/wikipedia/commons/thumb/4/41/Henrikh_Mkhitaryan_2017.jpg/250px-Henrikh_Mkhitaryan_2017.jpg",
-      source_url: "https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/henrikh-mkhitaryan/192883",
-      source_name: "EA SPORTS FC official ratings + Wikimedia photo"
+      avatar_url: "https://www.fifaratings.com/wp-content/uploads/henrikh-mkhitaryan-fc-rating-300x300.png",
+      source_url: "https://www.fifaratings.com/henrikh-mkhitaryan",
+      source_name: "FIFA Ratings normal FC ratings"
     },
     "reinildo mandava": {
       name: "Reinildo Mandava",
@@ -115,9 +115,9 @@ App.transfers = {
       nation: "Mozambique",
       overall: 79,
       gender: "Men's Football",
-      avatar_url: "https://upload.wikimedia.org/wikipedia/commons/thumb/8/82/Reinildo_Mandava_%28cropped%29.jpg/250px-Reinildo_Mandava_%28cropped%29.jpg",
-      source_url: "https://www.ea.com/fi/games/ea-sports-fc/ratings/player-ratings/reinildo/236045",
-      source_name: "EA SPORTS FC official ratings + Wikimedia photo"
+      avatar_url: "https://www.fifaratings.com/wp-content/uploads/reinildo-isnard-mandava-fc-rating-300x300.png",
+      source_url: "https://www.fifaratings.com/reinildo-isnard-mandava",
+      source_name: "FIFA Ratings normal FC ratings"
     },
     "reinildo isnard mandava": {
       name: "Reinildo Mandava",
@@ -126,9 +126,9 @@ App.transfers = {
       nation: "Mozambique",
       overall: 79,
       gender: "Men's Football",
-      avatar_url: "https://upload.wikimedia.org/wikipedia/commons/thumb/8/82/Reinildo_Mandava_%28cropped%29.jpg/250px-Reinildo_Mandava_%28cropped%29.jpg",
-      source_url: "https://www.ea.com/fi/games/ea-sports-fc/ratings/player-ratings/reinildo/236045",
-      source_name: "EA SPORTS FC official ratings + Wikimedia photo"
+      avatar_url: "https://www.fifaratings.com/wp-content/uploads/reinildo-isnard-mandava-fc-rating-300x300.png",
+      source_url: "https://www.fifaratings.com/reinildo-isnard-mandava",
+      source_name: "FIFA Ratings normal FC ratings"
     },
     "reinildo": {
       name: "Reinildo Mandava",
@@ -137,9 +137,53 @@ App.transfers = {
       nation: "Mozambique",
       overall: 79,
       gender: "Men's Football",
-      avatar_url: "https://upload.wikimedia.org/wikipedia/commons/thumb/8/82/Reinildo_Mandava_%28cropped%29.jpg/250px-Reinildo_Mandava_%28cropped%29.jpg",
-      source_url: "https://www.ea.com/fi/games/ea-sports-fc/ratings/player-ratings/reinildo/236045",
-      source_name: "EA SPORTS FC official ratings + Wikimedia photo"
+      avatar_url: "https://www.fifaratings.com/wp-content/uploads/reinildo-isnard-mandava-fc-rating-300x300.png",
+      source_url: "https://www.fifaratings.com/reinildo-isnard-mandava",
+      source_name: "FIFA Ratings normal FC ratings"
+    },
+    "sadio mane": {
+      name: "Sadio Mané",
+      club: "Al-Nassr Football Club",
+      position: "LM",
+      nation: "Senegal",
+      overall: 83,
+      gender: "Men's Football",
+      avatar_url: "https://www.fifaratings.com/wp-content/uploads/sadio-mane-fc-rating-300x300.png",
+      source_url: "https://www.fifaratings.com/sadio-mane",
+      source_name: "FIFA Ratings normal FC ratings"
+    },
+    "sadio mané": {
+      name: "Sadio Mané",
+      club: "Al-Nassr Football Club",
+      position: "LM",
+      nation: "Senegal",
+      overall: 83,
+      gender: "Men's Football",
+      avatar_url: "https://www.fifaratings.com/wp-content/uploads/sadio-mane-fc-rating-300x300.png",
+      source_url: "https://www.fifaratings.com/sadio-mane",
+      source_name: "FIFA Ratings normal FC ratings"
+    },
+    "mane": {
+      name: "Sadio Mané",
+      club: "Al-Nassr Football Club",
+      position: "LM",
+      nation: "Senegal",
+      overall: 83,
+      gender: "Men's Football",
+      avatar_url: "https://www.fifaratings.com/wp-content/uploads/sadio-mane-fc-rating-300x300.png",
+      source_url: "https://www.fifaratings.com/sadio-mane",
+      source_name: "FIFA Ratings normal FC ratings"
+    },
+    "mané": {
+      name: "Sadio Mané",
+      club: "Al-Nassr Football Club",
+      position: "LM",
+      nation: "Senegal",
+      overall: 83,
+      gender: "Men's Football",
+      avatar_url: "https://www.fifaratings.com/wp-content/uploads/sadio-mane-fc-rating-300x300.png",
+      source_url: "https://www.fifaratings.com/sadio-mane",
+      source_name: "FIFA Ratings normal FC ratings"
     }
   },
 
@@ -206,7 +250,11 @@ App.transfers = {
       "dybala": ["Paulo Dybala"],
       "mkhitaryan": ["Henrikh Mkhitaryan"],
       "reinildo": ["Reinildo Mandava", "Reinildo Isnard Mandava"],
-      "reinildo mandava": ["Reinildo", "Reinildo Isnard Mandava"]
+      "reinildo mandava": ["Reinildo", "Reinildo Isnard Mandava"],
+      "sadio mane": ["Sadio Mané"],
+      "sadio mané": ["Sadio Mane"],
+      "mane": ["Sadio Mané", "Sadio Mane"],
+      "mané": ["Sadio Mane", "Sadio Mané"]
     };
 
     return [playerName, ...(aliases[normalized] || [])].filter(Boolean);
