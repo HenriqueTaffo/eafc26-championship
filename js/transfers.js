@@ -68,7 +68,8 @@ App.transfers = {
       "ngolo kante": ["N'Golo Kante", "N’Golo Kante"],
       "inaki williams": ["Iñaki Williams", "Inaki Williams Arthuer"],
       "malcom": ["Malcom Filipe Silva de Oliveira"],
-      "roger ibanez": ["Roger Ibanez Da Silva"]
+      "roger ibanez": ["Roger Ibanez Da Silva"],
+      "davinson sanchez": ["Davinson Sanchez"]
     };
 
     return [playerName, ...(aliases[normalized] || [])].filter(Boolean);
