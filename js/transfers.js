@@ -61,7 +61,12 @@ App.transfers = {
       "neymar": ["Neymar Jr."],
       "kyle walker": ["Kyle Andrew Walker"],
       "heung-min son": ["Heung Min Son"],
-      "heung min son": ["Heung-Min Son"]
+      "heung min son": ["Heung-Min Son"],
+      "david de gea": ["David De Gea Quintana"],
+      "n'golo kante": ["N'Golo Kante", "N’Golo Kante", "Ngolo Kante"],
+      "n golo kante": ["N'Golo Kante", "N’Golo Kante", "Ngolo Kante"],
+      "ngolo kante": ["N'Golo Kante", "N’Golo Kante"],
+      "inaki williams": ["Iñaki Williams", "Inaki Williams Arthuer"]
     };
 
     return [playerName, ...(aliases[normalized] || [])].filter(Boolean);
@@ -92,7 +97,12 @@ App.transfers = {
     const clubKey = App.utils.normalizeText(player?.club);
     const ratings = (App.state.apiRatings || []).filter(App.transfers.isPlayableRating);
     const aliasKeys = App.transfers.getPlayerSearchAliases(player?.name).map(App.transfers.normalizePlayerRatingKey);
-    const matches = ratings.filter(item => aliasKeys.includes(App.transfers.normalizePlayerRatingKey(item.name)));
+    const matches = ratings.filter(item => {
+      const ratingKey = App.transfers.normalizePlayerRatingKey(item.name);
+      return aliasKeys.includes(ratingKey) || aliasKeys.some(aliasKey =>
+        ratingKey.startsWith(`${aliasKey} `) || aliasKey.startsWith(`${ratingKey} `)
+      );
+    });
     return matches.find(item =>
       App.transfers.normalizePlayerRatingKey(item.name) === key &&
       (!clubKey || !item.club || App.utils.normalizeText(item.club) === clubKey)

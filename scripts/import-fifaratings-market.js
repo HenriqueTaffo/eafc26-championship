@@ -15,6 +15,7 @@ const PLAYER_SLUG_ALIASES = {
   "ruben-dias": ["ruben-santos-gato-alves-dias"],
   "rodrigo-de-paul": ["rodrigo-javier-de-paul"],
   "kyle-walker": ["kyle-andrew-walker"],
+  "n-golo-kante": ["ngolo-kante"],
   "neymar": ["neymar-jr"],
   "ronaldo": ["cristiano-ronaldo"]
 };
@@ -88,7 +89,8 @@ function htmlDecode(value) {
     .replace(/&quot;/g, "\"")
     .replace(/&nbsp;/g, " ")
     .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">");
+    .replace(/&gt;/g, ">")
+    .replace(/&#(\d+);/g, (_, code) => String.fromCodePoint(Number(code)));
 }
 
 function toInt(value) {
