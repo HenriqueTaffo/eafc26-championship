@@ -38,6 +38,86 @@
   grid-column: 1 / -1;
 }
 
+.transfer-impact-spotlight {
+  grid-column: 1 / -1;
+  border-color: rgba(132, 204, 22, .34);
+  background:
+    radial-gradient(circle at top left, rgba(132, 204, 22, .16), transparent 34%),
+    radial-gradient(circle at top right, rgba(37, 99, 235, .14), transparent 36%),
+    rgba(17, 28, 51, .92);
+}
+
+.transfer-movement-card.is-impact-transfer {
+  border-color: rgba(132, 204, 22, .28);
+}
+
+.impact-spotlight-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, .9fr);
+  gap: 14px;
+  align-items: stretch;
+  margin-top: 14px;
+}
+
+.impact-spotlight-main,
+.impact-spotlight-list > div {
+  border-radius: 16px;
+  border: 1px solid rgba(148,163,184,.14);
+  background: rgba(2,6,23,.24);
+}
+
+.impact-spotlight-main {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  padding: 14px;
+}
+
+.impact-spotlight-main strong {
+  color: #bbf7d0;
+  white-space: nowrap;
+}
+
+.impact-spotlight-list {
+  display: grid;
+  gap: 8px;
+}
+
+.impact-spotlight-list > div {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  padding: 10px 12px;
+}
+
+.impact-spotlight-list span {
+  padding: 5px 8px;
+  border-radius: 999px;
+  background: rgba(132,204,22,.16);
+  color: #bef264;
+  font-size: 11px;
+  font-weight: 1000;
+  white-space: nowrap;
+}
+
+.impact-spotlight-list b,
+.impact-spotlight-list small {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.impact-spotlight-list b {
+  color: #f8fafc;
+}
+
+.impact-spotlight-list small {
+  color: #94a3b8;
+}
+
 .movement-card-header,
 .movement-meta,
 .movement-value {
@@ -293,6 +373,10 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .impact-spotlight-grid {
+    grid-template-columns: 1fr;
+  }
+
   .preview-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -301,15 +385,19 @@
 @media (max-width: 640px) {
   .transfer-budget-board,
   .transfer-insights,
+  .impact-spotlight-grid,
   .preview-grid {
     grid-template-columns: 1fr;
   }
 
   .budget-card-header,
   .budget-breakdown,
+  .impact-spotlight-main,
+  .impact-spotlight-list > div,
   .insight-row,
   .preview-header {
     align-items: flex-start;
+    display: flex;
     flex-direction: column;
   }
 }
@@ -630,6 +718,7 @@
 .mobile-player-identity,
 .coach-header-player-identity,
 .coach-transfer-player-identity,
+.impact-player-identity,
 .experience-player-identity {
   display: inline-grid;
   grid-template-columns: 42px minmax(0, 1fr);

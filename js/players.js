@@ -22,11 +22,127 @@ App.players = {
     const homeBonus = Number(budget.homeBonus || 0);
     const winBonus = Number(budget.winBonusValue || budget.winBonus || 0);
     const eventBonus = Number(budget.eventTotal || budget.eventBonus || 0);
+    const sponsorshipRewards = Number(budget.sponsorshipRewards || 0);
     const totalAccumulated = Number(budget.totalBudget ?? (base + homeBonus + winBonus + eventBonus));
     const spentValue = Number(budget.spentTotal ?? spent ?? 0);
     const available = Number(budget.remainingBudget ?? (totalAccumulated - spentValue));
 
-    return { base, homeBonus, winBonus, eventBonus, totalAccumulated, spent: spentValue, available };
+    return { base, homeBonus, winBonus, eventBonus, sponsorshipRewards, totalAccumulated, spent: spentValue, available };
+  },
+
+  getCoachStatementEntries(owner, budget, breakdown) {
+    const entries = [];
+    const pushEntry = ({ label, detail, amount, dateLabel, rank }) => {
+      const value = Number(amount || 0);
+      if (value <= 0) return;
+      entries.push({ label, detail, amount: value, dateLabel, rank });
+    };
+
+    const positiveEvents = (App.state.apiEvents || [])
+      .filter(event => App.utils.normalizeText(event.Jogador) === App.utils.normalizeText(owner))
+      .filter(event => Number(event.ImpactoFinanceiro || 0) > 0)
+      .sort((a, b) => App.events.getEventDateTime(b) - App.events.getEventDateTime(a))
+      .slice(0, 4);
+
+    positiveEvents.forEach((event, index) => {
+      pushEntry({
+        label: event.Titulo || "Evento positivo",
+        detail: event.Tipo || "Evento da liga",
+        amount: Number(event.ImpactoFinanceiro || 0),
+        dateLabel: App.utils.formatDateTime(App.events.getEventDateTime(event)),
+        rank: 10 + index
+      });
+    });
+
+    const eventRollup = Number(breakdown.eventBonus || 0) - Number(breakdown.sponsorshipRewards || 0);
+    if (!positiveEvents.length && eventRollup > 0) {
+      pushEntry({
+        label: "Eventos positivos",
+        detail: `${Number(budget.eventCount || 0)} ocorrência(s) com impacto financeiro`,
+        amount: eventRollup,
+        dateLabel: "Atualizado pela liga",
+        rank: 20
+      });
+    }
+
+    pushEntry({
+      label: "Patrocínios",
+      detail: "Bônus comerciais já processados",
+      amount: breakdown.sponsorshipRewards,
+      dateLabel: "Contratos ativos",
+      rank: 30
+    });
+
+    pushEntry({
+      label: "Premiação por vitórias",
+      detail: `${Number(budget.wins || 0)} vitória(s) aprovada(s)`,
+      amount: breakdown.winBonus,
+      dateLabel: "Resultados aprovados",
+      rank: 40
+    });
+
+    pushEntry({
+      label: "Bilheteria por mando",
+      detail: `${Number(budget.homeMatches || 0)} jogo(s) como mandante`,
+      amount: breakdown.homeBonus,
+      dateLabel: "Calendário oficial",
+      rank: 50
+    });
+
+    pushEntry({
+      label: "Orçamento inicial",
+      detail: "Crédito base da temporada",
+      amount: breakdown.base,
+      dateLabel: "Temporada",
+      rank: 60
+    });
+
+    return entries.sort((a, b) => a.rank - b.rank);
+  },
+
+  renderCoachFinancialStatement(owner, budget, breakdown) {
+    const entries = App.players.getCoachStatementEntries(owner, budget, breakdown);
+    const extraRevenue = Math.max(0, Number(breakdown.totalAccumulated || 0) - Number(breakdown.base || 0));
+    const latestExtra = entries.find(entry => entry.label !== "Orçamento inicial");
+
+    return `
+      <div class="coach-full-row-v54">
+        <article class="coach-panel-card coach-statement-card">
+          <div class="home-panel-header">
+            <h2>Extrato do clube</h2>
+            <span class="coach-section-kicker">Privado</span>
+          </div>
+          <div class="coach-statement-summary">
+            <div>
+              <span>Receitas extras</span>
+              <strong>${App.utils.formatCurrency(extraRevenue)}</strong>
+            </div>
+            <div>
+              <span>Saldo atual</span>
+              <strong>${App.utils.formatCurrency(breakdown.available)}</strong>
+            </div>
+            <div>
+              <span>Último crédito</span>
+              <strong>${latestExtra ? App.utils.formatCurrency(latestExtra.amount) : "-"}</strong>
+            </div>
+          </div>
+          <div class="coach-statement-list">
+            ${entries.map(entry => `
+              <div class="coach-statement-item">
+                <div>
+                  <strong>${App.utils.escapeHtml(entry.label)}</strong>
+                  <span>${App.utils.escapeHtml(entry.detail)}</span>
+                </div>
+                <div>
+                  <b>${App.utils.formatCurrency(entry.amount)}</b>
+                  <small>${App.utils.escapeHtml(entry.dateLabel)}</small>
+                </div>
+              </div>
+            `).join("")}
+          </div>
+        </article>
+      </div>
+    `;
   },
 
   getMatchesForTeam(teamName) {
@@ -440,6 +556,7 @@ App.players = {
     const sponsorshipCard = App.auth?.renderCoachSponsorshipCard ? App.auth.renderCoachSponsorshipCard(activeTeam.owner) : "";
     const pinCard = App.auth?.renderPinChangeCard ? App.auth.renderPinChangeCard(activeTeam.owner) : "";
     const strategyCards = canViewPrivate ? App.players.renderCoachStrategyCards(activeTeam, standing, budget, transfers, injuries, recentForm) : "";
+    const statementCard = canViewPrivate ? App.players.renderCoachFinancialStatement(activeTeam.owner, budget, breakdown) : "";
 
     return `
       <section class="coach-dashboard" style="--coach-color:${color}">
@@ -480,6 +597,7 @@ App.players = {
           ${decisionCard ? `<div class="coach-full-row-v54">${decisionCard}</div>` : ""}
           ${proposalCard ? `<div class="coach-full-row-v54">${proposalCard}</div>` : ""}
           ${sponsorshipCard ? `<div class="coach-full-row-v54">${sponsorshipCard}</div>` : ""}
+          ${statementCard}
           ${strategyCards}
 
           <div class="coach-flow-v55">

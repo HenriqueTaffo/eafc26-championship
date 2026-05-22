@@ -238,6 +238,7 @@ App.transfers = {
         eventPenalty: 0,
         eventTotal: Number(supabaseBudget.eventTotal ?? 0),
         eventCount: Number(supabaseBudget.eventCount ?? 0),
+        sponsorshipRewards: Number(supabaseBudget.sponsorshipRewards ?? 0),
         transferModifier: Number(supabaseBudget.transferModifier ?? 0),
         transferLimit: Number(supabaseBudget.transferLimit ?? App.config.baseDailyTransferLimit),
         activeInjuries: Number(supabaseBudget.activeInjuries ?? 0),
@@ -276,6 +277,7 @@ App.transfers = {
       item.eventPenalty = eventImpact[item.buyer]?.negative || 0;
       item.eventTotal = eventImpact[item.buyer]?.total || 0;
       item.eventCount = eventImpact[item.buyer]?.events || 0;
+      item.sponsorshipRewards = 0;
       item.transferModifier = eventImpact[item.buyer]?.transferModifier || 0;
       item.transferLimit = App.transfers.getTransferLimitForBuyer(item.buyer);
       item.activeInjuries = eventImpact[item.buyer]?.activeInjuries || 0;
@@ -387,6 +389,27 @@ App.transfers = {
         const aTime = new Date(a.timestamp || 0).getTime();
         const bTime = new Date(b.timestamp || 0).getTime();
         return (Number.isNaN(bTime) ? 0 : bTime) - (Number.isNaN(aTime) ? 0 : aTime) || b.index - a.index;
+      })
+      .slice(0, limit);
+  },
+
+  getTransferOverall(item) {
+    const transferOverall = Number(item?.overall || 0);
+    if (transferOverall > 0) return transferOverall;
+    const rating = App.transfers.getRatingForPlayerName(item?.player);
+    return Number(rating?.overall || 0);
+  },
+
+  getImpactTransferSpotlights(limit = 3) {
+    return [...App.transfers.getValidTransfers()]
+      .map(item => ({ ...item, displayOverall: App.transfers.getTransferOverall(item) }))
+      .filter(item => Number(item.displayOverall || 0) > 88)
+      .sort((a, b) => {
+        const aTime = new Date(a.timestamp || 0).getTime();
+        const bTime = new Date(b.timestamp || 0).getTime();
+        return (Number.isNaN(bTime) ? 0 : bTime) - (Number.isNaN(aTime) ? 0 : aTime) ||
+          Number(b.displayOverall || 0) - Number(a.displayOverall || 0) ||
+          Number(b.totalCost || 0) - Number(a.totalCost || 0);
       })
       .slice(0, limit);
   },
@@ -606,7 +629,7 @@ App.transfers = {
       messages.push("Contratação liberada para envio.");
     }
 
-    if (!preview.isInternal && (preview.finalValue >= 25000000 || preview.overall >= 88)) {
+    if (!preview.isInternal && (preview.finalValue >= 25000000 || preview.overall > 88)) {
       messages.push("Jogador de alto impacto: considere abrir leilão/consulta no grupo antes de confirmar.");
     }
 
@@ -697,6 +720,7 @@ App.transfers = {
     if (!target) return;
 
     const data = App.transfers.getRecentTransferMovements(5);
+    const impactTransfers = App.transfers.getImpactTransferSpotlights(3);
 
     if (!data.length) {
       target.innerHTML = `
@@ -711,13 +735,43 @@ App.transfers = {
       return;
     }
 
-    target.innerHTML = data.map(item => {
+    const impactHtml = impactTransfers.length ? `
+      <article class="transfer-movement-card transfer-impact-spotlight">
+        <div class="movement-card-header">
+          <span>Contratação impactante</span>
+          <small>OVR 89+</small>
+        </div>
+        <div class="impact-spotlight-grid">
+          <div class="impact-spotlight-main">
+            ${App.transfers.renderPlayerIdentity(
+              impactTransfers[0].player,
+              `${impactTransfers[0].fromClub || "Clube não informado"} · ${impactTransfers[0].buyer}`,
+              "impact-player-identity"
+            )}
+            <strong>${App.utils.formatCurrency(impactTransfers[0].totalCost)}</strong>
+          </div>
+          <div class="impact-spotlight-list">
+            ${impactTransfers.map(item => `
+              <div>
+                <span>OVR ${item.displayOverall}</span>
+                <b>${App.utils.escapeHtml(item.player)}</b>
+                <small>${App.utils.escapeHtml(item.buyer)} · ${App.utils.formatCurrency(item.totalCost)}</small>
+              </div>
+            `).join("")}
+          </div>
+        </div>
+      </article>
+    ` : "";
+
+    target.innerHTML = impactHtml + data.map(item => {
       const date = item.timestamp ? App.utils.formatDateTime(item.timestamp) : "Sem data";
+      const overall = App.transfers.getTransferOverall(item);
+      const isImpact = overall > 88;
       return `
-        <article class="transfer-movement-card">
+        <article class="transfer-movement-card ${isImpact ? "is-impact-transfer" : ""}">
           <div class="movement-card-header">
             ${App.ui.ownerBadge(item.buyer)}
-            <small>${App.utils.escapeHtml(date)}</small>
+            <small>${isImpact ? "Impactante · " : ""}${App.utils.escapeHtml(date)}</small>
           </div>
           <div class="movement-player">
             <span>Contratação</span>
@@ -725,7 +779,7 @@ App.transfers = {
           </div>
           <div class="movement-meta">
             <span>${App.utils.escapeHtml(item.fromClub || "Clube não informado")}</span>
-            <span>OVR ${item.overall || "-"}</span>
+            <span>OVR ${overall || "-"}</span>
           </div>
           <div class="movement-value">
             <span>Valor final</span>
