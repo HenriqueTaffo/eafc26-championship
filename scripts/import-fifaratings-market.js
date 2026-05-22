@@ -15,6 +15,7 @@ const PLAYER_SLUG_ALIASES = {
   "ruben-dias": ["ruben-santos-gato-alves-dias"],
   "rodrigo-de-paul": ["rodrigo-javier-de-paul"],
   "kyle-walker": ["kyle-andrew-walker"],
+  "david-de-gea": ["david-de-gea-quintana"],
   "n-golo-kante": ["ngolo-kante"],
   "malcom": ["malcom-filipe-silva-de-oliveira"],
   "neymar": ["neymar-jr"],
@@ -66,6 +67,48 @@ const MANUAL_RATINGS = {
     gender: "Men's Football",
     source_url: "https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/kyle-walker/188377",
     source_name: "EA SPORTS FC official ratings"
+  },
+  "david-de-gea": {
+    ea_id: "193080",
+    rank: null,
+    name: "David De Gea Quintana",
+    nation: "Spain",
+    club: "Fiorentina",
+    position: "GK",
+    overall: 85,
+    pace: 49,
+    shooting: null,
+    passing: null,
+    dribbling: null,
+    defending: null,
+    physical: null,
+    avatar_url: "https://upload.wikimedia.org/wikipedia/commons/a/ab/David_de_Gea_2018.png",
+    shield_url: null,
+    card_type: "Normal",
+    gender: "Men's Football",
+    source_url: "https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/de-gea/193080",
+    source_name: "EA SPORTS FC official ratings + Wikimedia photo"
+  },
+  "david-de-gea-quintana": {
+    ea_id: "193080",
+    rank: null,
+    name: "David De Gea Quintana",
+    nation: "Spain",
+    club: "Fiorentina",
+    position: "GK",
+    overall: 85,
+    pace: 49,
+    shooting: null,
+    passing: null,
+    dribbling: null,
+    defending: null,
+    physical: null,
+    avatar_url: "https://upload.wikimedia.org/wikipedia/commons/a/ab/David_de_Gea_2018.png",
+    shield_url: null,
+    card_type: "Normal",
+    gender: "Men's Football",
+    source_url: "https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/de-gea/193080",
+    source_name: "EA SPORTS FC official ratings + Wikimedia photo"
   }
 };
 const SUPABASE_PAGE_SIZE = 1000;
@@ -141,7 +184,7 @@ function parseFifaRatingsPage(html, fallbackName, url) {
 
   const fallbackSlug = slugify(fallbackName);
   const titleSlug = slugify(title);
-  if (!overall || !avatarUrl || /women|femin/i.test(html)) return null;
+  if (!overall || !avatarUrl || /player[_-](man|woman)/i.test(avatarUrl) || /women|femin/i.test(html)) return null;
   if ((PLAYER_SLUG_REJECTS[fallbackSlug] || []).includes(titleSlug)) return null;
   if (similarity(title, fallbackName) < 0.45 && !titleSlug.startsWith(`${fallbackSlug}-`)) return null;
 

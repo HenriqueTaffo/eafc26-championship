@@ -41,11 +41,65 @@ App.transfers = {
     "Pernille Harder"
   ],
 
+  manualPlayerRatings: {
+    "david de gea": {
+      name: "David De Gea Quintana",
+      club: "Fiorentina",
+      position: "GK",
+      nation: "Spain",
+      overall: 85,
+      gender: "Men's Football",
+      avatar_url: "https://upload.wikimedia.org/wikipedia/commons/a/ab/David_de_Gea_2018.png",
+      source_url: "https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/de-gea/193080",
+      source_name: "EA SPORTS FC official ratings + Wikimedia photo"
+    },
+    "david de gea quintana": {
+      name: "David De Gea Quintana",
+      club: "Fiorentina",
+      position: "GK",
+      nation: "Spain",
+      overall: 85,
+      gender: "Men's Football",
+      avatar_url: "https://upload.wikimedia.org/wikipedia/commons/a/ab/David_de_Gea_2018.png",
+      source_url: "https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/de-gea/193080",
+      source_name: "EA SPORTS FC official ratings + Wikimedia photo"
+    }
+  },
+
   isPlayableRating(player) {
     const gender = App.utils.normalizeText(player?.gender || "");
     const name = App.utils.normalizeText(player?.name || "");
     if (gender.includes("women") || gender.includes("femin")) return false;
     return !App.transfers.femaleRatingNames.some(item => App.utils.normalizeText(item) === name);
+  },
+
+  isUsablePlayerAvatar(url) {
+    const normalized = App.utils.normalizeText(url || "");
+    if (!normalized) return false;
+    return !normalized.includes("player_man") &&
+      !normalized.includes("player-woman") &&
+      !normalized.includes("player woman") &&
+      !normalized.includes("player-man");
+  },
+
+  getManualPlayerRating(playerName) {
+    const keys = App.transfers.getPlayerSearchAliases(playerName).map(App.transfers.normalizePlayerRatingKey);
+    const manualKey = keys.find(key => App.transfers.manualPlayerRatings[key]);
+    return manualKey ? App.transfers.manualPlayerRatings[manualKey] : null;
+  },
+
+  applyManualRatingFallback(rating, playerName) {
+    const manual = App.transfers.getManualPlayerRating(playerName);
+    if (!manual) return rating || null;
+    if (!rating) return manual;
+    if (App.transfers.isUsablePlayerAvatar(rating.avatar_url)) return rating;
+    return {
+      ...manual,
+      ...rating,
+      avatar_url: manual.avatar_url || rating.avatar_url,
+      source_url: rating.source_url || manual.source_url,
+      source_name: rating.source_name || manual.source_name
+    };
   },
 
   getPlayerSearchAliases(playerName) {
@@ -108,14 +162,20 @@ App.transfers = {
         ratingKey.startsWith(`${aliasKey} `) || aliasKey.startsWith(`${ratingKey} `)
       );
     });
-    return matches.find(item =>
+    const selected = matches.find(item =>
       App.transfers.normalizePlayerRatingKey(item.name) === key &&
       (!clubKey || !item.club || App.utils.normalizeText(item.club) === clubKey)
-    ) || matches.find(item => item.avatar_url) || matches[0] || null;
+    ) || matches.find(item => App.transfers.isUsablePlayerAvatar(item.avatar_url)) || matches[0] || null;
+
+    return App.transfers.applyManualRatingFallback(selected, player?.name);
   },
 
   renderPlayerPhoto(player, rating = null, className = "market-player-photo") {
-    const avatar = rating?.avatar_url || player?.avatar_url || "";
+    const avatar = App.transfers.isUsablePlayerAvatar(rating?.avatar_url)
+      ? rating.avatar_url
+      : App.transfers.isUsablePlayerAvatar(player?.avatar_url)
+        ? player.avatar_url
+        : "";
     const name = player?.name || rating?.name || "?";
     const fallback = App.utils.escapeHtml(String(name).charAt(0));
     return `
@@ -926,7 +986,13 @@ App.transfers = {
       })
     ));
     const ratingsRaw = ratingGroups.flat();
-    const ratings = ratingsRaw.filter(App.transfers.isPlayableRating);
+    const ratings = ratingsRaw
+      .filter(App.transfers.isPlayableRating)
+      .map(player => App.transfers.applyManualRatingFallback(player, query) || player);
+    const manualRating = App.transfers.getManualPlayerRating(query);
+    if (manualRating && !ratings.some(player => App.transfers.normalizePlayerRatingKey(player.name) === App.transfers.normalizePlayerRatingKey(manualRating.name))) {
+      ratings.unshift(manualRating);
+    }
 
     App.api.mergeEaRatings?.(ratings);
 
