@@ -206,10 +206,11 @@
 }
 
 .cup-board.fa-cup .cup-mark img {
-  width: 118px;
-  height: 72px;
-  justify-self: center;
+  width: 178px;
+  height: 102px;
+  justify-self: start;
   align-self: center;
+  transform: translateX(-10px);
 }
 
 .cup-board.league-cup .cup-mark img {
@@ -472,8 +473,9 @@
   }
 
   .cup-board.fa-cup .cup-mark img {
-    width: 100px;
-    height: 60px;
+    width: 138px;
+    height: 80px;
+    transform: translateX(-8px);
   }
 
   .cup-board-metrics {
