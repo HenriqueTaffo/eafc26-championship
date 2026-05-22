@@ -381,7 +381,7 @@ App.transfers = {
 
   getAllTransfers() {
     const approvedApiTransfers = App.state.apiTransfers
-      .filter(row => App.utils.normalizeText(row.Status) === "aprovado")
+      .filter(row => App.transfers.isApprovedTransferStatus(row.Status || row.status))
       .map((row, index) => ({
         player: row.Jogador,
         buyer: row.Comprador,
@@ -399,6 +399,18 @@ App.transfers = {
     }));
 
     return [...staticTransfers, ...approvedApiTransfers];
+  },
+
+  isApprovedTransferStatus(status) {
+    return ["aprovado", "approved"].includes(App.utils.normalizeText(status));
+  },
+
+  isMarketPlayerContracted(player) {
+    const playerKey = App.transfers.normalizePlayerRatingKey(player?.name);
+    if (!playerKey) return false;
+    return App.transfers.getAllTransfers().some(transfer =>
+      App.transfers.normalizePlayerRatingKey(transfer.player) === playerKey
+    );
   },
 
   getEventImpactByBuyer() {
@@ -1139,7 +1151,7 @@ App.transfers = {
     if (!form) return;
 
     const player = App.transfers.getMarketPlayers().find(item => String(item.id) === String(playerId));
-    if (!player || player.alreadyContracted || player.is_contracted) return;
+    if (!player || App.transfers.isMarketPlayerContracted(player)) return;
 
     if (form.elements.player) form.elements.player.value = player.name || "";
     if (form.elements.fromClub) form.elements.fromClub.value = player.club || "";
@@ -1240,7 +1252,7 @@ App.transfers = {
     }
 
     target.innerHTML = players.map(player => {
-      const isContracted = Boolean(player.alreadyContracted || player.is_contracted);
+      const isContracted = App.transfers.isMarketPlayerContracted(player);
       const eaRating = App.transfers.findEaRatingForMarketPlayer(player);
       const overall = Number(eaRating?.overall || player.overall || 0);
       const marketValue = App.transfers.getMarketPlayerValue(player);
