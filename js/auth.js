@@ -6,6 +6,8 @@ App.auth = {
   publicNews: [],
   myDecisions: [],
   myTransferProposals: [],
+  myTransferTargets: [],
+  myTransferTargetsLoaded: false,
   mySponsorships: null,
   autoDecisionRunning: false,
 
@@ -43,6 +45,7 @@ App.auth = {
       await Promise.all([
         App.auth.loadMyDecisions(),
         App.auth.loadMyTransferProposals(),
+        App.auth.loadMyTransferTargets(),
         App.auth.loadMySponsorships(),
         App.auth.loadPublicNews()
       ]);
@@ -93,6 +96,7 @@ App.auth = {
       await App.auth.generateDueDecisions();
       await App.auth.loadMyDecisions();
       await App.auth.loadMyTransferProposals();
+      await App.auth.loadMyTransferTargets();
       await App.auth.loadMySponsorships();
     }
     await App.governance?.loadData?.();
@@ -106,6 +110,8 @@ App.auth = {
     App.auth.currentSession = null;
     App.auth.myDecisions = [];
     App.auth.myTransferProposals = [];
+    App.auth.myTransferTargets = [];
+    App.auth.myTransferTargetsLoaded = false;
     App.auth.mySponsorships = null;
     localStorage.removeItem(App.auth.storageKey);
     App.auth.renderAll();
@@ -121,6 +127,66 @@ App.auth = {
       App.auth.publicNews = [];
       return [];
     }
+  },
+
+  async loadMyTransferTargets() {
+    const session = App.auth.getSession();
+    if (!session || session.isCommissioner) {
+      App.auth.myTransferTargets = [];
+      return [];
+    }
+
+    try {
+      const result = await App.api.rpc("app_get_private_transfer_targets", {
+        p_manager_id: session.managerId,
+        p_access_code: session.accessCode
+      }, 30000);
+
+      if (result?.ok === false) throw new Error(result.message || "Alvos privados indisponíveis.");
+      App.auth.myTransferTargets = Array.isArray(result?.targets) ? result.targets : [];
+      App.auth.myTransferTargetsLoaded = true;
+      return App.auth.myTransferTargets;
+    } catch (error) {
+      console.warn("Alvos privados indisponíveis, usando cache local:", error);
+      return App.auth.myTransferTargets || [];
+    }
+  },
+
+  async upsertMyTransferTarget(payload = {}) {
+    const session = App.auth.getSession();
+    if (!session || session.isCommissioner) throw new Error("Faça login como técnico para pinar alvos.");
+
+    const result = await App.api.rpc("app_upsert_private_transfer_target", {
+      p_manager_id: session.managerId,
+      p_access_code: session.accessCode,
+      p_target_id: payload.id || "",
+      p_player: payload.player || "",
+      p_club: payload.club || "",
+      p_value: Number(payload.value || 0),
+      p_priority: payload.priority || "Monitorar",
+      p_note: payload.note || ""
+    }, 30000);
+
+    if (result?.ok === false) throw new Error(result.message || "Não consegui salvar o alvo.");
+    App.auth.myTransferTargets = Array.isArray(result?.targets) ? result.targets : [];
+    App.auth.myTransferTargetsLoaded = true;
+    return App.auth.myTransferTargets;
+  },
+
+  async deleteMyTransferTarget(targetId) {
+    const session = App.auth.getSession();
+    if (!session || session.isCommissioner) throw new Error("Faça login como técnico para remover alvos.");
+
+    const result = await App.api.rpc("app_delete_private_transfer_target", {
+      p_manager_id: session.managerId,
+      p_access_code: session.accessCode,
+      p_target_id: targetId
+    }, 30000);
+
+    if (result?.ok === false) throw new Error(result.message || "Não consegui remover o alvo.");
+    App.auth.myTransferTargets = Array.isArray(result?.targets) ? result.targets : [];
+    App.auth.myTransferTargetsLoaded = true;
+    return App.auth.myTransferTargets;
   },
 
   async loadMyDecisions() {

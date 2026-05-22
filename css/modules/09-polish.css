@@ -158,10 +158,12 @@
 }
 
 .cup-board-hero {
+  position: relative;
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
-  gap: 18px;
-  padding: 20px 18px;
+  gap: 22px;
+  min-height: 154px;
+  padding: 18px 18px 30px;
   color: var(--cup-text);
   background:
     linear-gradient(135deg, color-mix(in srgb, var(--cup-accent) 22%, transparent), transparent 48%),
@@ -170,16 +172,16 @@
 }
 
 .cup-board-title {
-  display: flex;
+  display: grid;
+  grid-template-columns: 150px minmax(0, 1fr);
   align-items: center;
-  gap: 14px;
+  gap: 18px;
   min-width: 0;
 }
 
 .cup-mark {
-  width: 94px;
-  height: 64px;
-  flex: 0 0 94px;
+  width: 150px;
+  height: 108px;
   display: grid;
   place-items: center;
   border-radius: 8px;
@@ -193,25 +195,27 @@
 
 .cup-mark img {
   display: block;
-  max-width: 100%;
-  max-height: 100%;
+  width: 100%;
+  height: 100%;
   object-fit: contain;
 }
 
 .cup-board.fa-cup .cup-mark {
-  width: 152px;
-  height: 92px;
-  flex-basis: 152px;
-  align-self: center;
+  width: 150px;
+  height: 108px;
 }
 
 .cup-board.fa-cup .cup-mark img {
-  max-width: 148px;
-  max-height: 88px;
+  width: 118px;
+  height: 72px;
+  justify-self: center;
+  align-self: center;
 }
 
-.cup-board.fa-cup .cup-board-title {
-  gap: 8px;
+.cup-board.league-cup .cup-mark img {
+  width: 140px;
+  height: 104px;
+  justify-self: start;
 }
 
 .cup-board-title h2 {
@@ -255,7 +259,10 @@
 }
 
 .cup-progress {
-  grid-column: 1 / -1;
+  position: absolute;
+  left: 18px;
+  right: 18px;
+  bottom: 18px;
   height: 7px;
   overflow: hidden;
   border-radius: 999px;
@@ -446,6 +453,27 @@
 
   .cup-board-hero {
     grid-template-columns: 1fr;
+  }
+
+  .cup-board-title {
+    grid-template-columns: 122px minmax(0, 1fr);
+    gap: 12px;
+  }
+
+  .cup-mark,
+  .cup-board.fa-cup .cup-mark {
+    width: 122px;
+    height: 88px;
+  }
+
+  .cup-board.league-cup .cup-mark img {
+    width: 116px;
+    height: 86px;
+  }
+
+  .cup-board.fa-cup .cup-mark img {
+    width: 100px;
+    height: 60px;
   }
 
   .cup-board-metrics {

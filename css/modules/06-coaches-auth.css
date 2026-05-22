@@ -20,7 +20,8 @@
 
 .coach-war-room-card,
 .coach-market-card,
-.coach-event-radar-card {
+.coach-event-radar-card,
+.coach-targets-card {
   min-height: 0;
   background:
     radial-gradient(circle at top left, rgba(59,130,246,.10), transparent 36%),
@@ -37,6 +38,10 @@
 
 .coach-event-radar-card {
   border-color: rgba(168,85,247,.22);
+}
+
+.coach-targets-card {
+  border-color: rgba(45,212,191,.24);
 }
 
 .coach-alert-deck,
@@ -181,6 +186,113 @@
 .coach-event-item b {
   color: #ddd6fe;
   white-space: nowrap;
+}
+
+.coach-target-form {
+  display: grid;
+  grid-template-columns: minmax(180px, 1.3fr) minmax(160px, 1fr) minmax(120px, .75fr) minmax(130px, .8fr) minmax(180px, 1.2fr) auto;
+  gap: 10px;
+  align-items: end;
+  margin-bottom: 12px;
+}
+
+.coach-target-form label {
+  display: grid;
+  gap: 7px;
+  min-width: 0;
+  color: #cbd5e1;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.coach-target-form input,
+.coach-target-form select {
+  width: 100%;
+  min-width: 0;
+  height: 42px;
+  border: 1px solid rgba(148,163,184,.18);
+  border-radius: 12px;
+  padding: 0 12px;
+  background: rgba(2,6,23,.34);
+  color: #f8fafc;
+  font: inherit;
+  font-weight: 750;
+  outline: none;
+}
+
+.coach-target-form input:focus,
+.coach-target-form select:focus {
+  border-color: rgba(45,212,191,.55);
+  box-shadow: 0 0 0 3px rgba(45,212,191,.13);
+}
+
+.coach-target-form .secondary-button {
+  height: 42px;
+  border: 0;
+  border-radius: 12px;
+  padding: 0 16px;
+  background: linear-gradient(135deg, #0f766e, #2563eb);
+  color: white;
+  font-weight: 1000;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.coach-target-list {
+  display: grid;
+  gap: 10px;
+}
+
+.coach-target-item {
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  padding: 11px;
+  border-radius: 14px;
+  background: rgba(2,6,23,.26);
+  border: 1px solid rgba(45,212,191,.14);
+}
+
+.coach-target-item strong,
+.coach-target-item small,
+.coach-target-item span {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.coach-target-item strong {
+  color: #f8fafc;
+}
+
+.coach-target-item small {
+  margin-top: 2px;
+  color: #99f6e4;
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.coach-target-item span {
+  margin-top: 3px;
+  color: #94a3b8;
+  font-size: 12px;
+}
+
+.icon-action-button {
+  width: 34px;
+  height: 34px;
+  border: 1px solid rgba(248,113,113,.2);
+  border-radius: 12px;
+  display: inline-grid;
+  place-items: center;
+  background: rgba(127,29,29,.18);
+  color: #fecaca;
+  cursor: pointer;
+  font-size: 20px;
+  line-height: 1;
 }
 
 .coach-comparison-v47 {
@@ -771,7 +883,8 @@
 
 @media (max-width: 980px) {
   .coach-decision-grid,
-  .pin-change-form {
+  .pin-change-form,
+  .coach-target-form {
     grid-template-columns: 1fr;
   }
 }

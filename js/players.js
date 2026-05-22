@@ -271,6 +271,73 @@ App.players = {
       .filter(event => Number(event.PartidasRestantes || 0) > 0 || App.events.isActiveOrDurationEvent(event));
   },
 
+  getPrivateTargetsKey(owner) {
+    const session = App.auth?.getSession ? App.auth.getSession() : null;
+    const ownerKey = App.utils.normalizeText(owner).replace(/[^a-z0-9]+/g, "-");
+    const sessionKey = String(session?.managerId || ownerKey || "manager").replace(/[^a-zA-Z0-9_-]+/g, "-");
+    return `mml-private-transfer-targets-v1:${sessionKey}:${ownerKey}`;
+  },
+
+  getPrivateTransferTargets(owner) {
+    if (!App.auth?.canViewManagerPrivate?.(owner)) return [];
+    const session = App.auth?.getSession ? App.auth.getSession() : null;
+    if (session && App.utils.normalizeText(session.managerName) === App.utils.normalizeText(owner) && App.auth.myTransferTargetsLoaded) {
+      return App.auth.myTransferTargets;
+    }
+
+    try {
+      const raw = localStorage.getItem(App.players.getPrivateTargetsKey(owner));
+      const parsed = raw ? JSON.parse(raw) : [];
+      return Array.isArray(parsed) ? parsed : [];
+    } catch (error) {
+      return [];
+    }
+  },
+
+  savePrivateTransferTargets(owner, targets = []) {
+    if (!App.auth?.canViewManagerPrivate?.(owner)) return [];
+    const cleanTargets = targets
+      .map(item => ({
+        id: item.id || `target-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+      player: String(item.player || "").trim(),
+        club: String(item.club || "").trim(),
+        value: Number(item.value || 0),
+        priority: String(item.priority || "Monitorar"),
+        note: String(item.note || "").trim(),
+        createdAt: item.createdAt || new Date().toISOString()
+      }))
+      .filter(item => item.player);
+
+    localStorage.setItem(App.players.getPrivateTargetsKey(owner), JSON.stringify(cleanTargets));
+    return cleanTargets;
+  },
+
+  addPrivateTransferTarget(owner, payload = {}) {
+    const targets = App.players.getPrivateTransferTargets(owner);
+    const playerKey = App.transfers.normalizePlayerRatingKey(payload.player);
+    const existing = targets.find(item => App.transfers.normalizePlayerRatingKey(item.player) === playerKey);
+    const nextTarget = {
+      ...(existing || {}),
+      player: payload.player,
+      club: payload.club,
+      value: payload.value,
+      priority: payload.priority,
+      note: payload.note,
+      createdAt: existing?.createdAt || new Date().toISOString()
+    };
+
+    const nextTargets = existing
+      ? targets.map(item => item.id === existing.id ? { ...nextTarget, id: existing.id } : item)
+      : [{ ...nextTarget, id: `target-${Date.now()}` }, ...targets];
+
+    return App.players.savePrivateTransferTargets(owner, nextTargets);
+  },
+
+  removePrivateTransferTarget(owner, targetId) {
+    const targets = App.players.getPrivateTransferTargets(owner).filter(item => item.id !== targetId);
+    return App.players.savePrivateTransferTargets(owner, targets);
+  },
+
   renderCoachAlertDeck(alerts) {
     if (!alerts.length) {
       return `
@@ -372,6 +439,72 @@ App.players = {
           `;
         }).join("")}
       </div>
+    `;
+  },
+
+  renderPrivateTransferTargets(owner) {
+    const targets = App.players.getPrivateTransferTargets(owner);
+
+    return `
+      <article class="coach-panel-card coach-targets-card" data-private-target-owner="${App.utils.escapeHtml(owner)}">
+        <div class="home-panel-header">
+          <h2>Alvos privados</h2>
+          <span class="coach-section-kicker">Só você vê</span>
+        </div>
+        <form class="coach-target-form" data-private-target-form>
+          <label>
+            Jogador
+            <input name="player" type="text" placeholder="Nome do jogador" autocomplete="off" required />
+          </label>
+          <label>
+            Clube atual
+            <input name="club" type="text" placeholder="Clube ou liga" autocomplete="off" />
+          </label>
+          <label>
+            Valor teto
+            <input name="value" type="number" min="0" step="100000" placeholder="0" />
+          </label>
+          <label>
+            Prioridade
+            <select name="priority">
+              <option>Prioridade alta</option>
+              <option>Monitorar</option>
+              <option>Plano B</option>
+              <option>Oportunidade</option>
+            </select>
+          </label>
+          <label class="target-note-field">
+            Nota privada
+            <input name="note" type="text" placeholder="Ex.: negociar depois da rodada" autocomplete="off" />
+          </label>
+          <button type="submit" class="secondary-button">Pinar alvo</button>
+        </form>
+        <div class="coach-target-list">
+          ${targets.length ? targets.map(target => {
+            const marketPlayer = App.transfers.findMarketPlayerByName(target.player) || {
+              name: target.player,
+              club: target.club
+            };
+            const rating = App.transfers.getRatingForPlayerName(target.player);
+            return `
+              <div class="coach-target-item">
+                ${App.transfers.renderPlayerPhoto(marketPlayer, rating, "player-avatar")}
+                <div>
+                  <strong>${App.utils.escapeHtml(target.player)}</strong>
+                  <small>${App.utils.escapeHtml([target.priority, target.club, target.value ? App.utils.formatCurrency(target.value) : ""].filter(Boolean).join(" · "))}</small>
+                  ${target.note ? `<span>${App.utils.escapeHtml(target.note)}</span>` : ""}
+                </div>
+                <button type="button" class="icon-action-button" title="Remover alvo" aria-label="Remover alvo" data-remove-private-target="${App.utils.escapeHtml(target.id)}">×</button>
+              </div>
+            `;
+          }).join("") : `
+            <div class="coach-empty-state compact">
+              <strong>Nenhum alvo pinado</strong>
+              <p>Use este bloco para guardar nomes sem expor sua lista para os outros técnicos.</p>
+            </div>
+          `}
+        </div>
+      </article>
     `;
   },
 
@@ -584,6 +717,7 @@ App.players = {
     const pinCard = App.auth?.renderPinChangeCard ? App.auth.renderPinChangeCard(activeTeam.owner) : "";
     const strategyCards = canViewPrivate ? App.players.renderCoachStrategyCards(activeTeam, standing, budget, transfers, injuries, recentForm) : "";
     const statementCard = canViewPrivate ? App.players.renderCoachFinancialStatement(activeTeam.owner, budget, breakdown) : "";
+    const targetsCard = canViewPrivate ? App.players.renderPrivateTransferTargets(activeTeam.owner) : "";
 
     return `
       <section class="coach-dashboard" style="--coach-color:${color}">
@@ -653,6 +787,7 @@ App.players = {
             </article>
 
             ${pinCard || ""}
+            ${targetsCard}
           </div>
         </section>
       </section>
@@ -699,6 +834,52 @@ App.players = {
     });
 
     App.calendar.bindCalendarActions?.();
+    document.querySelectorAll("[data-private-target-form]").forEach(form => {
+      if (form.dataset.bound === "true") return;
+      form.dataset.bound = "true";
+      form.addEventListener("submit", async event => {
+        event.preventDefault();
+        const card = form.closest("[data-private-target-owner]");
+        const owner = card?.dataset.privateTargetOwner || "";
+        const payload = {
+          player: form.elements.player.value,
+          club: form.elements.club.value,
+          value: form.elements.value.value,
+          priority: form.elements.priority.value,
+          note: form.elements.note.value
+        };
+        App.players.addPrivateTransferTarget(owner, payload);
+        if (App.auth?.upsertMyTransferTarget) {
+          try {
+            const targets = await App.auth.upsertMyTransferTarget(payload);
+            App.players.savePrivateTransferTargets(owner, targets);
+          } catch (error) {
+            console.warn("Não consegui sincronizar alvo privado, mantive no cache local:", error);
+          }
+        }
+        form.reset();
+        App.players.render();
+      });
+    });
+
+    document.querySelectorAll("[data-remove-private-target]").forEach(button => {
+      if (button.dataset.bound === "true") return;
+      button.dataset.bound = "true";
+      button.addEventListener("click", async () => {
+        const card = button.closest("[data-private-target-owner]");
+        const owner = card?.dataset.privateTargetOwner || "";
+        App.players.removePrivateTransferTarget(owner, button.dataset.removePrivateTarget);
+        if (App.auth?.deleteMyTransferTarget) {
+          try {
+            const targets = await App.auth.deleteMyTransferTarget(button.dataset.removePrivateTarget);
+            App.players.savePrivateTransferTargets(owner, targets);
+          } catch (error) {
+            console.warn("Não consegui sincronizar remoção do alvo privado:", error);
+          }
+        }
+        App.players.render();
+      });
+    });
   },
 
   render() {
