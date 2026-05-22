@@ -49,9 +49,9 @@ App.transfers = {
       nation: "Spain",
       overall: 85,
       gender: "Men's Football",
-      avatar_url: "https://upload.wikimedia.org/wikipedia/commons/a/ab/David_de_Gea_2018.png",
-      source_url: "https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/de-gea/193080",
-      source_name: "EA SPORTS FC official ratings + Wikimedia photo"
+      avatar_url: "https://cdn.sofifa.net/players/193/080/26_240.png",
+      source_url: "https://sofifa.com/player/193080/david-de-gea",
+      source_name: "EA SPORTS FC official ratings + SoFIFA headshot"
     },
     "david de gea quintana": {
       name: "David De Gea Quintana",
@@ -60,9 +60,9 @@ App.transfers = {
       nation: "Spain",
       overall: 85,
       gender: "Men's Football",
-      avatar_url: "https://upload.wikimedia.org/wikipedia/commons/a/ab/David_de_Gea_2018.png",
-      source_url: "https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/de-gea/193080",
-      source_name: "EA SPORTS FC official ratings + Wikimedia photo"
+      avatar_url: "https://cdn.sofifa.net/players/193/080/26_240.png",
+      source_url: "https://sofifa.com/player/193080/david-de-gea",
+      source_name: "EA SPORTS FC official ratings + SoFIFA headshot"
     },
     "dybala": {
       name: "Paulo Dybala",
@@ -213,13 +213,16 @@ App.transfers = {
     const manual = App.transfers.getManualPlayerRating(playerName);
     if (!manual) return rating || null;
     if (!rating) return manual;
-    if (App.transfers.isUsablePlayerAvatar(rating.avatar_url)) return rating;
+    const ratingHasUsableAvatar = App.transfers.isUsablePlayerAvatar(rating.avatar_url);
+    const avatarSource = App.utils.normalizeText(`${rating.avatar_url || ""} ${rating.source_name || ""}`);
+    const shouldReplaceStaleAvatar = ratingHasUsableAvatar && manual.avatar_url && avatarSource.includes("wikimedia");
+    if (ratingHasUsableAvatar && !shouldReplaceStaleAvatar) return rating;
     return {
       ...manual,
       ...rating,
       avatar_url: manual.avatar_url || rating.avatar_url,
-      source_url: rating.source_url || manual.source_url,
-      source_name: rating.source_name || manual.source_name
+      source_url: shouldReplaceStaleAvatar ? manual.source_url : rating.source_url || manual.source_url,
+      source_name: shouldReplaceStaleAvatar ? manual.source_name : rating.source_name || manual.source_name
     };
   },
 

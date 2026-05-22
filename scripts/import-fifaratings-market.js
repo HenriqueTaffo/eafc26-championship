@@ -82,12 +82,12 @@ const MANUAL_RATINGS = {
     dribbling: null,
     defending: null,
     physical: null,
-    avatar_url: "https://upload.wikimedia.org/wikipedia/commons/a/ab/David_de_Gea_2018.png",
+    avatar_url: "https://cdn.sofifa.net/players/193/080/26_240.png",
     shield_url: null,
     card_type: "Normal",
     gender: "Men's Football",
-    source_url: "https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/de-gea/193080",
-    source_name: "EA SPORTS FC official ratings + Wikimedia photo"
+    source_url: "https://sofifa.com/player/193080/david-de-gea",
+    source_name: "EA SPORTS FC official ratings + SoFIFA headshot"
   },
   "david-de-gea-quintana": {
     ea_id: "193080",
@@ -103,12 +103,12 @@ const MANUAL_RATINGS = {
     dribbling: null,
     defending: null,
     physical: null,
-    avatar_url: "https://upload.wikimedia.org/wikipedia/commons/a/ab/David_de_Gea_2018.png",
+    avatar_url: "https://cdn.sofifa.net/players/193/080/26_240.png",
     shield_url: null,
     card_type: "Normal",
     gender: "Men's Football",
-    source_url: "https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/de-gea/193080",
-    source_name: "EA SPORTS FC official ratings + Wikimedia photo"
+    source_url: "https://sofifa.com/player/193080/david-de-gea",
+    source_name: "EA SPORTS FC official ratings + SoFIFA headshot"
   }
 };
 const SUPABASE_PAGE_SIZE = 1000;
