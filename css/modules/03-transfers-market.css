@@ -618,6 +618,11 @@
   font-weight: 900;
 }
 
+.market-player-photo.has-player-image i,
+.player-avatar.has-player-image i {
+  display: none;
+}
+
 .player-identity,
 .movement-player-identity,
 .insight-player-identity,

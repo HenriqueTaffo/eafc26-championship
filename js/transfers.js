@@ -58,7 +58,8 @@ App.transfers = {
       "dembele": ["Ousmane Dembele", "Ousmane Dembélé"],
       "lautaro martinez": ["Lautaro Martínez"],
       "ruben dias": ["Rúben Dias"],
-      "neymar": ["Neymar Jr."]
+      "neymar": ["Neymar Jr."],
+      "kyle walker": ["Kyle Andrew Walker"]
     };
 
     return [playerName, ...(aliases[normalized] || [])].filter(Boolean);
@@ -95,9 +96,11 @@ App.transfers = {
   renderPlayerPhoto(player, rating = null, className = "market-player-photo") {
     const avatar = rating?.avatar_url || player?.avatar_url || "";
     const name = player?.name || rating?.name || "?";
+    const fallback = App.utils.escapeHtml(String(name).charAt(0));
     return `
-      <span class="${className}">
-        ${avatar ? `<img src="${App.utils.escapeHtml(avatar)}" alt="" loading="lazy" />` : `<i>${App.utils.escapeHtml(String(name).charAt(0))}</i>`}
+      <span class="${className} ${avatar ? "has-player-image" : ""}">
+        ${avatar ? `<img src="${App.utils.escapeHtml(avatar)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.parentElement.classList.remove('has-player-image'); this.remove();" />` : ""}
+        <i>${fallback}</i>
       </span>
     `;
   },
@@ -861,9 +864,7 @@ App.transfers = {
 
     target.innerHTML = ratings.map(player => `
       <button class="ea-rating-option" type="button" data-ea-rating="${App.utils.escapeHtml(player.id || player.ea_id || player.name)}">
-        <span class="ea-rating-photo">
-          ${player.avatar_url ? `<img src="${App.utils.escapeHtml(player.avatar_url)}" alt="" loading="lazy" />` : `<i>${App.utils.escapeHtml(String(player.name || "?").charAt(0))}</i>`}
-        </span>
+        ${App.transfers.renderPlayerPhoto(player, null, "ea-rating-photo")}
         <span>
           <strong>${App.utils.escapeHtml(player.name || "-")}</strong>
           <small>${App.utils.escapeHtml([player.position, player.club, player.nation].filter(Boolean).join(" · "))}</small>

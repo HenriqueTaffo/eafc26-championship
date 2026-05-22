@@ -21,6 +21,29 @@ const PLAYER_SLUG_ALIASES = {
 const PLAYER_SLUG_REJECTS = {
   "kyle-walker": ["kyle-walker-peters"]
 };
+const MANUAL_RATINGS = {
+  "kyle-walker": {
+    ea_id: "188377",
+    rank: null,
+    name: "Kyle Walker",
+    nation: "England",
+    club: "Burnley",
+    position: "RB",
+    overall: 79,
+    pace: 80,
+    shooting: 64,
+    passing: 75,
+    dribbling: 76,
+    defending: 77,
+    physical: 78,
+    avatar_url: "https://ratings-images-prod.pulse.ea.com/FC25/full/player-portraits/p188377.png?padding=0.7",
+    shield_url: "https://ratings-images-prod.pulse.ea.com/FC25/full/player-shields/en/188377.png?width=265",
+    card_type: "Normal",
+    gender: "Men's Football",
+    source_url: "https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/kyle-walker/188377",
+    source_name: "EA SPORTS FC official ratings"
+  }
+};
 const SUPABASE_PAGE_SIZE = 1000;
 const RATING_FETCH_CONCURRENCY = 12;
 const RATING_FETCH_TIMEOUT_MS = 8000;
@@ -183,6 +206,7 @@ async function fetchRatingsForPlayers(marketPlayers) {
 async function fetchRatingForPlayer(player) {
   const slug = slugify(player.name);
   if (!slug) return null;
+  if (MANUAL_RATINGS[slug]) return MANUAL_RATINGS[slug];
   const slugs = [...new Set([slug, ...(PLAYER_SLUG_ALIASES[slug] || [])])];
 
   for (const candidate of slugs) {

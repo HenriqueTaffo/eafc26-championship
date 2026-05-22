@@ -745,6 +745,11 @@
   font-weight: 900;
 }
 
+.ea-rating-photo.has-player-image i,
+.scout-photo.has-player-image i {
+  display: none;
+}
+
 .scout-list > div {
   display: grid;
   grid-template-columns: 42px minmax(0, 1fr) auto;

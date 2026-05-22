@@ -231,7 +231,7 @@ App.experience = {
         <div class="scout-list">
           ${ratings.length ? ratings.slice(0, 6).map(item => `
             <div>
-              <span class="scout-photo">${item.avatar_url ? `<img src="${App.utils.escapeHtml(item.avatar_url)}" alt="" loading="lazy" />` : `<i>${App.utils.escapeHtml(String(item.name || "?").charAt(0))}</i>`}</span>
+              ${App.transfers.renderPlayerPhoto(item, null, "scout-photo")}
               <p>
                 <strong>${App.utils.escapeHtml(item.name)}</strong>
                 <span>${App.utils.escapeHtml([item.position, item.club].filter(Boolean).join(" · "))}</span>
@@ -267,7 +267,7 @@ App.experience = {
         <div class="opportunity-grid">
           ${rows.length ? rows.map(item => `
             <div class="opportunity-card">
-              <span class="scout-photo">${item.avatar_url ? `<img src="${App.utils.escapeHtml(item.avatar_url)}" alt="" loading="lazy" />` : `<i>${App.utils.escapeHtml(String(item.name || "?").charAt(0))}</i>`}</span>
+              ${App.transfers.renderPlayerPhoto(item, null, "scout-photo")}
               <span>${App.utils.escapeHtml(item.tag)}</span>
               <strong>${App.utils.escapeHtml(item.name)}</strong>
               <small>${App.utils.escapeHtml([item.position, item.club].filter(Boolean).join(" · "))}</small>
