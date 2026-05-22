@@ -12,6 +12,379 @@
 -- - Revoga execucao publica das funcoes antigas que aceitavam p_pin.
 -- - Liga RLS nas tabelas de apoio criadas pelo projeto, mantendo leitura/escrita via RPC.
 
+create or replace function public.app_find_transfer_table()
+returns regclass
+language plpgsql
+security definer
+stable
+set search_path = public
+as $$
+declare
+  v_transfer_table regclass;
+begin
+  select c.oid::regclass
+    into v_transfer_table
+  from pg_class c
+  join pg_namespace n on n.oid = c.relnamespace
+  where c.relkind = 'r'
+    and n.nspname = 'public'
+    and exists (select 1 from pg_attribute a where a.attrelid = c.oid and a.attname = 'Comprador' and not a.attisdropped)
+    and exists (select 1 from pg_attribute a where a.attrelid = c.oid and a.attname = 'Jogador' and not a.attisdropped)
+    and exists (select 1 from pg_attribute a where a.attrelid = c.oid and a.attname = 'ClubeOrigem' and not a.attisdropped)
+    and exists (select 1 from pg_attribute a where a.attrelid = c.oid and a.attname = 'Overall' and not a.attisdropped)
+    and exists (select 1 from pg_attribute a where a.attrelid = c.oid and a.attname = 'ValorTransfermarkt' and not a.attisdropped)
+    and exists (select 1 from pg_attribute a where a.attrelid = c.oid and a.attname = 'Status' and not a.attisdropped)
+    and exists (select 1 from pg_attribute a where a.attrelid = c.oid and a.attname = 'Timestamp' and not a.attisdropped)
+  order by c.relname
+  limit 1;
+
+  return v_transfer_table;
+end;
+$$;
+
+create or replace function public.app_get_transfer_spend_totals()
+returns jsonb
+language plpgsql
+security definer
+stable
+set search_path = public
+as $$
+declare
+  v_transfer_table regclass;
+  v_has_valor_final boolean := false;
+  v_has_tipo_transferencia boolean := false;
+  v_value_expr text;
+  v_type_filter text := '';
+  v_totals jsonb := '{}'::jsonb;
+begin
+  v_transfer_table := public.app_find_transfer_table();
+  if v_transfer_table is null then
+    return '{}'::jsonb;
+  end if;
+
+  select exists (
+      select 1
+      from pg_attribute
+      where attrelid = v_transfer_table
+        and attname = 'ValorFinal'
+        and not attisdropped
+    )
+    into v_has_valor_final;
+
+  select exists (
+      select 1
+      from pg_attribute
+      where attrelid = v_transfer_table
+        and attname = 'TipoTransferencia'
+        and not attisdropped
+    )
+    into v_has_tipo_transferencia;
+
+  v_value_expr := 'coalesce("ValorTransfermarkt", 0) * (1 + case
+      when coalesce("Overall", 0) >= 89 then 0.25
+      when coalesce("Overall", 0) >= 84 then 0.20
+      when coalesce("Overall", 0) >= 80 then 0.15
+      when coalesce("Overall", 0) >= 75 then 0.05
+      else 0
+    end)';
+
+  if v_has_valor_final then
+    v_value_expr := format('coalesce("ValorFinal", %s)', v_value_expr);
+  end if;
+
+  if v_has_tipo_transferencia then
+    v_type_filter := 'and lower(coalesce("TipoTransferencia"::text, ''market'')) <> ''internal''';
+  end if;
+
+  execute format(
+    'with approved as (
+       select
+         "Comprador"::text as buyer,
+         lower("Jogador"::text) as player_key,
+         %1$s as final_value,
+         row_number() over (
+           partition by lower("Jogador"::text)
+           order by "Timestamp" desc nulls last, ctid desc
+         ) as rn
+       from %2$s
+       where lower(coalesce("Status"::text, '''')) = ''aprovado''
+         %3$s
+     ),
+     totals as (
+       select buyer, sum(final_value)::numeric as spent_total
+       from approved
+       where rn = 1
+       group by buyer
+     )
+     select coalesce(jsonb_object_agg(buyer, spent_total), ''{}''::jsonb)
+     from totals',
+    v_value_expr,
+    v_transfer_table,
+    v_type_filter
+  )
+  into v_totals;
+
+  return coalesce(v_totals, '{}'::jsonb);
+end;
+$$;
+
+create or replace function public.app_get_external_transfer_today_count(
+  p_buyer text
+)
+returns integer
+language plpgsql
+security definer
+stable
+set search_path = public
+as $$
+declare
+  v_transfer_table regclass;
+  v_has_tipo_transferencia boolean := false;
+  v_timestamp_type text := '';
+  v_date_filter text;
+  v_type_filter text := '';
+  v_count integer := 0;
+begin
+  v_transfer_table := public.app_find_transfer_table();
+  if v_transfer_table is null then
+    return 0;
+  end if;
+
+  select exists (
+      select 1
+      from pg_attribute
+      where attrelid = v_transfer_table
+        and attname = 'TipoTransferencia'
+        and not attisdropped
+    )
+    into v_has_tipo_transferencia;
+
+  if v_has_tipo_transferencia then
+    v_type_filter := 'and lower(coalesce("TipoTransferencia"::text, ''market'')) <> ''internal''';
+  end if;
+
+  select format_type(a.atttypid, a.atttypmod)
+    into v_timestamp_type
+  from pg_attribute a
+  where a.attrelid = v_transfer_table
+    and a.attname = 'Timestamp'
+    and not a.attisdropped;
+
+  if coalesce(v_timestamp_type, '') like 'timestamp%' or coalesce(v_timestamp_type, '') = 'date' then
+    v_date_filter := 'and "Timestamp"::date = current_date';
+  else
+    v_date_filter := 'and (
+      "Timestamp"::text like to_char(current_date, ''YYYY-MM-DD'') || ''%''
+      or "Timestamp"::text like to_char(current_date, ''DD/MM/YYYY'') || ''%''
+    )';
+  end if;
+
+  execute format(
+    'select count(*)::integer
+       from %s
+      where lower(coalesce("Status"::text, '''')) = ''aprovado''
+        and lower("Comprador"::text) = lower($1)
+        %s
+        %s',
+    v_transfer_table,
+    v_date_filter,
+    v_type_filter
+  )
+  into v_count
+  using p_buyer;
+
+  return coalesce(v_count, 0);
+exception
+  when others then
+    return 0;
+end;
+$$;
+
+create or replace function public.app_record_external_transfer(
+  p_buyer text,
+  p_player text,
+  p_from_club text,
+  p_overall integer,
+  p_market_value numeric,
+  p_final_value numeric
+)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_transfer_table regclass;
+begin
+  v_transfer_table := public.app_find_transfer_table();
+  if v_transfer_table is null then
+    return jsonb_build_object('ok', false, 'message', 'Nao encontrei a tabela de transferencias.');
+  end if;
+
+  execute format('alter table %s add column if not exists "TipoTransferencia" text default ''market''', v_transfer_table);
+  execute format('alter table %s add column if not exists "Vendedor" text', v_transfer_table);
+  execute format('alter table %s add column if not exists "ValorNegociado" numeric', v_transfer_table);
+  execute format('alter table %s add column if not exists "ValorFinal" numeric', v_transfer_table);
+
+  execute format(
+    'insert into %s (
+       "Comprador",
+       "Jogador",
+       "ClubeOrigem",
+       "Overall",
+       "ValorTransfermarkt",
+       "ValorFinal",
+       "Status",
+       "Timestamp",
+       "TipoTransferencia"
+     ) values (%L, %L, %L, %s, %s, %s, ''aprovado'', now(), ''market'')',
+    v_transfer_table,
+    p_buyer,
+    p_player,
+    p_from_club,
+    coalesce(p_overall, 0),
+    coalesce(p_market_value, 0),
+    coalesce(p_final_value, 0)
+  );
+
+  return jsonb_build_object(
+    'ok', true,
+    'message', 'Transferencia registrada.',
+    'buyer', p_buyer,
+    'player', p_player,
+    'fromClub', p_from_club,
+    'overall', p_overall,
+    'marketValue', p_market_value,
+    'finalValue', p_final_value
+  );
+end;
+$$;
+
+create or replace function public.app_get_budget_reconciliation()
+returns jsonb
+language sql
+security definer
+stable
+set search_path = public
+as $$
+  with data as (
+    select public.app_get_data()::jsonb as j
+  ),
+  config as (
+    select
+      coalesce((j ->> 'budget')::numeric, 65000000) as base_budget_default,
+      coalesce((j ->> 'homeMatchBonus')::numeric, 1250000) as home_match_bonus,
+      coalesce((j ->> 'winBonus')::numeric, 500000) as win_bonus
+    from data
+  ),
+  teams(manager_name, club_name) as (
+    values
+      ('Henrique', 'Coventry City'),
+      ('Willian', 'Birmingham City'),
+      ('Rafael', 'Middlesbrough'),
+      ('Renato', 'Southampton'),
+      ('Bruno Silva', 'Wrexham')
+  ),
+  results as (
+    select *
+    from jsonb_to_recordset(coalesce((select j -> 'results' from data), '[]'::jsonb)) as r(
+      "Mandante" text,
+      "Visitante" text,
+      "GolsMandante" integer,
+      "GolsVisitante" integer,
+      "Status" text,
+      "Competicao" text
+    )
+    where lower(coalesce("Status", '')) = 'aprovado'
+      and lower(coalesce("Competicao", '')) = 'championship'
+  ),
+  stats as (
+    select
+      t.manager_name,
+      count(*) filter (where lower(r."Mandante") = lower(t.club_name))::integer as home_matches,
+      count(*) filter (
+        where (
+          lower(r."Mandante") = lower(t.club_name)
+          and coalesce(r."GolsMandante", 0) > coalesce(r."GolsVisitante", 0)
+        ) or (
+          lower(r."Visitante") = lower(t.club_name)
+          and coalesce(r."GolsVisitante", 0) > coalesce(r."GolsMandante", 0)
+        )
+      )::integer as wins
+    from teams t
+    left join results r
+      on lower(r."Mandante") = lower(t.club_name)
+      or lower(r."Visitante") = lower(t.club_name)
+    group by t.manager_name
+  ),
+  reward_totals as (
+    select
+      manager_name,
+      sum(reward_value)::numeric as reward_total
+    from public.sponsorship_rewards
+    group by manager_name
+  ),
+  sponsorship_reward_events as (
+    select
+      "Jogador" as manager_name,
+      sum(coalesce("ImpactoFinanceiro", 0))::numeric as event_reward_total
+    from jsonb_to_recordset(coalesce((select j -> 'events' from data), '[]'::jsonb)) as e(
+      "Jogador" text,
+      "Titulo" text,
+      "ImpactoFinanceiro" numeric
+    )
+    where lower(coalesce("Titulo", '')) like '%bonus de patrocinio%'
+    group by "Jogador"
+  ),
+  raw_budgets as (
+    select key as manager_name, value as budget
+    from jsonb_each(coalesce((select j -> 'budgets' from data), '{}'::jsonb))
+  ),
+  transfer_spend as (
+    select public.app_get_transfer_spend_totals() as totals
+  ),
+  reconciled as (
+    select
+      t.manager_name,
+      coalesce((rb.budget ->> 'baseBudget')::numeric, config.base_budget_default) as base_budget,
+      coalesce(s.home_matches, 0) as home_matches,
+      coalesce(s.wins, 0) as wins,
+      coalesce(s.home_matches, 0) * config.home_match_bonus as home_bonus,
+      coalesce(s.wins, 0) * config.win_bonus as win_bonus_value,
+      coalesce((rb.budget ->> 'eventTotal')::numeric, 0)
+        - coalesce(sre.event_reward_total, 0)
+        + coalesce(rt.reward_total, 0) as event_total,
+      coalesce(rt.reward_total, 0) as sponsorship_rewards,
+      coalesce((ts.totals ->> t.manager_name)::numeric, (rb.budget ->> 'spentTotal')::numeric, 0) as spent_total,
+      coalesce((rb.budget ->> 'transferLimit')::integer, 3) as transfer_limit
+    from teams t
+    cross join config
+    cross join transfer_spend ts
+    left join raw_budgets rb on rb.manager_name = t.manager_name
+    left join stats s on s.manager_name = t.manager_name
+    left join reward_totals rt on rt.manager_name = t.manager_name
+    left join sponsorship_reward_events sre on sre.manager_name = t.manager_name
+  )
+  select coalesce(jsonb_object_agg(
+    manager_name,
+    jsonb_build_object(
+      'baseBudget', base_budget,
+      'homeMatches', home_matches,
+      'wins', wins,
+      'homeBonus', home_bonus,
+      'winBonusValue', win_bonus_value,
+      'eventTotal', event_total,
+      'sponsorshipRewards', sponsorship_rewards,
+      'totalBudget', base_budget + home_bonus + win_bonus_value + event_total,
+      'spentTotal', spent_total,
+      'remainingBudget', base_budget + home_bonus + win_bonus_value + event_total - spent_total,
+      'transferLimit', transfer_limit,
+      'transfersToday', public.app_get_external_transfer_today_count(manager_name)
+    )
+  ), '{}'::jsonb)
+  from reconciled;
+$$;
+
 create or replace function public.app_security_login(
   p_manager_id text,
   p_access_code text
@@ -188,8 +561,8 @@ begin
   v_remaining := coalesce((v_budget ->> 'remainingBudget')::numeric, 0);
 
   v_budget := coalesce(public.app_get_data()::jsonb -> 'budgets' -> p_buyer, '{}'::jsonb);
-  v_transfer_limit := coalesce((v_budget ->> 'transferLimit')::integer, 0);
-  v_transfers_today := coalesce((v_budget ->> 'transfersToday')::integer, 0);
+  v_transfer_limit := coalesce((v_budget ->> 'transferLimit')::integer, 3);
+  v_transfers_today := public.app_get_external_transfer_today_count(p_buyer);
 
   if v_transfer_limit <= 0 then
     return jsonb_build_object('ok', false, 'message', format('Transferencias externas bloqueadas hoje para %s.', p_buyer));
@@ -206,13 +579,13 @@ begin
     );
   end if;
 
-  return public.app_add_transfer(
-    'eafc26'::text,
+  return public.app_record_external_transfer(
     p_buyer,
     p_player,
     p_from_club,
     p_overall,
-    p_market_value
+    p_market_value,
+    v_final_value
   );
 end;
 $$;
@@ -294,6 +667,7 @@ end;
 $$;
 
 grant execute on function public.app_security_login(text, text) to anon, authenticated;
+grant execute on function public.app_get_budget_reconciliation() to anon, authenticated;
 grant execute on function public.app_add_result(text, text, text, integer, text, text, text, integer, integer, text, text, text, text, text) to anon, authenticated;
 grant execute on function public.app_add_transfer(text, text, text, text, text, integer, numeric) to anon, authenticated;
 grant execute on function public.app_generate_due_events(text, text) to anon, authenticated;
