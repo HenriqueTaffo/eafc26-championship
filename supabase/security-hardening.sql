@@ -26,20 +26,69 @@ begin
     into v_transfer_table
   from pg_class c
   join pg_namespace n on n.oid = c.relnamespace
-  where c.relkind = 'r'
+  where c.relkind in ('r', 'p')
     and n.nspname = 'public'
-    and exists (select 1 from pg_attribute a where a.attrelid = c.oid and a.attname = 'Comprador' and not a.attisdropped)
-    and exists (select 1 from pg_attribute a where a.attrelid = c.oid and a.attname = 'Jogador' and not a.attisdropped)
-    and exists (select 1 from pg_attribute a where a.attrelid = c.oid and a.attname = 'ClubeOrigem' and not a.attisdropped)
-    and exists (select 1 from pg_attribute a where a.attrelid = c.oid and a.attname = 'Overall' and not a.attisdropped)
-    and exists (select 1 from pg_attribute a where a.attrelid = c.oid and a.attname = 'ValorTransfermarkt' and not a.attisdropped)
-    and exists (select 1 from pg_attribute a where a.attrelid = c.oid and a.attname = 'Status' and not a.attisdropped)
-    and exists (select 1 from pg_attribute a where a.attrelid = c.oid and a.attname = 'Timestamp' and not a.attisdropped)
-  order by c.relname
+    and c.relname not like '%proposal%'
+    and c.relname not like '%contract%'
+    and exists (
+      select 1 from pg_attribute a
+      where a.attrelid = c.oid
+        and not a.attisdropped
+        and lower(regexp_replace(a.attname, '[^a-z0-9]', '', 'g')) in ('comprador', 'buyer')
+    )
+    and exists (
+      select 1 from pg_attribute a
+      where a.attrelid = c.oid
+        and not a.attisdropped
+        and lower(regexp_replace(a.attname, '[^a-z0-9]', '', 'g')) in ('jogador', 'player')
+    )
+    and exists (
+      select 1 from pg_attribute a
+      where a.attrelid = c.oid
+        and not a.attisdropped
+        and lower(regexp_replace(a.attname, '[^a-z0-9]', '', 'g')) = 'status'
+    )
+    and exists (
+      select 1 from pg_attribute a
+      where a.attrelid = c.oid
+        and not a.attisdropped
+        and lower(regexp_replace(a.attname, '[^a-z0-9]', '', 'g')) in ('timestamp', 'createdat', 'data')
+    )
+  order by
+    case when c.relname in ('transfers', 'transferencias') then 0 else 1 end,
+    case when c.relname like '%transfer%' then 0 else 1 end,
+    c.relname
   limit 1;
 
   return v_transfer_table;
 end;
+$$;
+
+create or replace function public.app_transfer_column(
+  p_table regclass,
+  p_options text[]
+)
+returns text
+language sql
+security definer
+stable
+set search_path = public
+as $$
+  with options as (
+    select
+      option_name,
+      ordinality,
+      lower(regexp_replace(option_name, '[^a-z0-9]', '', 'g')) as normalized
+    from unnest(p_options) with ordinality as item(option_name, ordinality)
+  )
+  select quote_ident(a.attname)
+  from pg_attribute a
+  join options o
+    on lower(regexp_replace(a.attname, '[^a-z0-9]', '', 'g')) = o.normalized
+  where a.attrelid = p_table
+    and not a.attisdropped
+  order by o.ordinality
+  limit 1;
 $$;
 
 create or replace function public.app_get_transfer_spend_totals()
@@ -51,8 +100,14 @@ set search_path = public
 as $$
 declare
   v_transfer_table regclass;
-  v_has_valor_final boolean := false;
-  v_has_tipo_transferencia boolean := false;
+  v_buyer_col text;
+  v_player_col text;
+  v_status_col text;
+  v_timestamp_col text;
+  v_market_value_col text;
+  v_overall_col text;
+  v_final_value_col text;
+  v_type_col text;
   v_value_expr text;
   v_type_filter text := '';
   v_totals jsonb := '{}'::jsonb;
@@ -62,52 +117,53 @@ begin
     return '{}'::jsonb;
   end if;
 
-  select exists (
-      select 1
-      from pg_attribute
-      where attrelid = v_transfer_table
-        and attname = 'ValorFinal'
-        and not attisdropped
-    )
-    into v_has_valor_final;
+  v_buyer_col := public.app_transfer_column(v_transfer_table, array['Comprador', 'buyer', 'comprador']);
+  v_player_col := public.app_transfer_column(v_transfer_table, array['Jogador', 'player', 'jogador']);
+  v_status_col := public.app_transfer_column(v_transfer_table, array['Status', 'status']);
+  v_timestamp_col := public.app_transfer_column(v_transfer_table, array['Timestamp', 'created_at', 'createdAt', 'Data']);
+  v_market_value_col := public.app_transfer_column(v_transfer_table, array['ValorTransfermarkt', 'Valor Transfermarkt', 'marketValue', 'market_value']);
+  v_overall_col := public.app_transfer_column(v_transfer_table, array['Overall', 'overall']);
+  v_final_value_col := public.app_transfer_column(v_transfer_table, array['ValorFinal', 'Valor Final', 'finalValue', 'final_value']);
+  v_type_col := public.app_transfer_column(v_transfer_table, array['TipoTransferencia', 'Tipo Transferencia', 'transferType', 'transfer_type']);
 
-  select exists (
-      select 1
-      from pg_attribute
-      where attrelid = v_transfer_table
-        and attname = 'TipoTransferencia'
-        and not attisdropped
-    )
-    into v_has_tipo_transferencia;
-
-  v_value_expr := 'coalesce("ValorTransfermarkt", 0) * (1 + case
-      when coalesce("Overall", 0) >= 89 then 0.25
-      when coalesce("Overall", 0) >= 84 then 0.20
-      when coalesce("Overall", 0) >= 80 then 0.15
-      when coalesce("Overall", 0) >= 75 then 0.05
-      else 0
-    end)';
-
-  if v_has_valor_final then
-    v_value_expr := format('coalesce("ValorFinal", %s)', v_value_expr);
+  if v_buyer_col is null or v_player_col is null or v_status_col is null or v_timestamp_col is null or v_market_value_col is null then
+    return '{}'::jsonb;
   end if;
 
-  if v_has_tipo_transferencia then
-    v_type_filter := 'and lower(coalesce("TipoTransferencia"::text, ''market'')) <> ''internal''';
+  v_value_expr := format('coalesce((%s)::numeric, 0) * (1 + case
+      when coalesce((%s)::integer, 0) >= 89 then 0.25
+      when coalesce((%s)::integer, 0) >= 84 then 0.20
+      when coalesce((%s)::integer, 0) >= 80 then 0.15
+      when coalesce((%s)::integer, 0) >= 75 then 0.05
+      else 0
+    end)',
+    v_market_value_col,
+    coalesce(v_overall_col, '0'),
+    coalesce(v_overall_col, '0'),
+    coalesce(v_overall_col, '0'),
+    coalesce(v_overall_col, '0')
+  );
+
+  if v_final_value_col is not null then
+    v_value_expr := format('coalesce((%s)::numeric, %s)', v_final_value_col, v_value_expr);
+  end if;
+
+  if v_type_col is not null then
+    v_type_filter := format('and lower(coalesce(%s::text, ''market'')) <> ''internal''', v_type_col);
   end if;
 
   execute format(
     'with approved as (
        select
-         "Comprador"::text as buyer,
-         lower("Jogador"::text) as player_key,
+         %4$s::text as buyer,
+         lower(%5$s::text) as player_key,
          %1$s as final_value,
          row_number() over (
-           partition by lower("Jogador"::text)
-           order by "Timestamp" desc nulls last, ctid desc
+           partition by lower(%5$s::text)
+           order by %6$s desc nulls last, ctid desc
          ) as rn
        from %2$s
-       where lower(coalesce("Status"::text, '''')) = ''aprovado''
+       where lower(coalesce(%7$s::text, '''')) = ''aprovado''
          %3$s
      ),
      totals as (
@@ -120,7 +176,11 @@ begin
      from totals',
     v_value_expr,
     v_transfer_table,
-    v_type_filter
+    v_type_filter,
+    v_buyer_col,
+    v_player_col,
+    v_timestamp_col,
+    v_status_col
   )
   into v_totals;
 
@@ -139,7 +199,10 @@ set search_path = public
 as $$
 declare
   v_transfer_table regclass;
-  v_has_tipo_transferencia boolean := false;
+  v_buyer_col text;
+  v_status_col text;
+  v_timestamp_col text;
+  v_type_col text;
   v_timestamp_type text := '';
   v_date_filter text;
   v_type_filter text := '';
@@ -150,43 +213,45 @@ begin
     return 0;
   end if;
 
-  select exists (
-      select 1
-      from pg_attribute
-      where attrelid = v_transfer_table
-        and attname = 'TipoTransferencia'
-        and not attisdropped
-    )
-    into v_has_tipo_transferencia;
+  v_buyer_col := public.app_transfer_column(v_transfer_table, array['Comprador', 'buyer', 'comprador']);
+  v_status_col := public.app_transfer_column(v_transfer_table, array['Status', 'status']);
+  v_timestamp_col := public.app_transfer_column(v_transfer_table, array['Timestamp', 'created_at', 'createdAt', 'Data']);
+  v_type_col := public.app_transfer_column(v_transfer_table, array['TipoTransferencia', 'Tipo Transferencia', 'transferType', 'transfer_type']);
 
-  if v_has_tipo_transferencia then
-    v_type_filter := 'and lower(coalesce("TipoTransferencia"::text, ''market'')) <> ''internal''';
+  if v_buyer_col is null or v_status_col is null or v_timestamp_col is null then
+    return 0;
+  end if;
+
+  if v_type_col is not null then
+    v_type_filter := format('and lower(coalesce(%s::text, ''market'')) <> ''internal''', v_type_col);
   end if;
 
   select format_type(a.atttypid, a.atttypmod)
     into v_timestamp_type
   from pg_attribute a
   where a.attrelid = v_transfer_table
-    and a.attname = 'Timestamp'
+    and quote_ident(a.attname) = v_timestamp_col
     and not a.attisdropped;
 
   if coalesce(v_timestamp_type, '') like 'timestamp%' or coalesce(v_timestamp_type, '') = 'date' then
-    v_date_filter := 'and "Timestamp"::date = current_date';
+    v_date_filter := format('and %s::date = current_date', v_timestamp_col);
   else
-    v_date_filter := 'and (
-      "Timestamp"::text like to_char(current_date, ''YYYY-MM-DD'') || ''%''
-      or "Timestamp"::text like to_char(current_date, ''DD/MM/YYYY'') || ''%''
-    )';
+    v_date_filter := format('and (
+      %1$s::text like to_char(current_date, ''YYYY-MM-DD'') || ''%%''
+      or %1$s::text like to_char(current_date, ''DD/MM/YYYY'') || ''%%''
+    )', v_timestamp_col);
   end if;
 
   execute format(
     'select count(*)::integer
        from %s
-      where lower(coalesce("Status"::text, '''')) = ''aprovado''
-        and lower("Comprador"::text) = lower($1)
+      where lower(coalesce(%s::text, '''')) = ''aprovado''
+        and lower(%s::text) = lower($1)
         %s
         %s',
     v_transfer_table,
+    v_status_col,
+    v_buyer_col,
     v_date_filter,
     v_type_filter
   )
@@ -215,6 +280,17 @@ set search_path = public
 as $$
 declare
   v_transfer_table regclass;
+  v_buyer_col text;
+  v_player_col text;
+  v_origin_col text;
+  v_overall_col text;
+  v_market_value_col text;
+  v_final_value_col text;
+  v_status_col text;
+  v_timestamp_col text;
+  v_timestamp_type text := '';
+  v_timestamp_value_expr text := 'now()';
+  v_type_col text;
 begin
   v_transfer_table := public.app_find_transfer_table();
   if v_transfer_table is null then
@@ -225,26 +301,72 @@ begin
   execute format('alter table %s add column if not exists "Vendedor" text', v_transfer_table);
   execute format('alter table %s add column if not exists "ValorNegociado" numeric', v_transfer_table);
   execute format('alter table %s add column if not exists "ValorFinal" numeric', v_transfer_table);
+  execute format('alter table %s add column if not exists "ClubeOrigem" text', v_transfer_table);
+  execute format('alter table %s add column if not exists "Overall" integer', v_transfer_table);
+  execute format('alter table %s add column if not exists "ValorTransfermarkt" numeric', v_transfer_table);
+
+  v_buyer_col := public.app_transfer_column(v_transfer_table, array['Comprador', 'buyer', 'comprador']);
+  v_player_col := public.app_transfer_column(v_transfer_table, array['Jogador', 'player', 'jogador']);
+  v_origin_col := public.app_transfer_column(v_transfer_table, array['ClubeOrigem', 'Clube Origem', 'fromClub', 'from_club']);
+  v_overall_col := public.app_transfer_column(v_transfer_table, array['Overall', 'overall']);
+  v_market_value_col := public.app_transfer_column(v_transfer_table, array['ValorTransfermarkt', 'Valor Transfermarkt', 'marketValue', 'market_value']);
+  v_final_value_col := public.app_transfer_column(v_transfer_table, array['ValorFinal', 'Valor Final', 'finalValue', 'final_value']);
+  v_status_col := public.app_transfer_column(v_transfer_table, array['Status', 'status']);
+  v_timestamp_col := public.app_transfer_column(v_transfer_table, array['Timestamp', 'created_at', 'createdAt', 'Data']);
+  v_type_col := public.app_transfer_column(v_transfer_table, array['TipoTransferencia', 'Tipo Transferencia', 'transferType', 'transfer_type']);
+
+  if v_buyer_col is null
+     or v_player_col is null
+     or v_origin_col is null
+     or v_overall_col is null
+     or v_market_value_col is null
+     or v_final_value_col is null
+     or v_status_col is null
+     or v_timestamp_col is null
+     or v_type_col is null then
+    return jsonb_build_object('ok', false, 'message', 'Tabela de transferencias encontrada, mas faltam colunas esperadas.');
+  end if;
+
+  select format_type(a.atttypid, a.atttypmod)
+    into v_timestamp_type
+  from pg_attribute a
+  where a.attrelid = v_transfer_table
+    and quote_ident(a.attname) = v_timestamp_col
+    and not a.attisdropped;
+
+  if coalesce(v_timestamp_type, '') not like 'timestamp%' and coalesce(v_timestamp_type, '') <> 'date' then
+    v_timestamp_value_expr := quote_literal(to_char(now(), 'DD/MM/YYYY, HH24:MI'));
+  end if;
 
   execute format(
     'insert into %s (
-       "Comprador",
-       "Jogador",
-       "ClubeOrigem",
-       "Overall",
-       "ValorTransfermarkt",
-       "ValorFinal",
-       "Status",
-       "Timestamp",
-       "TipoTransferencia"
-     ) values (%L, %L, %L, %s, %s, %s, ''aprovado'', now(), ''market'')',
+       %s,
+       %s,
+       %s,
+       %s,
+       %s,
+       %s,
+       %s,
+       %s,
+       %s
+     ) values (%L, %L, %L, %s, %s, %s, ''aprovado'', %s, ''market'')',
     v_transfer_table,
+    v_buyer_col,
+    v_player_col,
+    v_origin_col,
+    v_overall_col,
+    v_market_value_col,
+    v_final_value_col,
+    v_status_col,
+    v_timestamp_col,
+    v_type_col,
     p_buyer,
     p_player,
     p_from_club,
     coalesce(p_overall, 0),
     coalesce(p_market_value, 0),
-    coalesce(p_final_value, 0)
+    coalesce(p_final_value, 0),
+    v_timestamp_value_expr
   );
 
   return jsonb_build_object(
