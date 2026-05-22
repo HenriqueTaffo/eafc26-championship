@@ -107,6 +107,39 @@ App.transfers = {
       avatar_url: "https://upload.wikimedia.org/wikipedia/commons/thumb/4/41/Henrikh_Mkhitaryan_2017.jpg/250px-Henrikh_Mkhitaryan_2017.jpg",
       source_url: "https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/henrikh-mkhitaryan/192883",
       source_name: "EA SPORTS FC official ratings + Wikimedia photo"
+    },
+    "reinildo mandava": {
+      name: "Reinildo Mandava",
+      club: "Sunderland",
+      position: "LB",
+      nation: "Mozambique",
+      overall: 79,
+      gender: "Men's Football",
+      avatar_url: "https://upload.wikimedia.org/wikipedia/commons/thumb/8/82/Reinildo_Mandava_%28cropped%29.jpg/250px-Reinildo_Mandava_%28cropped%29.jpg",
+      source_url: "https://www.ea.com/fi/games/ea-sports-fc/ratings/player-ratings/reinildo/236045",
+      source_name: "EA SPORTS FC official ratings + Wikimedia photo"
+    },
+    "reinildo isnard mandava": {
+      name: "Reinildo Mandava",
+      club: "Sunderland",
+      position: "LB",
+      nation: "Mozambique",
+      overall: 79,
+      gender: "Men's Football",
+      avatar_url: "https://upload.wikimedia.org/wikipedia/commons/thumb/8/82/Reinildo_Mandava_%28cropped%29.jpg/250px-Reinildo_Mandava_%28cropped%29.jpg",
+      source_url: "https://www.ea.com/fi/games/ea-sports-fc/ratings/player-ratings/reinildo/236045",
+      source_name: "EA SPORTS FC official ratings + Wikimedia photo"
+    },
+    "reinildo": {
+      name: "Reinildo Mandava",
+      club: "Sunderland",
+      position: "LB",
+      nation: "Mozambique",
+      overall: 79,
+      gender: "Men's Football",
+      avatar_url: "https://upload.wikimedia.org/wikipedia/commons/thumb/8/82/Reinildo_Mandava_%28cropped%29.jpg/250px-Reinildo_Mandava_%28cropped%29.jpg",
+      source_url: "https://www.ea.com/fi/games/ea-sports-fc/ratings/player-ratings/reinildo/236045",
+      source_name: "EA SPORTS FC official ratings + Wikimedia photo"
     }
   },
 
@@ -171,7 +204,9 @@ App.transfers = {
       "cristiano ronaldo": ["Cristiano Ronaldo dos Santos Aveiro"],
       "leandro paredes": ["Leandro Paredes"],
       "dybala": ["Paulo Dybala"],
-      "mkhitaryan": ["Henrikh Mkhitaryan"]
+      "mkhitaryan": ["Henrikh Mkhitaryan"],
+      "reinildo": ["Reinildo Mandava", "Reinildo Isnard Mandava"],
+      "reinildo mandava": ["Reinildo", "Reinildo Isnard Mandava"]
     };
 
     return [playerName, ...(aliases[normalized] || [])].filter(Boolean);
