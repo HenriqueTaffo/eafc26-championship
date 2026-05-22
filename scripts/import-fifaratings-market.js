@@ -13,9 +13,17 @@ const PLAYER_SLUG_ALIASES = {
   "mbappe": ["kylian-mbappe"],
   "dembele": ["ousmane-dembele"],
   "ruben-dias": ["ruben-santos-gato-alves-dias"],
+  "rodrigo-de-paul": ["rodrigo-javier-de-paul"],
+  "kyle-walker": ["kyle-andrew-walker"],
   "neymar": ["neymar-jr"],
   "ronaldo": ["cristiano-ronaldo"]
 };
+const PLAYER_SLUG_REJECTS = {
+  "kyle-walker": ["kyle-walker-peters"]
+};
+const SUPABASE_PAGE_SIZE = 1000;
+const RATING_FETCH_CONCURRENCY = 12;
+const RATING_FETCH_TIMEOUT_MS = 8000;
 
 function getConfigValue(source, key) {
   const match = source.match(new RegExp(`${key}:\\s*"([^"]+)"`));
@@ -38,6 +46,15 @@ function slugify(value) {
     .replace(/[^a-zA-Z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "")
     .toLowerCase();
+}
+
+function similarity(a, b) {
+  const left = slugify(a).split("-").filter(Boolean);
+  const right = slugify(b).split("-").filter(Boolean);
+  if (!left.length || !right.length) return 0;
+  const leftSet = new Set(left);
+  const overlap = right.filter(part => leftSet.has(part)).length;
+  return overlap / Math.max(left.length, right.length);
 }
 
 function htmlDecode(value) {
@@ -74,7 +91,11 @@ function parseFifaRatingsPage(html, fallbackName, url) {
   const defending = toInt(html.match(/Defending Rating:\s*(\d+)/i)?.[1]);
   const physical = toInt(html.match(/Physicality Rating:\s*(\d+)/i)?.[1]);
 
+  const fallbackSlug = slugify(fallbackName);
+  const titleSlug = slugify(title);
   if (!overall || !avatarUrl || /women|femin/i.test(html)) return null;
+  if ((PLAYER_SLUG_REJECTS[fallbackSlug] || []).includes(titleSlug)) return null;
+  if (similarity(title, fallbackName) < 0.45) return null;
 
   return {
     ea_id: `fifaratings:${slugify(title)}`,
@@ -98,12 +119,65 @@ function parseFifaRatingsPage(html, fallbackName, url) {
 }
 
 async function fetchMarketPlayers(supabaseUrl, supabaseKey, limit) {
-  const response = await fetch(
-    `${supabaseUrl}/rest/v1/players_market?select=name,club,position,market_value_eur&order=market_value_eur.desc.nullslast&limit=${limit}`,
-    { headers: { apikey: supabaseKey, Authorization: `Bearer ${supabaseKey}` } }
-  );
-  if (!response.ok) throw new Error(await response.text());
-  return response.json();
+  const shouldImportAll = process.argv.includes("--all");
+  const marketPlayers = [];
+  let offset = 0;
+
+  while (true) {
+    const remaining = shouldImportAll ? SUPABASE_PAGE_SIZE : Math.min(SUPABASE_PAGE_SIZE, limit - marketPlayers.length);
+    if (remaining <= 0) break;
+
+    const response = await fetch(
+      `${supabaseUrl}/rest/v1/players_market?select=name,club,position,market_value_eur&order=market_value_eur.desc.nullslast&limit=${remaining}&offset=${offset}`,
+      { headers: { apikey: supabaseKey, Authorization: `Bearer ${supabaseKey}` } }
+    );
+    if (!response.ok) throw new Error(await response.text());
+    const page = await response.json();
+    marketPlayers.push(...page);
+    if (page.length < remaining) break;
+    offset += page.length;
+  }
+
+  const appDataResponse = await fetch(`${supabaseUrl}/rest/v1/rpc/app_get_data`, {
+    method: "POST",
+    headers: {
+      apikey: supabaseKey,
+      Authorization: `Bearer ${supabaseKey}`,
+      "Content-Type": "application/json"
+    },
+    body: "{}"
+  });
+  const appData = appDataResponse.ok ? await appDataResponse.json() : {};
+  const transferPlayers = (appData.transfers || []).map(item => ({
+    name: item.Jogador,
+    club: item.ClubeOrigem,
+    position: "",
+    market_value_eur: Number(item.ValorTransfermarkt || 0)
+  }));
+
+  const byName = [...marketPlayers, ...transferPlayers].reduce((acc, item) => {
+    const key = slugify(item.name);
+    if (key && !acc[key]) acc[key] = item;
+    return acc;
+  }, {});
+
+  return Object.values(byName);
+}
+
+async function fetchRatingsForPlayers(marketPlayers) {
+  const players = [];
+
+  for (let index = 0; index < marketPlayers.length; index += RATING_FETCH_CONCURRENCY) {
+    const batch = marketPlayers.slice(index, index + RATING_FETCH_CONCURRENCY);
+    const ratings = await Promise.all(batch.map(player => fetchRatingForPlayer(player)));
+    players.push(...ratings.filter(Boolean));
+    const processed = Math.min(index + RATING_FETCH_CONCURRENCY, marketPlayers.length);
+    if (processed % 120 === 0 || processed === marketPlayers.length) {
+      console.error(`Processados ${processed}/${marketPlayers.length}; encontrados ${players.length}.`);
+    }
+  }
+
+  return players;
 }
 
 async function fetchRatingForPlayer(player) {
@@ -113,29 +187,28 @@ async function fetchRatingForPlayer(player) {
 
   for (const candidate of slugs) {
     const url = `https://www.fifaratings.com/${candidate}`;
-    const response = await fetch(url);
-    if (!response.ok) continue;
-    const html = await response.text();
-    if (!html.includes("FC 26 Rating")) continue;
-    const parsed = parseFifaRatingsPage(html, player.name, url);
-    if (parsed) return parsed;
+    try {
+      const response = await fetch(url, { signal: AbortSignal.timeout(RATING_FETCH_TIMEOUT_MS) });
+      if (!response.ok) continue;
+      const html = await response.text();
+      if (!html.includes("FC 26 Rating")) continue;
+      const parsed = parseFifaRatingsPage(html, player.name, url);
+      if (parsed) return parsed;
+    } catch {
+      continue;
+    }
   }
 
   return null;
 }
 
 async function main() {
-  const limit = Math.max(1, Math.min(Number(getArg("--limit", "80")) || 80, 300));
+  const limit = Math.max(1, Math.min(Number(getArg("--limit", "80")) || 80, 2000));
   const configSource = fs.readFileSync(path.join(ROOT_DIR, "js/config.js"), "utf8");
   const supabaseUrl = process.env.SUPABASE_URL || getConfigValue(configSource, "SUPABASE_URL");
   const supabaseKey = process.env.SUPABASE_PUBLISHABLE_KEY || getConfigValue(configSource, "SUPABASE_PUBLISHABLE_KEY");
   const marketPlayers = await fetchMarketPlayers(supabaseUrl, supabaseKey, limit);
-  const players = [];
-
-  for (const player of marketPlayers) {
-    const rating = await fetchRatingForPlayer(player);
-    if (rating) players.push(rating);
-  }
+  const players = await fetchRatingsForPlayers(marketPlayers);
 
   if (DRY_RUN) {
     console.log(JSON.stringify({
