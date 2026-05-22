@@ -978,7 +978,6 @@ App.transfers = {
     App.transfers.renderBudgetBoard();
     App.transfers.renderInsights();
     App.transfers.renderMarketPlayerResults();
-    App.transfers.renderEaRatingResults(document.getElementById("eaRatingSearch")?.value || "");
 
     const table = document.getElementById("transferTable");
     const mobile = document.getElementById("transferMobile");
