@@ -432,6 +432,7 @@ begin
   from pg_attribute a
   where a.attrelid = v_transfer_table
     and not a.attisdropped
+    and a.attgenerated = ''
     and a.attname in ('overall', 'rating', 'ovr')
   order by array_position(array['overall', 'rating', 'ovr'], a.attname::text)
   limit 1;
@@ -441,6 +442,7 @@ begin
   from pg_attribute a
   where a.attrelid = v_transfer_table
     and not a.attisdropped
+    and a.attgenerated = ''
     and a.attname in ('market_value', 'marketValue', 'market_value_eur')
   order by array_position(array['market_value', 'marketValue', 'market_value_eur'], a.attname::text)
   limit 1;
@@ -450,6 +452,7 @@ begin
   from pg_attribute a
   where a.attrelid = v_transfer_table
     and not a.attisdropped
+    and a.attgenerated = ''
     and a.attname in ('final_value', 'finalValue', 'total_cost')
   order by array_position(array['final_value', 'finalValue', 'total_cost'], a.attname::text)
   limit 1;
@@ -459,6 +462,7 @@ begin
   from pg_attribute a
   where a.attrelid = v_transfer_table
     and not a.attisdropped
+    and a.attgenerated = ''
     and a.attname = 'status'
   limit 1;
 
@@ -467,6 +471,7 @@ begin
   from pg_attribute a
   where a.attrelid = v_transfer_table
     and not a.attisdropped
+    and a.attgenerated = ''
     and a.attname in ('transfer_type', 'transferType')
   order by array_position(array['transfer_type', 'transferType'], a.attname::text)
   limit 1;
