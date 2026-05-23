@@ -419,8 +419,23 @@ App.governance = {
     const rows = (App.state.apiTransfers || [])
       .filter((item) => App.transfers.isApprovedTransferStatus(item.Status || item.status))
       .slice()
-      .sort((a, b) => new Date(b.Timestamp || b.created_at || 0) - new Date(a.Timestamp || a.created_at || 0))
-      .slice(0, 8);
+      .sort((a, b) => {
+        const buyerA = App.utils.normalizeText(a.Comprador || a.buyer || "");
+        const buyerB = App.utils.normalizeText(b.Comprador || b.buyer || "");
+        if (buyerA !== buyerB) return buyerA.localeCompare(buyerB);
+        return new Date(b.Timestamp || b.created_at || 0) - new Date(a.Timestamp || a.created_at || 0);
+      });
+    const ownerOrder = App.utils.getHumanBuyers();
+    const groupedRows = rows.reduce((groups, item) => {
+      const buyer = item.Comprador || item.buyer || "Sem técnico";
+      groups[buyer] = groups[buyer] || [];
+      groups[buyer].push(item);
+      return groups;
+    }, {});
+    const groupNames = [
+      ...ownerOrder.filter(owner => groupedRows[owner]),
+      ...Object.keys(groupedRows).filter(owner => !ownerOrder.includes(owner)).sort()
+    ];
 
     return `
       <article class="commissioner-card commissioner-transfer-reversal-card">
@@ -429,28 +444,37 @@ App.governance = {
             <span class="modal-kicker">Correções de mercado</span>
             <h2>Desfazer transferência</h2>
           </div>
-          <span class="coach-section-kicker">${rows.length} recente(s)</span>
+          <span class="coach-section-kicker">${rows.length} disponível(is)</span>
         </div>
-        <div class="commissioner-list transfer-reversal-list">
-          ${rows.length ? rows.map(item => {
-            const transferId = item.id || item.Id || item.ID || "";
-            const timestamp = item.Timestamp || item.created_at || "";
-            return `
-              <div>
-                <strong>${App.utils.escapeHtml(item.Jogador || item.player || "-")} · ${App.utils.escapeHtml(item.Comprador || item.buyer || "-")}</strong>
-                <span>${App.utils.escapeHtml(item.ClubeOrigem || item.fromClub || "-")} · ${App.utils.formatCurrency(Number(item.ValorFinal || item.ValorTransfermarkt || 0))}</span>
-                ${canAct ? `<button class="mini-action-button danger" type="button"
-                  data-reverse-transfer
-                  data-transfer-id="${App.utils.escapeHtml(String(transferId))}"
-                  data-transfer-buyer="${App.utils.escapeHtml(item.Comprador || item.buyer || "")}"
-                  data-transfer-player="${App.utils.escapeHtml(item.Jogador || item.player || "")}"
-                  data-transfer-from="${App.utils.escapeHtml(item.ClubeOrigem || item.fromClub || "")}"
-                  data-transfer-timestamp="${App.utils.escapeHtml(String(timestamp))}">Desfazer</button>` : ""}
-              </div>
-            `;
-          }).join("") : `<p class="calendar-muted">Nenhuma transferência aprovada recente.</p>`}
-        </div>
-        ${canAct ? `<p class="calendar-muted">A reversão marca a transferência como desfeita e libera o jogador para nova contratação.</p>` : `<p class="calendar-muted">Faça login como Comissário da Liga para desfazer transferências.</p>`}
+        ${canAct && rows.length ? `
+          <form class="commissioner-transfer-reversal-form" data-reverse-transfer-form>
+            <select name="transfer" required>
+              <option value="">Selecione uma transferência</option>
+              ${groupNames.map(groupName => `
+                <optgroup label="${App.utils.escapeHtml(groupName)}">
+                  ${groupedRows[groupName].map((item, index) => {
+                    const transferId = item.id || item.Id || item.ID || "";
+                    const timestamp = item.Timestamp || item.created_at || "";
+                    const player = item.Jogador || item.player || "-";
+                    const fromClub = item.ClubeOrigem || item.fromClub || "-";
+                    const value = Number(item.ValorFinal || item.ValorTransfermarkt || 0);
+                    return `<option
+                      value="${App.utils.escapeHtml(`${groupName}-${index}`)}"
+                      data-transfer-id="${App.utils.escapeHtml(String(transferId))}"
+                      data-transfer-buyer="${App.utils.escapeHtml(groupName)}"
+                      data-transfer-player="${App.utils.escapeHtml(player)}"
+                      data-transfer-from="${App.utils.escapeHtml(fromClub)}"
+                      data-transfer-timestamp="${App.utils.escapeHtml(String(timestamp))}">
+                      ${App.utils.escapeHtml(`${player} · ${fromClub} · ${App.utils.formatCurrency(value)}`)}
+                    </option>`;
+                  }).join("")}
+                </optgroup>
+              `).join("")}
+            </select>
+            <button class="secondary-button danger" type="submit">Desfazer</button>
+          </form>
+          <p class="calendar-muted">Ordenado por técnico. Escolha qualquer transferência aprovada sem abrir uma lista enorme no painel.</p>
+        ` : rows.length ? `<p class="calendar-muted">Faça login como Comissário da Liga para desfazer transferências.</p>` : `<p class="calendar-muted">Nenhuma transferência aprovada para desfazer.</p>`}
       </article>
     `;
   },
@@ -474,7 +498,7 @@ App.governance = {
           <input name="player" type="text" placeholder="Jogador do leilão" required />
           <input name="overall" type="number" min="1" max="99" placeholder="OVR" required />
           <input name="value" type="number" min="1" placeholder="Lance inicial" required />
-          <button type="submit">Abrir leilão</button>
+          <button class="secondary-button success" type="submit">Abrir leilão</button>
         </form>` : `<p class="calendar-muted">Faça login como Comissário da Liga para abrir leilões.</p>`}
         <div class="commissioner-list">
           ${auctions.length ? auctions.slice(0, 6).map(item => `
@@ -674,23 +698,29 @@ App.governance = {
       });
     });
 
-    root.querySelectorAll("[data-reverse-transfer]").forEach(button => {
-      if (button.dataset.bound === "true") return;
-      button.dataset.bound = "true";
-      button.addEventListener("click", async () => {
-        const player = button.dataset.transferPlayer || "jogador";
-        const buyer = button.dataset.transferBuyer || "comprador";
+    root.querySelectorAll("[data-reverse-transfer-form]").forEach(form => {
+      if (form.dataset.bound === "true") return;
+      form.dataset.bound = "true";
+      form.addEventListener("submit", async event => {
+        event.preventDefault();
+        const select = form.elements.transfer;
+        const option = select?.selectedOptions?.[0];
+        if (!option?.value) return;
+
+        const player = option.dataset.transferPlayer || "jogador";
+        const buyer = option.dataset.transferBuyer || "comprador";
         if (!window.confirm(`Desfazer a transferência de ${player} para ${buyer}?`)) return;
 
         try {
+          const button = form.querySelector("button");
           button.disabled = true;
           const result = await App.api.postToApi({
             action: "reverseTransfer",
-            transferId: button.dataset.transferId,
+            transferId: option.dataset.transferId,
             buyer,
             player,
-            fromClub: button.dataset.transferFrom || "",
-            timestamp: button.dataset.transferTimestamp || ""
+            fromClub: option.dataset.transferFrom || "",
+            timestamp: option.dataset.transferTimestamp || ""
           });
           if (result?.ok === false) throw new Error(result.message || "Transferência não foi desfeita.");
           await App.api.loadApiData({
@@ -702,6 +732,7 @@ App.governance = {
         } catch (error) {
           App.utils.setMessage(message, error.message, "error");
         } finally {
+          const button = form.querySelector("button");
           button.disabled = false;
         }
       });
