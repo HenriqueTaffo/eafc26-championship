@@ -156,6 +156,7 @@ as $$
         else 'Saudável'
       end as risk
     from managers m
+    cross join budgets
     left join payroll p on lower(p.manager_name) = lower(m.manager_name)
   )
   select coalesce(jsonb_agg(to_jsonb(rows) order by payroll_weekly desc), '[]'::jsonb)
