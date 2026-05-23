@@ -256,6 +256,83 @@ App.transfers = {
       source_url: "https://sofifa.com/player/263205/baris-alper-yilmaz",
       source_name: "SoFIFA FC 26 headshot",
     },
+    "hakan calhanoglu": {
+      name: "Hakan Çalhanoğlu",
+      club: "Football Club Internazionale Milano S.p.A.",
+      position: "CDM",
+      nation: "Turkey",
+      overall: 86,
+      gender: "Men's Football",
+      avatar_url: "https://cdn.sofifa.net/players/208/128/26_240.png",
+      source_url: "https://sofifa.com/player/208128/hakan-calhanoglu",
+      source_name: "SoFIFA FC 26 headshot",
+    },
+    "hakan çalhanoglu": {
+      name: "Hakan Çalhanoğlu",
+      club: "Football Club Internazionale Milano S.p.A.",
+      position: "CDM",
+      nation: "Turkey",
+      overall: 86,
+      gender: "Men's Football",
+      avatar_url: "https://cdn.sofifa.net/players/208/128/26_240.png",
+      source_url: "https://sofifa.com/player/208128/hakan-calhanoglu",
+      source_name: "SoFIFA FC 26 headshot",
+    },
+    "alvaro garcia": {
+      name: "Álvaro García",
+      club: "Rayo Vallecano de Madrid S.A.D.",
+      position: "LM",
+      nation: "Spain",
+      overall: 81,
+      gender: "Men's Football",
+      avatar_url: "https://cdn.sofifa.net/players/216/447/26_240.png",
+      source_url: "https://sofifa.com/player/216447/alvaro-garcia-rivera",
+      source_name: "SoFIFA FC 26 headshot",
+    },
+    "alvaro garcia rivera": {
+      name: "Álvaro García",
+      club: "Rayo Vallecano de Madrid S.A.D.",
+      position: "LM",
+      nation: "Spain",
+      overall: 81,
+      gender: "Men's Football",
+      avatar_url: "https://cdn.sofifa.net/players/216/447/26_240.png",
+      source_url: "https://sofifa.com/player/216447/alvaro-garcia-rivera",
+      source_name: "SoFIFA FC 26 headshot",
+    },
+    "neymar": {
+      name: "Neymar Jr",
+      club: "Santos Futebol Clube",
+      position: "CAM",
+      nation: "Brazil",
+      overall: 82,
+      gender: "Men's Football",
+      avatar_url: "https://cdn.sofifa.net/players/190/871/25_240.png",
+      source_url: "https://sofifa.com/player/190871/neymar-da-silva-santos-jr",
+      source_name: "SoFIFA headshot fallback",
+    },
+    "neymar jr": {
+      name: "Neymar Jr",
+      club: "Santos Futebol Clube",
+      position: "CAM",
+      nation: "Brazil",
+      overall: 82,
+      gender: "Men's Football",
+      avatar_url: "https://cdn.sofifa.net/players/190/871/25_240.png",
+      source_url: "https://sofifa.com/player/190871/neymar-da-silva-santos-jr",
+      source_name: "SoFIFA headshot fallback",
+    },
+    "isco": {
+      name: "Isco",
+      club: "Real Betis",
+      position: "CAM",
+      nation: "Spain",
+      overall: 84,
+      gender: "Men's Football",
+      avatar_url: "https://cdn.sofifa.net/players/197/781/26_240.png",
+      source_url: "https://sofifa.com/player/197781/francisco-roman-alarcon-suarez",
+      source_name: "SoFIFA FC 26 headshot",
+    },
     "nicolas pepe": {
       name: "Nicolas Pépé",
       club: "Villarreal Club de Fútbol S.A.D.",
@@ -464,17 +541,51 @@ App.transfers = {
     return App.transfers.applyManualRatingFallback(selected, player?.name);
   },
 
+  getPlayerAvatarCandidates(player, rating = null) {
+    const manual = App.transfers.getManualPlayerRating(player?.name || rating?.name);
+    const candidates = [
+      rating?.avatar_url,
+      manual?.avatar_url,
+      player?.avatar_url,
+      App.transfers.getMarketPlayerAvatar(player),
+    ]
+      .filter(App.transfers.isUsablePlayerAvatar)
+      .map((url) => String(url).trim());
+
+    return [...new Set(candidates)];
+  },
+
+  handlePlayerPhotoError(image) {
+    const candidates = (() => {
+      try {
+        return JSON.parse(decodeURIComponent(image.dataset.avatarCandidates || "[]"));
+      } catch (_) {
+        return [];
+      }
+    })();
+    const nextIndex = Number(image.dataset.avatarIndex || 0) + 1;
+    const nextAvatar = candidates[nextIndex];
+
+    if (nextAvatar) {
+      image.dataset.avatarIndex = String(nextIndex);
+      image.src = nextAvatar;
+      return;
+    }
+
+    image.parentElement?.classList.remove("has-player-image");
+    image.remove();
+  },
+
   renderPlayerPhoto(player, rating = null, className = "market-player-photo") {
-    const avatar = App.transfers.isUsablePlayerAvatar(rating?.avatar_url)
-      ? rating.avatar_url
-      : App.transfers.isUsablePlayerAvatar(player?.avatar_url)
-        ? player.avatar_url
-        : App.transfers.getMarketPlayerAvatar(player);
+    const avatarCandidates = App.transfers.getPlayerAvatarCandidates(player, rating);
+    const avatar = avatarCandidates[0] || "";
     const name = player?.name || rating?.name || "?";
     const fallback = App.utils.escapeHtml(String(name).charAt(0));
+    const encodedCandidates = encodeURIComponent(JSON.stringify(avatarCandidates));
+
     return `
       <span class="${className} ${avatar ? "has-player-image" : ""}">
-        ${avatar ? `<img src="${App.utils.escapeHtml(avatar)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.parentElement.classList.remove('has-player-image'); this.remove();" />` : ""}
+        ${avatar ? `<img src="${App.utils.escapeHtml(avatar)}" alt="" loading="lazy" referrerpolicy="no-referrer" data-avatar-candidates="${encodedCandidates}" data-avatar-index="0" onerror="App.transfers.handlePlayerPhotoError(this)" />` : ""}
         <i>${fallback}</i>
       </span>
     `;

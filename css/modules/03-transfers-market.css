@@ -757,6 +757,8 @@
   color: #bfdbfe;
   font-style: normal;
   font-weight: 900;
+  line-height: 1;
+  text-transform: uppercase;
 }
 
 .market-player-photo.has-player-image i,
@@ -834,6 +836,12 @@
   color: #bfdbfe;
   font-style: normal;
   font-weight: 900;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.movement-player .player-avatar i {
+  font-size: 18px;
 }
 
 .player-identity-copy {
