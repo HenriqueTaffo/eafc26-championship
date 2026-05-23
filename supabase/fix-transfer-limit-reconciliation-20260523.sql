@@ -120,7 +120,6 @@ as $$
         0,
         coalesce((rb.budget ->> 'spentTotal')::numeric, 0)
         - coalesce((ts.totals -> t.manager_name ->> 'nonApprovedMarketTotal')::numeric, 0)
-        + coalesce((ts.totals -> t.manager_name ->> 'deltaTotal')::numeric, 0)
       ) as spent_total,
       coalesce((rb.budget ->> 'transferModifier')::integer, 0) as transfer_modifier,
       coalesce((rb.budget ->> 'transferLimit')::integer, 3) as transfer_limit

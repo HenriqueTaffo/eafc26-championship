@@ -101,8 +101,8 @@ update public.transfers
    set overall = 84,
        "Overall" = 84,
        overall_rate = 0.15,
-       final_value = 32200000,
        "ValorFinal" = 32200000,
+       "ValorTransfermarkt" = 28000000,
        updated_at = now()
  where id = 73
    and lower(coalesce("Comprador", '')) = lower('Bruno Silva')
