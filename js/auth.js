@@ -929,11 +929,12 @@ App.auth = {
               const toneClass = cadence === "monthly" ? "monthly" : cadence === "weekly" ? "weekly" : "goal";
 
               return `
-                <div class="sponsor-active-item sponsor-active-item-${toneClass}">
-                  <div class="sponsor-card-top">
-                    <span>${App.utils.escapeHtml(item.category || "Patrocínio")}</span>
-                    <b>${App.utils.escapeHtml(item.deal_style || item.dealStyle || item.risk_level || item.riskLevel || "Contrato ativo")}</b>
-                  </div>
+              <div class="sponsor-active-item sponsor-active-item-${toneClass}">
+                <div class="sponsor-card-top">
+                  <span>${App.utils.escapeHtml(item.category || "Patrocínio")}</span>
+                  <b class="sponsor-cadence-badge ${App.auth.getSponsorshipCadenceClass(item)}">${App.utils.escapeHtml(App.auth.getSponsorshipCadenceLabel(item))}</b>
+                  <b>${App.utils.escapeHtml(item.deal_style || item.dealStyle || item.risk_level || item.riskLevel || "Contrato ativo")}</b>
+                </div>
                   <strong>${App.utils.escapeHtml(item.title)}</strong>
                   <em>${App.utils.escapeHtml(item.sponsor_name || item.sponsorName)}</em>
                   <div class="sponsor-value-strip">
@@ -977,15 +978,32 @@ App.auth = {
                   <span>${offersByCategory[category].length} proposta(s)</span>
                 </div>
                 <div class="sponsor-offer-grid">
-                  ${offersByCategory[category].map(offer => {
+                  ${offersByCategory[category]
+                    .slice()
+                    .sort((a, b) => {
+                      const priority = item => {
+                        const cadence = App.auth.getSponsorshipCadence(item);
+                        if (cadence === "monthly") return 0;
+                        if (cadence === "weekly") return 1;
+                        return 2;
+                      };
+                      const cadenceDiff = priority(a) - priority(b);
+                      if (cadenceDiff !== 0) return cadenceDiff;
+                      return (Number(b.rewardValue || b.reward_value || 0) + Number(b.signingBonus || b.signing_bonus || 0))
+                        - (Number(a.rewardValue || a.reward_value || 0) + Number(a.signingBonus || a.signing_bonus || 0));
+                    })
+                    .map(offer => {
                     const cadence = App.auth.getSponsorshipCadence(offer);
                     const totalValue = App.auth.getSponsorshipTotalValue(offer);
                     const toneClass = cadence === "monthly" ? "monthly" : cadence === "weekly" ? "weekly" : "goal";
+                    const cadenceLabel = App.auth.getSponsorshipCadenceLabel(offer);
+                    const cadenceClass = App.auth.getSponsorshipCadenceClass(offer);
 
                     return `
                       <article class="sponsor-offer-card sponsor-offer-card-${toneClass}">
                         <div class="sponsor-card-top">
                           <span>${App.utils.escapeHtml(offer.riskLevel || "Meta comercial")}</span>
+                          <b class="sponsor-cadence-badge ${cadenceClass}">${App.utils.escapeHtml(cadenceLabel)}</b>
                           <b>${App.utils.escapeHtml(offer.dealStyle || App.auth.getSponsorshipFrequencyLabel(offer))}</b>
                         </div>
                         <strong>${App.utils.escapeHtml(offer.title)}</strong>
@@ -1016,7 +1034,7 @@ App.auth = {
                         </button>
                       </article>
                     `;
-                  }).join("")}
+                    }).join("")}
                 </div>
               </section>
             `).join("")}
@@ -1072,6 +1090,19 @@ App.auth = {
     if (cadence === "weekly") return "por semana";
     if (cadence === "monthly") return "por mês";
     return "por meta";
+  },
+
+  getSponsorshipCadenceLabel(item = {}) {
+    const cadence = App.auth.getSponsorshipCadence(item);
+    if (cadence === "weekly") return "Semanal";
+    if (cadence === "monthly") return "Mensal";
+    return "Meta";
+  },
+
+  getSponsorshipCadenceClass(item = {}) {
+    const cadence = App.auth.getSponsorshipCadence(item);
+    if (cadence === "weekly" || cadence === "monthly") return cadence;
+    return "goal";
   },
 
   getSponsorshipTotalValue(item = {}) {

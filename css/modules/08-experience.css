@@ -310,6 +310,26 @@
   white-space: nowrap;
 }
 
+.sponsor-cadence-badge.monthly {
+  border-color: rgba(96, 165, 250, .38);
+  color: #dbeafe;
+  background: rgba(37, 99, 235, .28);
+  box-shadow: 0 0 0 1px rgba(96, 165, 250, .12) inset;
+}
+
+.sponsor-cadence-badge.weekly {
+  border-color: rgba(45, 212, 191, .38);
+  color: #cffafe;
+  background: rgba(6, 182, 212, .18);
+  box-shadow: 0 0 0 1px rgba(45, 212, 191, .16) inset;
+}
+
+.sponsor-cadence-badge.goal {
+  border-color: rgba(134, 239, 172, .28);
+  color: #dcfce7;
+  background: rgba(22, 163, 74, .18);
+}
+
 .sponsor-active-item strong,
 .sponsor-offer-card strong {
   display: block;
