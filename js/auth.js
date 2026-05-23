@@ -108,8 +108,33 @@ App.auth = {
     await App.governance?.loadData?.();
     await App.auth.loadPublicNews();
     App.auth.renderAll();
+    App.auth.openSessionHome();
 
     return result;
+  },
+
+  openSessionHome() {
+    const session = App.auth.getSession();
+    if (!session) return;
+
+    if (session.isCommissioner) {
+      App.main?.switchToView?.("commissionerView");
+      return;
+    }
+
+    const filter = document.getElementById("playersFilter");
+    if (filter) {
+      filter.value = session.managerName;
+      localStorage.setItem("mml-filter-playersFilter", session.managerName);
+    }
+
+    const search = document.getElementById("playersSearchInput");
+    if (search) {
+      search.value = "";
+      localStorage.setItem("mml-filter-playersSearchInput", "");
+    }
+
+    App.main?.switchToView?.("playersView");
   },
 
   logout() {
@@ -124,6 +149,7 @@ App.auth = {
     App.auth.myNotifications = [];
     localStorage.removeItem(App.auth.storageKey);
     App.auth.renderAll();
+    App.main?.renderCurrentView?.();
   },
 
   async loadPublicNews() {
