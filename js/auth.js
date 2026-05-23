@@ -921,20 +921,48 @@ App.auth = {
 
         ${active.length ? `
           <div class="sponsor-active-list">
-            ${active.map(item => `
-              <div class="sponsor-active-item">
-                <span>${App.utils.escapeHtml(item.category || "Patrocínio")}</span>
-                <strong>${App.utils.escapeHtml(item.title)}</strong>
-                <small>${App.utils.escapeHtml(item.sponsor_name)} · ${Number(item.claims_used || 0)}/${Number(item.max_claims || 0)} bônus pagos · ${App.utils.formatCurrency(item.reward_value)}</small>
-                <p class="sponsor-condition-line">
-                  Critério: ${App.utils.escapeHtml(App.auth.getSponsorshipConditionLabel(item))}
-                  ${Number(item.termination_fee || 0) > 0 ? ` · multa atual ${App.utils.formatCurrency(item.termination_fee)}` : ""}
-                </p>
-                ${App.auth.renderSponsorshipPaymentSchedule(item)}
-              </div>
-            `).join("")}
+            ${active.map(item => {
+              const cadence = App.auth.getSponsorshipCadence(item);
+              const claimLabel = cadence ? "parcelas" : "bônus";
+              const paidTotal = Number(item.paid_total || item.paidTotal || 0);
+              const signingPaidAt = App.auth.parseSponsorshipDate(item.signing_paid_at || item.signingPaidAt);
+              const toneClass = cadence === "monthly" ? "monthly" : cadence === "weekly" ? "weekly" : "goal";
+
+              return `
+                <div class="sponsor-active-item sponsor-active-item-${toneClass}">
+                  <div class="sponsor-card-top">
+                    <span>${App.utils.escapeHtml(item.category || "Patrocínio")}</span>
+                    <b>${App.utils.escapeHtml(item.deal_style || item.dealStyle || item.risk_level || item.riskLevel || "Contrato ativo")}</b>
+                  </div>
+                  <strong>${App.utils.escapeHtml(item.title)}</strong>
+                  <em>${App.utils.escapeHtml(item.sponsor_name || item.sponsorName)}</em>
+                  <div class="sponsor-value-strip">
+                    <div>
+                      <span>Luva</span>
+                      <strong>${App.utils.formatCurrency(item.signing_bonus || item.signingBonus || 0)}</strong>
+                      <small>${signingPaidAt ? `paga em ${App.utils.formatDate(signingPaidAt)}` : "pagamento inicial"}</small>
+                    </div>
+                    <div>
+                      <span>${cadence ? "Parcela" : "Bônus"}</span>
+                      <strong>${App.utils.formatCurrency(item.reward_value || item.rewardValue || 0)}</strong>
+                      <small>${App.auth.getSponsorshipFrequencyLabel(item)}</small>
+                    </div>
+                    <div>
+                      <span>Total pago</span>
+                      <strong>${App.utils.formatCurrency(paidTotal)}</strong>
+                      <small>${Number(item.claims_used || 0)}/${Number(item.max_claims || 0)} ${claimLabel}</small>
+                    </div>
+                  </div>
+                  <p class="sponsor-condition-line">
+                    Critério: ${App.utils.escapeHtml(App.auth.getSponsorshipConditionLabel(item))}
+                    ${Number(item.termination_fee || 0) > 0 ? ` · multa atual ${App.utils.formatCurrency(item.termination_fee)}` : ""}
+                  </p>
+                  ${App.auth.renderSponsorshipPaymentSchedule(item)}
+                </div>
+              `;
+            }).join("")}
           </div>
-        ` : `<p class="calendar-muted">Nenhum patrocinador ativo. Escolha com cuidado: as luvas são menores e o dinheiro forte depende das metas.</p>`}
+        ` : `<p class="calendar-muted">Nenhum patrocinador ativo. Escolha com cuidado: as luvas agora entram como pagamento oficial e as marcas competem por categoria.</p>`}
 
         ${offers.length ? `
           <div class="sponsor-market-note">
@@ -949,21 +977,46 @@ App.auth = {
                   <span>${offersByCategory[category].length} proposta(s)</span>
                 </div>
                 <div class="sponsor-offer-grid">
-                  ${offersByCategory[category].map(offer => `
-                    <article class="sponsor-offer-card">
-                      <span>${App.utils.escapeHtml(offer.riskLevel || "Meta comercial")}</span>
-                      <strong>${App.utils.escapeHtml(offer.title)}</strong>
-                      <em>${App.utils.escapeHtml(offer.sponsorName)}</em>
-                      <p>${App.utils.escapeHtml(offer.description)}</p>
-                      <small>
-                        Luvas ${App.utils.formatCurrency(offer.signingBonus)} · ${App.utils.escapeHtml(offer.conditionLabel || "Meta cumprida")} paga ${App.utils.formatCurrency(offer.rewardValue)}
-                        ${offer.isReplacement ? ` · substitui ${App.utils.escapeHtml(offer.currentSponsorName || "contrato atual")} por ${App.utils.formatCurrency(offer.terminationFee || 0)}` : ""}
-                      </small>
-                      <button type="button" data-sponsor-offer="${App.utils.escapeHtml(offer.id)}" data-sponsor-fee="${Number(offer.terminationFee || 0)}" data-sponsor-replacement="${offer.isReplacement ? "true" : "false"}">
-                        ${offer.isReplacement ? "Trocar contrato" : "Assinar"}
-                      </button>
-                    </article>
-                  `).join("")}
+                  ${offersByCategory[category].map(offer => {
+                    const cadence = App.auth.getSponsorshipCadence(offer);
+                    const totalValue = App.auth.getSponsorshipTotalValue(offer);
+                    const toneClass = cadence === "monthly" ? "monthly" : cadence === "weekly" ? "weekly" : "goal";
+
+                    return `
+                      <article class="sponsor-offer-card sponsor-offer-card-${toneClass}">
+                        <div class="sponsor-card-top">
+                          <span>${App.utils.escapeHtml(offer.riskLevel || "Meta comercial")}</span>
+                          <b>${App.utils.escapeHtml(offer.dealStyle || App.auth.getSponsorshipFrequencyLabel(offer))}</b>
+                        </div>
+                        <strong>${App.utils.escapeHtml(offer.title)}</strong>
+                        <em>${App.utils.escapeHtml(offer.sponsorName)}</em>
+                        <p>${App.utils.escapeHtml(offer.description)}</p>
+                        <div class="sponsor-value-strip">
+                          <div>
+                            <span>Luva agora</span>
+                            <strong>${App.utils.formatCurrency(offer.signingBonus || 0)}</strong>
+                          </div>
+                          <div>
+                            <span>${cadence ? "Parcela" : "Bônus"}</span>
+                            <strong>${App.utils.formatCurrency(offer.rewardValue || 0)}</strong>
+                            <small>${App.auth.getSponsorshipFrequencyLabel(offer)}</small>
+                          </div>
+                          <div>
+                            <span>Teto</span>
+                            <strong>${App.utils.formatCurrency(totalValue)}</strong>
+                            <small>${Number(offer.maxClaims || 0)} pagamento(s)</small>
+                          </div>
+                        </div>
+                        <small class="sponsor-offer-detail">
+                          ${App.utils.escapeHtml(offer.conditionLabel || "Meta cumprida")}
+                          ${offer.isReplacement ? ` · substitui ${App.utils.escapeHtml(offer.currentSponsorName || "contrato atual")} por ${App.utils.formatCurrency(offer.terminationFee || 0)}` : ""}
+                        </small>
+                        <button type="button" data-sponsor-offer="${App.utils.escapeHtml(offer.id)}" data-sponsor-fee="${Number(offer.terminationFee || 0)}" data-sponsor-replacement="${offer.isReplacement ? "true" : "false"}" data-sponsor-signing="${Number(offer.signingBonus || 0)}" data-sponsor-reward="${Number(offer.rewardValue || 0)}" data-sponsor-cadence="${App.utils.escapeHtml(cadence || "goal")}">
+                          ${offer.isReplacement ? "Trocar marca" : "Assinar contrato"}
+                        </button>
+                      </article>
+                    `;
+                  }).join("")}
                 </div>
               </section>
             `).join("")}
@@ -975,7 +1028,7 @@ App.auth = {
             <strong>Últimos pagamentos</strong>
             ${rewards.map(item => `
               <div>
-                <span>${App.utils.escapeHtml(item.sponsor_name)}</span>
+                <span>${App.utils.escapeHtml(App.auth.getSponsorshipRewardKind(item))} · ${App.utils.escapeHtml(item.sponsor_name)}</span>
                 <b>${App.utils.formatCurrency(item.reward_value)}</b>
               </div>
             `).join("")}
@@ -1004,23 +1057,62 @@ App.auth = {
     return labels[condition] || "Meta comercial cumprida";
   },
 
-  getRecurringSponsorshipSchedule(item = {}) {
+  getSponsorshipCadence(item = {}) {
+    const explicit = App.utils.normalizeText(item.paymentCadence || item.payment_cadence || "");
+    if (explicit === "weekly" || explicit === "monthly") return explicit;
+
     const condition = App.utils.normalizeText(item.condition_type || item.conditionType || "");
-    const intervalDays = condition === "weekly_payment" ? 7 : condition === "monthly_payment" ? 30 : 0;
+    if (condition === "weekly_payment") return "weekly";
+    if (condition === "monthly_payment") return "monthly";
+    return "";
+  },
+
+  getSponsorshipFrequencyLabel(item = {}) {
+    const cadence = App.auth.getSponsorshipCadence(item);
+    if (cadence === "weekly") return "por semana";
+    if (cadence === "monthly") return "por mês";
+    return "por meta";
+  },
+
+  getSponsorshipTotalValue(item = {}) {
+    const fromApi = Number(item.totalContractValue || item.total_contract_value || 0);
+    if (fromApi > 0) return fromApi;
+
+    const signing = Number(item.signingBonus || item.signing_bonus || 0);
+    const reward = Number(item.rewardValue || item.reward_value || 0);
+    const maxClaims = Number(item.maxClaims || item.max_claims || 0);
+    return signing + (reward * maxClaims);
+  },
+
+  getSponsorshipRewardKind(item = {}) {
+    if (item.reward_kind || item.rewardKind) return item.reward_kind || item.rewardKind;
+    const key = App.utils.normalizeText(item.result_key || item.resultKey || "");
+    if (key.startsWith("signing_bonus")) return "Luva";
+    if (key.startsWith("periodic")) return "Parcela";
+    return "Meta";
+  },
+
+  parseSponsorshipDate(value) {
+    if (!value) return null;
+    const date = value instanceof Date ? value : new Date(value);
+    return Number.isNaN(date.getTime()) ? null : date;
+  },
+
+  getRecurringSponsorshipSchedule(item = {}) {
+    const cadence = App.auth.getSponsorshipCadence(item);
+    const intervalDays = cadence === "weekly" ? 7 : cadence === "monthly" ? 30 : 0;
     if (!intervalDays) return null;
 
-    const signedAt = new Date(item.created_at || item.createdAt || item.createdAtUtc || "");
-    if (Number.isNaN(signedAt.getTime())) return null;
+    const signedAt = App.auth.parseSponsorshipDate(item.created_at || item.createdAt || item.createdAtUtc || "");
+    if (!signedAt) return null;
 
     const claimsUsed = Number(item.claims_used || item.claimsUsed || 0);
     const maxClaims = Number(item.max_claims || item.maxClaims || 0);
     const intervalMs = intervalDays * 24 * 60 * 60 * 1000;
-    const lastPaymentAt = claimsUsed > 0
-      ? new Date(signedAt.getTime() + claimsUsed * intervalMs)
-      : null;
-    const nextPaymentAt = maxClaims && claimsUsed >= maxClaims
-      ? null
-      : new Date(signedAt.getTime() + (claimsUsed + 1) * intervalMs);
+    const lastPaymentAt = App.auth.parseSponsorshipDate(item.last_installment_at || item.lastInstallmentAt)
+      || (claimsUsed > 0 ? new Date(signedAt.getTime() + claimsUsed * intervalMs) : null);
+    const nextPaymentAt = App.auth.parseSponsorshipDate(item.next_payment_at || item.nextPaymentAt)
+      || (maxClaims && claimsUsed >= maxClaims ? null : new Date(signedAt.getTime() + (claimsUsed + 1) * intervalMs));
 
     return {
       cadence: intervalDays === 7 ? "semanal" : "mensal",
@@ -1043,8 +1135,8 @@ App.auth = {
     return `
       <div class="sponsor-payment-schedule">
         <span>${schedule.cadence}</span>
-        <small>Último pagamento: <strong>${lastLabel}</strong></small>
-        <small>Próximo pagamento: <strong>${nextLabel}</strong></small>
+        <small>Última parcela: <strong>${lastLabel}</strong></small>
+        <small>Próxima parcela: <strong>${nextLabel}</strong></small>
       </div>
     `;
   },
@@ -1110,9 +1202,17 @@ App.auth = {
         const offerId = event.currentTarget.dataset.sponsorOffer;
         const isReplacement = event.currentTarget.dataset.sponsorReplacement === "true";
         const fee = Number(event.currentTarget.dataset.sponsorFee || 0);
+        const signingBonus = Number(event.currentTarget.dataset.sponsorSigning || 0);
+        const rewardValue = Number(event.currentTarget.dataset.sponsorReward || 0);
+        const cadence = event.currentTarget.dataset.sponsorCadence;
+        const paymentLabel = cadence === "weekly"
+          ? `parcela semanal de ${App.utils.formatCurrency(rewardValue)}`
+          : cadence === "monthly"
+            ? `parcela mensal de ${App.utils.formatCurrency(rewardValue)}`
+            : `bônus por meta de ${App.utils.formatCurrency(rewardValue)}`;
         const message = isReplacement
-          ? `Trocar para este patrocínio? A multa de rescisão estimada é ${App.utils.formatCurrency(fee)} e será debitada do orçamento.`
-          : "Assinar este patrocínio? Ele ficará ativo e pagará bônus quando as metas forem cumpridas.";
+          ? `Trocar para este patrocínio? A multa estimada é ${App.utils.formatCurrency(fee)}. A luva de ${App.utils.formatCurrency(signingBonus)} entra agora e o contrato paga ${paymentLabel}.`
+          : `Assinar este patrocínio? A luva de ${App.utils.formatCurrency(signingBonus)} entra agora e o contrato paga ${paymentLabel}.`;
         if (!confirm(message)) return;
 
         try {
