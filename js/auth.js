@@ -13,6 +13,7 @@ App.auth = {
   myFavorites: [],
   myNotifications: [],
   autoDecisionRunning: false,
+  autoCpuOfferRunning: false,
 
   init() {
     try {
@@ -25,6 +26,7 @@ App.auth = {
     App.auth.renderAll();
     App.auth.bootstrapSessionState();
     App.auth.generateDueDecisions();
+    App.auth.generateDueCpuTransferProposals();
   },
 
   getSession() {
@@ -109,6 +111,7 @@ App.auth = {
 
     if (!App.auth.currentSession.isCommissioner) {
       await App.auth.generateDueDecisions();
+      await App.auth.generateDueCpuTransferProposals();
       await App.auth.loadMyDecisions();
       await App.auth.loadMyTransferProposals();
       await App.auth.loadMyTransferTargets();
@@ -519,6 +522,30 @@ App.auth = {
       return null;
     } finally {
       App.auth.autoDecisionRunning = false;
+    }
+  },
+
+  async generateDueCpuTransferProposals() {
+    if (App.auth.autoCpuOfferRunning) return null;
+
+    try {
+      App.auth.autoCpuOfferRunning = true;
+      const result = await App.api.rpc("app_generate_due_cpu_transfer_proposals", {
+        p_count: 4
+      }, 30000);
+
+      if (App.auth.isLoggedIn() && !App.auth.isCommissioner()) {
+        await App.auth.loadMyTransferProposals();
+        App.auth.renderTransferProposalPanel();
+        App.main?.renderCurrentView?.();
+      }
+
+      return result;
+    } catch (error) {
+      console.warn("Geração automática de propostas da CPU indisponível:", error);
+      return null;
+    } finally {
+      App.auth.autoCpuOfferRunning = false;
     }
   },
 
