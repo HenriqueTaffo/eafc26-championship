@@ -114,6 +114,29 @@ begin
   end if;
 
   if v_rows = 0 then
+    execute format(
+      'update %s
+          set "Status" = ''desfeito'',
+              "RevertidaEm" = now(),
+              "RevertidaPor" = %L
+        where ctid = (
+          select ctid
+          from %s
+          where lower(coalesce("Comprador"::text, '''')) = lower($1)
+            and lower(coalesce("Jogador"::text, '''')) = lower($2)
+            and lower(coalesce("Status"::text, '''')) in (''aprovado'', ''approved'')
+          order by "Timestamp" desc nulls last
+          limit 1
+        )',
+      v_transfer_table,
+      coalesce(v_login ->> 'managerName', 'Comissario da Liga'),
+      v_transfer_table
+    )
+    using coalesce(p_buyer, ''), coalesce(p_player, '');
+    get diagnostics v_rows = row_count;
+  end if;
+
+  if v_rows = 0 then
     return jsonb_build_object('ok', false, 'message', 'Transferencia aprovada nao encontrada para desfazer.');
   end if;
 

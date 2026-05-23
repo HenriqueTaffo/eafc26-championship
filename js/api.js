@@ -970,9 +970,10 @@ App.api = {
   },
 
   mapReverseTransferPayload(payload) {
+    const transferId = Number(payload.transferId);
     return {
       ...App.api.getAuthPayload(),
-      p_transfer_id: payload.transferId ? Number(payload.transferId) : null,
+      p_transfer_id: Number.isFinite(transferId) ? transferId : null,
       p_buyer: payload.buyer || "",
       p_player: payload.player || "",
       p_from_club: payload.fromClub || "",

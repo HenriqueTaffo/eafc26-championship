@@ -456,7 +456,8 @@ App.governance = {
                     const transferId = item.id || item.Id || item.ID || "";
                     const timestamp = item.Timestamp || item.created_at || "";
                     const player = item.Jogador || item.player || "-";
-                    const fromClub = item.ClubeOrigem || item.fromClub || "-";
+                    const fromClub = item.ClubeOrigem || item.fromClub || "";
+                    const fromClubLabel = fromClub || "Clube não informado";
                     const value = Number(item.ValorFinal || item.ValorTransfermarkt || 0);
                     return `<option
                       value="${App.utils.escapeHtml(`${groupName}-${index}`)}"
@@ -465,7 +466,7 @@ App.governance = {
                       data-transfer-player="${App.utils.escapeHtml(player)}"
                       data-transfer-from="${App.utils.escapeHtml(fromClub)}"
                       data-transfer-timestamp="${App.utils.escapeHtml(String(timestamp))}">
-                      ${App.utils.escapeHtml(`${player} · ${fromClub} · ${App.utils.formatCurrency(value)}`)}
+                      ${App.utils.escapeHtml(`${player} · ${fromClubLabel} · ${App.utils.formatCurrency(value)}`)}
                     </option>`;
                   }).join("")}
                 </optgroup>
@@ -711,9 +712,20 @@ App.governance = {
         const buyer = option.dataset.transferBuyer || "comprador";
         if (!window.confirm(`Desfazer a transferência de ${player} para ${buyer}?`)) return;
 
+        const button = form.querySelector("button");
+        const originalText = button?.textContent || "Desfazer";
+
         try {
-          const button = form.querySelector("button");
-          button.disabled = true;
+          if (button) {
+            button.disabled = true;
+            button.textContent = "Desfazendo...";
+          }
+          App.utils.setMessage(message, `Desfazendo transferência de ${player}...`, "warning");
+          App.main?.showLoader?.({
+            variant: "market",
+            title: "Desfazendo transferência",
+            message: "Atualizando mercado, orçamento e posse do jogador."
+          });
           const result = await App.api.postToApi({
             action: "reverseTransfer",
             transferId: option.dataset.transferId,
@@ -729,11 +741,15 @@ App.governance = {
             message: "Transferência desfeita. Recalculando orçamento, elenco e radar."
           });
           App.utils.setMessage(message, result.message || "Transferência desfeita.", "success");
+          if (select) select.value = "";
         } catch (error) {
           App.utils.setMessage(message, error.message, "error");
         } finally {
-          const button = form.querySelector("button");
-          button.disabled = false;
+          App.main?.hideLoader?.();
+          if (button) {
+            button.disabled = false;
+            button.textContent = originalText;
+          }
         }
       });
     });
