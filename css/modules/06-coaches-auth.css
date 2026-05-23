@@ -341,6 +341,46 @@
   line-height: 1;
 }
 
+.favorite-action-button {
+  border-color: rgba(45, 212, 191, .24);
+  background: rgba(8, 145, 178, .14);
+  color: #67e8f9;
+}
+
+.favorite-action-button span {
+  position: relative;
+  display: block;
+  width: 13px;
+  height: 17px;
+  border: 2px solid currentColor;
+  border-bottom: 0;
+  border-radius: 4px 4px 2px 2px;
+}
+
+.favorite-action-button span::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -5px;
+  width: 9px;
+  height: 9px;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  background: rgba(8, 145, 178, .14);
+  transform: translateX(-50%) rotate(45deg);
+}
+
+.favorite-action-button.is-active {
+  border-color: rgba(45, 212, 191, .52);
+  background: rgba(20, 184, 166, .24);
+  color: #99f6e4;
+}
+
+.favorite-action-button.is-active span,
+.favorite-action-button.is-active span::after {
+  background: currentColor;
+}
+
 .coach-target-actions .icon-action-button {
   flex: 0 0 auto;
 }
@@ -1923,7 +1963,7 @@
   opacity: .62;
 }
 
-.icon-action-button.is-active {
+.icon-action-button.is-active:not(.favorite-action-button) {
   border-color: rgba(250, 204, 21, .45);
   color: #facc15;
 }

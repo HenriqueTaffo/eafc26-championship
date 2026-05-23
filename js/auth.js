@@ -56,6 +56,7 @@ App.auth = {
     }
 
     App.auth.renderAll();
+    App.main?.renderCurrentView?.();
   },
 
   canViewManagerPrivate(managerName) {
@@ -293,11 +294,12 @@ App.auth = {
       App.auth.myNotifications = Array.isArray(result?.notifications) ? result.notifications : [];
       if (Array.isArray(result?.financeForecast)) App.state.apiFinanceForecast = result.financeForecast;
       if (result?.financeRules) App.state.apiFinanceRules = result.financeRules;
+      App.auth.saveLocalFavorites(App.auth.myFavorites);
       return App.auth.myQoL;
     } catch (error) {
       console.warn("Central privada/QoL indisponível:", error);
       App.auth.myQoL = null;
-      App.auth.myFavorites = [];
+      App.auth.myFavorites = App.auth.loadLocalFavorites();
       App.auth.myNotifications = [];
       return null;
     }
@@ -307,48 +309,117 @@ App.auth = {
     return `${App.utils.normalizeText(type)}|${App.utils.normalizeText(key)}`;
   },
 
+  getLocalFavoritesStorageKey() {
+    const session = App.auth.getSession();
+    return `mistura_manager_favorites_v1:${session?.managerId || "anon"}`;
+  },
+
+  loadLocalFavorites() {
+    try {
+      const raw = localStorage.getItem(App.auth.getLocalFavoritesStorageKey());
+      const favorites = raw ? JSON.parse(raw) : [];
+      return Array.isArray(favorites) ? favorites : [];
+    } catch (error) {
+      return [];
+    }
+  },
+
+  saveLocalFavorites(favorites = []) {
+    try {
+      localStorage.setItem(
+        App.auth.getLocalFavoritesStorageKey(),
+        JSON.stringify(Array.isArray(favorites) ? favorites : []),
+      );
+    } catch (error) {
+      console.warn("Não consegui salvar favoritos locais:", error);
+    }
+  },
+
   isFavorite(type, key) {
     const favoriteKey = App.auth.getFavoriteKey(type, key);
     return (App.auth.myFavorites || []).some(item => App.auth.getFavoriteKey(item.item_type, item.item_key) === favoriteKey);
+  },
+
+  upsertLocalFavorite(payload = {}) {
+    const session = App.auth.getSession();
+    const favorite = {
+      id: `${payload.type || "item"}:${payload.key || payload.title || Date.now()}`,
+      manager_id: session?.managerId || "",
+      manager_name: session?.managerName || "",
+      item_type: payload.type || "item",
+      item_key: payload.key || payload.title || "",
+      title: payload.title || "Favorito",
+      detail: payload.detail || "",
+      payload: payload.payload || {},
+      created_at: new Date().toISOString()
+    };
+    const favoriteKey = App.auth.getFavoriteKey(favorite.item_type, favorite.item_key);
+    const next = [
+      favorite,
+      ...(App.auth.myFavorites || []).filter(item => App.auth.getFavoriteKey(item.item_type, item.item_key) !== favoriteKey)
+    ];
+    App.auth.myFavorites = next;
+    App.auth.saveLocalFavorites(next);
+    return { ok: true, favorites: next, localOnly: true };
+  },
+
+  deleteLocalFavorite(type, key) {
+    const favoriteKey = App.auth.getFavoriteKey(type, key);
+    const next = (App.auth.myFavorites || []).filter(item => App.auth.getFavoriteKey(item.item_type, item.item_key) !== favoriteKey);
+    App.auth.myFavorites = next;
+    App.auth.saveLocalFavorites(next);
+    return { ok: true, favorites: next, localOnly: true };
   },
 
   async upsertFavorite(payload = {}) {
     const session = App.auth.getSession();
     if (!session || session.isCommissioner) throw new Error("Faça login como técnico para favoritar.");
 
-    const result = await App.api.rpc("app_upsert_manager_favorite", {
-      p_manager_id: session.managerId,
-      p_access_code: session.accessCode,
-      p_item_type: payload.type || "item",
-      p_item_key: payload.key || payload.title || "",
-      p_title: payload.title || "Favorito",
-      p_detail: payload.detail || "",
-      p_payload: payload.payload || {}
-    }, 30000);
+    try {
+      const result = await App.api.rpc("app_upsert_manager_favorite", {
+        p_manager_id: session.managerId,
+        p_access_code: session.accessCode,
+        p_item_type: payload.type || "item",
+        p_item_key: payload.key || payload.title || "",
+        p_title: payload.title || "Favorito",
+        p_detail: payload.detail || "",
+        p_payload: payload.payload || {}
+      }, 30000);
 
-    if (result?.ok === false) throw new Error(result.message || "Não consegui favoritar.");
-    App.auth.myQoL = result;
-    App.auth.myFavorites = Array.isArray(result?.favorites) ? result.favorites : [];
-    App.auth.myNotifications = Array.isArray(result?.notifications) ? result.notifications : [];
-    return result;
+      if (result?.ok === false) throw new Error(result.message || "Não consegui favoritar.");
+      App.auth.myQoL = result;
+      App.auth.myFavorites = Array.isArray(result?.favorites) ? result.favorites : [];
+      App.auth.myNotifications = Array.isArray(result?.notifications) ? result.notifications : [];
+      App.auth.saveLocalFavorites(App.auth.myFavorites);
+      return result;
+    } catch (error) {
+      console.warn("Favorito via Supabase indisponível, usando fallback local:", error);
+      return App.auth.upsertLocalFavorite(payload);
+    }
   },
 
   async deleteFavorite(type, key) {
     const session = App.auth.getSession();
     if (!session || session.isCommissioner) throw new Error("Faça login como técnico para remover favorito.");
 
-    const result = await App.api.rpc("app_delete_manager_favorite", {
-      p_manager_id: session.managerId,
-      p_access_code: session.accessCode,
-      p_item_type: type,
-      p_item_key: key
-    }, 30000);
+    try {
+      const result = await App.api.rpc("app_delete_manager_favorite", {
+        p_manager_id: session.managerId,
+        p_access_code: session.accessCode,
+        p_item_type: type,
+        p_item_key: key
+      }, 30000);
 
-    if (result?.ok === false) throw new Error(result.message || "Não consegui remover favorito.");
-    App.auth.myQoL = result;
-    App.auth.myFavorites = Array.isArray(result?.favorites) ? result.favorites : [];
-    App.auth.myNotifications = Array.isArray(result?.notifications) ? result.notifications : [];
-    return result;
+      if (result?.ok === false) throw new Error(result.message || "Não consegui remover favorito.");
+      App.auth.myQoL = result;
+      App.auth.myFavorites = Array.isArray(result?.favorites) ? result.favorites : [];
+      App.auth.myNotifications = Array.isArray(result?.notifications) ? result.notifications : [];
+      App.auth.saveLocalFavorites(App.auth.myFavorites);
+      return result;
+    } catch (error) {
+      console.warn("Remoção de favorito via Supabase indisponível, usando fallback local:", error);
+      return App.auth.deleteLocalFavorite(type, key);
+    }
   },
 
   async markNotificationsRead() {
