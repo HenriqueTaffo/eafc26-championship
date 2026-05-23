@@ -814,6 +814,7 @@ App.api = {
     try {
       try {
         await App.api.rpc("app_process_all_sponsorship_rewards", {}, 45000);
+        await App.api.rpc("app_process_periodic_sponsorships", {}, 45000);
       } catch (sponsorshipError) {
         console.warn(
           "Processamento automático de patrocínios indisponível:",
@@ -968,6 +969,17 @@ App.api = {
     };
   },
 
+  mapReverseTransferPayload(payload) {
+    return {
+      ...App.api.getAuthPayload(),
+      p_transfer_id: payload.transferId ? Number(payload.transferId) : null,
+      p_buyer: payload.buyer || "",
+      p_player: payload.player || "",
+      p_from_club: payload.fromClub || "",
+      p_timestamp: payload.timestamp || "",
+    };
+  },
+
   async postToApi(payload) {
     if (payload.action === "addResult") {
       App.api.requireSession(
@@ -987,6 +999,17 @@ App.api = {
       return App.api.rpc(
         "app_reverse_match_result",
         App.api.mapReverseResultPayload(payload),
+        45000,
+      );
+    }
+
+    if (payload.action === "reverseTransfer") {
+      App.api.requireCommissioner(
+        "Apenas o Comissário da Liga pode desfazer transferências.",
+      );
+      return App.api.rpc(
+        "app_reverse_transfer",
+        App.api.mapReverseTransferPayload(payload),
         45000,
       );
     }

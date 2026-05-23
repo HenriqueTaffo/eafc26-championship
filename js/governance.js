@@ -414,6 +414,47 @@ App.governance = {
     `;
   },
 
+  renderTransferReversal() {
+    const canAct = App.auth?.isCommissioner?.();
+    const rows = (App.state.apiTransfers || [])
+      .filter((item) => App.transfers.isApprovedTransferStatus(item.Status || item.status))
+      .slice()
+      .sort((a, b) => new Date(b.Timestamp || b.created_at || 0) - new Date(a.Timestamp || a.created_at || 0))
+      .slice(0, 8);
+
+    return `
+      <article class="commissioner-card commissioner-transfer-reversal-card">
+        <div class="home-panel-header">
+          <div>
+            <span class="modal-kicker">Correções de mercado</span>
+            <h2>Desfazer transferência</h2>
+          </div>
+          <span class="coach-section-kicker">${rows.length} recente(s)</span>
+        </div>
+        <div class="commissioner-list transfer-reversal-list">
+          ${rows.length ? rows.map(item => {
+            const transferId = item.id || item.Id || item.ID || "";
+            const timestamp = item.Timestamp || item.created_at || "";
+            return `
+              <div>
+                <strong>${App.utils.escapeHtml(item.Jogador || item.player || "-")} · ${App.utils.escapeHtml(item.Comprador || item.buyer || "-")}</strong>
+                <span>${App.utils.escapeHtml(item.ClubeOrigem || item.fromClub || "-")} · ${App.utils.formatCurrency(Number(item.ValorFinal || item.ValorTransfermarkt || 0))}</span>
+                ${canAct ? `<button class="mini-action-button danger" type="button"
+                  data-reverse-transfer
+                  data-transfer-id="${App.utils.escapeHtml(String(transferId))}"
+                  data-transfer-buyer="${App.utils.escapeHtml(item.Comprador || item.buyer || "")}"
+                  data-transfer-player="${App.utils.escapeHtml(item.Jogador || item.player || "")}"
+                  data-transfer-from="${App.utils.escapeHtml(item.ClubeOrigem || item.fromClub || "")}"
+                  data-transfer-timestamp="${App.utils.escapeHtml(String(timestamp))}">Desfazer</button>` : ""}
+              </div>
+            `;
+          }).join("") : `<p class="calendar-muted">Nenhuma transferência aprovada recente.</p>`}
+        </div>
+        ${canAct ? `<p class="calendar-muted">A reversão marca a transferência como desfeita e libera o jogador para nova contratação.</p>` : `<p class="calendar-muted">Faça login como Comissário da Liga para desfazer transferências.</p>`}
+      </article>
+    `;
+  },
+
   renderAuctions() {
     const auctions = App.state.apiGovernance?.auctions || [];
     const candidates = App.transfers.getAuctionCandidates();
@@ -632,6 +673,39 @@ App.governance = {
         }
       });
     });
+
+    root.querySelectorAll("[data-reverse-transfer]").forEach(button => {
+      if (button.dataset.bound === "true") return;
+      button.dataset.bound = "true";
+      button.addEventListener("click", async () => {
+        const player = button.dataset.transferPlayer || "jogador";
+        const buyer = button.dataset.transferBuyer || "comprador";
+        if (!window.confirm(`Desfazer a transferência de ${player} para ${buyer}?`)) return;
+
+        try {
+          button.disabled = true;
+          const result = await App.api.postToApi({
+            action: "reverseTransfer",
+            transferId: button.dataset.transferId,
+            buyer,
+            player,
+            fromClub: button.dataset.transferFrom || "",
+            timestamp: button.dataset.transferTimestamp || ""
+          });
+          if (result?.ok === false) throw new Error(result.message || "Transferência não foi desfeita.");
+          await App.api.loadApiData({
+            variant: "market",
+            title: "Atualizando mercado",
+            message: "Transferência desfeita. Recalculando orçamento, elenco e radar."
+          });
+          App.utils.setMessage(message, result.message || "Transferência desfeita.", "success");
+        } catch (error) {
+          App.utils.setMessage(message, error.message, "error");
+        } finally {
+          button.disabled = false;
+        }
+      });
+    });
   },
 
   render() {
@@ -644,6 +718,7 @@ App.governance = {
       ${App.governance.renderLeagueRadar()}
       ${App.governance.renderEconomyControl()}
       ${App.governance.renderRumorDesk()}
+      ${App.governance.renderTransferReversal()}
       ${App.governance.renderAuctions()}
       ${App.governance.renderMedical()}
       ${App.governance.renderWeekly()}

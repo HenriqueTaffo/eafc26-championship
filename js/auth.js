@@ -898,7 +898,9 @@ App.auth = {
       "home_win": "Vencer como mandante",
       "clean_sheet": "Não sofrer gols",
       "three_goals": "Marcar 3+ gols",
-      "away_win": "Vencer como visitante"
+      "away_win": "Vencer como visitante",
+      "weekly_payment": "Pagamento semanal fixo",
+      "monthly_payment": "Pagamento mensal fixo"
     };
 
     return labels[condition] || "Meta comercial cumprida";
