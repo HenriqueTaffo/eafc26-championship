@@ -641,15 +641,22 @@ App.transfers = {
       .filter((row) =>
         App.transfers.isApprovedTransferStatus(row.Status || row.status),
       )
-      .map((row, index) => ({
-        player: row.Jogador,
-        buyer: row.Comprador,
-        fromClub: row.ClubeOrigem,
-        overall: Number(row.Overall),
-        marketValue: Number(row.ValorTransfermarkt),
-        timestamp: row.Timestamp,
-        sourceIndex: index,
-      }));
+      .map((row, index) => {
+        const transferType = row.TipoTransferencia || row.transfer_type || "";
+        const isCpuSale = App.utils.normalizeText(transferType) === "cpu_sale";
+
+        return {
+          player: row.Jogador,
+          buyer: isCpuSale ? "CPU" : row.Comprador,
+          fromClub: isCpuSale ? "Venda para CPU" : row.ClubeOrigem,
+          overall: Number(row.Overall),
+          marketValue: Number(isCpuSale ? 0 : row.ValorTransfermarkt),
+          timestamp: row.Timestamp,
+          sourceIndex: index,
+          transferType,
+          isCpuSale,
+        };
+      });
 
     const staticTransfers = App.data.transfers.map((transfer, index) => ({
       ...transfer,
@@ -667,12 +674,22 @@ App.transfers = {
   isMarketPlayerContracted(player) {
     const playerKey = App.transfers.normalizePlayerRatingKey(player?.name);
     if (!playerKey) return false;
-    return App.transfers
+    const latest = App.transfers
       .getAllTransfers()
-      .some(
+      .filter(
         (transfer) =>
           App.transfers.normalizePlayerRatingKey(transfer.player) === playerKey,
-      );
+      )
+      .sort((a, b) => {
+        const timeA = new Date(a.timestamp || 0).getTime();
+        const timeB = new Date(b.timestamp || 0).getTime();
+        return (Number.isNaN(timeB) ? 0 : timeB) - (Number.isNaN(timeA) ? 0 : timeA);
+      })[0];
+
+    if (!latest || App.utils.normalizeText(latest.buyer) === "cpu") return false;
+    return App.utils.getHumanBuyers().some(
+      owner => App.utils.normalizeText(owner) === App.utils.normalizeText(latest.buyer),
+    );
   },
 
   getEventImpactByBuyer() {

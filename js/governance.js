@@ -481,6 +481,34 @@ App.governance = {
     `;
   },
 
+  renderCpuTransferOffers() {
+    const canAct = App.auth?.isCommissioner?.();
+    const owners = App.utils.getHumanBuyers();
+
+    return `
+      <article class="commissioner-card commissioner-cpu-offers-card">
+        <div class="home-panel-header">
+          <div>
+            <span class="modal-kicker">Mercado ativo</span>
+            <h2>Propostas da CPU</h2>
+          </div>
+          <span class="coach-section-kicker">CPU x Técnico</span>
+        </div>
+        <p class="calendar-muted">Gere ofertas automáticas para jogadores dos técnicos. O técnico recebe no painel privado e decide aceitar ou recusar.</p>
+        ${canAct ? `
+          <form class="commissioner-inline-form" data-cpu-transfer-offers-form>
+            <select name="targetManager">
+              <option value="">Todos os técnicos</option>
+              ${owners.map(owner => `<option value="${App.utils.escapeHtml(owner)}">${App.utils.escapeHtml(owner)}</option>`).join("")}
+            </select>
+            <input name="count" type="number" min="1" max="12" value="4" aria-label="Quantidade de propostas" />
+            <button class="secondary-button success" type="submit">Gerar propostas</button>
+          </form>
+        ` : `<p class="calendar-muted">Faça login como Comissário da Liga para gerar propostas da CPU.</p>`}
+      </article>
+    `;
+  },
+
   renderAuctions() {
     const auctions = App.state.apiGovernance?.auctions || [];
     const candidates = App.transfers.getAuctionCandidates();
@@ -754,6 +782,37 @@ App.governance = {
         }
       });
     });
+
+    root.querySelectorAll("[data-cpu-transfer-offers-form]").forEach(form => {
+      if (form.dataset.bound === "true") return;
+      form.dataset.bound = "true";
+      form.addEventListener("submit", async event => {
+        event.preventDefault();
+        const payload = Object.fromEntries(new FormData(form).entries());
+        const button = form.querySelector("button");
+        const originalText = button?.textContent || "Gerar propostas";
+
+        try {
+          if (button) {
+            button.disabled = true;
+            button.textContent = "Gerando...";
+          }
+          const result = await App.governance.runAction("app_generate_cpu_transfer_proposals", {
+            p_count: Number(payload.count || 4),
+            p_target_manager: payload.targetManager || ""
+          });
+          await App.auth?.loadMyTransferProposals?.();
+          App.utils.setMessage(message, result.message || "Propostas da CPU geradas.", "success");
+        } catch (error) {
+          App.utils.setMessage(message, error.message, "error");
+        } finally {
+          if (button) {
+            button.disabled = false;
+            button.textContent = originalText;
+          }
+        }
+      });
+    });
   },
 
   render() {
@@ -767,6 +826,7 @@ App.governance = {
       ${App.governance.renderEconomyControl()}
       ${App.governance.renderRumorDesk()}
       ${App.governance.renderTransferReversal()}
+      ${App.governance.renderCpuTransferOffers()}
       ${App.governance.renderAuctions()}
       ${App.governance.renderMedical()}
       ${App.governance.renderWeekly()}

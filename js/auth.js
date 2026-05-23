@@ -31,6 +31,16 @@ App.auth = {
     return App.auth.currentSession;
   },
 
+  isCpuProposal(item = {}) {
+    return item.is_cpu_offer === true
+      || App.utils.normalizeText(item.offer_source || "") === "cpu"
+      || App.utils.normalizeText(item.buyer || "") === "cpu";
+  },
+
+  getTransferProposalSourceLabel(item = {}) {
+    return App.auth.isCpuProposal(item) ? "CPU" : (item.buyer || "outro tecnico");
+  },
+
   isLoggedIn() {
     const session = App.auth.getSession();
     return Boolean(session?.managerId && session?.accessCode);
@@ -880,7 +890,7 @@ App.auth = {
         <div class="home-panel-header">
           <div>
             <h2>Propostas recebidas</h2>
-            <p class="coach-card-subtitle">Ofertas de outros técnicos pelos seus jogadores.</p>
+            <p class="coach-card-subtitle">Ofertas internas e propostas da CPU pelos seus jogadores.</p>
           </div>
           <span class="coach-section-kicker">${pending.length} pendente(s)</span>
         </div>
@@ -1207,8 +1217,9 @@ App.auth = {
         const proposalId = target.dataset.proposalId;
         const decision = target.dataset.decision;
         const label = decision === "accepted" ? "aceitar" : "recusar";
+        const sourceLabel = target.dataset.proposalSourceLabel || "esta oferta";
 
-        if (!confirm(`Deseja ${label} esta proposta?`)) return;
+        if (!confirm(`Deseja ${label} a proposta de ${sourceLabel}?`)) return;
 
         try {
           target.disabled = true;
@@ -1259,24 +1270,41 @@ App.auth = {
   },
 
   renderTransferProposalCard(item) {
+    const isCpuOffer = App.auth.isCpuProposal(item);
+    const sourceLabel = App.auth.getTransferProposalSourceLabel(item);
+    const sourceLabelEscaped = App.utils.escapeHtml(sourceLabel);
+    const proposedValue = Number(item.proposed_value || 0);
+
     return `
       <article class="decision-card transfer-proposal-item">
         <div class="decision-card-top">
-          <span>Oferta interna</span>
+          <span>${isCpuOffer ? "Oferta da CPU" : "Oferta interna"}</span>
           <b>${App.utils.escapeHtml(item.status || "pending")}</b>
         </div>
         <h3>${App.utils.escapeHtml(item.player)}</h3>
-        <p>${App.utils.escapeHtml(item.buyer)} ofereceu ${App.utils.formatCurrency(item.proposed_value)} por este jogador.</p>
+        <p>${sourceLabelEscaped} ofereceu ${App.utils.formatCurrency(proposedValue)} por este jogador.</p>
         <div class="proposal-meta">
           <span>OVR ${App.utils.escapeHtml(item.overall || "-")}</span>
           <span>${App.utils.escapeHtml(item.from_club || "Negociação interna")}</span>
         </div>
         <div class="decision-options">
-          <button type="button" data-transfer-proposal-answer data-proposal-id="${item.id}" data-decision="accepted">
+          <button
+            type="button"
+            data-transfer-proposal-answer
+            data-proposal-id="${App.utils.escapeHtml(item.id)}"
+            data-decision="accepted"
+            data-proposal-source-label="${sourceLabelEscaped}"
+          >
             <strong>Aceitar</strong>
-            <small>Vende o jogador e recebe o valor.</small>
+            <small>${isCpuOffer ? `Vende para a CPU e recebe ${App.utils.formatCurrency(proposedValue)}.` : "Vende o jogador e recebe o valor."}</small>
           </button>
-          <button type="button" data-transfer-proposal-answer data-proposal-id="${item.id}" data-decision="rejected">
+          <button
+            type="button"
+            data-transfer-proposal-answer
+            data-proposal-id="${App.utils.escapeHtml(item.id)}"
+            data-decision="rejected"
+            data-proposal-source-label="${sourceLabelEscaped}"
+          >
             <strong>Recusar</strong>
             <small>A proposta é encerrada sem movimentação.</small>
           </button>
