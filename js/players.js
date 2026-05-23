@@ -492,21 +492,23 @@ App.players = {
             return `
               <div class="coach-target-item">
                 ${App.transfers.renderPlayerPhoto(marketPlayer, rating, "player-avatar")}
-                <div>
+                <div class="coach-target-copy">
                   <strong>${App.utils.escapeHtml(target.player)}</strong>
                   <small>${App.utils.escapeHtml([target.priority, target.club, target.value ? App.utils.formatCurrency(target.value) : ""].filter(Boolean).join(" · "))}</small>
                   ${target.note ? `<span>${App.utils.escapeHtml(target.note)}</span>` : ""}
                 </div>
-                <button
-                  type="button"
-                  class="icon-action-button ${isFavorite ? "is-active" : ""}"
-                  title="${isFavorite ? "Remover dos favoritos" : "Favoritar alvo"}"
-                  aria-label="${isFavorite ? "Remover dos favoritos" : "Favoritar alvo"}"
-                  data-favorite-target="${App.utils.escapeHtml(favoriteKey)}"
-                  data-favorite-title="${App.utils.escapeHtml(target.player)}"
-                  data-favorite-detail="${App.utils.escapeHtml([target.priority, target.club].filter(Boolean).join(" · "))}"
-                >★</button>
-                <button type="button" class="icon-action-button" title="Remover alvo" aria-label="Remover alvo" data-remove-private-target="${App.utils.escapeHtml(target.id)}">×</button>
+                <div class="coach-target-actions">
+                  <button
+                    type="button"
+                    class="icon-action-button ${isFavorite ? "is-active" : ""}"
+                    title="${isFavorite ? "Remover dos favoritos" : "Favoritar alvo"}"
+                    aria-label="${isFavorite ? "Remover dos favoritos" : "Favoritar alvo"}"
+                    data-favorite-target="${App.utils.escapeHtml(favoriteKey)}"
+                    data-favorite-title="${App.utils.escapeHtml(target.player)}"
+                    data-favorite-detail="${App.utils.escapeHtml([target.priority, target.club].filter(Boolean).join(" · "))}"
+                  >★</button>
+                  <button type="button" class="icon-action-button" title="Remover alvo" aria-label="Remover alvo" data-remove-private-target="${App.utils.escapeHtml(target.id)}">×</button>
+                </div>
               </div>
             `;
           }).join("") : `
