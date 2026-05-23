@@ -930,6 +930,7 @@ App.auth = {
                   Critério: ${App.utils.escapeHtml(App.auth.getSponsorshipConditionLabel(item))}
                   ${Number(item.termination_fee || 0) > 0 ? ` · multa atual ${App.utils.formatCurrency(item.termination_fee)}` : ""}
                 </p>
+                ${App.auth.renderSponsorshipPaymentSchedule(item)}
               </div>
             `).join("")}
           </div>
@@ -1001,6 +1002,51 @@ App.auth = {
     };
 
     return labels[condition] || "Meta comercial cumprida";
+  },
+
+  getRecurringSponsorshipSchedule(item = {}) {
+    const condition = App.utils.normalizeText(item.condition_type || item.conditionType || "");
+    const intervalDays = condition === "weekly_payment" ? 7 : condition === "monthly_payment" ? 30 : 0;
+    if (!intervalDays) return null;
+
+    const signedAt = new Date(item.created_at || item.createdAt || item.createdAtUtc || "");
+    if (Number.isNaN(signedAt.getTime())) return null;
+
+    const claimsUsed = Number(item.claims_used || item.claimsUsed || 0);
+    const maxClaims = Number(item.max_claims || item.maxClaims || 0);
+    const intervalMs = intervalDays * 24 * 60 * 60 * 1000;
+    const lastPaymentAt = claimsUsed > 0
+      ? new Date(signedAt.getTime() + claimsUsed * intervalMs)
+      : null;
+    const nextPaymentAt = maxClaims && claimsUsed >= maxClaims
+      ? null
+      : new Date(signedAt.getTime() + (claimsUsed + 1) * intervalMs);
+
+    return {
+      cadence: intervalDays === 7 ? "semanal" : "mensal",
+      lastPaymentAt,
+      nextPaymentAt
+    };
+  },
+
+  renderSponsorshipPaymentSchedule(item = {}) {
+    const schedule = App.auth.getRecurringSponsorshipSchedule(item);
+    if (!schedule) return "";
+
+    const lastLabel = schedule.lastPaymentAt
+      ? App.utils.formatDate(schedule.lastPaymentAt)
+      : "ainda não pago";
+    const nextLabel = schedule.nextPaymentAt
+      ? App.utils.formatDate(schedule.nextPaymentAt)
+      : "contrato completo";
+
+    return `
+      <div class="sponsor-payment-schedule">
+        <span>${schedule.cadence}</span>
+        <small>Último pagamento: <strong>${lastLabel}</strong></small>
+        <small>Próximo pagamento: <strong>${nextLabel}</strong></small>
+      </div>
+    `;
   },
 
   bindDecisionAnswerButtons(root = document) {
