@@ -245,6 +245,28 @@ App.transfers = {
       source_url: "https://www.fifaratings.com/sadio-mane",
       source_name: "FIFA Ratings normal FC ratings",
     },
+    "baris alper yilmaz": {
+      name: "Barış Alper Yılmaz",
+      club: "Galatasaray Spor Kulübü",
+      position: "LM",
+      nation: "Turkey",
+      overall: 80,
+      gender: "Men's Football",
+      avatar_url: "https://cdn.sofifa.net/players/263/205/26_240.png",
+      source_url: "https://sofifa.com/player/263205/baris-alper-yilmaz",
+      source_name: "SoFIFA FC 26 headshot",
+    },
+    "nicolas pepe": {
+      name: "Nicolas Pépé",
+      club: "Villarreal Club de Fútbol S.A.D.",
+      position: "RM",
+      nation: "Ivory Coast",
+      overall: 78,
+      gender: "Men's Football",
+      avatar_url: "https://cdn.sofifa.net/players/226/110/26_240.png",
+      source_url: "https://sofifa.com/player/226110/nicolas-pepe",
+      source_name: "SoFIFA FC 26 headshot",
+    },
   },
 
   isPlayableRating(player) {
@@ -337,6 +359,8 @@ App.transfers = {
       "sadio mané": ["Sadio Mane"],
       mane: ["Sadio Mané", "Sadio Mane"],
       mané: ["Sadio Mane", "Sadio Mané"],
+      "baris alper yilmaz": ["Barış Alper Yılmaz", "B. Yılmaz"],
+      "barış alper yılmaz": ["Baris Alper Yilmaz", "B. Yilmaz"],
       "nicolas pepe": ["Nicolas Pépé"],
       "nicolas pépé": ["Nicolas Pepe"],
     };
