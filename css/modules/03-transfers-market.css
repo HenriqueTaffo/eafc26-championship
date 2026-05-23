@@ -25,12 +25,16 @@
 }
 
 .transfer-movement-card {
+  display: grid;
+  align-content: start;
   background:
     radial-gradient(circle at top right, rgba(37, 99, 235, .12), transparent 35%),
     rgba(17, 28, 51, .88);
   border: 1px solid rgba(148,163,184,.18);
   border-radius: 18px;
   padding: 14px;
+  min-height: 230px;
+  overflow: hidden;
   box-shadow: 0 16px 35px rgba(0,0,0,.18);
 }
 
@@ -135,7 +139,11 @@
 }
 
 .movement-player {
+  display: grid;
+  gap: 8px;
   margin-top: 14px;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .movement-player span,
@@ -148,16 +156,35 @@
   font-weight: 900;
 }
 
-.movement-player strong {
-  display: block;
-  min-height: 34px;
-  margin-top: 6px;
-  font-size: clamp(18px, 2vw, 24px);
-  line-height: 1.05;
+.movement-player .movement-player-identity {
+  min-height: 58px;
+}
+
+.movement-player .player-avatar {
+  align-self: start;
+  width: 46px;
+  height: 46px;
+}
+
+.movement-player .player-identity-copy {
+  padding-top: 2px;
+}
+
+.movement-player .player-identity-copy strong {
+  display: -webkit-box;
+  overflow: hidden;
+  min-height: 42px;
+  max-height: 42px;
+  font-size: clamp(16px, 1.45vw, 21px);
+  line-height: 1.08;
+  white-space: normal;
+  text-overflow: clip;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
 }
 
 .movement-meta {
-  margin-top: 10px;
+  margin-top: 12px;
   padding-top: 10px;
   border-top: 1px solid rgba(148,163,184,.10);
 }
