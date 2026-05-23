@@ -233,8 +233,9 @@ App.governance = {
       });
     });
 
-    const avatarTotal = Object.keys(App.data?.marketPlayerAvatars || {}).length;
-    if (avatarTotal < 20000) {
+    const avatarCache = App.data?.marketPlayerAvatars || null;
+    const avatarTotal = avatarCache ? Object.keys(avatarCache).length : 0;
+    if (avatarCache && avatarTotal < 20000) {
       issues.push({
         severity: "info",
         title: "Fotos do mercado",

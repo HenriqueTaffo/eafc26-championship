@@ -39,6 +39,19 @@ App.api = {
     }
   },
 
+  async mapWithConcurrency(items = [], limit = 6, mapper = async () => null) {
+    const results = [];
+    const normalizedLimit = Math.max(1, Number(limit || 1));
+
+    for (let index = 0; index < items.length; index += normalizedLimit) {
+      const chunk = items.slice(index, index + normalizedLimit);
+      const chunkResults = await Promise.all(chunk.map(mapper));
+      results.push(...chunkResults);
+    }
+
+    return results;
+  },
+
   getSupabaseHeaders() {
     return {
       apikey: App.config.SUPABASE_PUBLISHABLE_KEY,
@@ -238,11 +251,13 @@ App.api = {
       ...new Set(
         (names || []).map((name) => String(name || "").trim()).filter(Boolean),
       ),
-    ].slice(0, 120);
+    ].slice(0, 40);
     if (!uniqueNames.length) return App.state.apiRatings || [];
 
-    const groups = await Promise.all(
-      uniqueNames.map((name) => {
+    const groups = await App.api.mapWithConcurrency(
+      uniqueNames,
+      6,
+      (name) => {
         const aliases = App.transfers?.getPlayerSearchAliases
           ? App.transfers.getPlayerSearchAliases(name)
           : [name];
@@ -257,7 +272,7 @@ App.api = {
             App.api.searchEaRatings(alias, limitPerName).catch(() => []),
           ),
         );
-      }),
+      },
     );
 
     App.api.mergeEaRatings(groups.flat(2));
@@ -269,17 +284,70 @@ App.api = {
       ...new Set(
         (names || []).map((name) => String(name || "").trim()).filter(Boolean),
       ),
-    ].slice(0, 150);
+    ].slice(0, 40);
     if (!uniqueNames.length) return App.state.apiMarketPlayers || [];
 
-    const groups = await Promise.all(
-      uniqueNames.map((name) =>
+    const groups = await App.api.mapWithConcurrency(
+      uniqueNames,
+      6,
+      (name) =>
         App.api.loadMarketPlayers(name, true, limitPerName).catch(() => []),
-      ),
     );
 
     App.api.mergeMarketPlayers(groups.flat());
     return App.state.apiMarketPlayers;
+  },
+
+  getTransferLookupNames(data = {}) {
+    return [
+      ...(data.transfers || []).map((item) => item.Jogador),
+      ...(App.data.transfers || []).map((item) => item.player),
+    ]
+      .map((name) => String(name || "").trim())
+      .filter(Boolean);
+  },
+
+  async hydrateSecondaryData(data = {}) {
+    if (App.state.secondaryHydrationRunning) return;
+    App.state.secondaryHydrationRunning = true;
+    const names = App.api.getTransferLookupNames(data);
+
+    try {
+      await Promise.allSettled([
+        App.api.loadMarketPlayersForNames(names),
+        App.api.loadEaRatings("", 50),
+        App.api.loadRatingsForPlayerNames(names),
+        App.api.loadExperienceData(),
+        App.api.loadManagerOnboarding?.(),
+        App.api.loadFinanceRulesAndForecast?.(),
+        App.governance?.loadData?.(),
+        App.auth?.generateDueDecisions?.(),
+        App.auth?.loadPublicNews?.(),
+        App.auth?.loadMyDecisions?.(),
+        App.auth?.loadMyTransferProposals?.(),
+        App.auth?.loadMyQoL?.(),
+        App.auth?.loadMySponsorships?.(),
+      ]);
+
+      if (App.state.apiLoaded) {
+        App.main?.renderCurrentView?.();
+        App.main?.markSynced?.("Dados complementares sincronizados");
+      }
+    } finally {
+      App.state.secondaryHydrationRunning = false;
+    }
+  },
+
+  async processSponsorshipsInBackground() {
+    try {
+      await App.api.rpc("app_process_all_sponsorship_rewards", {}, 45000);
+      await App.api.rpc("app_process_periodic_sponsorships", {}, 45000);
+    } catch (sponsorshipError) {
+      console.warn(
+        "Processamento automático de patrocínios indisponível:",
+        sponsorshipError,
+      );
+    }
   },
 
   async loadExperienceData() {
@@ -812,16 +880,6 @@ App.api = {
     }
 
     try {
-      try {
-        await App.api.rpc("app_process_all_sponsorship_rewards", {}, 45000);
-        await App.api.rpc("app_process_periodic_sponsorships", {}, 45000);
-      } catch (sponsorshipError) {
-        console.warn(
-          "Processamento automático de patrocínios indisponível:",
-          sponsorshipError,
-        );
-      }
-
       const data = await App.api.rpc("app_get_data", {}, 45000);
       if (!data.ok)
         throw new Error(
@@ -860,29 +918,28 @@ App.api = {
 
       await App.api.loadMatches();
       await App.api.loadMarketPlayers();
-      await App.api.loadMarketPlayersForNames([
-        ...(data.transfers || []).map((item) => item.Jogador),
-        ...(App.data.transfers || []).map((item) => item.player),
-      ]);
-      await App.api.loadEaRatings("", 50);
-      await App.api.loadRatingsForPlayerNames([
-        ...(data.transfers || []).map((item) => item.Jogador),
-        ...(App.data.transfers || []).map((item) => item.player),
-      ]);
-      await App.api.loadExperienceData();
-      await App.api.loadManagerOnboarding?.();
-      await App.api.loadFinanceRulesAndForecast?.();
-      await App.governance?.loadData?.();
-      await App.auth?.generateDueDecisions?.();
-      await App.auth?.loadPublicNews?.();
-      await App.auth?.loadMyDecisions?.();
-      await App.auth?.loadMyTransferProposals?.();
-      await App.auth?.loadMyQoL?.();
-      await App.auth?.loadMySponsorships?.();
 
       App.state.apiLoaded = true;
       App.main.renderAll();
       App.main?.markSynced?.();
+      if (!options.skipBackgroundRefresh) {
+        App.api
+          .processSponsorshipsInBackground()
+          .then(() =>
+            App.api.loadApiData({
+              showLoader: false,
+              skipBackgroundRefresh: true,
+            }),
+          )
+          .catch((error) =>
+            console.warn("Atualização de patrocínios indisponível:", error),
+          );
+        App.api
+          .hydrateSecondaryData(data)
+          .catch((error) =>
+            console.warn("Hidratação complementar indisponível:", error),
+          );
+      }
       return data;
     } catch (error) {
       const hadPreviousData =
