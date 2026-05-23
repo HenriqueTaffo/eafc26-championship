@@ -135,10 +135,20 @@
   text-overflow: ellipsis;
 }
 
-.coach-transfer-item,
-.coach-event-item {
+.coach-transfer-item {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 16px;
+  background: rgba(2,6,23,.24);
+  border: 1px solid rgba(148,163,184,.10);
+}
+
+.coach-event-item {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) max-content;
   align-items: center;
   gap: 12px;
   padding: 12px;
@@ -186,6 +196,8 @@
 .coach-event-item b {
   color: #ddd6fe;
   white-space: nowrap;
+  justify-self: end;
+  text-align: right;
 }
 
 .coach-target-form {
@@ -418,15 +430,24 @@
     gap: 14px;
   }
 
-  .coach-transfer-item,
-  .coach-event-item {
+  .coach-transfer-item {
     grid-template-columns: auto minmax(0, 1fr);
   }
 
-  .coach-transfer-item b,
+  .coach-event-item {
+    grid-template-columns: 40px minmax(0, 1fr);
+    align-items: start;
+  }
+
+  .coach-transfer-item b {
+    grid-column: 2;
+    justify-self: start;
+  }
+
   .coach-event-item b {
     grid-column: 2;
     justify-self: start;
+    text-align: left;
   }
 
   .coach-podium-grid {
