@@ -915,7 +915,7 @@ App.players = {
           <div class="coach-hero-main">
             <div class="coach-club-mark">${App.clubs.getTeamBadgeHtml(activeTeam.team, "coach-crest")}</div>
             <div>
-              <span class="modal-kicker">Painel do técnico</span>
+              <span class="modal-kicker">Escritório do técnico</span>
               <h2>${activeTeam.owner}</h2>
               <p>Técnico do ${activeTeam.team}</p>
               <div class="coach-form-line">

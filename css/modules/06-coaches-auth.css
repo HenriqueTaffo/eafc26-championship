@@ -741,6 +741,195 @@
   line-height: 1.35;
 }
 
+.email-office-card {
+  border-color: rgba(56, 189, 248, .24) !important;
+  background:
+    linear-gradient(145deg, rgba(8, 19, 35, .94), rgba(15, 23, 42, .84)) !important;
+}
+
+.email-office-header {
+  align-items: center;
+}
+
+.email-office-card .home-panel-header h2,
+.email-office-card .decision-header strong {
+  letter-spacing: 0;
+}
+
+.email-office-card .coach-card-subtitle,
+.email-office-card .decision-header p {
+  color: #b6c5d8;
+}
+
+.email-office-stats,
+.email-office-command-row {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin: 12px 0 14px;
+}
+
+.email-office-stats article,
+.email-office-command-row span {
+  min-width: 0;
+  border: 1px solid rgba(148, 163, 184, .16);
+  border-radius: 12px;
+  padding: 10px 12px;
+  background: rgba(2, 6, 23, .28);
+}
+
+.email-office-stats article span,
+.email-office-command-row span {
+  display: block;
+  color: #8fd3ff;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.email-office-stats article strong {
+  display: block;
+  margin-top: 4px;
+  color: #f8fafc;
+  font-size: 24px;
+  line-height: 1;
+}
+
+.email-office-stats article small {
+  display: block;
+  margin-top: 5px;
+  color: #94a3b8;
+  line-height: 1.25;
+}
+
+.email-thread-grid {
+  align-items: stretch;
+}
+
+.decision-email-message {
+  border-radius: 14px;
+  border-color: rgba(148, 163, 184, .18);
+  background:
+    linear-gradient(180deg, rgba(15, 23, 42, .96), rgba(2, 6, 23, .45));
+  box-shadow: inset 4px 0 0 rgba(56, 189, 248, .72);
+}
+
+.decision-email-message.priority-high {
+  box-shadow: inset 4px 0 0 rgba(248, 113, 113, .86);
+  border-color: rgba(248, 113, 113, .24);
+}
+
+.email-message-top span,
+.decision-email-message .email-message-preview span,
+.email-office-card .email-empty-state span,
+.email-office-card .email-locked-state span {
+  letter-spacing: 0;
+}
+
+.email-message-top b {
+  background: rgba(56, 189, 248, .12);
+  border: 1px solid rgba(56, 189, 248, .24);
+  color: #bae6fd;
+}
+
+.decision-email-message.priority-high .email-message-top b {
+  background: rgba(248, 113, 113, .12);
+  border-color: rgba(248, 113, 113, .24);
+  color: #fecaca;
+}
+
+.email-message-subject {
+  margin-top: 12px;
+}
+
+.email-message-subject strong {
+  display: block;
+  color: #f8fafc;
+  font-size: 21px;
+  line-height: 1.12;
+}
+
+.email-message-subject small {
+  display: block;
+  margin-top: 6px;
+  color: #8fd3ff;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.decision-email-message p {
+  margin: 12px 0 0;
+}
+
+.email-message-preview {
+  display: grid;
+  gap: 7px;
+  margin-top: 12px;
+}
+
+.decision-email-message .email-message-preview span {
+  display: block;
+  border: 1px solid rgba(148, 163, 184, .13);
+  border-radius: 10px;
+  padding: 8px 10px;
+  background: rgba(15, 23, 42, .48);
+  color: #cbd5e1;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: none;
+}
+
+.email-response-actions button {
+  border-radius: 12px;
+  min-height: 78px;
+}
+
+.email-response-actions button:first-child {
+  border-color: rgba(34, 197, 94, .34);
+  background: rgba(20, 83, 45, .28);
+}
+
+.email-response-actions button:last-child {
+  border-color: rgba(248, 113, 113, .28);
+  background: rgba(127, 29, 29, .24);
+}
+
+.email-empty-state,
+.email-locked-state {
+  border-color: rgba(56, 189, 248, .20) !important;
+  background: rgba(2, 6, 23, .26) !important;
+}
+
+.email-empty-state > span,
+.email-locked-state > span,
+.decision-locked.email-office-card > b {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  border: 1px solid rgba(56, 189, 248, .24);
+  background: rgba(56, 189, 248, .10);
+  color: #bae6fd;
+  font-size: 13px !important;
+  font-weight: 1000;
+  line-height: 1;
+}
+
+.email-archive-list div {
+  border: 1px solid rgba(148, 163, 184, .12);
+}
+
+.email-archive-list div b {
+  color: #8fd3ff;
+}
+
+.decision-history.email-archive-list div b,
+.coach-decision-history.email-archive-list div b {
+  color: #8fd3ff;
+}
+
 .decision-history {
   margin-top: 14px;
   display: grid;
@@ -806,6 +995,11 @@
 
   .decision-options {
     grid-template-columns: 1fr;
+  }
+
+  .email-office-stats,
+  .email-office-command-row {
+    grid-template-columns: 1fr 1fr;
   }
 }
 

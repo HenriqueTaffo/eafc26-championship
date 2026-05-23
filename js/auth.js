@@ -43,6 +43,48 @@ App.auth = {
     return App.auth.isCpuProposal(item) ? "CPU" : (item.buyer || "outro tecnico");
   },
 
+  getDecisionEmailMeta(item = {}) {
+    const category = item.category || "Diretoria";
+    const normalized = App.utils.normalizeText(category);
+    const text = App.utils.normalizeText([
+      item.title,
+      item.description,
+      item.yes_preview,
+      item.no_preview
+    ].join(" "));
+    const senders = [
+      { key: "mercado", sender: "Diretoria de futebol", folder: "Mercado" },
+      { key: "finance", sender: "Financeiro", folder: "Finanças" },
+      { key: "orcamento", sender: "Financeiro", folder: "Finanças" },
+      { key: "lesao", sender: "Departamento médico", folder: "Elenco" },
+      { key: "medic", sender: "Departamento médico", folder: "Elenco" },
+      { key: "imprensa", sender: "Comunicação", folder: "Imprensa" },
+      { key: "patro", sender: "Comercial", folder: "Comercial" },
+      { key: "torcida", sender: "Relações com torcedores", folder: "Clube" }
+    ];
+    const matched = senders.find(item => normalized.includes(item.key) || text.includes(item.key));
+    const isHighPriority = ["urgente", "risco", "multa", "lesao", "negativo", "perde", "bloque"].some(key => text.includes(key));
+
+    return {
+      sender: matched?.sender || "Diretoria executiva",
+      folder: matched?.folder || category,
+      priority: isHighPriority ? "Alta" : "Normal",
+      tone: isHighPriority ? "high" : "normal"
+    };
+  },
+
+  renderDecisionEmailStats(pending = [], resolved = []) {
+    const highPriority = pending.filter(item => App.auth.getDecisionEmailMeta(item).priority === "Alta").length;
+    return `
+      <div class="email-office-stats">
+        <article><span>Entrada</span><strong>${pending.length}</strong><small>aguardando resposta</small></article>
+        <article><span>Prioridade</span><strong>${highPriority}</strong><small>alta atenção</small></article>
+        <article><span>Arquivo</span><strong>${resolved.length}</strong><small>últimas respostas</small></article>
+        <article><span>Prazo</span><strong>23:59</strong><small>fechamento diário</small></article>
+      </div>
+    `;
+  },
+
   isLoggedIn() {
     const session = App.auth.getSession();
     return Boolean(session?.managerId && session?.accessCode);
@@ -518,7 +560,7 @@ App.auth = {
       App.auth.renderAll();
       return result;
     } catch (error) {
-      console.warn("Geração automática de decisões indisponível:", error);
+      console.warn("Geração automática de e-mails indisponível:", error);
       return null;
     } finally {
       App.auth.autoDecisionRunning = false;
@@ -551,7 +593,7 @@ App.auth = {
 
   async generateDecision() {
     const session = App.auth.getSession();
-    if (!session) throw new Error("Faça login como técnico antes de sortear decisões.");
+    if (!session) throw new Error("Faça login como técnico antes de sortear e-mails.");
 
     const result = await App.api.rpc("app_generate_my_decision_event", {
       p_manager_id: session.managerId,
@@ -569,7 +611,7 @@ App.auth = {
 
   async answerDecision(decisionId, choice) {
     const session = App.auth.getSession();
-    if (!session) throw new Error("Faça login como técnico antes de responder decisões.");
+    if (!session) throw new Error("Faça login como técnico antes de responder e-mails.");
 
     const result = await App.api.rpc("app_answer_decision_event", {
       p_manager_id: session.managerId,
@@ -656,7 +698,7 @@ App.auth = {
           <div>
             <span>${session.isCommissioner ? "Login do comissário" : "Login do técnico"}</span>
             <strong>${App.utils.escapeHtml(session.managerName)}</strong>
-            <small>${App.utils.escapeHtml(session.clubName || "Clube vinculado")} · ${session.isCommissioner ? "governança liberada" : "decisões privadas liberadas"}</small>
+            <small>${App.utils.escapeHtml(session.clubName || "Clube vinculado")} · ${session.isCommissioner ? "governança liberada" : "e-mail privado liberado"}</small>
           </div>
           <div class="manager-session-actions">
             <button type="button" class="ghost-button" data-auth-action="logout">Sair</button>
@@ -675,7 +717,7 @@ App.auth = {
         <div>
           <span>Login da liga</span>
           <strong>Área privada</strong>
-          <small>Técnicos acessam decisões próprias. O comissário acessa as ferramentas de governança.</small>
+          <small>Técnicos acessam o escritório privado. O comissário acessa as ferramentas de governança.</small>
         </div>
         <label>
           Perfil
@@ -716,13 +758,13 @@ App.auth = {
 
     if (!session) {
       panel.innerHTML = `
-        <section class="decision-private-card decision-locked">
+        <section class="decision-private-card decision-locked email-office-card">
           <div>
-            <span>Central de decisões</span>
-            <strong>Faça login para ver seus eventos privados</strong>
-            <p>Cada técnico só consegue responder as próprias decisões. O resultado aparece publicamente no Jornal da Liga.</p>
+            <span>E-mail do técnico</span>
+            <strong>Caixa de entrada privada</strong>
+            <p>Mensagens da diretoria, mercado e bastidores ficam disponíveis após o login do técnico.</p>
           </div>
-          <b>🔐</b>
+          <b>@</b>
         </section>
       `;
       return;
@@ -732,31 +774,32 @@ App.auth = {
     const resolved = App.auth.myDecisions.filter(item => item.status !== "pending").slice(0, 4);
 
     panel.innerHTML = `
-      <section class="decision-private-card">
-        <div class="decision-header">
+      <section class="decision-private-card email-office-card">
+        <div class="decision-header email-office-header">
           <div>
-            <span>Central de decisões</span>
-            <strong>${pending.length ? `${pending.length} decisão(ões) pendente(s)` : "Nenhuma decisão pendente"}</strong>
-            <p>${App.utils.escapeHtml(session.managerName)}, responda seus eventos privados. Outros técnicos não conseguem decidir por você.</p>
+            <span>E-mail do técnico</span>
+            <strong>${pending.length ? `${pending.length} mensagens não respondidas` : "Inbox em dia"}</strong>
+            <p>${App.utils.escapeHtml(session.managerName)}, mensagens privadas da diretoria e bastidores aparecem aqui.</p>
           </div>
-          <span class="decision-auto-pill">Sorteio automático até 23:59</span>
+          <span class="decision-auto-pill">Expira às 23:59</span>
         </div>
+        ${App.auth.renderDecisionEmailStats(pending, resolved)}
 
         ${pending.length ? `
-          <div class="decision-grid">
+          <div class="decision-grid email-thread-grid">
             ${pending.map(item => App.auth.renderDecisionCard(item)).join("")}
           </div>
         ` : `
-          <div class="decision-empty">
-            <span>🗞️</span>
-            <strong>A mesa está limpa</strong>
-            <p>As decisões aparecem automaticamente durante o dia. Se não forem respondidas até 23:59, expiram e o app limpa para o próximo dia.</p>
+          <div class="decision-empty email-empty-state">
+            <span>INBOX</span>
+            <strong>Nenhum e-mail pendente</strong>
+            <p>Novas mensagens entram automaticamente ao longo do dia e vencem às 23:59.</p>
           </div>
         `}
 
         ${resolved.length ? `
-          <div class="decision-history">
-            <strong>Últimas decisões resolvidas</strong>
+          <div class="decision-history email-archive-list">
+            <strong>Arquivados recentes</strong>
             ${resolved.map(item => `
               <div>
                 <span>${App.utils.escapeHtml(item.title)}</span>
@@ -829,16 +872,16 @@ App.auth = {
 
     if (!session) {
       return `
-        <article class="coach-panel-card coach-decision-card coach-decision-locked-card">
+        <article class="coach-panel-card coach-decision-card coach-decision-locked-card email-office-card">
           <div class="home-panel-header">
-            <h2>Central de decisões</h2>
+            <h2>E-mail</h2>
             <span class="coach-section-kicker">Login necessário</span>
           </div>
-          <div class="coach-empty-state decision-empty-visible">
-            <span>🔐</span>
+          <div class="coach-empty-state decision-empty-visible email-locked-state">
+            <span>@</span>
             <div>
-              <strong>Decisões privadas do técnico</strong>
-              <p>Faça login para ver e responder os eventos de Sim/Não. As consequências aparecem publicamente no Jornal da Liga.</p>
+              <strong>Caixa de entrada privada</strong>
+              <p>Faça login para abrir mensagens da diretoria, mercado e bastidores do clube.</p>
             </div>
           </div>
         </article>
@@ -847,16 +890,16 @@ App.auth = {
 
     if (App.utils.normalizeText(session.managerName) !== App.utils.normalizeText(owner)) {
       return `
-        <article class="coach-panel-card coach-decision-card coach-decision-locked-card">
+        <article class="coach-panel-card coach-decision-card coach-decision-locked-card email-office-card">
           <div class="home-panel-header">
-            <h2>Central de decisões</h2>
+            <h2>E-mail</h2>
             <span class="coach-section-kicker">Privado</span>
           </div>
-          <div class="coach-empty-state decision-empty-visible">
-            <span>🧤</span>
+          <div class="coach-empty-state decision-empty-visible email-locked-state">
+            <span>@</span>
             <div>
-              <strong>Painel protegido</strong>
-              <p>Você está logado como ${App.utils.escapeHtml(session.managerName)}. Para decidir eventos de ${App.utils.escapeHtml(owner)}, entre com o PIN desse técnico.</p>
+              <strong>Caixa postal protegida</strong>
+              <p>Você está logado como ${App.utils.escapeHtml(session.managerName)}. Para abrir os e-mails de ${App.utils.escapeHtml(owner)}, entre com o PIN desse técnico.</p>
             </div>
           </div>
         </article>
@@ -865,34 +908,41 @@ App.auth = {
 
     const pending = App.auth.myDecisions.filter(item => item.status === "pending");
     const resolved = App.auth.myDecisions.filter(item => item.status !== "pending").slice(0, 3);
+    const highPriority = pending.filter(item => App.auth.getDecisionEmailMeta(item).priority === "Alta").length;
 
     return `
-      <article class="coach-panel-card coach-decision-card">
-        <div class="home-panel-header">
+      <article class="coach-panel-card coach-decision-card email-office-card">
+        <div class="home-panel-header email-office-header">
           <div>
-            <h2>Central de decisões</h2>
-            <p class="coach-card-subtitle">Eventos privados de Sim/Não. Sorteio automático durante o dia; expira às 23:59.</p>
+            <h2>E-mail</h2>
+            <p class="coach-card-subtitle">Inbox privada do escritório: diretoria, mercado, elenco e bastidores.</p>
           </div>
-          <span class="coach-section-kicker">${pending.length} pendente(s)</span>
+          <span class="coach-section-kicker">${pending.length} não respondida(s)</span>
+        </div>
+        <div class="email-office-command-row">
+          <span>Entrada ${pending.length}</span>
+          <span>Prioridade ${highPriority}</span>
+          <span>Arquivados ${resolved.length}</span>
+          <span>Prazo 23:59</span>
         </div>
 
         ${pending.length ? `
-          <div class="coach-decision-grid">
+          <div class="coach-decision-grid email-thread-grid">
             ${pending.map(item => App.auth.renderDecisionCard(item)).join("")}
           </div>
         ` : `
-          <div class="coach-empty-state decision-empty-visible">
-            <span>🗞️</span>
+          <div class="coach-empty-state decision-empty-visible email-empty-state">
+            <span>INBOX</span>
             <div>
-              <strong>Nenhuma decisão pendente</strong>
-              <p>Quando o sorteio automático cair para ${App.utils.escapeHtml(session.managerName)}, as opções aparecem aqui.</p>
+              <strong>Nenhum e-mail pendente</strong>
+              <p>Quando uma nova mensagem chegar para ${App.utils.escapeHtml(session.managerName)}, ela aparece aqui com ações de resposta.</p>
             </div>
           </div>
         `}
 
         ${resolved.length ? `
-          <div class="coach-decision-history">
-            <strong>Últimas decisões</strong>
+          <div class="coach-decision-history email-archive-list">
+            <strong>Arquivados recentes</strong>
             ${resolved.map(item => `
               <div>
                 <span>${App.utils.escapeHtml(item.title)}</span>
@@ -1220,7 +1270,7 @@ App.auth = {
         const choice = target.dataset.choice;
         const label = choice === "yes" ? "Sim" : "Não";
 
-        if (!confirm(`Confirmar resposta "${label}"? A consequência será aplicada e publicada no Jornal da Liga.`)) return;
+        if (!confirm(`Enviar resposta "${label}" para este e-mail? A consequência será aplicada e publicada no Jornal da Liga.`)) return;
 
         try {
           target.disabled = true;
@@ -1351,21 +1401,31 @@ App.auth = {
   },
 
   renderDecisionCard(item) {
+    const meta = App.auth.getDecisionEmailMeta(item);
+    const statusLabel = item.status === "pending" ? "Não respondido" : item.status || "arquivado";
+
     return `
-      <article class="decision-card">
-        <div class="decision-card-top">
-          <span>${App.utils.escapeHtml(item.category || "Evento")}</span>
-          <b>Privado</b>
+      <article class="decision-card decision-email-message priority-${meta.tone}">
+        <div class="decision-card-top email-message-top">
+          <span>${App.utils.escapeHtml(meta.sender)}</span>
+          <b>${App.utils.escapeHtml(statusLabel)}</b>
         </div>
-        <h3>${App.utils.escapeHtml(item.title)}</h3>
+        <div class="email-message-subject">
+          <strong>${App.utils.escapeHtml(item.title)}</strong>
+          <small>${App.utils.escapeHtml(meta.folder)} · prioridade ${App.utils.escapeHtml(meta.priority)}</small>
+        </div>
         <p>${App.utils.escapeHtml(item.description)}</p>
-        <div class="decision-options">
+        <div class="email-message-preview">
+          <span>${App.utils.escapeHtml(item.yes_label || "Sim")}: ${App.utils.escapeHtml(item.yes_preview || "Aplicar consequência positiva/arriscada.")}</span>
+          <span>${App.utils.escapeHtml(item.no_label || "Não")}: ${App.utils.escapeHtml(item.no_preview || "Recusar e aceitar a consequência alternativa.")}</span>
+        </div>
+        <div class="decision-options email-response-actions">
           <button type="button" data-decision-answer data-decision-id="${item.id}" data-choice="yes">
-            <strong>${App.utils.escapeHtml(item.yes_label || "Sim")}</strong>
+            <strong>Responder: ${App.utils.escapeHtml(item.yes_label || "Sim")}</strong>
             <small>${App.utils.escapeHtml(item.yes_preview || "Aplicar consequência positiva/arriscada.")}</small>
           </button>
           <button type="button" data-decision-answer data-decision-id="${item.id}" data-choice="no">
-            <strong>${App.utils.escapeHtml(item.no_label || "Não")}</strong>
+            <strong>Responder: ${App.utils.escapeHtml(item.no_label || "Não")}</strong>
             <small>${App.utils.escapeHtml(item.no_preview || "Recusar e aceitar a consequência alternativa.")}</small>
           </button>
         </div>
@@ -1486,7 +1546,7 @@ App.auth = {
             <strong>Favoritos</strong>
             ${favorites.length ? favorites.slice(0, 5).map(item => `
               <span class="manager-qol-pill info">${App.utils.escapeHtml(item.title)} · ${App.utils.escapeHtml(item.detail || item.item_type || "")}</span>
-            `).join("") : `<span class="calendar-muted">Favorite alvos e atalhos no painel do técnico.</span>`}
+            `).join("") : `<span class="calendar-muted">Favorite alvos e atalhos no escritório do técnico.</span>`}
           </div>
         </div>
       </section>
@@ -1527,7 +1587,7 @@ App.auth = {
         ` : `
           <div class="league-news-empty">
             <strong>Nenhuma manchete publicada ainda</strong>
-            <p>Quando um técnico responder uma decisão privada, o desenrolar aparece aqui como notícia da liga.</p>
+            <p>Quando um técnico responder um e-mail privado, o desenrolar aparece aqui como notícia da liga.</p>
           </div>
         `}
       </section>
