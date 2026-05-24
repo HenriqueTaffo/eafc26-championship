@@ -29,12 +29,26 @@ App.auth = {
       App.auth.currentSession = null;
     }
 
+    App.auth.syncAuthGate();
     App.auth.renderAll();
     App.auth.bootstrapSessionState();
   },
 
   getSession() {
     return App.auth.currentSession;
+  },
+
+  syncAuthGate() {
+    if (!document.body) return;
+
+    const isLocked = !App.auth.isLoggedIn();
+    document.body.classList.toggle("auth-gated", isLocked);
+    document.body.classList.toggle("auth-unlocked", !isLocked);
+
+    if (isLocked) {
+      App.main?.hideLoader?.(true);
+      App.main?.markSynced?.("Faça login para abrir a liga");
+    }
   },
 
   isCpuProposal(item = {}) {
@@ -816,6 +830,8 @@ App.auth = {
     if (!panel) return;
 
     const session = App.auth.getSession();
+    App.auth.syncAuthGate();
+
     const managers = App.utils?.getHumanBuyers ? App.utils.getHumanBuyers() : ["Henrique", "Willian", "Rafael", "Renato"];
     const loginOptions = [...managers, "Comissário da Liga"];
 

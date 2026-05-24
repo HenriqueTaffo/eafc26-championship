@@ -445,6 +445,12 @@ App.main = {
     App.calendar.populateWeeks();
     App.main.startTimers();
 
+    if (!App.auth?.isLoggedIn?.()) {
+      App.main.hideLoader(true);
+      App.main.markSynced("Faça login para abrir a liga");
+      return;
+    }
+
     const initialLoad = App.api.loadApiData({
       force: true,
       variant: "match",
