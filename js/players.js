@@ -548,6 +548,88 @@ App.players = {
     `;
   },
 
+  renderCoachSaleListCard(owner, transfers = []) {
+    const data = App.auth?.myTransferSaleListings || { listings: [], ownedPlayers: [] };
+    const listings = Array.isArray(data.listings) ? data.listings : [];
+    const dbOwnedPlayers = Array.isArray(data.ownedPlayers) ? data.ownedPlayers : [];
+    const ownedPlayers = dbOwnedPlayers.length
+      ? dbOwnedPlayers
+      : transfers.map(item => ({
+          player: item.player,
+          playerName: item.player,
+          fromClub: item.fromClub,
+          overall: item.overall,
+          baseValue: item.totalCost || item.marketValue || 0,
+          listed: listings.some(listing => App.utils.normalizeText(listing.player || listing.playerName) === App.utils.normalizeText(item.player))
+        }));
+    const activeCount = listings.length;
+
+    return `
+      <article class="coach-panel-card coach-sale-list-card coach-targets-card" data-sale-list-owner="${App.utils.escapeHtml(owner)}">
+        <div class="home-panel-header">
+          <div>
+            <h2>Lista de venda</h2>
+            <p class="coach-card-subtitle">Jogadores sinalizados aqui entram primeiro nas sondagens externas de clubes reais.</p>
+          </div>
+          <span class="coach-section-kicker">${activeCount} ativo(s)</span>
+        </div>
+        <form class="coach-target-form" data-sale-listing-form>
+          <label>
+            Jogador
+            <select name="player" required data-sale-listing-player>
+              <option value="">Selecione do elenco</option>
+              ${ownedPlayers.map(player => {
+                const name = player.player || player.playerName || "";
+                const baseValue = Number(player.baseValue || 0);
+                return `<option value="${App.utils.escapeHtml(name)}" data-base-value="${baseValue}">${App.utils.escapeHtml(name)}${player.listed ? " · listado" : ""}</option>`;
+              }).join("")}
+            </select>
+          </label>
+          <label>
+            Pedida
+            <input name="askingPrice" type="number" min="0" step="100000" placeholder="Auto" data-sale-listing-price />
+          </label>
+          <label class="target-note-field">
+            Recado
+            <input name="note" type="text" placeholder="Ex.: aceito proposta acima da pedida" autocomplete="off" />
+          </label>
+          <button type="submit" class="secondary-button" ${ownedPlayers.length ? "" : "disabled"}>Colocar na lista</button>
+        </form>
+        <div class="coach-target-list">
+          ${listings.length ? listings.map(item => {
+            const name = item.player || item.playerName;
+            const fromClub = item.fromClub || item.from_club || "";
+            const askingPrice = Number(item.askingPrice || item.asking_price || 0);
+            const baseValue = Number(item.baseValue || item.base_value || 0);
+            const offerCount = Number(item.offerCount || item.offer_count || 0);
+            const lastOfferAt = item.lastOfferAt || item.last_offer_at || "";
+            const rating = App.transfers.getRatingForPlayerName(name, { club: fromClub });
+            const marketPlayer = App.transfers.findMarketPlayerByName(name, { club: fromClub }) || { name, club: fromClub };
+            return `
+              <div class="coach-target-item">
+                ${App.transfers.renderPlayerPhoto(marketPlayer, rating, "player-avatar")}
+                <div class="coach-target-copy">
+                  <strong>${App.utils.escapeHtml(name)}</strong>
+                  <small>${App.utils.escapeHtml([fromClub, item.overall ? `OVR ${item.overall}` : "", askingPrice ? App.utils.formatCurrency(askingPrice) : ""].filter(Boolean).join(" · "))}</small>
+                  <span>${App.utils.escapeHtml(item.note || "Disponível para propostas externas.")}</span>
+                  <span>${offerCount ? `${offerCount} proposta(s) direcionada(s)${lastOfferAt ? ` · última ${App.utils.formatDateTime(lastOfferAt)}` : ""}` : `Base ${App.utils.formatCurrency(baseValue)} · aguardando sondagem`}</span>
+                </div>
+                <div class="coach-target-actions">
+                  <button type="button" class="icon-action-button" title="Remover da lista" aria-label="Remover da lista" data-remove-sale-listing="${App.utils.escapeHtml(item.id)}">×</button>
+                </div>
+              </div>
+            `;
+          }).join("") : `
+            <div class="coach-empty-state compact">
+              <strong>Ninguém listado</strong>
+              <p>Liste jogadores fora do plano para aumentar a chance de receber ofertas externas por eles.</p>
+            </div>
+          `}
+        </div>
+      </article>
+    `;
+  },
+
   async renderPrivateTargetSearchResults(form) {
     const card = form.closest("[data-private-target-owner]");
     const target = card?.querySelector("[data-private-target-results]");
@@ -942,6 +1024,7 @@ App.players = {
     const statementCard = canViewPrivate ? App.players.renderCoachFinancialStatement(activeTeam.owner, budget, breakdown) : "";
     const targetsCard = canViewPrivate ? App.players.renderPrivateTransferTargets(activeTeam.owner) : "";
     const favoritesCard = canViewPrivate ? App.players.renderPrivateFavoritesCard(activeTeam.owner) : "";
+    const saleListCard = canViewPrivate ? App.players.renderCoachSaleListCard(activeTeam.owner, transfers) : "";
 
     return `
       <section class="coach-dashboard" style="--coach-color:${color}">
@@ -983,6 +1066,7 @@ App.players = {
 
           ${decisionCard ? `<div class="coach-full-row-v54">${decisionCard}</div>` : ""}
           ${proposalCard ? `<div class="coach-full-row-v54">${proposalCard}</div>` : ""}
+          ${saleListCard ? `<div class="coach-full-row-v54">${saleListCard}</div>` : ""}
           ${sponsorshipCard ? `<div class="coach-full-row-v54">${sponsorshipCard}</div>` : ""}
           ${statementCard}
           ${privateBoardCard}
@@ -1062,6 +1146,64 @@ App.players = {
     });
 
     App.calendar.bindCalendarActions?.();
+
+    document.querySelectorAll("[data-sale-listing-form]").forEach(form => {
+      if (form.dataset.bound === "true") return;
+      form.dataset.bound = "true";
+      const playerSelect = form.querySelector("[data-sale-listing-player]");
+      const priceInput = form.querySelector("[data-sale-listing-price]");
+
+      playerSelect?.addEventListener("change", () => {
+        const option = playerSelect.selectedOptions?.[0];
+        const baseValue = Number(option?.dataset.baseValue || 0);
+        if (priceInput && baseValue > 0 && !priceInput.value) {
+          priceInput.value = Math.round((baseValue * 1.12) / 100000) * 100000;
+        }
+      });
+
+      form.addEventListener("submit", async event => {
+        event.preventDefault();
+        const button = form.querySelector("button[type='submit']");
+        try {
+          if (button) {
+            button.disabled = true;
+            button.textContent = "Salvando...";
+          }
+          await App.auth.upsertTransferSaleListing({
+            player: form.elements.player.value,
+            askingPrice: form.elements.askingPrice.value,
+            note: form.elements.note.value
+          });
+          form.reset();
+          App.players.render();
+        } catch (error) {
+          alert(error.message);
+        } finally {
+          if (button) {
+            button.disabled = false;
+            button.textContent = "Colocar na lista";
+          }
+        }
+      });
+    });
+
+    document.querySelectorAll("[data-remove-sale-listing]").forEach(button => {
+      if (button.dataset.bound === "true") return;
+      button.dataset.bound = "true";
+      button.addEventListener("click", async () => {
+        if (!confirm("Remover este jogador da lista de venda?")) return;
+        try {
+          button.disabled = true;
+          await App.auth.deleteTransferSaleListing(button.dataset.removeSaleListing);
+          App.players.render();
+        } catch (error) {
+          alert(error.message);
+        } finally {
+          button.disabled = false;
+        }
+      });
+    });
+
     document.querySelectorAll("[data-private-target-form]").forEach(form => {
       if (form.dataset.bound === "true") return;
       form.dataset.bound = "true";

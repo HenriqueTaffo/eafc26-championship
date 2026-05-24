@@ -8,6 +8,10 @@ App.auth = {
   myTransferProposals: [],
   myTransferTargets: [],
   myTransferTargetsLoaded: false,
+  myTransferSaleListings: {
+    listings: [],
+    ownedPlayers: []
+  },
   mySponsorships: null,
   myQoL: null,
   myFavorites: [],
@@ -106,6 +110,7 @@ App.auth = {
         App.auth.loadMyDecisions(),
         App.auth.loadMyTransferProposals(),
         App.auth.loadMyTransferTargets(),
+        App.auth.loadMyTransferSaleListings(),
         App.auth.loadMySponsorships(),
         App.auth.loadMyQoL(),
         App.auth.loadPublicNews()
@@ -160,6 +165,7 @@ App.auth = {
       await App.auth.loadMyDecisions();
       await App.auth.loadMyTransferProposals();
       await App.auth.loadMyTransferTargets();
+      await App.auth.loadMyTransferSaleListings();
       await App.auth.loadMySponsorships();
       await App.auth.loadMyQoL();
     }
@@ -201,6 +207,7 @@ App.auth = {
     App.auth.myTransferProposals = [];
     App.auth.myTransferTargets = [];
     App.auth.myTransferTargetsLoaded = false;
+    App.auth.myTransferSaleListings = { listings: [], ownedPlayers: [] };
     App.auth.mySponsorships = null;
     App.auth.myQoL = null;
     App.auth.myFavorites = [];
@@ -280,6 +287,70 @@ App.auth = {
     App.auth.myTransferTargets = Array.isArray(result?.targets) ? result.targets : [];
     App.auth.myTransferTargetsLoaded = true;
     return App.auth.myTransferTargets;
+  },
+
+  async loadMyTransferSaleListings() {
+    const session = App.auth.getSession();
+    if (!session || session.isCommissioner) {
+      App.auth.myTransferSaleListings = { listings: [], ownedPlayers: [] };
+      return App.auth.myTransferSaleListings;
+    }
+
+    try {
+      const result = await App.api.rpc("app_get_my_transfer_sale_listings", {
+        p_manager_id: session.managerId,
+        p_access_code: session.accessCode
+      }, 30000);
+
+      if (result?.ok === false) throw new Error(result.message || "Lista de venda indisponível.");
+      App.auth.myTransferSaleListings = {
+        listings: Array.isArray(result?.listings) ? result.listings : [],
+        ownedPlayers: Array.isArray(result?.ownedPlayers) ? result.ownedPlayers : []
+      };
+      return App.auth.myTransferSaleListings;
+    } catch (error) {
+      console.warn("Lista de venda indisponível:", error);
+      App.auth.myTransferSaleListings = App.auth.myTransferSaleListings || { listings: [], ownedPlayers: [] };
+      return App.auth.myTransferSaleListings;
+    }
+  },
+
+  async upsertTransferSaleListing(payload = {}) {
+    const session = App.auth.getSession();
+    if (!session || session.isCommissioner) throw new Error("Faça login como técnico para listar jogadores.");
+
+    const result = await App.api.rpc("app_upsert_transfer_sale_listing", {
+      p_manager_id: session.managerId,
+      p_access_code: session.accessCode,
+      p_player: payload.player || "",
+      p_asking_price: Number(payload.askingPrice || 0),
+      p_note: payload.note || ""
+    }, 30000);
+
+    if (result?.ok === false) throw new Error(result.message || "Não consegui salvar a lista de venda.");
+    App.auth.myTransferSaleListings = {
+      listings: Array.isArray(result?.listings) ? result.listings : [],
+      ownedPlayers: Array.isArray(result?.ownedPlayers) ? result.ownedPlayers : []
+    };
+    return App.auth.myTransferSaleListings;
+  },
+
+  async deleteTransferSaleListing(listingId) {
+    const session = App.auth.getSession();
+    if (!session || session.isCommissioner) throw new Error("Faça login como técnico para remover jogadores da lista.");
+
+    const result = await App.api.rpc("app_delete_transfer_sale_listing", {
+      p_manager_id: session.managerId,
+      p_access_code: session.accessCode,
+      p_listing_id: listingId
+    }, 30000);
+
+    if (result?.ok === false) throw new Error(result.message || "Não consegui remover da lista de venda.");
+    App.auth.myTransferSaleListings = {
+      listings: Array.isArray(result?.listings) ? result.listings : [],
+      ownedPlayers: Array.isArray(result?.ownedPlayers) ? result.ownedPlayers : []
+    };
+    return App.auth.myTransferSaleListings;
   },
 
   async loadMyDecisions() {
@@ -670,6 +741,7 @@ App.auth = {
     await Promise.all([
       App.auth.loadMyDecisions(),
       App.auth.loadMyTransferProposals(),
+      App.auth.loadMyTransferSaleListings(),
       App.auth.loadMySponsorships(),
       App.auth.loadMyQoL(),
       App.auth.loadPublicNews()

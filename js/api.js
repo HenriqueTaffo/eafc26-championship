@@ -370,6 +370,7 @@ App.api = {
         App.auth?.loadPublicNews?.(),
         App.auth?.loadMyDecisions?.(),
         App.auth?.loadMyTransferProposals?.(),
+        App.auth?.loadMyTransferSaleListings?.(),
         App.auth?.loadMyQoL?.(),
         App.auth?.loadMySponsorships?.(),
       ]);
