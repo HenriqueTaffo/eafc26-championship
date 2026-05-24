@@ -536,9 +536,13 @@ App.transfers = {
     const key = App.transfers.normalizePlayerRatingKey(playerName);
     if (!key) return null;
     return (
-      (App.state.apiRatings || []).find(
-        (item) => App.transfers.normalizePlayerRatingKey(item.name) === key,
-      ) || null
+      App.transfers
+        .sortRatingCandidates(
+          (App.state.apiRatings || []).filter(
+            (item) => App.transfers.normalizePlayerRatingKey(item.name) === key,
+          ),
+          key,
+        )[0] || null
     );
   },
 
@@ -598,27 +602,54 @@ App.transfers = {
         App.transfers.isTrustedPlayerNameMatch(aliasKey, ratingKey),
       );
     });
-    const isClubMatch = (item) =>
-      !clubKey || !item.club || App.utils.normalizeText(item.club) === clubKey;
     const selected =
-      matches.find(
-        (item) =>
-          App.transfers.normalizePlayerRatingKey(item.name) === key &&
-          isClubMatch(item),
-      ) ||
-      matches.find(
-        (item) =>
-          isClubMatch(item) &&
-          App.transfers.isUsablePlayerAvatar(item.avatar_url),
-      ) ||
-      matches.find(
-        (item) => App.transfers.normalizePlayerRatingKey(item.name) === key,
-      ) ||
-      matches.find((item) => App.transfers.isUsablePlayerAvatar(item.avatar_url)) ||
-      matches[0] ||
-      null;
+      App.transfers.sortRatingCandidates(matches, key, clubKey)[0] || null;
 
     return App.transfers.applyManualRatingFallback(selected, player?.name);
+  },
+
+  getRatingSourcePriority(item = {}) {
+    if (App.api?.getRatingSourcePriority) {
+      return App.api.getRatingSourcePriority(item);
+    }
+    const source = App.utils.normalizeText(item.source_name || "");
+    if (source.includes("futbin")) return 50;
+    if (source.includes("ea sports") || source.includes("official")) return 40;
+    if (source.includes("sofifa")) return 30;
+    if (source.includes("fifa ratings")) return 20;
+    return 10;
+  },
+
+  getRatingSourceLabel(item = {}) {
+    const source = App.utils.normalizeText(item.source_name || "");
+    if (source.includes("futbin")) return "FUTBIN";
+    if (source.includes("ea sports") || source.includes("official")) return "EA FC";
+    if (source.includes("sofifa")) return "SoFIFA";
+    if (source.includes("fifa ratings")) return "FIFA Ratings";
+    return item.source_name || "Rating";
+  },
+
+  sortRatingCandidates(candidates = [], nameKey = "", clubKey = "") {
+    return [...candidates].sort((a, b) => {
+      const aNameExact =
+        App.transfers.normalizePlayerRatingKey(a.name) === nameKey ? 1 : 0;
+      const bNameExact =
+        App.transfers.normalizePlayerRatingKey(b.name) === nameKey ? 1 : 0;
+      const aClubMatch =
+        !clubKey || !a.club || App.utils.normalizeText(a.club) === clubKey ? 1 : 0;
+      const bClubMatch =
+        !clubKey || !b.club || App.utils.normalizeText(b.club) === clubKey ? 1 : 0;
+      return (
+        bNameExact - aNameExact ||
+        bClubMatch - aClubMatch ||
+        App.transfers.getRatingSourcePriority(b) -
+          App.transfers.getRatingSourcePriority(a) ||
+        (App.transfers.isUsablePlayerAvatar(b.avatar_url) ? 1 : 0) -
+          (App.transfers.isUsablePlayerAvatar(a.avatar_url) ? 1 : 0) ||
+        Number(b.overall || 0) - Number(a.overall || 0) ||
+        String(a.name || "").localeCompare(String(b.name || ""))
+      );
+    });
   },
 
   getPlayerAvatarCandidates(player, rating = null) {
@@ -2008,7 +2039,7 @@ App.transfers = {
     const ratingGroups = await Promise.all(
       App.transfers.getPlayerSearchAliases(query).map((alias) =>
         App.api.searchEaRatings(alias, 8).catch((error) => {
-          console.warn("Busca de rating EA indisponível:", error);
+          console.warn("Busca de rating indisponível:", error);
           return [];
         }),
       ),
@@ -2019,6 +2050,13 @@ App.transfers = {
       .map(
         (player) =>
           App.transfers.applyManualRatingFallback(player, query) || player,
+      )
+      .sort(
+        (a, b) =>
+          App.transfers.getRatingSourcePriority(b) -
+            App.transfers.getRatingSourcePriority(a) ||
+          Number(b.overall || 0) - Number(a.overall || 0) ||
+          String(a.name || "").localeCompare(String(b.name || "")),
       );
     const manualRating = App.transfers.getManualPlayerRating(query);
     if (
@@ -2054,7 +2092,12 @@ App.transfers = {
         ${App.transfers.renderPlayerPhoto(player, null, "ea-rating-photo")}
         <span>
           <strong>${App.utils.escapeHtml(player.name || "-")}</strong>
-          <small>${App.utils.escapeHtml([player.position, player.club, player.nation].filter(Boolean).join(" · "))}</small>
+          <small>${App.utils.escapeHtml([
+            player.position,
+            player.club,
+            player.nation,
+            App.transfers.getRatingSourceLabel(player),
+          ].filter(Boolean).join(" · "))}</small>
         </span>
         <b>OVR ${Number(player.overall || 0)}</b>
       </button>

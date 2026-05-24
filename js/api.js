@@ -199,26 +199,71 @@ App.api = {
     });
   },
 
+  getRatingSourcePriority(item = {}) {
+    const source = App.utils.normalizeText(item.source_name || item.source || "");
+    if (source.includes("futbin")) return 50;
+    if (source.includes("ea sports") || source.includes("official")) return 40;
+    if (source.includes("sofifa")) return 30;
+    if (source.includes("fifa ratings")) return 20;
+    return 10;
+  },
+
+  getRatingIdentityKey(item = {}) {
+    const name = App.utils.normalizeText(item.name || "");
+    if (!name) return String(item.id || item.ea_id || "").toLowerCase();
+    return [
+      name,
+      App.utils.normalizeText(item.club || ""),
+      App.utils.normalizeText(item.position || ""),
+    ].join("|");
+  },
+
+  pickPreferredRating(current, next) {
+    if (!current) return next;
+    const sourceDelta =
+      App.api.getRatingSourcePriority(next) -
+      App.api.getRatingSourcePriority(current);
+    if (sourceDelta !== 0) return sourceDelta > 0 ? next : current;
+
+    const nextSynced = new Date(next.synced_at || next.updated_at || 0).getTime();
+    const currentSynced = new Date(
+      current.synced_at || current.updated_at || 0,
+    ).getTime();
+    if ((nextSynced || 0) !== (currentSynced || 0)) {
+      return (nextSynced || 0) > (currentSynced || 0) ? next : current;
+    }
+
+    if (next.avatar_url && !current.avatar_url) return next;
+    if (Number(next.overall || 0) !== Number(current.overall || 0)) {
+      return Number(next.overall || 0) > Number(current.overall || 0)
+        ? next
+        : current;
+    }
+    return current;
+  },
+
   mergeEaRatings(rows = []) {
     const current = Array.isArray(App.state.apiRatings)
       ? App.state.apiRatings
       : [];
     const byKey = current.reduce((acc, item) => {
-      const key = String(
-        item.id || item.ea_id || item.name || "",
-      ).toLowerCase();
-      if (key) acc[key] = item;
+      const key = App.api.getRatingIdentityKey(item);
+      if (key) acc[key] = App.api.pickPreferredRating(acc[key], item);
       return acc;
     }, {});
 
     rows.forEach((item) => {
-      const key = String(
-        item.id || item.ea_id || item.name || "",
-      ).toLowerCase();
-      if (key) byKey[key] = item;
+      const key = App.api.getRatingIdentityKey(item);
+      if (key) byKey[key] = App.api.pickPreferredRating(byKey[key], item);
     });
 
-    App.state.apiRatings = Object.values(byKey);
+    App.state.apiRatings = Object.values(byKey).sort(
+      (a, b) =>
+        App.api.getRatingSourcePriority(b) -
+          App.api.getRatingSourcePriority(a) ||
+        Number(b.overall || 0) - Number(a.overall || 0) ||
+        String(a.name || "").localeCompare(String(b.name || "")),
+    );
     return App.state.apiRatings;
   },
 
@@ -241,7 +286,7 @@ App.api = {
       App.api.mergeEaRatings(rows);
       return App.state.apiRatings;
     } catch (error) {
-      console.warn("Base oficial EA FC indisponível:", error);
+      console.warn("Base de ratings indisponível:", error);
       return App.state.apiRatings || [];
     }
   },

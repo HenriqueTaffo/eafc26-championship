@@ -6,7 +6,9 @@ const path = require("path");
 const ROOT_DIR = path.resolve(__dirname, "..");
 const DRY_RUN = process.argv.includes("--dry-run");
 const ALLOW_UNLABELED = process.argv.includes("--allow-unlabeled");
+const APPEND = process.argv.includes("--append");
 const DEFAULT_SOURCE_URL = "https://www.futbin.com/players?version=gold";
+const SOURCE_NAME = "FUTBIN base gold ratings";
 const SPECIAL_TERMS = [
   "totw", "toty", "tots", "ucl", "uel", "uwcl", "hero", "icon", "icono", "sbc",
   "objective", "objectives", "evolution", "evolutions", "evo", "special", "promo",
@@ -129,7 +131,7 @@ function mapPlayer(row, index) {
     shield_url: pick(row, ["shield_url", "shield", "club_image", "club_logo", "badge"]),
     card_type: cardType,
     source_url: pick(row, ["url", "futbin_url", "source_url"]) || DEFAULT_SOURCE_URL,
-    source_name: "FUTBIN base gold ratings"
+    source_name: SOURCE_NAME
   };
 }
 
@@ -173,20 +175,27 @@ async function main() {
   const supabaseUrl = process.env.SUPABASE_URL || getConfigValue(configSource, "SUPABASE_URL");
   const supabaseKey = process.env.SUPABASE_PUBLISHABLE_KEY || getConfigValue(configSource, "SUPABASE_PUBLISHABLE_KEY");
 
-  const response = await fetch(`${supabaseUrl}/rest/v1/rpc/app_upsert_ea_player_ratings`, {
+  const rpcName = APPEND
+    ? "app_upsert_ea_player_ratings"
+    : "app_replace_ea_player_ratings";
+  const response = await fetch(`${supabaseUrl}/rest/v1/rpc/${rpcName}`, {
     method: "POST",
     headers: {
       apikey: supabaseKey,
       Authorization: `Bearer ${supabaseKey}`,
       "Content-Type": "application/json"
     },
-    body: JSON.stringify({ p_players: players })
+    body: JSON.stringify(
+      APPEND ? { p_players: players } : { p_players: players, p_source_name: SOURCE_NAME },
+    )
   });
 
   const text = await response.text();
   if (!response.ok) throw new Error(text || `Supabase respondeu ${response.status}`);
   console.log(text || JSON.stringify({ ok: true, upserted: players.length }));
-  console.log(`Importados ${players.length} jogadores base/normais do FUTBIN.`);
+  console.log(
+    `${APPEND ? "Importados/atualizados" : "Substituida a fonte FUTBIN com"} ${players.length} jogadores base/normais.`,
+  );
 }
 
 main().catch(error => {

@@ -168,7 +168,7 @@ App.experience = {
       ${App.ui.summaryCard("Moral média", `${avgMorale}/100`)}
       ${App.ui.summaryCard("Oportunidades", opportunities.length)}
       ${App.ui.summaryCard("Radar de leilão", auctions.length)}
-      ${App.ui.summaryCard("Cache EA FC", ratings.length ? `${ratings.length} jogador(es)` : "Aguardando import")}
+      ${App.ui.summaryCard("Cache ratings", ratings.length ? `${ratings.length} jogador(es)` : "Aguardando import")}
     `;
   },
 
@@ -225,9 +225,9 @@ App.experience = {
     const ratings = (App.state.apiRatings || []).filter(item => App.transfers.isPlayableRating?.(item) !== false);
     return `
       <article class="experience-card" id="eaScoutBoard">
-        <span class="modal-kicker">Base oficial EA FC</span>
+        <span class="modal-kicker">Base de ratings</span>
         <h2>Scout de overall</h2>
-        <p class="calendar-muted">Use a tabela local importada da página oficial da EA para validar OVR, posição e clube antes de enviar transferência.</p>
+        <p class="calendar-muted">Use a tabela local importada de fontes confiáveis para validar OVR, posição e clube antes de enviar transferência.</p>
         <div class="scout-list">
           ${ratings.length ? ratings.slice(0, 6).map(item => `
             <div>
@@ -238,7 +238,7 @@ App.experience = {
               </p>
               <b>OVR ${Number(item.overall || 0)}</b>
             </div>
-          `).join("") : `<p class="calendar-muted">Cache ainda vazio. Rode o SQL de ratings e importe a base oficial da EA.</p>`}
+          `).join("") : `<p class="calendar-muted">Cache ainda vazio. Importe uma base de ratings antes de usar o scout.</p>`}
         </div>
       </article>
     `;
