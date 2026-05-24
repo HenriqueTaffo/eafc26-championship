@@ -328,24 +328,22 @@ App.forms = {
   },
 
   renderApiSummary() {
-    const container = document.getElementById("apiSummary");
-    if (!container) return;
-    const approvedResults = App.standings.getApprovedApiResults().length;
-    const approvedTransfers = App.state.apiTransfers.filter(row => App.utils.normalizeText(row.Status) === "aprovado").length;
-    const events = App.state.apiEvents.length;
-
-    container.innerHTML = `
-      ${App.ui.summaryCard("Status Supabase", App.state.apiLoaded ? "Conectado" : "Carregando")}
-      ${App.ui.summaryCard("Resultados", approvedResults)}
-      ${App.ui.summaryCard("Transfers", approvedTransfers)}
-      ${App.ui.summaryCard("Eventos", events)}
-    `;
-
     const transferForm = document.getElementById("transferForm");
     if (transferForm && App.state.apiLoaded) {
       App.transfers.populateExchangePlayers(transferForm);
       App.transfers.renderTransferPreview(transferForm);
     }
+
+    const container = document.getElementById("apiSummary");
+    if (!container) return;
+    const approvedResults = App.standings.getApprovedApiResults().length;
+    const events = App.state.apiEvents.length;
+
+    container.innerHTML = `
+      ${App.ui.summaryCard("Status Supabase", App.state.apiLoaded ? "Conectado" : "Carregando")}
+      ${App.ui.summaryCard("Resultados", approvedResults)}
+      ${App.ui.summaryCard("Eventos", events)}
+    `;
   },
 
   setupPenaltyControls(form) {

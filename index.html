@@ -7,7 +7,7 @@
     <meta http-equiv="Pragma" content="no-cache" />
     <meta http-equiv="Expires" content="0" />
     <title>Mistura Managers League</title>
-    <link rel="stylesheet" href="./css/styles.css?v=20260524-sponsor-portfolio-v1" />
+    <link rel="stylesheet" href="./css/styles.css?v=20260524-submit-transfer-rework-v1" />
   </head>
   <body>
     <div
@@ -33,7 +33,7 @@
             <div class="loader-orbit"></div>
             <img
               class="loader-mascot"
-              src="./assets/mistura-mascot.png?v=20260524-sponsor-portfolio-v1"
+              src="./assets/mistura-mascot.png?v=20260524-submit-transfer-rework-v1"
               alt=""
             />
           </div>
@@ -67,7 +67,7 @@
         <div class="league-seal" aria-hidden="true">
           <div class="league-seal-ring">
             <span class="seal-top">MISTURA</span>
-            <img src="./assets/mistura-mascot.png?v=20260524-sponsor-portfolio-v1" alt="" />
+            <img src="./assets/mistura-mascot.png?v=20260524-submit-transfer-rework-v1" alt="" />
             <span class="seal-left">20</span>
             <span class="seal-right">24</span>
             <span class="seal-bottom">MANAGERS LEAGUE</span>
@@ -505,6 +505,195 @@
           id="transferBudgetBoard"
         ></section>
 
+        <section class="transfer-workbench">
+          <section class="form-card submit-card submit-card-transfer">
+            <div class="submit-card-header">
+              <span class="submit-card-icon">⇄</span>
+              <div>
+                <h2>Registrar transferência</h2>
+                <p>
+                  Mercado externo, negociação entre técnicos e troca de jogador
+                  no mesmo fluxo.
+                </p>
+              </div>
+            </div>
+            <form id="transferForm">
+              <div class="form-grid">
+                <div
+                  class="submit-mode-switch full"
+                  aria-label="Tipo de transferência"
+                >
+                  <label>
+                    <input
+                      name="transferType"
+                      type="radio"
+                      value="market"
+                      checked
+                    />
+                    <span>Mercado externo</span>
+                  </label>
+                  <label>
+                    <input name="transferType" type="radio" value="internal" />
+                    <span>Entre técnicos</span>
+                  </label>
+                </div>
+                <label
+                  >Comprador
+                  <select name="buyer" required>
+                    <option value="Henrique">Henrique</option>
+                    <option value="Willian">Willian</option>
+                    <option value="Rafael">Rafael</option>
+                    <option value="Renato">Renato</option>
+                    <option value="Bruno Silva">Bruno Silva</option>
+                  </select>
+                </label>
+                <label
+                  class="internal-transfer-field"
+                  data-internal-transfer-field
+                  hidden
+                  >Vendedor
+                  <select name="seller">
+                    <option value="">Selecione o vendedor</option>
+                    <option value="Henrique">Henrique</option>
+                    <option value="Willian">Willian</option>
+                    <option value="Rafael">Rafael</option>
+                    <option value="Renato">Renato</option>
+                    <option value="Bruno Silva">Bruno Silva</option>
+                  </select>
+                </label>
+                <label
+                  class="internal-transfer-field full"
+                  data-internal-transfer-field
+                  hidden
+                  >Jogador do vendedor
+                  <select id="internalTransferPlayer" name="internalPlayer">
+                    <option value="">Escolha vendedor e jogador</option>
+                  </select>
+                </label>
+                <label class="full" data-market-transfer-field
+                  >Buscar jogador no mercado
+                  <input
+                    id="marketPlayerSearch"
+                    type="search"
+                    placeholder="Digite nome, clube, liga ou posição..."
+                    autocomplete="off"
+                  />
+                </label>
+                <div
+                  class="market-player-toolbar full"
+                  data-market-transfer-field
+                >
+                  <span
+                    >Por padrão, jogadores já contratados ficam
+                    escondidos.</span
+                  >
+                  <label class="market-toggle">
+                    <input id="showContractedPlayers" type="checkbox" />
+                    <span>Mostrar já contratados</span>
+                  </label>
+                </div>
+                <div
+                  class="market-player-results full"
+                  id="marketPlayerResults"
+                  data-market-transfer-field
+                >
+                  <div class="market-empty">
+                    Digite o nome, clube, liga ou posição para buscar jogadores.
+                  </div>
+                </div>
+                <div
+                  class="transfer-exchange-box full"
+                  data-market-transfer-field
+                >
+                  <div class="transfer-exchange-copy">
+                    <span>Troca na negociação</span>
+                    <strong>Jogador + dinheiro</strong>
+                    <small id="transferExchangeHint"
+                      >Opcional. O abatimento aparece na prévia antes do
+                      envio.</small
+                    >
+                  </div>
+                  <label class="transfer-exchange-control">
+                    <span>Jogador oferecido</span>
+                    <select id="transferExchangePlayer" name="exchangePlayer">
+                      <option value="">Sem jogador na troca</option>
+                    </select>
+                  </label>
+                </div>
+                <label
+                  >Jogador
+                  <input
+                    name="player"
+                    type="text"
+                    placeholder="Nome do jogador"
+                    required
+                  />
+                </label>
+                <label
+                  >Clube origem
+                  <input
+                    name="fromClub"
+                    type="text"
+                    placeholder="Clube atual"
+                    required
+                  />
+                </label>
+                <label
+                  >Overall EAFC
+                  <input
+                    name="overall"
+                    type="number"
+                    min="1"
+                    max="99"
+                    placeholder="Ex: 82"
+                    required
+                  />
+                </label>
+                <label class="full"
+                  ><span id="transferValueLabel">Valor Transfermarkt</span>
+                  <input
+                    name="marketValue"
+                    type="number"
+                    min="0"
+                    step="1"
+                    inputmode="numeric"
+                    placeholder="Ex: 32000000"
+                    required
+                  />
+                </label>
+              </div>
+
+              <div class="transfer-live-preview" id="transferFormPreview">
+                <strong>Prévia da contratação</strong>
+                <span
+                  >Preencha comprador, jogador, overall e valor para calcular
+                  custo final, saldo e travas antes de enviar.</span
+                >
+              </div>
+
+              <label class="checkbox-row transfer-confirmation-row">
+                <input
+                  name="confirmTransferBuyer"
+                  type="checkbox"
+                  value="yes"
+                  required
+                />
+                <span
+                  >Confirmo que o comprador selecionado está correto e assumo
+                  esta contratação para esse técnico.</span
+                >
+              </label>
+
+              <div class="form-actions">
+                <button class="primary-button" type="submit">
+                  Enviar transferência
+                </button>
+                <span class="app-message" id="transferMessage"></span>
+              </div>
+            </form>
+          </section>
+        </section>
+
         <section class="controls">
           <input
             id="transferSearchInput"
@@ -601,20 +790,17 @@
       </section>
 
       <section id="submitView" class="view">
-        <section class="summary" id="apiSummary"></section>
-
         <section class="submit-hero">
           <div>
             <span class="modal-kicker">Central de lançamentos</span>
             <h2>Enviar dados da liga</h2>
             <p>
-              Resultados, mercado e simulações ficam no mesmo lugar, com prévias
-              para reduzir erro antes de salvar.
+              Resultados oficiais e simulações CPU x CPU em uma tela mais
+              direta.
             </p>
           </div>
           <div class="submit-hero-actions">
             <a href="#resultForm">Resultado</a>
-            <a href="#transferForm">Transferência</a>
             <a href="#cpuSimulationForm">CPU x CPU</a>
           </div>
         </section>
@@ -729,194 +915,6 @@
                   Enviar resultado
                 </button>
                 <span class="app-message" id="resultMessage"></span>
-              </div>
-            </form>
-          </section>
-
-          <section class="form-card submit-card submit-card-transfer">
-            <div class="submit-card-header">
-              <span class="submit-card-icon">⇄</span>
-              <div>
-                <h2>Enviar transferência</h2>
-                <p>
-                  Compre no mercado externo ou negocie um jogador que já
-                  pertence a outro técnico.
-                </p>
-              </div>
-            </div>
-            <form id="transferForm">
-              <div class="form-grid">
-                <div
-                  class="submit-mode-switch full"
-                  aria-label="Tipo de transferência"
-                >
-                  <label>
-                    <input
-                      name="transferType"
-                      type="radio"
-                      value="market"
-                      checked
-                    />
-                    <span>Mercado externo</span>
-                  </label>
-                  <label>
-                    <input name="transferType" type="radio" value="internal" />
-                    <span>Entre técnicos</span>
-                  </label>
-                </div>
-                <label
-                  >Comprador
-                  <select name="buyer" required>
-                    <option value="Henrique">Henrique</option>
-                    <option value="Willian">Willian</option>
-                    <option value="Rafael">Rafael</option>
-                    <option value="Renato">Renato</option>
-                    <option value="Bruno Silva">Bruno Silva</option>
-                  </select>
-                </label>
-                <label
-                  class="internal-transfer-field"
-                  data-internal-transfer-field
-                  hidden
-                  >Vendedor
-                  <select name="seller">
-                    <option value="">Selecione o vendedor</option>
-                    <option value="Henrique">Henrique</option>
-                    <option value="Willian">Willian</option>
-                    <option value="Rafael">Rafael</option>
-                    <option value="Renato">Renato</option>
-                    <option value="Bruno Silva">Bruno Silva</option>
-                  </select>
-                </label>
-                <label
-                  class="internal-transfer-field full"
-                  data-internal-transfer-field
-                  hidden
-                  >Jogador do vendedor
-                  <select id="internalTransferPlayer" name="internalPlayer">
-                    <option value="">Escolha vendedor e jogador</option>
-                  </select>
-                </label>
-                <label class="full" data-market-transfer-field
-                  >Buscar jogador no mercado
-                  <input
-                    id="marketPlayerSearch"
-                    type="search"
-                    placeholder="Digite nome, clube, liga ou posição..."
-                    autocomplete="off"
-                  />
-                </label>
-                <div
-                  class="market-player-toolbar full"
-                  data-market-transfer-field
-                >
-                  <span
-                    >Por padrão, jogadores já contratados ficam
-                    escondidos.</span
-                  >
-                  <label class="market-toggle">
-                    <input id="showContractedPlayers" type="checkbox" />
-                    <span>Mostrar já contratados</span>
-                  </label>
-                </div>
-                <div
-                  class="market-player-results full"
-                  id="marketPlayerResults"
-                  data-market-transfer-field
-                >
-                  <div class="market-empty">
-                    Carregue a base `players_market` no Supabase para selecionar
-                    jogadores. O preenchimento manual continua disponível.
-                  </div>
-                </div>
-                <div
-                  class="transfer-exchange-box full"
-                  data-market-transfer-field
-                >
-                  <div class="transfer-exchange-copy">
-                    <span>Troca na negociação</span>
-                    <strong>Jogador + dinheiro</strong>
-                    <small id="transferExchangeHint"
-                      >Opcional. O abatimento aparece na prévia antes do
-                      envio.</small
-                    >
-                  </div>
-                  <label class="transfer-exchange-control">
-                    <span>Jogador oferecido</span>
-                    <select id="transferExchangePlayer" name="exchangePlayer">
-                      <option value="">Sem jogador na troca</option>
-                    </select>
-                  </label>
-                </div>
-                <label
-                  >Jogador
-                  <input
-                    name="player"
-                    type="text"
-                    placeholder="Nome do jogador"
-                    required
-                  />
-                </label>
-                <label
-                  >Clube origem
-                  <input
-                    name="fromClub"
-                    type="text"
-                    placeholder="Clube atual"
-                    required
-                  />
-                </label>
-                <label
-                  >Overall EAFC
-                  <input
-                    name="overall"
-                    type="number"
-                    min="1"
-                    max="99"
-                    placeholder="Ex: 82"
-                    required
-                  />
-                </label>
-                <label class="full"
-                  ><span id="transferValueLabel">Valor Transfermarkt</span>
-                  <input
-                    name="marketValue"
-                    type="number"
-                    min="0"
-                    step="1"
-                    inputmode="numeric"
-                    placeholder="Ex: 32000000"
-                    required
-                  />
-                </label>
-              </div>
-
-              <div class="transfer-live-preview" id="transferFormPreview">
-                <strong>Prévia da contratação</strong>
-                <span
-                  >Preencha comprador, jogador, overall e valor para calcular
-                  custo final, saldo e travas antes de enviar.</span
-                >
-              </div>
-
-              <label class="checkbox-row transfer-confirmation-row">
-                <input
-                  name="confirmTransferBuyer"
-                  type="checkbox"
-                  value="yes"
-                  required
-                />
-                <span
-                  >Confirmo que o comprador selecionado está correto e assumo
-                  esta contratação para esse técnico.</span
-                >
-              </label>
-
-              <div class="form-actions">
-                <button class="primary-button" type="submit">
-                  Enviar transferência
-                </button>
-                <span class="app-message" id="transferMessage"></span>
               </div>
             </form>
           </section>
@@ -1065,22 +1063,22 @@
       </section>
     </main>
 
-    <script src="./js/config.js?v=20260524-sponsor-portfolio-v1"></script>
-    <script src="./js/data.js?v=20260524-sponsor-portfolio-v1"></script>
-    <script src="./js/utils.js?v=20260524-sponsor-portfolio-v1"></script>
-    <script src="./js/ui.js?v=20260524-sponsor-portfolio-v1"></script>
-    <script src="./js/clubs.js?v=20260524-sponsor-portfolio-v1"></script>
-    <script src="./js/api.js?v=20260524-sponsor-portfolio-v1"></script>
-    <script src="./js/auth.js?v=20260524-sponsor-portfolio-v1"></script>
-    <script src="./js/standings.js?v=20260524-sponsor-portfolio-v1"></script>
-    <script src="./js/calendar.js?v=20260524-sponsor-portfolio-v1"></script>
-    <script src="./js/cups.js?v=20260524-sponsor-portfolio-v1"></script>
-    <script src="./js/transfers.js?v=20260524-sponsor-portfolio-v1"></script>
-    <script src="./js/events.js?v=20260524-sponsor-portfolio-v1"></script>
-    <script src="./js/players.js?v=20260524-sponsor-portfolio-v1"></script>
-    <script src="./js/experience.js?v=20260524-sponsor-portfolio-v1"></script>
-    <script src="./js/governance.js?v=20260524-sponsor-portfolio-v1"></script>
-    <script src="./js/forms.js?v=20260524-sponsor-portfolio-v1"></script>
-    <script src="./js/main.js?v=20260524-sponsor-portfolio-v1"></script>
+    <script src="./js/config.js?v=20260524-submit-transfer-rework-v1"></script>
+    <script src="./js/data.js?v=20260524-submit-transfer-rework-v1"></script>
+    <script src="./js/utils.js?v=20260524-submit-transfer-rework-v1"></script>
+    <script src="./js/ui.js?v=20260524-submit-transfer-rework-v1"></script>
+    <script src="./js/clubs.js?v=20260524-submit-transfer-rework-v1"></script>
+    <script src="./js/api.js?v=20260524-submit-transfer-rework-v1"></script>
+    <script src="./js/auth.js?v=20260524-submit-transfer-rework-v1"></script>
+    <script src="./js/standings.js?v=20260524-submit-transfer-rework-v1"></script>
+    <script src="./js/calendar.js?v=20260524-submit-transfer-rework-v1"></script>
+    <script src="./js/cups.js?v=20260524-submit-transfer-rework-v1"></script>
+    <script src="./js/transfers.js?v=20260524-submit-transfer-rework-v1"></script>
+    <script src="./js/events.js?v=20260524-submit-transfer-rework-v1"></script>
+    <script src="./js/players.js?v=20260524-submit-transfer-rework-v1"></script>
+    <script src="./js/experience.js?v=20260524-submit-transfer-rework-v1"></script>
+    <script src="./js/governance.js?v=20260524-submit-transfer-rework-v1"></script>
+    <script src="./js/forms.js?v=20260524-submit-transfer-rework-v1"></script>
+    <script src="./js/main.js?v=20260524-submit-transfer-rework-v1"></script>
   </body>
 </html>

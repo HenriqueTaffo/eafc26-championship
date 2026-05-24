@@ -2390,9 +2390,51 @@ App.transfers = {
       document.getElementById("showContractedPlayers")?.checked,
     );
     const normalized = App.utils.normalizeText(query);
+    if (normalized.length < 2) return [];
+    const cacheKey = `${normalized}|${showContracted ? "all" : "available"}`;
+    const cached = App.transfers.marketSearchCache?.[cacheKey];
+    if (cached && Date.now() - cached.at < 60000) return cached.players;
+
+    const remember = (players = []) => {
+      App.transfers.marketSearchCache = App.transfers.marketSearchCache || {};
+      App.transfers.marketSearchCache[cacheKey] = {
+        at: Date.now(),
+        players,
+      };
+      return players;
+    };
+
+    try {
+      const rows = await App.api.fetchMarketPlayersDirect(query, 18);
+      const players = App.api.applyMarketPlayerOverrides(
+        Array.isArray(rows) ? rows : [],
+        { showContracted },
+      );
+      App.api.mergeMarketPlayers(players);
+      if (players.length) return remember(players);
+    } catch (error) {
+      console.warn("Busca direta de mercado indisponível, tentando RPC:", error);
+    }
+
+    const fallback = await App.api.loadMarketPlayers(query, showContracted, 14);
+    return remember(fallback);
+  },
+
+  async searchEaRatingsCached(query = "", limit = 2) {
+    const normalized = App.utils.normalizeText(query);
     if (!normalized) return [];
 
-    return App.api.loadMarketPlayers(query, showContracted, 14);
+    const cacheKey = `${normalized}|${Number(limit || 2)}`;
+    const cached = App.transfers.eaRatingSearchCache?.[cacheKey];
+    if (cached && Date.now() - cached.at < 10 * 60000) return cached.rows;
+
+    const rows = await App.api.searchEaRatings(query, limit).catch(() => []);
+    App.transfers.eaRatingSearchCache = App.transfers.eaRatingSearchCache || {};
+    App.transfers.eaRatingSearchCache[cacheKey] = {
+      at: Date.now(),
+      rows,
+    };
+    return rows;
   },
 
   selectMarketPlayer(playerId) {
@@ -2528,25 +2570,32 @@ App.transfers = {
     if (!target) return;
 
     const query = input?.value || "";
-    if (!App.utils.normalizeText(query)) {
+    const normalized = App.utils.normalizeText(query);
+    if (normalized.length < 2) {
+      App.transfers.marketSearchRequestId = "";
       target.innerHTML = `
         <div class="market-empty">
-          Digite o nome, clube, liga ou posição para buscar jogadores no mercado.
+          Digite pelo menos 2 letras para buscar jogadores no mercado.
         </div>
       `;
       return;
     }
 
+    const requestId = `${Date.now()}-${Math.random()}`;
+    App.transfers.marketSearchRequestId = requestId;
     target.innerHTML = `<div class="market-empty">Buscando jogadores no mercado...</div>`;
 
     const players = await App.transfers.searchMarketPlayers(query);
+    if (App.transfers.marketSearchRequestId !== requestId) return;
+
     const ratingRows = await Promise.all(
       players
-        .slice(0, 10)
+        .slice(0, 6)
         .map((player) =>
-          App.api.searchEaRatings(player.name || "", 3).catch(() => []),
+          App.transfers.searchEaRatingsCached(player.name || "", 2),
         ),
     );
+    if (App.transfers.marketSearchRequestId !== requestId) return;
     App.api.mergeEaRatings?.(ratingRows.flat());
 
     if (!players.length) {
@@ -2631,6 +2680,11 @@ App.transfers = {
     App.transfers.renderBudgetBoard();
     App.transfers.renderInsights();
     App.transfers.renderMarketPlayerResults();
+    const transferForm = document.getElementById("transferForm");
+    if (transferForm && App.state.apiLoaded) {
+      App.transfers.populateExchangePlayers(transferForm);
+      App.transfers.renderTransferPreview(transferForm);
+    }
 
     const table = document.getElementById("transferTable");
     const mobile = document.getElementById("transferMobile");
@@ -2641,7 +2695,7 @@ App.transfers = {
       table.innerHTML = `<tr><td colspan="8" class="calendar-muted">Nenhuma transferência aprovada ainda.</td></tr>`;
       mobile.innerHTML = App.ui.emptyCard(
         "Nenhuma transferência cadastrada",
-        "Use a aba Enviar dados para cadastrar contratações.",
+        "Use o formulário Registrar transferência nesta aba.",
       );
       return;
     }
