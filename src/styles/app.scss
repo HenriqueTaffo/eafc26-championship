@@ -219,6 +219,165 @@ $shadow-soft: 0 14px 38px rgba(15, 23, 42, 0.1);
   box-shadow: $shadow-soft;
 }
 
+.app-action-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 100001;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 18px;
+}
+
+.app-action-modal.is-visible {
+  display: flex;
+}
+
+.app-action-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(2, 6, 23, 0.78);
+}
+
+.app-action-modal-card {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  gap: 14px;
+  width: min(520px, 100%);
+  max-height: min(88vh, 680px);
+  overflow: auto;
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  border-radius: $radius;
+  padding: clamp(18px, 4vw, 24px);
+  background:
+    linear-gradient(135deg, rgba(45, 212, 191, 0.1), transparent 42%),
+    rgba(8, 13, 18, 0.98);
+  box-shadow: 0 28px 80px rgba(0, 0, 0, 0.38);
+}
+
+.app-action-modal-success {
+  border-color: rgba(34, 197, 94, 0.28);
+}
+
+.app-action-modal-danger {
+  border-color: rgba(248, 113, 113, 0.32);
+  background:
+    linear-gradient(135deg, rgba(248, 113, 113, 0.12), transparent 42%),
+    rgba(8, 13, 18, 0.98);
+}
+
+.app-action-modal-header {
+  display: grid;
+  gap: 7px;
+}
+
+.app-action-modal-header span {
+  color: #9ff3e8;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.app-action-modal-header h2 {
+  margin: 0;
+  color: #fffef8;
+  font-size: clamp(26px, 6vw, 38px);
+  line-height: 1;
+}
+
+.app-action-modal-header p,
+.app-action-modal-detail {
+  margin: 0;
+  color: #b9c8c6;
+  line-height: 1.45;
+}
+
+.app-action-modal-detail,
+.app-action-modal-error {
+  border: 1px solid rgba(148, 163, 184, 0.14);
+  border-radius: $radius;
+  padding: 11px 12px;
+  background: rgba(2, 6, 23, 0.3);
+  font-size: 13px;
+}
+
+.app-action-modal-fields {
+  display: grid;
+  gap: 10px;
+}
+
+.app-action-modal-field {
+  display: grid;
+  gap: 7px;
+  color: #d9e5e2;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.app-action-modal-field b {
+  width: fit-content;
+  border: 1px solid rgba(45, 212, 191, 0.2);
+  border-radius: $radius;
+  padding: 4px 8px;
+  color: #d9fffa;
+  background: rgba(45, 212, 191, 0.08);
+  font-size: 11px;
+}
+
+.app-action-modal-field input {
+  @include control-shell;
+  width: 100%;
+  min-height: 48px;
+  padding: 0 13px;
+  background: rgba(2, 6, 23, 0.68);
+  color: #f8fafc;
+}
+
+.app-action-modal-field input:focus {
+  outline: 0;
+  border-color: rgba($accent, 0.72);
+  box-shadow: 0 0 0 3px rgba($accent, 0.18);
+}
+
+.app-action-modal-error {
+  border-color: rgba(248, 113, 113, 0.32);
+  color: #fecaca;
+  background: rgba(127, 29, 29, 0.22);
+}
+
+.app-action-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.app-action-modal-button {
+  min-height: 42px;
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  border-radius: $radius;
+  padding: 0 14px;
+  color: #e5edf3;
+  background: rgba(15, 23, 42, 0.68);
+  font: inherit;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.app-action-modal-button-primary {
+  border-color: transparent;
+  color: #07100f;
+  background: linear-gradient(135deg, #f4d33f, #42d8c4);
+}
+
+.app-action-modal-button-danger {
+  border-color: rgba(248, 113, 113, 0.44);
+  color: #fff1f2;
+  background: rgba(127, 29, 29, 0.42);
+}
+
 @media (max-width: 760px) {
   .controls,
   .form-grid {
@@ -237,6 +396,14 @@ $shadow-soft: 0 14px 38px rgba(15, 23, 42, 0.1);
   .react-accordion-toggle {
     width: 32px;
     height: 32px;
+  }
+
+  .app-action-modal-actions {
+    display: grid;
+  }
+
+  .app-action-modal-button {
+    width: 100%;
   }
 }
 

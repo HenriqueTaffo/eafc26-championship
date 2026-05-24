@@ -791,9 +791,12 @@ App.auth = {
       p_manager_id: session.managerId,
       p_access_code: session.accessCode,
       p_proposal_id: Number(proposalId),
-      p_decision: decision
+      p_decision: decision,
+      p_counter_value: null
     };
-    const normalizedCounter = counterValue === null ? null : Number(counterValue);
+    const normalizedCounter = counterValue === null || counterValue === undefined || counterValue === ""
+      ? null
+      : Number(counterValue);
     if (Number.isFinite(normalizedCounter)) {
       payload.p_counter_value = normalizedCounter;
     }
@@ -1677,44 +1680,82 @@ App.auth = {
         const decision = target.dataset.decision;
         const currentOffer = Number(target.dataset.proposalCounterValue || 0);
         let counterValue = null;
-        let label;
         const sourceLabel = target.dataset.proposalSourceLabel || "esta oferta";
+        const playerLabel = target.dataset.proposalPlayer || target.closest(".transfer-proposal-item")?.querySelector("h3")?.textContent || "este jogador";
+        const offerLabel = App.utils.formatCurrency(currentOffer);
 
         if (decision === "counter") {
           const suggestion = Math.max(currentOffer, 1000000);
-          const valueInput = window.prompt(
-            `Digite o valor da contraoferta para ${sourceLabel}:`,
-            String(suggestion)
-          );
+          const modalResult = await App.ui.openActionModal({
+            kicker: "Negociacao externa",
+            title: "Enviar contraoferta",
+            message: `${sourceLabel} ofereceu ${offerLabel} por ${playerLabel}. Informe o novo valor para a CPU avaliar.`,
+            detail: "A CPU pode aceitar, recusar ou responder com uma nova contraoferta.",
+            tone: "market",
+            fields: [{
+              name: "counterValue",
+              label: "Valor da contraoferta",
+              value: String(suggestion),
+              inputMode: "decimal",
+              placeholder: "Ex.: 2500000",
+              prefix: "EUR"
+            }],
+            actions: [
+              { id: "cancel", label: "Cancelar", variant: "secondary" },
+              { id: "confirm", label: "Enviar contraoferta", variant: "primary" }
+            ],
+            validate(values) {
+              const normalized = String(values.counterValue || "")
+                .trim()
+                .replace(/\./g, "")
+                .replace(/,/g, ".");
+              const parsed = Number(normalized);
+              if (!Number.isFinite(parsed) || parsed <= 0) {
+                return "Informe um valor numerico maior que zero para a contraoferta.";
+              }
+              return "";
+            }
+          });
 
-          if (valueInput === null) return;
+          if (modalResult.action !== "confirm") return;
 
-          const normalized = String(valueInput)
+          const normalized = String(modalResult.values.counterValue || "")
             .trim()
             .replace(/\./g, "")
             .replace(/,/g, ".");
-          const parsed = Number(normalized);
-
-          if (!Number.isFinite(parsed) || parsed <= 0) {
-            alert("Informe um valor numérico maior que zero para a contraoferta.");
-            return;
-          }
-
-          counterValue = parsed;
-          label = `fazer contraoferta de ${App.utils.formatCurrency(parsed)}`;
-        } else if (decision === "accepted") {
-          label = "aceitar";
+          counterValue = Number(normalized);
         } else {
-          label = "recusar";
-        }
+          const isAccepted = decision === "accepted";
+          const confirmed = await App.ui.confirmAction({
+            kicker: "Oferta externa",
+            title: isAccepted ? "Aceitar proposta" : "Recusar proposta",
+            message: isAccepted
+              ? `Vender ${playerLabel} para ${sourceLabel} por ${offerLabel}?`
+              : `Recusar a proposta de ${sourceLabel} por ${playerLabel}?`,
+            detail: isAccepted
+              ? "A transferencia sera aplicada e o orcamento sera atualizado."
+              : "A proposta sera encerrada sem movimentacao.",
+            tone: isAccepted ? "success" : "danger",
+            confirmLabel: isAccepted ? "Aceitar proposta" : "Recusar proposta",
+            confirmVariant: isAccepted ? "primary" : "danger"
+          });
 
-        if (!confirm(`Deseja ${label} a proposta de ${sourceLabel}?`)) return;
+          if (!confirmed) return;
+        }
 
         try {
           target.disabled = true;
           await App.auth.answerTransferProposal(proposalId, decision, counterValue);
         } catch (error) {
-          alert(error.message);
+          await App.ui.openActionModal({
+            kicker: "Proposta nao aplicada",
+            title: "Nao consegui responder",
+            message: error.message || "O Supabase recusou a operacao. Tente novamente apos sincronizar.",
+            tone: "danger",
+            actions: [
+              { id: "confirm", label: "Entendi", variant: "primary", autofocus: true }
+            ]
+          });
         } finally {
           target.disabled = false;
         }
@@ -1790,6 +1831,8 @@ App.auth = {
             data-proposal-id="${App.utils.escapeHtml(item.id)}"
             data-decision="accepted"
             data-proposal-source-label="${sourceLabelEscaped}"
+            data-proposal-player="${App.utils.escapeDisplay(item.player)}"
+            data-proposal-counter-value="${proposedValue}"
           >
             <strong>Aceitar</strong>
             <small>${isCpuOffer ? `Vende para ${sourceLabelEscaped} e recebe ${App.utils.formatCurrency(proposedValue)}.` : "Vende o jogador e recebe o valor."}</small>
@@ -1800,6 +1843,8 @@ App.auth = {
             data-proposal-id="${App.utils.escapeHtml(item.id)}"
             data-decision="rejected"
             data-proposal-source-label="${sourceLabelEscaped}"
+            data-proposal-player="${App.utils.escapeDisplay(item.player)}"
+            data-proposal-counter-value="${proposedValue}"
           >
             <strong>Recusar</strong>
             <small>A proposta é encerrada sem movimentação.</small>
@@ -1811,6 +1856,7 @@ App.auth = {
             data-proposal-id="${App.utils.escapeHtml(item.id)}"
             data-decision="counter"
             data-proposal-source-label="${sourceLabelEscaped}"
+            data-proposal-player="${App.utils.escapeDisplay(item.player)}"
             data-proposal-counter-value="${proposedValue}"
           >
             <strong>Contraoferta</strong>
