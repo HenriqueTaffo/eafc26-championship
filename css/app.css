@@ -11213,7 +11213,7 @@ body.auth-gated {
 body.auth-gated::before {
   content: "";
   position: fixed;
-  inset: -24%;
+  inset: -18%;
   z-index: 0;
   pointer-events: none;
   opacity: .62;
@@ -11227,8 +11227,11 @@ body.auth-gated::before {
   background-position: center, center, center, center, 0 0, 0 0;
   background-size: 760px 460px, 760px 460px, 760px 460px, 760px 460px, 96px 96px, 96px 96px !important;
   mask-image: none !important;
-  transform: rotate(-7deg) translateZ(0);
-  animation: login-pitch-drift 24s linear infinite;
+  transform: translate3d(-1.5%, -.8%, 0) rotate(-7deg) scale(1.02);
+  transform-origin: center;
+  will-change: transform, opacity;
+  contain: paint;
+  animation: login-pitch-drift 34s ease-in-out infinite alternate;
 }
 
 body.auth-gated::after {
@@ -11246,7 +11249,19 @@ body.auth-gated::after {
     inset 0 0 0 1px rgba(251, 191, 36, .08),
     0 0 70px rgba(45, 212, 191, .05);
   transform: translateZ(0);
-  animation: login-center-circle 18s ease-in-out infinite;
+  will-change: transform, opacity;
+  contain: paint;
+  animation: login-center-circle 28s ease-in-out infinite;
+}
+
+body.auth-gated:focus-within::before,
+body.auth-gated:focus-within::after,
+body.auth-gated:focus-within .manager-login-flip-card {
+  animation-play-state: paused;
+}
+
+body.auth-gated:focus-within::before {
+  opacity: .46;
 }
 
 body.auth-gated #globalLoader {
@@ -11458,6 +11473,7 @@ body:not(.is-commissioner) #submitView {
   border-radius: 8px;
   padding: 18px;
   background: rgba(2, 6, 23, .24);
+  contain: layout paint style;
 }
 
 .manager-login-mascot-stage {
@@ -11487,7 +11503,8 @@ body:not(.is-commissioner) #submitView {
   height: 100%;
   display: block;
   transform-style: preserve-3d;
-  animation: login-mascot-flip 7.5s cubic-bezier(.76, 0, .24, 1) infinite;
+  will-change: transform;
+  animation: login-mascot-flip 9s cubic-bezier(.76, 0, .24, 1) infinite;
 }
 
 .manager-login-face {
@@ -11528,12 +11545,12 @@ body:not(.is-commissioner) #submitView {
 }
 
 @keyframes login-pitch-drift {
-  from {
-    background-position: 0 0, 0 0, 0 0, 0 0;
+  0% {
+    transform: translate3d(-1.5%, -.8%, 0) rotate(-7deg) scale(1.02);
   }
 
-  to {
-    background-position: 760px 0, 0 480px, 118px 0, 0 118px;
+  100% {
+    transform: translate3d(1.5%, .8%, 0) rotate(-7deg) scale(1.02);
   }
 }
 
