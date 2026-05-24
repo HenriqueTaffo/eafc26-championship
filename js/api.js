@@ -967,12 +967,18 @@ App.api = {
         App.config.eventSlots = data.eventSlots.map(Number);
       }
 
-      await App.api.loadMatches();
-      await App.api.loadMarketPlayers();
-
       App.state.apiLoaded = true;
       App.main.renderAll();
       App.main?.markSynced?.();
+
+      await Promise.all([
+        App.api.loadMatches(),
+        App.api.loadMarketPlayers(),
+      ]);
+
+      App.main.renderAll();
+      App.main?.markSynced?.();
+
       if (!options.skipBackgroundRefresh) {
         App.api
           .processSponsorshipsInBackground()

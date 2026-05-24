@@ -1301,6 +1301,24 @@ App.players = {
     const grid = document.getElementById("playersGrid");
     if (!summary || !grid) return;
 
+    if (!App.state.apiLoaded) {
+      summary.innerHTML = `
+        ${App.ui.summaryCard("Técnicos", App.data.teams.filter(team => team.status === "Nosso").length)}
+        ${App.ui.summaryCard("Dados", "Sincronizando", "Buscando campanha e orçamento")}
+        ${App.ui.summaryCard("Transferências", "Aguarde", "Carregando mercado")}
+        ${App.ui.summaryCard("Alertas", "Aguarde", "Calculando escritório")}
+      `;
+      grid.innerHTML = `
+        <article class="coach-panel-card">
+          <div class="home-panel-header">
+            <h2>Sincronizando escritório</h2>
+          </div>
+          <p class="calendar-muted">Carregando dados oficiais da liga antes de exibir saldo, campanha e transferências.</p>
+        </article>
+      `;
+      return;
+    }
+
     const search = App.utils.normalizeText(document.getElementById("playersSearchInput")?.value);
     const filter = document.getElementById("playersFilter")?.value || "all";
     const standings = App.standings.getStandings();

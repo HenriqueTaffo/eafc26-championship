@@ -434,11 +434,41 @@ App.standings = {
   },
 
   render() {
-    const standings = App.standings.getStandings();
     const table = document.getElementById("standingsTable");
     const mobile = document.getElementById("standingsMobile");
     const summary = document.getElementById("standingsSummary");
     if (!table || !mobile || !summary) return;
+
+    if (!App.state.apiLoaded) {
+      summary.innerHTML = `
+        ${App.ui.summaryCard("Liga", "Sincronizando", "Buscando jogos aprovados")}
+        ${App.ui.summaryCard("Classificação", "Aguarde", "Calculando tabela")}
+        ${App.ui.summaryCard("Mercado", "Aguarde", "Carregando orçamentos")}
+        ${App.ui.summaryCard("Times", App.data.teams.length, "Na competição")}
+      `;
+      App.standings.renderHomeStandings([]);
+      const homeTable = document.getElementById("homeStandingsTable");
+      if (homeTable) {
+        homeTable.innerHTML = `
+          <tr>
+            <td colspan="8" class="calendar-muted">Sincronizando dados oficiais da liga...</td>
+          </tr>
+        `;
+      }
+      table.innerHTML = `
+        <tr>
+          <td colspan="11" class="calendar-muted">Sincronizando dados oficiais da liga...</td>
+        </tr>
+      `;
+      mobile.innerHTML = `
+        <article class="calendar-card standings-mobile-card">
+          <p class="calendar-muted">Sincronizando dados oficiais da liga...</p>
+        </article>
+      `;
+      return;
+    }
+
+    const standings = App.standings.getStandings();
 
     App.standings.renderSummaryCards(standings, summary);
     App.standings.renderHomeStandings(standings);

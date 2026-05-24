@@ -118,7 +118,7 @@ App.auth = {
     }
 
     App.auth.renderAll();
-    App.main?.renderCurrentView?.();
+    if (App.state.apiLoaded) App.main?.renderCurrentView?.();
   },
 
   canViewManagerPrivate(managerName) {
@@ -653,7 +653,7 @@ App.auth = {
       if (App.auth.isLoggedIn() && !App.auth.isCommissioner()) {
         await App.auth.loadMyTransferProposals();
         App.auth.renderTransferProposalPanel();
-        App.main?.renderCurrentView?.();
+        if (App.state.apiLoaded) App.main?.renderCurrentView?.();
       }
 
       return result;
@@ -747,7 +747,7 @@ App.auth = {
       App.auth.loadPublicNews()
     ]);
 
-    App.main?.renderCurrentView?.();
+    if (App.state.apiLoaded) App.main?.renderCurrentView?.();
     App.auth.renderAll();
   },
 
