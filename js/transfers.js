@@ -1298,6 +1298,10 @@ App.transfers = {
       );
       const payrollPressure = totalBudget > 0 ? (payrollWeekly * 4) / totalBudget : 0;
       const runwayWeeks = payrollWeekly > 0 ? Math.floor(Math.max(0, remaining) / payrollWeekly) : null;
+      const salaryDebtActive = Boolean(budget.salaryDebtActive);
+      const salaryDebtAmount = Number(
+        budget.salaryDebtAmount ?? (remaining < 0 ? Math.abs(remaining) : 0),
+      );
 
       return {
         buyer,
@@ -1313,6 +1317,12 @@ App.transfers = {
         activeInjuries: Number(budget.activeInjuries || 0),
         homeBonus: Number(budget.homeBonus || 0),
         winBonusValue: Number(budget.winBonusValue || 0),
+        marketEmbargo: Boolean(budget.marketEmbargo || salaryDebtActive || remaining < 0),
+        salaryDebtActive,
+        salaryDebtAmount,
+        salaryDebtWeeks: Number(budget.salaryDebtWeeks || 0),
+        salaryDebtPayroll: Number(budget.salaryDebtPayroll || 0),
+        salaryDebtPeriod: budget.salaryDebtPeriod || "",
         payrollWeekly,
         payrollPressure,
         runwayWeeks,
@@ -1354,7 +1364,9 @@ App.transfers = {
       .map((item) => {
         const usage = item.totalBudget > 0 ? item.spent / item.totalBudget : 0;
         const severity =
-          item.remaining < 0
+          item.marketEmbargo
+            ? "Embargo"
+            : item.remaining < 0
             ? "Crítico"
             : item.payrollPressure >= 0.18
               ? "Folha alta"
@@ -1447,6 +1459,11 @@ App.transfers = {
     const maxPayrollRatio = Number(App.state.apiFinanceRules?.max_payroll_to_budget_ratio || 0.22);
     const payrollCeiling = Number(budget?.totalBudget || App.config.transferBudget) * maxPayrollRatio / 4;
     const payrollBlocked = payrollAfter > payrollCeiling;
+    const marketEmbargo = Boolean(
+      budget?.marketEmbargo ||
+      budget?.salaryDebtActive ||
+      Number(budget?.remaining || 0) < 0
+    );
     const runwayWeeksAfter = payrollAfter > 0
       ? Math.floor(Math.max(0, remainingAfter) / payrollAfter)
       : null;
@@ -1457,7 +1474,7 @@ App.transfers = {
     const overBudget = budget ? finalValue > budget.remaining : false;
     const hardBlock = Boolean(
       hasEnoughData &&
-      (duplicateBlock || sameBuyerAndSeller || limitReached || overBudget || payrollBlocked),
+      (duplicateBlock || sameBuyerAndSeller || marketEmbargo || limitReached || overBudget || payrollBlocked),
     );
 
     return {
@@ -1481,6 +1498,7 @@ App.transfers = {
       payrollAfter,
       payrollCeiling,
       payrollBlocked,
+      marketEmbargo,
       runwayWeeksAfter,
       limitReached,
       overBudget,
@@ -1546,6 +1564,12 @@ App.transfers = {
 
     if (preview.sameBuyerAndSeller) {
       messages.push("Comprador e vendedor precisam ser técnicos diferentes.");
+    }
+
+    if (preview.marketEmbargo) {
+      messages.push(
+        "Mercado bloqueado por dívida salarial ou saldo negativo. Venda jogadores ou aguarde receita vencida.",
+      );
     }
 
     if (

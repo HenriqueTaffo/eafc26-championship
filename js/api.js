@@ -895,17 +895,20 @@ App.api = {
 
   async loadFinanceRulesAndForecast() {
     try {
-      const [rules, forecast] = await Promise.all([
+      const [rules, salaryDebts] = await Promise.all([
         App.api.rpc("app_get_finance_rules", {}, 30000),
-        App.api.rpc("app_get_manager_finance_forecast", {}, 30000)
+        App.api.rpc("app_get_salary_debt_status", {}, 30000)
       ]);
+      const forecast = await App.api.rpc("app_get_manager_finance_forecast", {}, 30000);
       App.state.apiFinanceRules = rules || null;
       App.state.apiFinanceForecast = Array.isArray(forecast) ? forecast : [];
+      App.state.apiSalaryDebts = Array.isArray(salaryDebts) ? salaryDebts : [];
       return App.state.apiFinanceForecast;
     } catch (error) {
       console.warn("Previsão financeira persistente indisponível:", error);
       App.state.apiFinanceRules = null;
       App.state.apiFinanceForecast = [];
+      App.state.apiSalaryDebts = [];
       return [];
     }
   },

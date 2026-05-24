@@ -75,6 +75,10 @@ App.governance = {
         payrollWeekly: Number(item.payroll_weekly || 0),
         projectedMonth: Number(item.payroll_monthly || 0),
         runwayWeeks: item.runway_weeks === null ? null : Number(item.runway_weeks),
+        marketEmbargo: Boolean(item.market_embargo),
+        salaryDebtActive: Boolean(item.salary_debt_active),
+        salaryDebtAmount: Number(item.salary_debt_amount || 0),
+        salaryDebtWeeks: Number(item.salary_debt_weeks || 0),
         risk: item.risk || "Saudável",
         burnRate: Number(item.total_budget || 0) > 0
           ? (Number(item.spent_total || 0) + Number(item.payroll_monthly || 0)) / Number(item.total_budget || 1)
@@ -97,6 +101,10 @@ App.governance = {
           ...item,
           projectedMonth,
           burnRate,
+          marketEmbargo: Boolean(item.marketEmbargo || item.salaryDebtActive || item.remaining < 0),
+          salaryDebtActive: Boolean(item.salaryDebtActive),
+          salaryDebtAmount: Number(item.salaryDebtAmount || (item.remaining < 0 ? Math.abs(item.remaining) : 0)),
+          salaryDebtWeeks: Number(item.salaryDebtWeeks || 0),
           risk
         };
       })
@@ -129,7 +137,7 @@ App.governance = {
       }));
 
     fairPlay.slice(0, 3).forEach(item => rows.push({
-      tone: item.remaining < 0 ? "critical" : "warn",
+      tone: item.marketEmbargo || item.remaining < 0 ? "critical" : "warn",
       title: `${item.buyer} sob observação financeira`,
       detail: `${item.severity} · saldo ${App.utils.formatCurrency(item.remaining)}.`
     }));
@@ -227,7 +235,7 @@ App.governance = {
 
     App.transfers.getFairPlayWatchlist().forEach(item => {
       issues.push({
-        severity: item.remaining < 0 ? "critical" : "warn",
+        severity: item.marketEmbargo || item.remaining < 0 ? "critical" : "warn",
         title: `Fair play: ${item.buyer}`,
         detail: `${item.severity} · saldo ${App.utils.formatCurrency(item.remaining)} · folha ${App.utils.formatCurrency(item.payrollWeekly || 0)}/sem.`
       });
@@ -384,7 +392,7 @@ App.governance = {
           ${rows.map(item => `
             <div class="economy-row ${App.utils.normalizeText(item.risk).replace(/\s+/g, "-")}">
               <strong>${App.utils.escapeHtml(item.buyer)} · ${App.utils.escapeHtml(item.risk)}</strong>
-              <span>Saldo ${App.utils.formatCurrency(item.remaining)} · folha ${App.utils.formatCurrency(item.payrollWeekly)}/sem · mês projetado ${App.utils.formatCurrency(item.projectedMonth)}</span>
+              <span>Saldo ${App.utils.formatCurrency(item.remaining)} · folha ${App.utils.formatCurrency(item.payrollWeekly)}/sem · mês projetado ${App.utils.formatCurrency(item.projectedMonth)}${item.marketEmbargo ? ` · embargo ativo${item.salaryDebtAmount ? ` (${App.utils.formatCurrency(item.salaryDebtAmount)})` : ""}` : ""}</span>
             </div>
           `).join("")}
         </div>
@@ -586,9 +594,9 @@ App.governance = {
         <div class="home-panel-header">
           <div>
             <span class="modal-kicker">Fechamento semanal</span>
-            <h2>Objetivos e diretoria</h2>
+            <h2>Objetivos, folha e fair play</h2>
           </div>
-          ${canAct ? `<button class="secondary-button" type="button" data-close-weekly-review>Fechar semana</button>` : ""}
+          ${canAct ? `<button class="secondary-button" type="button" data-close-weekly-review>Fechar semana + folha</button>` : ""}
         </div>
         <div class="commissioner-list">
           ${rows.map(item => `
@@ -692,10 +700,14 @@ App.governance = {
       weeklyButton.dataset.bound = "true";
       weeklyButton.addEventListener("click", async () => {
         try {
-          await App.governance.runAction("app_close_weekly_review", {
+          const result = await App.governance.runAction("app_close_weekly_review", {
             p_snapshot: JSON.stringify(App.governance.getWeeklyObjectiveRows())
           });
-          App.utils.setMessage(message, "Fechamento semanal registrado.", "success");
+          const payroll = result?.payroll || null;
+          const payrollMessage = payroll
+            ? ` ${Number(payroll.charged || 0)} folha(s), ${Number(payroll.debts || 0)} dívida(s), ${Number(payroll.penalties || 0)} multa(s).`
+            : "";
+          App.utils.setMessage(message, `Fechamento semanal registrado.${payrollMessage}`, "success");
         } catch (error) {
           App.utils.setMessage(message, error.message, "error");
         }

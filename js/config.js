@@ -39,6 +39,7 @@ App.state = {
     weeklyReviews: []
   },
   apiFinanceForecast: [],
+  apiSalaryDebts: [],
   apiFinanceRules: null,
   apiLoaded: false,
   loadingCount: 0,

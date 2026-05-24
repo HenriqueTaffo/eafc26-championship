@@ -25,6 +25,15 @@ App.players = {
     ) || null;
   },
 
+  getSalaryDebtForBuyer(buyer) {
+    return (App.state.apiSalaryDebts || []).find(
+      item =>
+        (item.status === "active" || item.marketEmbargo) &&
+        App.utils.normalizeText(item.managerName || item.manager_name) ===
+        App.utils.normalizeText(buyer),
+    ) || null;
+  },
+
   getWeeklyPayrollForBuyer(buyer, transfers = []) {
     const forecast = App.players.getFinanceForecastForBuyer(buyer);
     const forecastPayroll = Number(forecast?.payroll_weekly ?? forecast?.payrollWeekly);
@@ -667,7 +676,7 @@ App.players = {
     const spendPct = totalBudget > 0 ? spent / totalBudget : 0;
     const topSix = Number(standing?.position || 99) <= 6;
     const positiveGoalDiff = Number(standing?.goalDifference || 0) >= 0;
-    const cashDiscipline = remaining >= 0 && spendPct <= .85;
+    const cashDiscipline = remaining >= 0 && spendPct <= .85 && !budget.marketEmbargo;
     const squadDepth = transfers.length >= 4;
 
     return [
@@ -684,7 +693,7 @@ App.players = {
       {
         label: "Fair play financeiro",
         status: cashDiscipline ? "ok" : "risk",
-        detail: cashDiscipline ? "Gasto sob controle." : "Orçamento pressionado ou negativo."
+        detail: cashDiscipline ? "Gasto sob controle." : "Orçamento pressionado, negativo ou bloqueado."
       },
       {
         label: "Profundidade do elenco",
@@ -710,15 +719,20 @@ App.players = {
     return { score, label };
   },
 
-  getFairPlayFlags(budget, transfers) {
+  getFairPlayFlags(owner, budget, transfers) {
     const remaining = Number(budget.remainingBudget ?? App.config.transferBudget);
     const totalBudget = Number(budget.totalBudget ?? App.config.transferBudget);
     const spent = Number(budget.spentTotal || 0);
-    const payrollWeekly = transfers.reduce((sum, item) => sum + App.transfers.estimateWeeklySalary(item), 0);
+    const payrollWeekly = App.players.getWeeklyPayrollForBuyer(owner, transfers);
     const payrollPressure = totalBudget > 0 ? (payrollWeekly * 4) / totalBudget : 0;
+    const debt = App.players.getSalaryDebtForBuyer(owner);
     const flags = [];
 
-    if (remaining < 0) flags.push("Saldo negativo: risco de auditoria.");
+    if (debt || budget.salaryDebtActive) {
+      flags.push(`Dívida salarial ativa: ${App.utils.formatCurrency(Number(debt?.debtAmount || budget.salaryDebtAmount || Math.abs(remaining)))}.`);
+    }
+    if (budget.marketEmbargo || remaining < 0) flags.push("Mercado bloqueado até o saldo voltar ao positivo.");
+    if (remaining < 0) flags.push("Saldo negativo: receitas vencidas quitam a dívida primeiro.");
     if (totalBudget > 0 && spent / totalBudget >= .9) flags.push("Gasto acima de 90% do orçamento.");
     if (payrollPressure >= .18) flags.push(`Folha pesada: ${App.utils.formatCurrency(payrollWeekly)} por semana.`);
     if (transfers.some(item => Number(item.totalCost || 0) >= 30000000)) flags.push("Compra pesada no radar da liga.");
@@ -731,7 +745,7 @@ App.players = {
     const next = App.players.getNextMatchForTeam(activeTeam.team);
     const remaining = Number(budget.remainingBudget ?? App.config.transferBudget);
     const totalBudget = Number(budget.totalBudget ?? App.config.transferBudget);
-    const payrollWeekly = transfers.reduce((sum, item) => sum + App.transfers.estimateWeeklySalary(item), 0);
+    const payrollWeekly = App.players.getWeeklyPayrollForBuyer(activeTeam.owner, transfers);
     const lastFive = recentForm.slice(0, 5);
     const wins = lastFive.filter(item => item.result === "W").length;
     const hasValueBuy = transfers.some(item => Number(item.overall || 0) >= 78 && Number(item.totalCost || 0) <= 14000000);
@@ -825,7 +839,7 @@ App.players = {
   renderCoachStrategyCards(activeTeam, standing, budget, transfers, injuries, recentForm) {
     const objectives = App.players.getCoachObjectives(activeTeam, standing, budget, transfers);
     const morale = App.players.getCoachMorale(activeTeam, standing, budget, injuries, recentForm);
-    const fairPlay = App.players.getFairPlayFlags(budget, transfers);
+    const fairPlay = App.players.getFairPlayFlags(activeTeam.owner, budget, transfers);
     const payrollWeekly = App.players.getWeeklyPayrollForBuyer(activeTeam.owner, transfers);
     const runwayWeeks = payrollWeekly > 0
       ? Math.floor(Math.max(0, Number(budget.remainingBudget ?? App.config.transferBudget)) / payrollWeekly)
@@ -874,6 +888,7 @@ App.players = {
   renderCoachDashboard(activeTeam, standings, budgetInfo) {
     const standing = standings.find(item => App.utils.sameTeamName(item.team, activeTeam.team));
     const budget = budgetInfo[activeTeam.owner] || {};
+    const salaryDebt = App.players.getSalaryDebtForBuyer(activeTeam.owner);
     const spent = App.players.getSpentByBuyer(activeTeam.owner);
     const breakdown = App.players.getBudgetBreakdown(budget, spent);
     const transfers = App.players.getApprovedTransfersForBuyer(activeTeam.owner);
@@ -953,9 +968,10 @@ App.players = {
           <article><span>Campanha</span><strong>${standing?.wins || 0}/${standing?.draws || 0}/${standing?.losses || 0}</strong><small>V/E/D</small></article>
           <article><span>Saldo de gols</span><strong>${App.utils.formatGoalDifference(standing?.goalDifference || 0)}</strong><small>${standing?.goalsFor || 0} pró / ${standing?.goalsAgainst || 0} contra</small></article>
           ${canViewPrivate ? `
-            <article><span>Saldo mercado</span><strong>${App.utils.formatCurrency(breakdown.available)}</strong><small>Gasto ${App.utils.formatCurrency(breakdown.spent)}</small></article>
+            <article><span>Saldo mercado</span><strong>${App.utils.formatCurrency(breakdown.available)}</strong><small>${budget.marketEmbargo ? "Mercado bloqueado" : `Gasto ${App.utils.formatCurrency(breakdown.spent)}`}</small></article>
             <article><span>Transfers hoje</span><strong>${todayCount}/${transferLimit}</strong><small>${transfers.length} totais válidas</small></article>
             <article><span>Folha semanal</span><strong>${App.utils.formatCurrency(payrollWeekly)}</strong><small>Estimativa por elenco contratado</small></article>
+            ${(budget.marketEmbargo || salaryDebt) ? `<article><span>Fair play</span><strong>Embargo</strong><small>${App.utils.formatCurrency(Number(salaryDebt?.debtAmount || budget.salaryDebtAmount || Math.abs(Number(budget.remainingBudget || 0))))} em aberto</small></article>` : ""}
           ` : ""}
         </section>
 
