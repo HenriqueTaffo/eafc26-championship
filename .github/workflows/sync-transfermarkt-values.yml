@@ -1,0 +1,52 @@
+name: Sync Transfermarkt Market Values
+
+on:
+  schedule:
+    - cron: "20 6 * * *"
+  workflow_dispatch:
+    inputs:
+      limit:
+        description: "Quantidade máxima de jogadores para verificar"
+        required: false
+        default: "250"
+      player:
+        description: "Filtro opcional por jogador ou clube"
+        required: false
+        default: ""
+      dry_run:
+        description: "Conferir sem gravar"
+        type: boolean
+        required: false
+        default: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    env:
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      SYNC_LIMIT: ${{ github.event.inputs.limit || '250' }}
+      SYNC_PLAYER: ${{ github.event.inputs.player || '' }}
+      SYNC_DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Sync values
+        run: |
+          ARGS=(--limit="${SYNC_LIMIT}")
+          if [ -n "${SYNC_PLAYER}" ]; then
+            ARGS+=(--player="${SYNC_PLAYER}")
+          fi
+          if [ "${SYNC_DRY_RUN}" = "true" ]; then
+            ARGS+=(--dry-run)
+          fi
+          node scripts/sync-transfermarkt-market-values.js "${ARGS[@]}"
