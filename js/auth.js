@@ -1351,12 +1351,19 @@ App.auth = {
     const sourceLabel = App.auth.getTransferProposalSourceLabel(item);
     const sourceLabelEscaped = App.utils.escapeHtml(sourceLabel);
     const proposedValue = Number(item.proposed_value || 0);
+    const status = App.utils.normalizeText(item.status || "pending");
+    const statusLabel =
+      status === "accepted"
+        ? "Aceita"
+        : status === "rejected"
+          ? "Recusada"
+          : "Pendente";
 
     return `
-      <article class="decision-card transfer-proposal-item">
+      <article class="decision-card transfer-proposal-item proposal-status-${status}">
         <div class="decision-card-top">
           <span>${isCpuOffer ? "Oferta da CPU" : "Oferta interna"}</span>
-          <b>${App.utils.escapeHtml(item.status || "pending")}</b>
+          <b>${statusLabel}</b>
         </div>
         <h3>${App.utils.escapeHtml(item.player)}</h3>
         <p>${sourceLabelEscaped} ofereceu ${App.utils.formatCurrency(proposedValue)} por este jogador.</p>
@@ -1391,9 +1398,16 @@ App.auth = {
   },
 
   renderTransferProposalSummary(item) {
+    const status = App.utils.normalizeText(item.status || "pending");
+    const statusLabel =
+      status === "accepted"
+        ? "Aceita"
+        : status === "rejected"
+          ? "Recusada"
+          : "Pendente";
     return `
-      <article class="proposal-summary-item">
-        <span>${App.utils.escapeHtml(item.status || "pending")}</span>
+      <article class="proposal-summary-item proposal-status-${status}">
+        <span>${statusLabel}</span>
         <strong>${App.utils.escapeHtml(item.player)}</strong>
         <small>${App.utils.escapeHtml(item.seller)} · ${App.utils.formatCurrency(item.proposed_value)}</small>
       </article>

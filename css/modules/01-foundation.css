@@ -610,6 +610,8 @@ tr.calendar-pending-row {
 }
 
 .transfer-status.valid { background: rgba(34,197,94,.16); color: #bbf7d0; }
+.transfer-status.sale { background: rgba(45,212,191,.16); color: #99f6e4; }
+.transfer-status.rejected { background: rgba(148,163,184,.14); color: #cbd5e1; }
 .transfer-status.duplicate, .transfer-status.overbudget { background: rgba(239,68,68,.18); color: #fecaca; }
 .money-positive { color: #bbf7d0; font-weight: 900; }
 .money-warning { color: #fef3c7; font-weight: 900; }
@@ -2088,4 +2090,3 @@ body.loader-active {
     font-size: 23px;
   }
 }
-

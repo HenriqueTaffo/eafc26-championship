@@ -729,13 +729,27 @@ App.transfers = {
       .map((row, index) => {
         const transferType = row.TipoTransferencia || row.transfer_type || "";
         const isCpuSale = App.utils.normalizeText(transferType) === "cpu_sale";
+        const negotiatedValue = Number(
+          row.ValorNegociado ??
+            row.negotiated_value ??
+            row.ValorFinal ??
+            row.final_value ??
+            0,
+        );
 
         return {
+          id: row.Id || row.id || "",
           player: row.Jogador,
           buyer: isCpuSale ? "CPU" : row.Comprador,
-          fromClub: isCpuSale ? "Venda para CPU" : row.ClubeOrigem,
+          seller: row.Vendedor || (isCpuSale ? row.Comprador : ""),
+          originalBuyer: row.Comprador || "",
+          fromClub: isCpuSale ? row.ClubeOrigem || "Venda para CPU" : row.ClubeOrigem,
           overall: Number(row.Overall),
-          marketValue: Number(isCpuSale ? 0 : row.ValorTransfermarkt),
+          marketValue: Number(isCpuSale ? negotiatedValue : row.ValorTransfermarkt),
+          negotiatedValue,
+          saleValue: isCpuSale ? negotiatedValue : 0,
+          status: row.Status || row.status || "",
+          reason: row.Motivo || row.reason || "",
           timestamp: row.Timestamp,
           sourceIndex: index,
           transferType,
@@ -754,6 +768,49 @@ App.transfers = {
 
   isApprovedTransferStatus(status) {
     return ["aprovado", "approved"].includes(App.utils.normalizeText(status));
+  },
+
+  isRejectedTransferStatus(status) {
+    return ["recusado", "rejeitado", "rejected"].includes(
+      App.utils.normalizeText(status),
+    );
+  },
+
+  isCpuSaleTransfer(item = {}) {
+    const transferType = App.utils.normalizeText(
+      item.transferType || item.TipoTransferencia || item.transfer_type || "",
+    );
+    const reason = App.utils.normalizeText(item.reason || item.Motivo || "");
+    const fromClub = App.utils.normalizeText(item.fromClub || item.ClubeOrigem || "");
+    return (
+      item.isCpuSale === true ||
+      transferType === "cpu_sale" ||
+      reason === "venda para cpu" ||
+      fromClub === "venda para cpu"
+    );
+  },
+
+  getMovementValue(item = {}) {
+    if (App.transfers.isCpuSaleTransfer(item)) {
+      return Number(
+        item.saleValue ||
+          item.negotiatedValue ||
+          item.ValorNegociado ||
+          item.totalCost ||
+          item.marketValue ||
+          item.ValorFinal ||
+          0,
+      );
+    }
+    return Number(item.marketValue || item.ValorTransfermarkt || item.totalCost || 0);
+  },
+
+  isCompletedMovementTransfer(item = {}) {
+    if (App.transfers.isRejectedTransferStatus(item.status || item.Status)) {
+      return false;
+    }
+    if (!App.transfers.isCpuSaleTransfer(item)) return true;
+    return App.transfers.getMovementValue(item) > 0;
   },
 
   isMarketPlayerContracted(player) {
@@ -960,12 +1017,15 @@ App.transfers = {
 
   getTransfersWithStats() {
     const allTransfers = App.transfers.getAllTransfers();
-    const nameCounts = allTransfers.reduce((acc, transfer) => {
+    const ownershipTransfers = allTransfers
+      .map((transfer, index) => ({ transfer, index }))
+      .filter(({ transfer }) => App.transfers.isCompletedMovementTransfer(transfer));
+    const nameCounts = ownershipTransfers.reduce((acc, { transfer }) => {
       const key = App.utils.normalizeText(transfer.player);
       acc[key] = (acc[key] || 0) + 1;
       return acc;
     }, {});
-    const latestIndexByPlayer = allTransfers.reduce((acc, transfer, index) => {
+    const latestIndexByPlayer = ownershipTransfers.reduce((acc, { transfer, index }) => {
       const key = App.utils.normalizeText(transfer.player);
       const currentIndex = acc[key];
       if (currentIndex === undefined) {
@@ -989,15 +1049,18 @@ App.transfers = {
     const spentByBuyer = {};
 
     return allTransfers.map((transfer, index) => {
-      const feeRate = App.transfers.getTransferRate(Number(transfer.overall));
+      const isCpuSale = App.transfers.isCpuSaleTransfer(transfer);
+      const baseValue = App.transfers.getMovementValue(transfer);
+      const feeRate = isCpuSale
+        ? 0
+        : App.transfers.getTransferRate(Number(transfer.overall));
       const totalCost =
-        Number(transfer.marketValue || 0) +
-        Number(transfer.marketValue || 0) * feeRate;
+        Number(baseValue || 0) + Number(baseValue || 0) * feeRate;
       const nameKey = App.utils.normalizeText(transfer.player);
       const hasDuplicate = nameCounts[nameKey] > 1;
       const isBlockedDuplicate =
         hasDuplicate && latestIndexByPlayer[nameKey] !== index;
-      const countedCost = isBlockedDuplicate ? 0 : totalCost;
+      const countedCost = isBlockedDuplicate || isCpuSale ? 0 : totalCost;
       spentByBuyer[transfer.buyer] =
         (spentByBuyer[transfer.buyer] || 0) + countedCost;
       const budgetInfo = App.transfers.getBudgetInfoByBuyer()[transfer.buyer];
@@ -1015,6 +1078,7 @@ App.transfers = {
         index,
         feeRate,
         totalCost,
+        isCpuSale,
         hasDuplicate,
         isBlockedDuplicate,
         currentBudget,
@@ -1027,17 +1091,29 @@ App.transfers = {
   getValidTransfers() {
     return App.transfers
       .getTransfersWithStats()
-      .filter((item) => !item.isBlockedDuplicate);
+      .filter(
+        (item) =>
+          !item.isBlockedDuplicate &&
+          App.transfers.isCompletedMovementTransfer(item),
+      );
   },
 
   getTransferStatusClass(item) {
+    if (App.transfers.isRejectedTransferStatus(item.status || item.Status)) {
+      return "rejected";
+    }
     if (item.isBlockedDuplicate) return "duplicate";
+    if (App.transfers.isCpuSaleTransfer(item)) return "sale";
     if (item.runningSpent > item.currentBudget) return "overbudget";
     return "valid";
   },
 
   getTransferStatusLabel(item) {
+    if (App.transfers.isRejectedTransferStatus(item.status || item.Status)) {
+      return "Recusada";
+    }
     if (item.isBlockedDuplicate) return "Duplicado";
+    if (App.transfers.isCpuSaleTransfer(item)) return "Venda CPU";
     if (item.runningSpent > item.currentBudget) return "Revisar";
     return "Válido";
   },
@@ -1052,7 +1128,12 @@ App.transfers = {
     const status =
       document.getElementById("transferStatusFilter")?.value || "all";
 
-    if (owner !== "all") data = data.filter((item) => item.buyer === owner);
+    if (owner !== "all")
+      data = data.filter(
+        (item) =>
+          item.buyer === owner ||
+          (App.transfers.isCpuSaleTransfer(item) && item.seller === owner),
+      );
     if (status !== "all")
       data = data.filter(
         (item) => App.transfers.getTransferStatusClass(item) === status,
@@ -1062,6 +1143,7 @@ App.transfers = {
         (item) =>
           App.utils.normalizeText(item.player).includes(search) ||
           App.utils.normalizeText(item.buyer).includes(search) ||
+          App.utils.normalizeText(item.seller).includes(search) ||
           App.utils.normalizeText(item.fromClub).includes(search),
       );
     }
@@ -1127,6 +1209,11 @@ App.transfers = {
 
     return App.state.apiTransfers
       .filter((row) => App.utils.normalizeText(row.Status) === "aprovado")
+      .filter(
+        (row) =>
+          App.utils.normalizeText(row.TipoTransferencia || row.transfer_type) !==
+          "cpu_sale",
+      )
       .filter(
         (row) =>
           App.utils.normalizeText(row.Comprador) ===
@@ -1220,6 +1307,7 @@ App.transfers = {
   getAuctionCandidates() {
     return App.transfers
       .getValidTransfers()
+      .filter((item) => !App.transfers.isCpuSaleTransfer(item))
       .filter(
         (item) =>
           Number(item.totalCost || 0) >= 25000000 ||
@@ -1256,7 +1344,11 @@ App.transfers = {
     return (
       App.transfers
         .getValidTransfers()
-        .find((item) => App.utils.normalizeText(item.player) === key) || null
+        .find(
+          (item) =>
+            !App.transfers.isCpuSaleTransfer(item) &&
+            App.utils.normalizeText(item.player) === key,
+        ) || null
     );
   },
 
@@ -1598,45 +1690,58 @@ App.transfers = {
             <span>Movimentações recentes</span>
           </div>
           <strong>Nenhuma transferência aprovada ainda.</strong>
-          <p class="calendar-muted">As últimas contratações aprovadas aparecerão aqui.</p>
+          <p class="calendar-muted">As últimas compras e vendas aprovadas aparecerão aqui.</p>
         </article>
       `;
       return;
     }
 
     const impactHtml = impactTransfers.length
-      ? `
-      <article class="transfer-movement-card transfer-impact-spotlight">
+      ? (() => {
+          const spotlight = impactTransfers[0];
+          const isSpotlightSale = App.transfers.isCpuSaleTransfer(spotlight);
+          const spotlightOwner = isSpotlightSale
+            ? spotlight.seller || spotlight.originalBuyer || "Técnico"
+            : spotlight.buyer;
+          return `
+      <article class="transfer-movement-card transfer-impact-spotlight ${isSpotlightSale ? "is-cpu-sale-transfer" : ""}">
         <div class="movement-card-header">
-          <span>Contratação impactante</span>
-          <small>OVR 89+</small>
+          <span>${isSpotlightSale ? "Venda impactante" : "Contratação impactante"}</span>
+          <small>${isSpotlightSale ? "CPU · OVR 89+" : "OVR 89+"}</small>
         </div>
         <div class="impact-spotlight-grid">
           <div class="impact-spotlight-main">
             ${App.transfers.renderPlayerIdentity(
-              impactTransfers[0].player,
-              `${impactTransfers[0].fromClub || "Clube não informado"} · ${impactTransfers[0].buyer}`,
+              spotlight.player,
+              isSpotlightSale
+                ? `${spotlightOwner} vendeu para CPU`
+                : `${spotlight.fromClub || "Clube não informado"} · ${spotlight.buyer}`,
               "impact-player-identity",
-              { club: impactTransfers[0].fromClub },
+              { club: spotlight.fromClub },
             )}
-            <strong>${App.utils.formatCurrency(impactTransfers[0].totalCost)}</strong>
+            <strong>${App.utils.formatCurrency(spotlight.totalCost)}</strong>
           </div>
           <div class="impact-spotlight-list">
             ${impactTransfers
-              .map(
-                (item) => `
+              .map((item) => {
+                const isSale = App.transfers.isCpuSaleTransfer(item);
+                const owner = isSale
+                  ? item.seller || item.originalBuyer || "Técnico"
+                  : item.buyer;
+                return `
               <div>
                 <span>OVR ${item.displayOverall}</span>
                 <b>${App.utils.escapeHtml(item.player)}</b>
-                <small>${App.utils.escapeHtml(item.buyer)} · ${App.utils.formatCurrency(item.totalCost)}</small>
+                <small>${App.utils.escapeHtml(isSale ? `${owner} vendeu` : owner)} · ${App.utils.formatCurrency(item.totalCost)}</small>
               </div>
-            `,
-              )
+            `;
+              })
               .join("")}
           </div>
         </div>
       </article>
-    `
+    `;
+        })()
       : "";
 
     target.innerHTML =
@@ -1648,29 +1753,44 @@ App.transfers = {
             : "Sem data";
           const overall = App.transfers.getTransferOverall(item);
           const isImpact = overall > 88;
+          const isCpuSale = App.transfers.isCpuSaleTransfer(item);
+          const ownerLabel = isCpuSale
+            ? item.seller || item.originalBuyer || "Técnico"
+            : item.buyer;
           const marketValue = Number(item.marketValue || 0);
           const feePercent = Math.round(Number(item.feeRate || 0) * 100);
           const valueBreakdown = marketValue
             ? `Base ${App.utils.formatCurrency(marketValue)}${feePercent ? ` + ${feePercent}% OVR` : ""}`
             : "Base não informada";
+          const movementClass = [
+            isImpact ? "is-impact-transfer" : "",
+            isCpuSale ? "is-cpu-sale-transfer" : "",
+          ].filter(Boolean).join(" ");
           return `
-        <article class="transfer-movement-card ${isImpact ? "is-impact-transfer" : ""}">
+        <article class="transfer-movement-card ${movementClass}">
           <div class="movement-card-header">
-            ${App.ui.ownerBadge(item.buyer)}
-            <small>${isImpact ? "Impactante · " : ""}${App.utils.escapeHtml(date)}</small>
+            ${App.ui.ownerBadge(ownerLabel)}
+            <small>${isCpuSale ? "Venda para CPU · " : isImpact ? "Impactante · " : ""}${App.utils.escapeHtml(date)}</small>
           </div>
           <div class="movement-player">
-            <span>Contratação</span>
-            ${App.transfers.renderPlayerIdentity(item.player, item.fromClub || "Clube não informado", "movement-player-identity", { club: item.fromClub })}
+            <span>${isCpuSale ? "Venda concluída" : "Contratação"}</span>
+            ${App.transfers.renderPlayerIdentity(
+              item.player,
+              isCpuSale
+                ? `${ownerLabel} vendeu para CPU`
+                : item.fromClub || "Clube não informado",
+              "movement-player-identity",
+              { club: item.fromClub },
+            )}
           </div>
           <div class="movement-meta">
-            <span>${App.utils.escapeHtml(item.fromClub || "Clube não informado")}</span>
+            <span>${App.utils.escapeHtml(isCpuSale ? "Destino: CPU" : item.fromClub || "Clube não informado")}</span>
             <span>OVR ${overall || "-"}</span>
           </div>
           <div class="movement-value">
-            <span>Valor final</span>
+            <span>${isCpuSale ? "Valor recebido" : "Valor final"}</span>
             <div class="movement-value-copy">
-              <small>${App.utils.escapeHtml(valueBreakdown)}</small>
+              <small>${App.utils.escapeHtml(isCpuSale ? "Oferta aceita da CPU" : valueBreakdown)}</small>
               <strong>${App.utils.formatCurrency(item.totalCost)}</strong>
             </div>
           </div>
@@ -1685,7 +1805,10 @@ App.transfers = {
     if (!target) return;
 
     const transfers = App.transfers.getValidTransfers();
-    const biggest = [...transfers]
+    const purchases = transfers.filter(
+      (item) => !App.transfers.isCpuSaleTransfer(item),
+    );
+    const biggest = [...purchases]
       .sort((a, b) => b.totalCost - a.totalCost)
       .slice(0, 5);
     const recent = App.transfers.getRecentTransferMovements(5);
@@ -1693,10 +1816,10 @@ App.transfers = {
       .getHumanBuyers()
       .map((buyer) => ({
         buyer,
-        count: transfers.filter((item) => item.buyer === buyer).length,
+        count: purchases.filter((item) => item.buyer === buyer).length,
       }))
       .sort((a, b) => b.count - a.count);
-    const fromClubs = transfers.reduce((acc, item) => {
+    const fromClubs = purchases.reduce((acc, item) => {
       const club = item.fromClub || "Clube não informado";
       acc[club] = (acc[club] || 0) + 1;
       return acc;
@@ -1735,12 +1858,22 @@ App.transfers = {
           recent.length
             ? recent
                 .map(
-                  (item) => `
+                  (item) => {
+                    const isCpuSale = App.transfers.isCpuSaleTransfer(item);
+                    const owner = isCpuSale
+                      ? item.seller || item.originalBuyer || "Técnico"
+                      : item.buyer;
+                    return `
           <div class="insight-row">
-            <span>${App.transfers.renderPlayerIdentity(item.player, item.buyer, "insight-player-identity")}</span>
-            <strong>${App.utils.escapeHtml(item.buyer)}</strong>
+            <span>${App.transfers.renderPlayerIdentity(
+              item.player,
+              isCpuSale ? `${owner} vendeu para CPU` : item.buyer,
+              "insight-player-identity",
+            )}</span>
+            <strong>${App.utils.escapeHtml(isCpuSale ? "Venda CPU" : item.buyer)}</strong>
           </div>
-        `,
+        `;
+                  },
                 )
                 .join("")
             : `<p class="calendar-muted">Nenhuma movimentação recente.</p>`
@@ -2012,26 +2145,35 @@ App.transfers = {
     if (!summary) return;
 
     const data = App.transfers.getValidTransfers();
+    const purchases = data.filter(
+      (item) => !App.transfers.isCpuSaleTransfer(item),
+    );
+    const cpuSales = data.filter((item) => App.transfers.isCpuSaleTransfer(item));
     const recent = App.transfers.getRecentTransferMovements(1)[0];
     const totalMoved = data.reduce(
       (sum, item) => sum + Number(item.totalCost || 0),
       0,
     );
-    const biggest = data.reduce(
+    const biggest = purchases.reduce(
       (best, item) =>
         Number(item.totalCost || 0) > Number(best?.totalCost || 0)
           ? item
           : best,
-      data[0],
+      purchases[0],
     );
-    const buyersActive = new Set(data.map((item) => item.buyer)).size;
+    const buyersActive = new Set(purchases.map((item) => item.buyer)).size;
+    const recentLabel =
+      recent && App.transfers.isCpuSaleTransfer(recent)
+        ? `${recent.player} (venda CPU)`
+        : recent?.player;
 
     summary.innerHTML = `
-      ${App.ui.summaryCard("Contratações válidas", data.length)}
+      ${App.ui.summaryCard("Contratações válidas", purchases.length)}
       ${App.ui.summaryCard("Total movimentado", App.utils.formatCurrency(totalMoved))}
       ${App.ui.summaryCard("Maior compra", biggest ? App.utils.formatCurrency(biggest.totalCost) : "-")}
+      ${App.ui.summaryCard("Vendas para CPU", cpuSales.length)}
       ${App.ui.summaryCard("Compradores ativos", buyersActive)}
-      ${App.ui.summaryCard("Última movimentação", recent ? App.utils.escapeHtml(recent.player) : "-")}
+      ${App.ui.summaryCard("Última movimentação", recentLabel ? App.utils.escapeHtml(recentLabel) : "-")}
     `;
   },
 
@@ -2058,11 +2200,24 @@ App.transfers = {
     table.innerHTML = data
       .map((item) => {
         const statusClass = App.transfers.getTransferStatusClass(item);
+        const isCpuSale = App.transfers.isCpuSaleTransfer(item);
+        const ownerLabel = isCpuSale
+          ? item.seller || item.originalBuyer || "Técnico"
+          : item.buyer;
+        const destinationLabel = isCpuSale ? "CPU" : item.buyer;
+        const originLabel = isCpuSale
+          ? ownerLabel
+          : item.fromClub || "-";
         return `
         <tr class="ours-row">
-          <td class="calendar-match">${App.transfers.renderPlayerIdentity(item.player, item.fromClub || "-", "table-player-identity", { club: item.fromClub })}</td>
-          <td>${App.ui.ownerBadge(item.buyer, App.data.ownerColors["Livre / CPU"])}</td>
-          <td>${App.utils.escapeHtml(item.fromClub || "-")}</td>
+          <td class="calendar-match">${App.transfers.renderPlayerIdentity(
+            item.player,
+            isCpuSale ? `${ownerLabel} vendeu para CPU` : item.fromClub || "-",
+            "table-player-identity",
+            { club: item.fromClub },
+          )}</td>
+          <td>${App.ui.ownerBadge(destinationLabel, App.data.ownerColors["Livre / CPU"])}</td>
+          <td>${App.utils.escapeHtml(originLabel)}</td>
           <td class="numeric">${item.overall}</td>
           <td>${App.utils.formatCurrency(item.marketValue)}</td>
           <td class="numeric">${Math.round(item.feeRate * 100)}%</td>
@@ -2075,11 +2230,21 @@ App.transfers = {
 
     mobile.innerHTML = data
       .map((item) => {
+        const isCpuSale = App.transfers.isCpuSaleTransfer(item);
+        const ownerLabel = isCpuSale
+          ? item.seller || item.originalBuyer || "Técnico"
+          : item.buyer;
+        const destinationLabel = isCpuSale ? "CPU" : item.buyer;
         return `
         <article class="calendar-card ours-row">
-          <div class="calendar-card-header">${App.ui.ownerBadge(item.buyer, App.data.ownerColors["Livre / CPU"])}<span class="transfer-status ${App.transfers.getTransferStatusClass(item)}">${App.transfers.getTransferStatusLabel(item)}</span></div>
-          ${App.transfers.renderPlayerIdentity(item.player, `${item.fromClub || "-"} · OVR ${item.overall}`, "mobile-player-identity", { club: item.fromClub })}
-          <p>Valor final: <strong>${App.utils.formatCurrency(item.totalCost)}</strong></p>
+          <div class="calendar-card-header">${App.ui.ownerBadge(destinationLabel, App.data.ownerColors["Livre / CPU"])}<span class="transfer-status ${App.transfers.getTransferStatusClass(item)}">${App.transfers.getTransferStatusLabel(item)}</span></div>
+          ${App.transfers.renderPlayerIdentity(
+            item.player,
+            `${isCpuSale ? `${ownerLabel} vendeu para CPU` : item.fromClub || "-"} · OVR ${item.overall}`,
+            "mobile-player-identity",
+            { club: item.fromClub },
+          )}
+          <p>${isCpuSale ? "Valor recebido" : "Valor final"}: <strong>${App.utils.formatCurrency(item.totalCost)}</strong></p>
         </article>
       `;
       })

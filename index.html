@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Mistura Managers League</title>
-    <link rel="stylesheet" href="./css/styles.css?v=20260524-brand-polish" />
+    <link rel="stylesheet" href="./css/styles.css?v=20260524-cpu-sale-cards" />
   </head>
   <body>
     <div
@@ -506,10 +506,10 @@
           <input
             id="transferSearchInput"
             type="search"
-            placeholder="Buscar jogador, comprador ou clube..."
+            placeholder="Buscar jogador, técnico, destino ou clube..."
           />
           <select id="transferOwnerFilter">
-            <option value="all">Todos os compradores</option>
+            <option value="all">Todos os técnicos/destinos</option>
             <option value="Henrique">Henrique</option>
             <option value="Willian">Willian</option>
             <option value="Rafael">Rafael</option>
@@ -519,6 +519,7 @@
           <select id="transferStatusFilter">
             <option value="all">Todos os status</option>
             <option value="valid">Válidas</option>
+            <option value="sale">Vendas CPU</option>
             <option value="duplicate">Duplicadas</option>
           </select>
         </section>
@@ -554,12 +555,12 @@
             <thead>
               <tr>
                 <th>Jogador</th>
-                <th>Comprador</th>
-                <th>Clube origem</th>
+                <th>Destino</th>
+                <th>Origem</th>
                 <th>OVR</th>
-                <th>Valor Transfermarkt</th>
+                <th>Base/Oferta</th>
                 <th>% Overall</th>
-                <th>Valor final</th>
+                <th>Valor</th>
                 <th>Status</th>
               </tr>
             </thead>
@@ -568,7 +569,7 @@
         </section>
         <section class="mobile-list" id="transferMobile"></section>
         <p class="footer-note">
-          Mostrando apenas as 5 transferências aprovadas mais recentes.
+          Mostrando apenas as 5 movimentações aprovadas mais recentes.
         </p>
       </section>
 
@@ -1048,11 +1049,11 @@
     <script src="./js/ui.js?v=20260522-league-intelligence"></script>
     <script src="./js/clubs.js?v=20260522-league-intelligence"></script>
     <script src="./js/api.js?v=20260523-fast-boot"></script>
-    <script src="./js/auth.js?v=20260522-league-intelligence"></script>
-    <script src="./js/standings.js?v=20260522-league-intelligence"></script>
+    <script src="./js/auth.js?v=20260524-cpu-sale-cards"></script>
+    <script src="./js/standings.js?v=20260524-cpu-sale-cards"></script>
     <script src="./js/calendar.js?v=20260522-league-intelligence"></script>
     <script src="./js/cups.js?v=20260522-league-intelligence"></script>
-    <script src="./js/transfers.js?v=20260523-player-photo-safe-match"></script>
+    <script src="./js/transfers.js?v=20260524-cpu-sale-cards"></script>
     <script src="./js/events.js?v=20260522-league-intelligence"></script>
     <script src="./js/players.js?v=20260523-player-photo-safe-match"></script>
     <script src="./js/experience.js?v=20260522-league-intelligence"></script>

@@ -371,12 +371,24 @@ App.standings = {
       detail: `${row.Competicao || ""} · ${row.RodadaFase || ""} · ${row.EnviadoPor || ""}`.replace(/\s+·\s+$/g, "")
     }));
 
-    const transferItems = (App.state.apiTransfers || []).map(row => ({
-      type: "Transferência",
-      date: row.Timestamp || "",
-      title: `${row.Comprador || "-"} contratou ${row.Jogador || "-"}`,
-      detail: `${App.utils.formatCurrency(row.ValorFinal || row.ValorTransfermarkt || 0)} · ${row.ClubeOrigem || ""}`
-    }));
+    const transferItems = (App.state.apiTransfers || []).map(row => {
+      const isCpuSale =
+        App.utils.normalizeText(row.TipoTransferencia || row.transfer_type) ===
+        "cpu_sale";
+      const value = isCpuSale
+        ? row.ValorNegociado || row.negotiated_value || row.ValorFinal
+        : row.ValorFinal || row.ValorTransfermarkt;
+      return {
+        type: "Transferência",
+        date: row.Timestamp || "",
+        title: isCpuSale
+          ? `${row.Comprador || "-"} vendeu ${row.Jogador || "-"} para CPU`
+          : `${row.Comprador || "-"} contratou ${row.Jogador || "-"}`,
+        detail: `${App.utils.formatCurrency(value || 0)} · ${
+          isCpuSale ? "Venda para CPU" : row.ClubeOrigem || ""
+        }`,
+      };
+    });
 
     const eventItems = (App.state.apiEvents || []).map(row => ({
       type: "Evento",

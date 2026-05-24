@@ -55,6 +55,23 @@
   border-color: rgba(132, 204, 22, .28);
 }
 
+.transfer-movement-card.is-cpu-sale-transfer {
+  border-color: rgba(45, 212, 191, .32);
+  background:
+    radial-gradient(circle at top left, rgba(45, 212, 191, .14), transparent 34%),
+    linear-gradient(135deg, rgba(12, 18, 20, .94), rgba(10, 16, 18, .82));
+}
+
+.transfer-movement-card.is-cpu-sale-transfer .movement-player span,
+.transfer-movement-card.is-cpu-sale-transfer .movement-card-header > span {
+  color: #99f6e4;
+}
+
+.transfer-movement-card.is-cpu-sale-transfer .movement-value strong,
+.transfer-movement-card.is-cpu-sale-transfer .impact-spotlight-main strong {
+  color: #5eead4;
+}
+
 .impact-spotlight-grid {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(280px, .9fr);
