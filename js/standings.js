@@ -366,9 +366,11 @@ App.standings = {
   getActivityItems() {
     const resultItems = (App.state.apiResults || []).map(row => ({
       type: "Resultado",
+      tone: "result",
       date: row.Timestamp || row.created_at || row.Data || "",
       title: `${App.utils.resolveTeamName(row.Mandante)} ${row.GolsMandante} x ${row.GolsVisitante} ${App.utils.resolveTeamName(row.Visitante)}`,
-      detail: `${row.Competicao || ""} · ${row.RodadaFase || ""} · ${row.EnviadoPor || ""}`.replace(/\s+·\s+$/g, "")
+      detail: `${row.Competicao || ""} · ${row.RodadaFase || ""} · enviado por ${row.EnviadoPor || "Liga"}`.replace(/\s+·\s+$/g, ""),
+      metric: App.utils.formatDateTime(row.Timestamp || row.created_at || row.Data || "")
     }));
 
     const transferItems = (App.state.apiTransfers || []).map(row => {
@@ -378,31 +380,41 @@ App.standings = {
       const value = isCpuSale
         ? row.ValorNegociado || row.negotiated_value || row.ValorFinal
         : row.ValorFinal || row.ValorTransfermarkt;
+      const valueLabel = Number(value || 0) > 0 ? App.utils.formatCurrency(value || 0) : "valor em revisão";
       const seller = row.Vendedor || row.CompradorRegistro || row.Comprador || "-";
       const destination = row.ClubeDestino || row.Destino || row.destination_club || row.Comprador || "clube interessado";
       return {
         type: "Transferência",
+        tone: isCpuSale ? "sale" : "transfer",
         date: row.Timestamp || "",
         title: isCpuSale
           ? `${seller} vendeu ${row.Jogador || "-"} para ${destination}`
           : `${row.Comprador || "-"} contratou ${row.Jogador || "-"}`,
-        detail: `${App.utils.formatCurrency(value || 0)} · ${
-          isCpuSale ? `Venda externa para ${destination}` : row.ClubeOrigem || ""
-        }`,
+        detail: isCpuSale
+          ? `${valueLabel} recebido · destino: ${destination}`
+          : `${valueLabel} custo final · origem: ${row.ClubeOrigem || "clube não informado"}`,
+        metric: App.utils.formatDateTime(row.Timestamp || "")
       };
     });
 
-    const eventItems = (App.state.apiEvents || []).map(row => ({
-      type: "Evento",
-      date: row.Timestamp || row.ExpiraEm || "",
-      title: row.Titulo || "-",
-      detail: `${row.Jogador || ""} · ${row.Tipo || ""} · ${row.Status || ""}`
-    }));
+    const eventItems = (App.state.apiEvents || [])
+      .filter(row => !App.utils.normalizeText(row.Titulo || "").startsWith("venda externa"))
+      .map(row => {
+        const impact = Number(row.ImpactoFinanceiro || 0);
+        return {
+          type: "Evento",
+          tone: impact > 0 ? "positive" : impact < 0 ? "negative" : "event",
+          date: row.Timestamp || row.ExpiraEm || "",
+          title: row.Titulo || "-",
+          detail: `${row.Jogador || "Liga"} · ${row.Tipo || "Ocorrência"} · ${row.Status || "registrado"}`,
+          metric: App.events?.getEventImpactLabel ? App.events.getEventImpactLabel(row) : App.utils.formatDateTime(row.Timestamp || row.ExpiraEm || "")
+        };
+      });
 
     return [...resultItems, ...transferItems, ...eventItems]
       .filter(item => item.date)
       .sort((a, b) => new Date(b.date) - new Date(a.date))
-      .slice(0, 8);
+      .slice(0, 6);
   },
 
   renderActivityPanel() {
@@ -414,17 +426,21 @@ App.standings = {
     target.innerHTML = `
       <article class="activity-card">
         <div class="home-panel-header">
-          <h2>Atividades recentes</h2>
+          <div>
+            <span class="modal-kicker">Linha do tempo</span>
+            <h2>Movimentos oficiais</h2>
+          </div>
         </div>
         ${items.length ? `
           <div class="activity-list">
             ${items.map(item => `
-              <div class="activity-item">
-                <span class="activity-type">${item.type}</span>
+              <div class="activity-item activity-${App.utils.escapeHtml(item.tone || "event")}">
+                <span class="activity-type">${App.utils.escapeHtml(item.type)}</span>
                 <div>
                   <strong>${App.utils.escapeHtml(item.title)}</strong>
-                  <small>${App.utils.escapeHtml(item.detail)} · ${App.utils.formatDateTime(item.date)}</small>
+                  <small>${App.utils.escapeHtml(item.detail)}</small>
                 </div>
+                <b>${App.utils.escapeHtml(item.metric || App.utils.formatDateTime(item.date))}</b>
               </div>
             `).join("")}
           </div>

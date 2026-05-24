@@ -1737,37 +1737,103 @@ App.auth = {
     });
   },
 
+  getLeagueNewsTone(item = {}) {
+    const text = App.utils.normalizeText(`${item.headline || ""} ${item.summary || ""} ${item.impact_text || ""}`);
+    if (text.includes("-") || text.includes("fora") || text.includes("veta") || text.includes("recusa") || text.includes("ignora")) return "negative";
+    if (text.includes("+") || text.includes("aceita") || text.includes("fechou") || text.includes("reforcou")) return "positive";
+    return "neutral";
+  },
+
+  getLeagueNewsRows(news = []) {
+    const groups = (news || []).reduce((acc, item) => {
+      const manager = item.manager_name || "Liga";
+      const headlineKey = App.utils.normalizeText(item.headline || "")
+        .replace(App.utils.normalizeText(manager), "")
+        .replace(/\s+/g, " ")
+        .trim();
+      const key = [
+        headlineKey,
+        App.utils.normalizeText(item.summary || ""),
+        App.utils.normalizeText(item.impact_text || "")
+      ].join("|");
+      acc[key] = acc[key] || [];
+      acc[key].push(item);
+      return acc;
+    }, {});
+
+    return Object.values(groups).map(group => {
+      const first = group[0] || {};
+      const managers = [...new Set(group.map(item => item.manager_name).filter(Boolean))];
+      const isGrouped = group.length > 1;
+      const rawHeadline = first.headline || "movimento de bastidor";
+      const firstManager = String(first.manager_name || "").trim();
+      const groupedHeadline = firstManager && rawHeadline.toLowerCase().startsWith(firstManager.toLowerCase())
+        ? rawHeadline.slice(firstManager.length).trim()
+        : rawHeadline;
+      const managerLabel = isGrouped
+        ? `${managers.slice(0, 3).join(", ")}${managers.length > 3 ? ` +${managers.length - 3}` : ""}`
+        : first.manager_name || "Liga";
+      const impactText = first.impact_text || "";
+      return {
+        managerLabel,
+        count: group.length,
+        tone: App.auth.getLeagueNewsTone(first),
+        headline: isGrouped
+          ? `Tema recorrente: ${groupedHeadline || "movimento de bastidor"}`
+          : rawHeadline || "Movimento de bastidor",
+        summary: isGrouped
+          ? `${group.length} publicações seguiram a mesma linha: ${first.summary || "decisão registrada pela liga."}`
+          : first.summary || "Decisão registrada pela liga.",
+        impact: isGrouped && impactText
+          ? `${group.length} caso(s) · ${impactText}`
+          : impactText || "Sem impacto financeiro direto."
+      };
+    }).slice(0, 6);
+  },
+
   renderLeagueNews() {
     const panel = document.getElementById("leagueNewsPanel");
     if (!panel) return;
 
-    const news = App.auth.publicNews || [];
+    const news = App.auth.getLeagueNewsRows(App.auth.publicNews || []);
+    const lead = news[0];
+    const briefs = news.slice(1, 5);
 
     panel.innerHTML = `
       <section class="league-news-card">
         <div class="league-news-header">
           <div>
             <span>Jornal da Liga</span>
-            <strong>Manchetes dos bastidores</strong>
+            <strong>Bastidores em manchete</strong>
           </div>
-          <small>Decisões privadas viram notícia pública aqui.</small>
+          <small>Somente movimentos com consequência ou leitura pública entram aqui.</small>
         </div>
 
-        ${news.length ? `
-          <div class="league-news-list">
-            ${news.map(item => `
-              <article>
-                <span>${App.utils.escapeHtml(item.manager_name || "Liga")}</span>
-                <strong>${App.utils.escapeHtml(item.headline)}</strong>
-                <p>${App.utils.escapeHtml(item.summary)}</p>
-                <small>${App.utils.escapeHtml(item.impact_text || "")}</small>
-              </article>
-            `).join("")}
+        ${lead ? `
+          <div class="league-news-layout">
+            <article class="league-news-feature tone-${App.utils.escapeHtml(lead.tone)}">
+              <span>${App.utils.escapeHtml(lead.managerLabel)}</span>
+              <strong>${App.utils.escapeHtml(lead.headline)}</strong>
+              <p>${App.utils.escapeHtml(lead.summary)}</p>
+              <small>${App.utils.escapeHtml(lead.impact)}</small>
+            </article>
+            ${briefs.length ? `
+              <div class="league-news-list">
+                ${briefs.map(item => `
+                  <article class="tone-${App.utils.escapeHtml(item.tone)}">
+                    <span>${App.utils.escapeHtml(item.managerLabel)}</span>
+                    <strong>${App.utils.escapeHtml(item.headline)}</strong>
+                    <p>${App.utils.escapeHtml(item.summary)}</p>
+                    <small>${App.utils.escapeHtml(item.impact)}</small>
+                  </article>
+                `).join("")}
+              </div>
+            ` : ""}
           </div>
         ` : `
           <div class="league-news-empty">
-            <strong>Nenhuma manchete publicada ainda</strong>
-            <p>Quando um técnico responder um e-mail privado, o desenrolar aparece aqui como notícia da liga.</p>
+            <strong>Nenhuma manchete relevante publicada</strong>
+            <p>Quando uma decisão privada mexer com caixa, elenco ou bastidor, ela aparece aqui como nota pública.</p>
           </div>
         `}
       </section>

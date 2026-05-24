@@ -136,20 +136,69 @@ App.experience = {
     const rows = profiles.map(profile => {
       const result = profile.recent[0];
       if (profile.reputation === "Crise") {
-        return `${profile.team.owner} entra em semana decisiva após pressão financeira e esportiva.`;
+        return {
+          topic: "Diretoria",
+          tone: "pressure",
+          headline: `${profile.team.owner} entra em semana decisiva`,
+          summary: "Pressão financeira e esportiva elevou o tom da cobrança interna.",
+          impact: "Risco de crise"
+        };
       }
       if (result?.result === "V") {
-        return `${profile.team.team} vence e fortalece a moral de ${profile.team.owner}.`;
+        return {
+          topic: "Vestiário",
+          tone: "positive",
+          headline: `${profile.team.team} ganha respiro`,
+          summary: `A vitória fortaleceu a moral do elenco de ${profile.team.owner}.`,
+          impact: "Moral em alta"
+        };
       }
-      return `${profile.team.owner} tem ${profile.reputation.toLowerCase()} na diretoria antes da próxima rodada.`;
+      return {
+        topic: "Bastidores",
+        tone: profile.reputation === "Pressão" ? "pressure" : "neutral",
+        headline: `${profile.team.owner} sob leitura da diretoria`,
+        summary: `Reputação atual: ${profile.reputation.toLowerCase()}. A próxima rodada pesa na avaliação.`,
+        impact: "Monitoramento"
+      };
     });
 
-    const sponsorRewards = (App.auth?.mySponsorships?.recentRewards || []).map(item =>
-      `${item.sponsor_name || "Patrocinador"} pagou bônus por meta cumprida.`
-    );
+    const sponsorGroups = (App.auth?.mySponsorships?.recentRewards || []).reduce((groups, item) => {
+      const sponsor = item.sponsor_name || "Patrocinador";
+      groups[sponsor] = groups[sponsor] || { sponsor, count: 0, total: 0 };
+      groups[sponsor].count += 1;
+      groups[sponsor].total += Number(item.reward_value || 0);
+      return groups;
+    }, {});
 
-    const persisted = (App.state.apiExperience?.news || []).map(item => item.body || item.title).filter(Boolean);
-    return [...persisted, ...sponsorRewards, ...rows].slice(0, 8);
+    const sponsorRewards = Object.values(sponsorGroups).map(item => ({
+      topic: "Comercial",
+      tone: "money",
+      headline: item.count > 1 ? `${item.sponsor} mantém fluxo de caixa` : `${item.sponsor} ativa bônus`,
+      summary: item.count > 1
+        ? `${item.count} pagamento(s) comercial(is) consolidados no escritório.`
+        : "Meta cumprida e pagamento comercial confirmado.",
+      impact: item.total > 0 ? `+${App.utils.formatCurrency(item.total)}` : "Bônus confirmado"
+    }));
+
+    const persisted = (App.state.apiExperience?.news || [])
+      .map(item => ({
+        topic: item.category || "Liga",
+        tone: "neutral",
+        headline: item.title || "Informe da liga",
+        summary: item.body || item.description || "A liga publicou uma atualização oficial.",
+        impact: item.impact || "Atualização"
+      }))
+      .filter(item => item.headline || item.summary);
+
+    const seen = new Set();
+    return [...persisted, ...sponsorRewards, ...rows]
+      .filter(item => {
+        const key = App.utils.normalizeText(`${item.topic}|${item.headline}|${item.summary}`);
+        if (!key || seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      })
+      .slice(0, 6);
   },
 
   renderSummary() {
@@ -283,6 +332,8 @@ App.experience = {
   renderAuctionsAndNews() {
     const auctions = App.experience.getAuctionRows();
     const news = App.experience.getNewsRows();
+    const leadNews = news[0];
+    const secondaryNews = news.slice(1, 5);
 
     return `
       <article class="experience-card">
@@ -298,11 +349,34 @@ App.experience = {
         </div>
       </article>
       <article class="experience-card">
-        <span class="modal-kicker">Notícias automáticas</span>
-        <h2>Jornal da Liga</h2>
-        <div class="experience-list">
-          ${news.map(item => `<div><strong>${App.utils.escapeHtml(item)}</strong></div>`).join("")}
+        <div class="home-panel-header">
+          <div>
+            <span class="modal-kicker">Jornal da Liga</span>
+            <h2>Boletim editorial</h2>
+          </div>
+          <small class="experience-news-count">${news.length} nota(s)</small>
         </div>
+        ${leadNews ? `
+          <div class="experience-news-board">
+            <article class="experience-news-lead tone-${App.utils.escapeHtml(leadNews.tone || "neutral")}">
+              <span>${App.utils.escapeHtml(leadNews.topic || "Liga")}</span>
+              <strong>${App.utils.escapeHtml(leadNews.headline)}</strong>
+              <p>${App.utils.escapeHtml(leadNews.summary)}</p>
+              <b>${App.utils.escapeHtml(leadNews.impact || "")}</b>
+            </article>
+            ${secondaryNews.length ? `
+              <div class="experience-news-briefs">
+                ${secondaryNews.map(item => `
+                  <article class="tone-${App.utils.escapeHtml(item.tone || "neutral")}">
+                    <span>${App.utils.escapeHtml(item.topic || "Liga")}</span>
+                    <strong>${App.utils.escapeHtml(item.headline)}</strong>
+                    <small>${App.utils.escapeHtml(item.impact || "")}</small>
+                  </article>
+                `).join("")}
+              </div>
+            ` : ""}
+          </div>
+        ` : `<p class="calendar-muted">Sem notícia relevante para publicar agora.</p>`}
       </article>
     `;
   },
