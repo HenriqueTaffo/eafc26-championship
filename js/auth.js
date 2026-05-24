@@ -132,6 +132,22 @@ App.auth = {
     return Boolean(session?.isCommissioner || session?.managerId === "comissario");
   },
 
+  async ensureLeagueDataReady() {
+    if (App.state.apiLoaded) return;
+
+    if (App.state.apiLoadPromise) {
+      await App.state.apiLoadPromise.catch(() => null);
+      if (App.state.apiLoaded) return;
+    }
+
+    if (App.api?.loadApiData) {
+      await App.api.loadApiData({
+        showLoader: false,
+        skipBackgroundRefresh: true
+      });
+    }
+  },
+
   async login(managerName, accessCode) {
     let result;
 
@@ -171,8 +187,10 @@ App.auth = {
     }
     await App.governance?.loadData?.();
     await App.auth.loadPublicNews();
+    await App.auth.ensureLeagueDataReady();
     App.auth.renderAll();
     App.auth.openSessionHome();
+    App.main?.renderCurrentView?.();
 
     return result;
   },

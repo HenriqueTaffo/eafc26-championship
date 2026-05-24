@@ -31,6 +31,7 @@ App.api = {
 
     try {
       return await fetch(url, {
+        cache: "no-store",
         ...options,
         signal: controller.signal,
       });
@@ -950,7 +951,6 @@ App.api = {
       ] = await Promise.all([
         App.api.loadBudgetReconciliation(),
         App.api.loadSponsorshipRewardTotals(),
-        App.api.loadFinanceRulesAndForecast?.(),
       ]);
 
       App.state.apiResults = data.results || [];
