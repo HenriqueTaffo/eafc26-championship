@@ -19,24 +19,24 @@ const browserGlobals = {
   setInterval: "readonly",
   setTimeout: "readonly",
   URLSearchParams: "readonly",
-  window: "readonly"
+  window: "readonly",
 };
 
 module.exports = [
-  {
-    ignores: ["src/legacyShell.js"]
-  },
   js.configs.recommended,
   {
     files: ["js/**/*.js"],
     languageOptions: {
       ecmaVersion: 2022,
-      sourceType: "script",
-      globals: browserGlobals
+      sourceType: "module",
+      globals: browserGlobals,
     },
     rules: {
-      "no-unused-vars": ["error", { caughtErrors: "none" }]
-    }
+      "no-unused-vars": [
+        "error",
+        { caughtErrors: "none", varsIgnorePattern: "^[A-Z]" },
+      ],
+    },
   },
   {
     files: ["src/**/*.{js,jsx}"],
@@ -44,13 +44,16 @@ module.exports = [
       ecmaVersion: 2022,
       sourceType: "module",
       parserOptions: {
-        ecmaFeatures: { jsx: true }
+        ecmaFeatures: { jsx: true },
       },
-      globals: browserGlobals
+      globals: browserGlobals,
     },
     rules: {
-      "no-unused-vars": ["error", { caughtErrors: "none" }]
-    }
+      "no-unused-vars": [
+        "error",
+        { caughtErrors: "none", varsIgnorePattern: "^[A-Z]" },
+      ],
+    },
   },
   {
     files: ["scripts/**/*.cjs", "vite.config.js"],
@@ -61,11 +64,11 @@ module.exports = [
         console: "readonly",
         module: "readonly",
         process: "readonly",
-        require: "readonly"
-      }
+        require: "readonly",
+      },
     },
     rules: {
-      "no-unused-vars": ["error", { caughtErrors: "none" }]
-    }
-  }
+      "no-unused-vars": ["error", { caughtErrors: "none" }],
+    },
+  },
 ];

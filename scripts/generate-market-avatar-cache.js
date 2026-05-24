@@ -10,7 +10,7 @@ const DEFAULT_PAGE_SIZE = 1000;
 
 function getArg(name, fallback = null) {
   const prefix = `${name}=`;
-  const inline = process.argv.find(arg => arg.startsWith(prefix));
+  const inline = process.argv.find((arg) => arg.startsWith(prefix));
   if (inline) return inline.slice(prefix.length);
 
   const index = process.argv.indexOf(name);
@@ -35,7 +35,7 @@ function normalizeText(value) {
 }
 
 function sleep(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms));
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 function getTransfermarktPlayerId(url) {
@@ -44,14 +44,19 @@ function getTransfermarktPlayerId(url) {
 }
 
 function pickTransfermarktPortrait(html, playerId) {
-  const urls = [...String(html || "").matchAll(/https:\/\/img\.a\.transfermarkt\.technology\/portrait\/[^"'<> ]+/g)]
-    .map(match => match[0].replace(/&amp;/g, "&"));
-  const matchingUrls = playerId ? urls.filter(url => url.includes(`/${playerId}-`)) : urls;
+  const urls = [
+    ...String(html || "").matchAll(
+      /https:\/\/img\.a\.transfermarkt\.technology\/portrait\/[^"'<> ]+/g,
+    ),
+  ].map((match) => match[0].replace(/&amp;/g, "&"));
+  const matchingUrls = playerId
+    ? urls.filter((url) => url.includes(`/${playerId}-`))
+    : urls;
 
   return (
-    matchingUrls.find(url => url.includes("/portrait/big/")) ||
-    matchingUrls.find(url => url.includes("/portrait/header/")) ||
-    matchingUrls.find(url => url.includes("/portrait/medium/")) ||
+    matchingUrls.find((url) => url.includes("/portrait/big/")) ||
+    matchingUrls.find((url) => url.includes("/portrait/header/")) ||
+    matchingUrls.find((url) => url.includes("/portrait/medium/")) ||
     matchingUrls[0] ||
     ""
   );
@@ -60,7 +65,8 @@ function pickTransfermarktPortrait(html, playerId) {
 async function readTransfermarktPortraitFromStream(response, playerId) {
   const decoder = new TextDecoder();
   const reader = response.body?.getReader?.();
-  if (!reader) return pickTransfermarktPortrait(await response.text(), playerId);
+  if (!reader)
+    return pickTransfermarktPortrait(await response.text(), playerId);
 
   let buffer = "";
   let scanned = "";
@@ -98,7 +104,12 @@ async function fetchJson(url, options = {}) {
   }
 
   if (!response.ok) {
-    const message = data?.message || data?.hint || data?.details || text || `HTTP ${response.status}`;
+    const message =
+      data?.message ||
+      data?.hint ||
+      data?.details ||
+      text ||
+      `HTTP ${response.status}`;
     throw new Error(message);
   }
 
@@ -110,20 +121,24 @@ async function rpc({ supabaseUrl, headers, functionName, payload = {} }) {
     method: "POST",
     headers: {
       ...headers,
-      "Content-Type": "application/json"
+      "Content-Type": "application/json",
     },
-    body: JSON.stringify(payload)
+    body: JSON.stringify(payload),
   });
 }
 
 async function getTransferNames({ supabaseUrl, headers }) {
-  const data = await rpc({ supabaseUrl, headers, functionName: "app_get_data" });
+  const data = await rpc({
+    supabaseUrl,
+    headers,
+    functionName: "app_get_data",
+  });
   return [
     ...new Set(
       (data?.transfers || [])
-        .map(item => String(item.Jogador || item.player || "").trim())
-        .filter(Boolean)
-    )
+        .map((item) => String(item.Jogador || item.player || "").trim())
+        .filter(Boolean),
+    ),
   ];
 }
 
@@ -139,7 +154,9 @@ async function getAllMarketPlayers({ supabaseUrl, headers, limit = 0 }) {
   const select = "id,name,club,transfermarkt_url,avatar_url,market_value_eur";
 
   for (let offset = 0; ; offset += DEFAULT_PAGE_SIZE) {
-    const remaining = limit ? Math.max(0, limit - players.length) : DEFAULT_PAGE_SIZE;
+    const remaining = limit
+      ? Math.max(0, limit - players.length)
+      : DEFAULT_PAGE_SIZE;
     if (!remaining) break;
 
     const pageSize = Math.min(DEFAULT_PAGE_SIZE, remaining);
@@ -162,12 +179,14 @@ async function getMarketPlayerByName({ supabaseUrl, headers, name }) {
     payload: {
       p_query: name,
       p_show_contracted: true,
-      p_limit: 5
-    }
+      p_limit: 5,
+    },
   });
   const key = normalizeText(name);
   return (
-    (Array.isArray(rows) ? rows : []).find(item => normalizeText(item.name) === key) ||
+    (Array.isArray(rows) ? rows : []).find(
+      (item) => normalizeText(item.name) === key,
+    ) ||
     (Array.isArray(rows) ? rows : [])[0] ||
     null
   );
@@ -182,8 +201,9 @@ async function fetchTransfermarktAvatar(player) {
   const response = await fetch(player.transfermarkt_url, {
     headers: {
       accept: "text/html,application/xhtml+xml",
-      "user-agent": "Mozilla/5.0 (compatible; EAFC26ChampionshipAvatarCache/1.0)"
-    }
+      "user-agent":
+        "Mozilla/5.0 (compatible; EAFC26ChampionshipAvatarCache/1.0)",
+    },
   });
   if (!response.ok) throw new Error(`Transfermarkt HTTP ${response.status}`);
 
@@ -193,7 +213,9 @@ async function fetchTransfermarktAvatar(player) {
 function readExistingCache() {
   if (!fs.existsSync(OUTPUT_FILE)) return {};
   const contents = fs.readFileSync(OUTPUT_FILE, "utf8");
-  const match = contents.match(/App\.data\.marketPlayerAvatars\s*=\s*(\{[\s\S]*?\});/);
+  const match = contents.match(
+    /App\.data\.marketPlayerAvatars\s*=\s*(\{[\s\S]*?\});/,
+  );
   if (!match) return {};
 
   try {
@@ -211,7 +233,7 @@ function writeCache(cache) {
       return acc;
     }, {});
 
-  const contents = `window.App = window.App || {};\nApp.data = App.data || {};\n\nApp.data.marketPlayerAvatars = ${JSON.stringify(sorted, null, 2)};\n`;
+  const contents = `import App from "./app.js";\nApp.data = App.data || {};\n\nApp.data.marketPlayerAvatars = ${JSON.stringify(sorted, null, 2)};\n`;
   fs.writeFileSync(OUTPUT_FILE, contents);
 }
 
@@ -228,43 +250,57 @@ async function runPool(items, worker, concurrency) {
 }
 
 async function main() {
-  const supabaseUrl = process.env.SUPABASE_URL || readConfigValue("SUPABASE_URL");
-  const key = process.env.SUPABASE_PUBLISHABLE_KEY || readConfigValue("SUPABASE_PUBLISHABLE_KEY");
+  const supabaseUrl =
+    process.env.SUPABASE_URL || readConfigValue("SUPABASE_URL");
+  const key =
+    process.env.SUPABASE_PUBLISHABLE_KEY ||
+    readConfigValue("SUPABASE_PUBLISHABLE_KEY");
   const delayMs = Math.max(0, Number(getArg("--delay-ms", DEFAULT_DELAY_MS)));
   const topLimit = Math.max(0, Number(getArg("--top-limit", 0)));
   const allPlayers = process.argv.includes("--all");
   const limit = Math.max(0, Number(getArg("--limit", 0)));
-  const concurrency = Math.max(1, Math.min(Number(getArg("--concurrency", 4)), 12));
+  const concurrency = Math.max(
+    1,
+    Math.min(Number(getArg("--concurrency", 4)), 12),
+  );
   const quiet = process.argv.includes("--quiet");
 
-  if (!supabaseUrl || !key) throw new Error("Configure SUPABASE_URL e SUPABASE_PUBLISHABLE_KEY.");
+  if (!supabaseUrl || !key)
+    throw new Error("Configure SUPABASE_URL e SUPABASE_PUBLISHABLE_KEY.");
 
   const headers = {
     apikey: key,
-    Authorization: `Bearer ${key}`
+    Authorization: `Bearer ${key}`,
   };
   const cache = readExistingCache();
   const transferNames = await getTransferNames({ supabaseUrl, headers });
   const transferPlayers = (
     await Promise.all(
-      transferNames.map(name =>
-        getMarketPlayerByName({ supabaseUrl, headers, name }).catch(error => {
+      transferNames.map((name) =>
+        getMarketPlayerByName({ supabaseUrl, headers, name }).catch((error) => {
           console.warn(`mercado indisponível para ${name}: ${error.message}`);
           return null;
-        })
-      )
+        }),
+      ),
     )
   ).filter(Boolean);
-  const topPlayers = await getTopMarketPlayers({ supabaseUrl, headers, limit: topLimit });
+  const topPlayers = await getTopMarketPlayers({
+    supabaseUrl,
+    headers,
+    limit: topLimit,
+  });
   const fullMarketPlayers = allPlayers
     ? await getAllMarketPlayers({ supabaseUrl, headers, limit })
     : [];
-  const playersById = [...transferPlayers, ...topPlayers].reduce((acc, player) => {
-    const id = getTransfermarktPlayerId(player.transfermarkt_url);
-    if (id) acc[id] = player;
-    return acc;
-  }, {});
-  fullMarketPlayers.forEach(player => {
+  const playersById = [...transferPlayers, ...topPlayers].reduce(
+    (acc, player) => {
+      const id = getTransfermarktPlayerId(player.transfermarkt_url);
+      if (id) acc[id] = player;
+      return acc;
+    },
+    {},
+  );
+  fullMarketPlayers.forEach((player) => {
     const id = getTransfermarktPlayerId(player.transfermarkt_url);
     if (id) playersById[id] = player;
   });
@@ -272,37 +308,51 @@ async function main() {
   let updated = 0;
   let missed = 0;
   let scanned = 0;
-  const entries = Object.entries(playersById).filter(([playerId]) => !cache[playerId]);
+  const entries = Object.entries(playersById).filter(
+    ([playerId]) => !cache[playerId],
+  );
 
-  await runPool(entries, async ([playerId, player]) => {
-    try {
-      const avatarUrl = await fetchTransfermarktAvatar(player);
-      if (avatarUrl) {
-        cache[playerId] = avatarUrl;
-        updated += 1;
-        if (!quiet) console.log(`ok: ${player.name} -> ${avatarUrl}`);
-      } else {
+  await runPool(
+    entries,
+    async ([playerId, player]) => {
+      try {
+        const avatarUrl = await fetchTransfermarktAvatar(player);
+        if (avatarUrl) {
+          cache[playerId] = avatarUrl;
+          updated += 1;
+          if (!quiet) console.log(`ok: ${player.name} -> ${avatarUrl}`);
+        } else {
+          missed += 1;
+          if (!quiet) console.log(`sem foto: ${player.name}`);
+        }
+      } catch (error) {
         missed += 1;
-        if (!quiet) console.log(`sem foto: ${player.name}`);
+        if (!quiet) console.warn(`erro: ${player.name}: ${error.message}`);
       }
-    } catch (error) {
-      missed += 1;
-      if (!quiet) console.warn(`erro: ${player.name}: ${error.message}`);
-    }
 
-    scanned += 1;
-    if (quiet && scanned % 100 === 0) {
-      console.log(`processados ${scanned}/${entries.length} | cache ${Object.keys(cache).length}`);
-      writeCache(cache);
-    }
-    if (delayMs) await sleep(delayMs);
-  }, concurrency);
+      scanned += 1;
+      if (quiet && scanned % 100 === 0) {
+        console.log(
+          `processados ${scanned}/${entries.length} | cache ${Object.keys(cache).length}`,
+        );
+        writeCache(cache);
+      }
+      if (delayMs) await sleep(delayMs);
+    },
+    concurrency,
+  );
 
   writeCache(cache);
-  console.log(JSON.stringify({ cached: Object.keys(cache).length, updated, missed }, null, 2));
+  console.log(
+    JSON.stringify(
+      { cached: Object.keys(cache).length, updated, missed },
+      null,
+      2,
+    ),
+  );
 }
 
-main().catch(error => {
+main().catch((error) => {
   console.error(error.message);
   process.exit(1);
 });

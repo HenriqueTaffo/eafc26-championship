@@ -1,4 +1,4 @@
-window.App = window.App || {};
+import App from "./app.js";
 
 App.auth = {
   storageKey: "mistura_manager_session_v2",

@@ -1,6 +1,5 @@
-import { useEffect, useMemo } from "react";
-import staticShellMarkup from "./legacyShell";
-import { htmlToReact } from "./shell/htmlToReact.jsx";
+import { useEffect } from "react";
+import { StaticShell } from "./shell/StaticShell.jsx";
 
 const ACCORDION_SELECTOR = [
   "#submitView .submit-card",
@@ -8,7 +7,7 @@ const ACCORDION_SELECTOR = [
   "#eventsView .events-intro-card",
   "#cupsView .cup-prize-card",
   "#transfersView .rule-card",
-  ".legend-block"
+  ".legend-block",
 ].join(",");
 
 function getAccordionHeader(card) {
@@ -22,7 +21,7 @@ function getAccordionHeader(card) {
 }
 
 function enhanceAccordionCards(root = document) {
-  root.querySelectorAll(ACCORDION_SELECTOR).forEach(card => {
+  root.querySelectorAll(ACCORDION_SELECTOR).forEach((card) => {
     if (card.dataset.reactAccordion === "true") return;
 
     const header = getAccordionHeader(card);
@@ -37,7 +36,7 @@ function enhanceAccordionCards(root = document) {
     button.setAttribute("aria-expanded", "true");
     button.setAttribute("aria-label", "Alternar painel");
     button.innerHTML = "<span></span>";
-    button.addEventListener("click", event => {
+    button.addEventListener("click", (event) => {
       event.preventDefault();
       const isCollapsed = card.classList.toggle("is-collapsed");
       button.setAttribute("aria-expanded", String(!isCollapsed));
@@ -52,9 +51,9 @@ function useAccordionEnhancement() {
   useEffect(() => {
     enhanceAccordionCards();
 
-    const observer = new MutationObserver(mutations => {
-      mutations.forEach(mutation => {
-        mutation.addedNodes.forEach(node => {
+    const observer = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        mutation.addedNodes.forEach((node) => {
           if (node.nodeType === Node.ELEMENT_NODE) {
             enhanceAccordionCards(node);
           }
@@ -69,7 +68,10 @@ function useAccordionEnhancement() {
 
 export default function App() {
   useAccordionEnhancement();
-  const shell = useMemo(() => htmlToReact(staticShellMarkup), []);
 
-  return <div className="react-shell">{shell}</div>;
+  return (
+    <div className="react-shell">
+      <StaticShell />
+    </div>
+  );
 }

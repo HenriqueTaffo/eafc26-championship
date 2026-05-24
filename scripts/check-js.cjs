@@ -1,5 +1,5 @@
-const { readdirSync, statSync } = require("fs");
-const { join } = require("path");
+const { readFileSync, readdirSync, statSync } = require("fs");
+const { join, sep } = require("path");
 const { spawnSync } = require("child_process");
 
 const roots = ["js", "scripts"];
@@ -20,7 +20,7 @@ function collect(dir) {
   }
 }
 
-roots.forEach(root => {
+roots.forEach((root) => {
   try {
     collect(root);
   } catch (error) {
@@ -31,9 +31,15 @@ roots.forEach(root => {
 let failed = false;
 
 for (const file of files) {
-  const result = spawnSync(process.execPath, ["--check", file], {
-    stdio: "inherit"
-  });
+  const isBrowserModule = file.startsWith(`js${sep}`) && file.endsWith(".js");
+  const result = isBrowserModule
+    ? spawnSync(process.execPath, ["--input-type=module", "--check"], {
+        input: readFileSync(file, "utf8"),
+        stdio: ["pipe", "inherit", "inherit"],
+      })
+    : spawnSync(process.execPath, ["--check", file], {
+        stdio: "inherit",
+      });
 
   if (result.status !== 0) failed = true;
 }

@@ -12,9 +12,10 @@ module.exports = defineConfig({
       output: {
         manualChunks(id) {
           if (id.includes("node_modules")) return "vendor";
-          if (id.includes("/js/") || id.includes("\\js\\")) return "legacy-app";
-        }
-      }
-    }
-  }
+          if (id.includes("/js/") || id.includes("\\js\\"))
+            return "app-runtime";
+        },
+      },
+    },
+  },
 });

@@ -1,4 +1,4 @@
-window.App = window.App || {};
+import App from "./app.js";
 
 App.data = {
   ownerColors: {

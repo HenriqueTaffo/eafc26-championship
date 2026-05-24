@@ -4,6 +4,7 @@ import { flushSync } from "react-dom";
 import App from "./App.jsx";
 import "./styles/app.scss";
 
+import "../js/app.js";
 import "../js/config.js";
 import "../js/data.js";
 import "../js/utils.js";

@@ -1,4 +1,4 @@
-window.App = window.App || {};
+import App from "./app.js";
 
 App.transfers = {
   femaleRatingNames: [
@@ -615,6 +615,7 @@ App.transfers = {
       const script = document.createElement("script");
       const version = App.config?.assetVersion || Date.now();
       script.src = `./js/market-avatars.js?v=${encodeURIComponent(version)}`;
+      script.type = "module";
       script.defer = true;
       script.onload = () => resolve(true);
       script.onerror = () => {
