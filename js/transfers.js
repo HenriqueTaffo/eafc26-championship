@@ -1716,6 +1716,57 @@ App.transfers = {
       submitButton.disabled = preview.hardBlock;
     }
 
+    const renderMetric = ({ label, value, unit = "", tone = "" }) => `
+      <span class="preview-metric ${tone ? `is-${tone}` : ""}">
+        <small class="preview-metric-label">${App.utils.escapeHtml(label)}</small>
+        <span class="preview-metric-value">
+          <strong>${App.utils.escapeHtml(String(value))}</strong>
+          ${unit ? `<em>${App.utils.escapeHtml(unit)}</em>` : ""}
+        </span>
+      </span>
+    `;
+    const previewMetrics = [
+      { label: "OVR", value: preview.overall },
+      { label: "Taxa", value: `${Math.round(preview.rate * 100)}%` },
+      {
+        label: preview.isInternal ? "Valor negociado" : "Custo final",
+        value: App.utils.formatCurrency(preview.finalValue),
+      },
+      {
+        label: "Saldo após compra",
+        value: App.utils.formatCurrency(preview.remainingAfter),
+        tone: preview.remainingAfter < 0 ? "danger" : "",
+      },
+      {
+        label: "Salário estimado",
+        value: App.utils.formatCurrency(preview.weeklySalary),
+        unit: "/sem",
+      },
+      {
+        label: "Folha pós-compra",
+        value: App.utils.formatCurrency(preview.payrollAfter),
+        unit: "/sem",
+        tone: preview.payrollBlocked ? "danger" : "",
+      },
+      {
+        label: preview.isInternal ? "Limite diário" : "Transferências hoje",
+        value: preview.isInternal
+          ? "Não consome"
+          : `${preview.budget.transfersToday}/${preview.budget.transferLimit}`,
+      },
+      {
+        label: "Fôlego de caixa",
+        value:
+          preview.runwayWeeksAfter === null
+            ? "Sem folha"
+            : `${preview.runwayWeeksAfter} sem.`,
+        tone:
+          preview.runwayWeeksAfter !== null && preview.runwayWeeksAfter < 3
+            ? "warning"
+            : "",
+      },
+    ];
+
     target.className = `transfer-live-preview ${preview.hardBlock ? "danger" : "success"}`;
     target.innerHTML = `
       <div class="preview-header">
@@ -1723,14 +1774,7 @@ App.transfers = {
         <span>${preview.buyer}</span>
       </div>
       <div class="preview-grid">
-        <span>OVR <strong>${preview.overall}</strong></span>
-        <span>Taxa <strong>${Math.round(preview.rate * 100)}%</strong></span>
-        <span>${preview.isInternal ? "Valor negociado" : "Custo final"} <strong>${App.utils.formatCurrency(preview.finalValue)}</strong></span>
-        <span>Saldo após compra <strong>${App.utils.formatCurrency(preview.remainingAfter)}</strong></span>
-        <span>Salário estimado <strong>${App.utils.formatCurrency(preview.weeklySalary)}/sem</strong></span>
-        <span>Folha pós-compra <strong>${App.utils.formatCurrency(preview.payrollAfter)}/sem</strong></span>
-        <span>${preview.isInternal ? "Limite diário" : "Transferências hoje"} <strong>${preview.isInternal ? "Não consome" : `${preview.budget.transfersToday}/${preview.budget.transferLimit}`}</strong></span>
-        <span>Fôlego de caixa <strong>${preview.runwayWeeksAfter === null ? "Sem folha" : `${preview.runwayWeeksAfter} sem.`}</strong></span>
+        ${previewMetrics.map(renderMetric).join("")}
       </div>
       <ul class="preview-alerts">
         ${messages.map((message) => `<li>${App.utils.escapeHtml(message)}</li>`).join("")}
