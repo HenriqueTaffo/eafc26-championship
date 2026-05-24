@@ -3,8 +3,11 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "check": "npm run check:js",
-    "check:js": "for file in js/*.js; do node --check \"$file\"; done",
+    "dev": "vite --host 127.0.0.1",
+    "build": "vite build",
+    "preview": "vite preview --host 127.0.0.1",
+    "check": "npm run check:js && npm run build",
+    "check:js": "node scripts/check-js.cjs",
     "sync:ea-ratings": "node scripts/import-ea-ratings.js",
     "sync:ea-ratings:dry": "node scripts/import-ea-ratings.js --dry-run",
     "sync:futbin-ratings": "node scripts/import-futbin-ratings.js",
@@ -18,14 +21,21 @@
     "sync:market-avatar-cache-db:dry": "node scripts/sync-market-avatars-from-cache.js --dry-run",
     "sync:market-avatars": "node scripts/backfill-player-avatars.js",
     "sync:market-avatars:dry": "node scripts/backfill-player-avatars.js --dry-run",
-    "build:css": "node scripts/build-css-bundle.js",
+    "build:css": "vite build",
     "format": "prettier --write \"**/*.{html,css,js,json,md}\"",
     "format:check": "prettier --check \"**/*.{html,css,js,json,md}\"",
-    "lint": "eslint js"
+    "lint": "eslint js src scripts/check-js.cjs vite.config.js"
   },
   "devDependencies": {
-    "@eslint/js": "^9.0.0",
-    "eslint": "^9.0.0",
-    "prettier": "^3.0.0"
+    "@eslint/js": "^8.57.1",
+    "@vitejs/plugin-react": "^4.2.1",
+    "eslint": "^8.57.1",
+    "prettier": "^3.0.0",
+    "sass": "^1.69.7",
+    "vite": "^4.5.14"
+  },
+  "dependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
   }
 }
