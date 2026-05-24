@@ -386,7 +386,7 @@ App.players = {
         </div>
         <div>
           <span>Maior compra</span>
-          ${topTransfer ? App.transfers.renderPlayerIdentity(topTransfer.player, topTransfer.fromClub || "", "coach-header-player-identity") : `<strong>-</strong>`}
+          ${topTransfer ? App.transfers.renderPlayerIdentity(topTransfer.player, topTransfer.fromClub || "", "coach-header-player-identity", { club: topTransfer.fromClub }) : `<strong>-</strong>`}
         </div>
         <div>
           <span>Total exibido</span>
@@ -397,7 +397,7 @@ App.players = {
       <div class="coach-transfer-timeline">
         ${transfers.map((item, index) => `
           <div class="coach-transfer-item">
-            ${App.transfers.renderPlayerIdentity(item.player, item.fromClub || "Clube não informado", "coach-transfer-player-identity")}
+            ${App.transfers.renderPlayerIdentity(item.player, item.fromClub || "Clube não informado", "coach-transfer-player-identity", { club: item.fromClub })}
             <b>${App.utils.formatCurrency(item.totalCost)}</b>
           </div>
         `).join("")}
@@ -482,11 +482,11 @@ App.players = {
         <div class="coach-target-search-results" data-private-target-results></div>
         <div class="coach-target-list">
           ${targets.length ? targets.map(target => {
-            const marketPlayer = App.transfers.findMarketPlayerByName(target.player) || {
+            const marketPlayer = App.transfers.findMarketPlayerByName(target.player, { club: target.club }) || {
               name: target.player,
               club: target.club
             };
-            const rating = App.transfers.getRatingForPlayerName(target.player);
+            const rating = App.transfers.getRatingForPlayerName(target.player, { club: target.club });
             const favoriteKey = `target:${target.id || target.player}`;
             const isFavorite = App.auth?.isFavorite?.("transfer_target", favoriteKey);
             return `

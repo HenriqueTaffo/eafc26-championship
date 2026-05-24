@@ -256,6 +256,50 @@ App.transfers = {
       source_url: "https://sofifa.com/player/263205/baris-alper-yilmaz",
       source_name: "SoFIFA FC 26 headshot",
     },
+    marquinhos: {
+      name: "Marquinhos",
+      club: "Paris SG",
+      position: "CB",
+      nation: "Brazil",
+      overall: 87,
+      gender: "Men's Football",
+      avatar_url: "https://cdn.sofifa.net/players/207/865/26_240.png",
+      source_url: "https://sofifa.com/player/207865/marquinhos",
+      source_name: "SoFIFA FC 26 headshot",
+    },
+    "theo hernandez": {
+      name: "Theo Hernandez",
+      club: "Al Hilal",
+      position: "LB",
+      nation: "France",
+      overall: 84,
+      gender: "Men's Football",
+      avatar_url: "https://cdn.sofifa.net/players/232/656/26_240.png",
+      source_url: "https://sofifa.com/player/232656/theo-hernandez",
+      source_name: "SoFIFA FC 26 headshot",
+    },
+    "marcos llorente": {
+      name: "Marcos Llorente Moreno",
+      club: "Atletico de Madrid",
+      position: "RB",
+      nation: "Spain",
+      overall: 84,
+      gender: "Men's Football",
+      avatar_url: "https://cdn.sofifa.net/players/226/161/26_240.png",
+      source_url: "https://sofifa.com/player/226161/marcos-llorente-moreno",
+      source_name: "SoFIFA FC 26 headshot",
+    },
+    "marcos llorente moreno": {
+      name: "Marcos Llorente Moreno",
+      club: "Atletico de Madrid",
+      position: "RB",
+      nation: "Spain",
+      overall: 84,
+      gender: "Men's Football",
+      avatar_url: "https://cdn.sofifa.net/players/226/161/26_240.png",
+      source_url: "https://sofifa.com/player/226161/marcos-llorente-moreno",
+      source_name: "SoFIFA FC 26 headshot",
+    },
     "hakan calhanoglu": {
       name: "Hakan Çalhanoğlu",
       club: "Football Club Internazionale Milano S.p.A.",
@@ -438,6 +482,9 @@ App.transfers = {
       mané: ["Sadio Mane", "Sadio Mané"],
       "baris alper yilmaz": ["Barış Alper Yılmaz", "B. Yılmaz"],
       "barış alper yılmaz": ["Baris Alper Yilmaz", "B. Yilmaz"],
+      "theo hernandez": ["Theo Hernández"],
+      "theo hérnandez": ["Theo Hernandez"],
+      "marcos llorente": ["Marcos Llorente Moreno"],
       "nicolas pepe": ["Nicolas Pépé"],
       "nicolas pépé": ["Nicolas Pepe"],
     };
@@ -450,6 +497,24 @@ App.transfers = {
       .normalizeText(value)
       .replace(/[^a-z0-9]+/g, " ")
       .trim();
+  },
+
+  isTrustedPlayerNameMatch(aliasKey, candidateKey) {
+    if (!aliasKey || !candidateKey) return false;
+    if (aliasKey === candidateKey) return true;
+
+    const aliasTokens = aliasKey.split(" ").filter(Boolean);
+    const candidateTokens = candidateKey.split(" ").filter(Boolean);
+    const shorter =
+      aliasTokens.length <= candidateTokens.length ? aliasTokens : candidateTokens;
+    const longer =
+      aliasTokens.length <= candidateTokens.length ? candidateTokens : aliasTokens;
+    const shorterKey = shorter.join(" ");
+    const longerKey = longer.join(" ");
+
+    if (!shorterKey || !longerKey.startsWith(`${shorterKey} `)) return false;
+
+    return shorter.length >= 2;
   },
 
   getMarketPlayerValue(player) {
@@ -477,27 +542,41 @@ App.transfers = {
     );
   },
 
-  findMarketPlayerByName(playerName) {
+  findMarketPlayerByName(playerName, context = {}) {
     const aliasKeys = App.transfers
       .getPlayerSearchAliases(playerName)
       .map(App.transfers.normalizePlayerRatingKey);
+    const clubKey = App.utils.normalizeText(
+      context?.club || context?.fromClub || context?.clubName || "",
+    );
     const marketPlayers = Array.isArray(App.state.apiMarketPlayers)
       ? App.state.apiMarketPlayers
       : [];
     if (!aliasKeys.length || !marketPlayers.length) return null;
 
+    const exactMatches = marketPlayers.filter((item) =>
+      aliasKeys.includes(App.transfers.normalizePlayerRatingKey(item.name)),
+    );
+    const fuzzyMatches = marketPlayers.filter((item) => {
+      const marketKey = App.transfers.normalizePlayerRatingKey(item.name);
+      return aliasKeys.some((aliasKey) =>
+        App.transfers.isTrustedPlayerNameMatch(aliasKey, marketKey),
+      );
+    });
+    const byIdentity = [...exactMatches, ...fuzzyMatches].reduce((acc, item) => {
+      const key = String(item.id || item.transfermarkt_url || item.name || "");
+      if (key && !acc[key]) acc[key] = item;
+      return acc;
+    }, {});
+    const matches = Object.values(byIdentity);
+
     return (
-      marketPlayers.find((item) =>
-        aliasKeys.includes(App.transfers.normalizePlayerRatingKey(item.name)),
-      ) ||
-      marketPlayers.find((item) => {
-        const marketKey = App.transfers.normalizePlayerRatingKey(item.name);
-        return aliasKeys.some(
-          (aliasKey) =>
-            marketKey.startsWith(`${aliasKey} `) ||
-            aliasKey.startsWith(`${marketKey} `),
-        );
-      }) ||
+      (clubKey
+        ? matches.find(
+            (item) => App.utils.normalizeText(item.club || "") === clubKey,
+          )
+        : null) ||
+      matches[0] ||
       null
     );
   },
@@ -515,26 +594,27 @@ App.transfers = {
       .map(App.transfers.normalizePlayerRatingKey);
     const matches = ratings.filter((item) => {
       const ratingKey = App.transfers.normalizePlayerRatingKey(item.name);
-      return (
-        aliasKeys.includes(ratingKey) ||
-        aliasKeys.some(
-          (aliasKey) =>
-            ratingKey.startsWith(`${aliasKey} `) ||
-            aliasKey.startsWith(`${ratingKey} `),
-        )
+      return aliasKeys.some((aliasKey) =>
+        App.transfers.isTrustedPlayerNameMatch(aliasKey, ratingKey),
       );
     });
+    const isClubMatch = (item) =>
+      !clubKey || !item.club || App.utils.normalizeText(item.club) === clubKey;
     const selected =
       matches.find(
         (item) =>
           App.transfers.normalizePlayerRatingKey(item.name) === key &&
-          (!clubKey ||
-            !item.club ||
-            App.utils.normalizeText(item.club) === clubKey),
+          isClubMatch(item),
       ) ||
-      matches.find((item) =>
-        App.transfers.isUsablePlayerAvatar(item.avatar_url),
+      matches.find(
+        (item) =>
+          isClubMatch(item) &&
+          App.transfers.isUsablePlayerAvatar(item.avatar_url),
       ) ||
+      matches.find(
+        (item) => App.transfers.normalizePlayerRatingKey(item.name) === key,
+      ) ||
+      matches.find((item) => App.transfers.isUsablePlayerAvatar(item.avatar_url)) ||
       matches[0] ||
       null;
 
@@ -604,12 +684,12 @@ App.transfers = {
     return App.transfers.isUsablePlayerAvatar(avatar) ? avatar : "";
   },
 
-  getRatingForPlayerName(playerName) {
-    const marketPlayer = App.transfers.findMarketPlayerByName(playerName);
+  getRatingForPlayerName(playerName, context = {}) {
+    const marketPlayer = App.transfers.findMarketPlayerByName(playerName, context);
     const marketAvatar = App.transfers.getMarketPlayerAvatar(marketPlayer);
     return (
       App.transfers.findEaRatingForMarketPlayer(
-        marketPlayer || { name: playerName },
+        marketPlayer || { name: playerName, club: context?.club || "" },
       ) ||
       (marketPlayer?.avatar_url || marketAvatar
         ? {
@@ -622,9 +702,14 @@ App.transfers = {
     );
   },
 
-  renderPlayerIdentity(playerName, detail = "", className = "player-identity") {
-    const marketPlayer = App.transfers.findMarketPlayerByName(playerName);
-    const rating = App.transfers.getRatingForPlayerName(playerName);
+  renderPlayerIdentity(
+    playerName,
+    detail = "",
+    className = "player-identity",
+    context = {},
+  ) {
+    const marketPlayer = App.transfers.findMarketPlayerByName(playerName, context);
+    const rating = App.transfers.getRatingForPlayerName(playerName, context);
     return `
       <span class="${className}">
         ${App.transfers.renderPlayerPhoto(marketPlayer || { name: playerName }, rating, "player-avatar")}
@@ -1532,6 +1617,7 @@ App.transfers = {
               impactTransfers[0].player,
               `${impactTransfers[0].fromClub || "Clube não informado"} · ${impactTransfers[0].buyer}`,
               "impact-player-identity",
+              { club: impactTransfers[0].fromClub },
             )}
             <strong>${App.utils.formatCurrency(impactTransfers[0].totalCost)}</strong>
           </div>
@@ -1575,7 +1661,7 @@ App.transfers = {
           </div>
           <div class="movement-player">
             <span>Contratação</span>
-            ${App.transfers.renderPlayerIdentity(item.player, item.fromClub || "Clube não informado", "movement-player-identity")}
+            ${App.transfers.renderPlayerIdentity(item.player, item.fromClub || "Clube não informado", "movement-player-identity", { club: item.fromClub })}
           </div>
           <div class="movement-meta">
             <span>${App.utils.escapeHtml(item.fromClub || "Clube não informado")}</span>
@@ -1974,7 +2060,7 @@ App.transfers = {
         const statusClass = App.transfers.getTransferStatusClass(item);
         return `
         <tr class="ours-row">
-          <td class="calendar-match">${App.transfers.renderPlayerIdentity(item.player, item.fromClub || "-", "table-player-identity")}</td>
+          <td class="calendar-match">${App.transfers.renderPlayerIdentity(item.player, item.fromClub || "-", "table-player-identity", { club: item.fromClub })}</td>
           <td>${App.ui.ownerBadge(item.buyer, App.data.ownerColors["Livre / CPU"])}</td>
           <td>${App.utils.escapeHtml(item.fromClub || "-")}</td>
           <td class="numeric">${item.overall}</td>
@@ -1992,7 +2078,7 @@ App.transfers = {
         return `
         <article class="calendar-card ours-row">
           <div class="calendar-card-header">${App.ui.ownerBadge(item.buyer, App.data.ownerColors["Livre / CPU"])}<span class="transfer-status ${App.transfers.getTransferStatusClass(item)}">${App.transfers.getTransferStatusLabel(item)}</span></div>
-          ${App.transfers.renderPlayerIdentity(item.player, `${item.fromClub || "-"} · OVR ${item.overall}`, "mobile-player-identity")}
+          ${App.transfers.renderPlayerIdentity(item.player, `${item.fromClub || "-"} · OVR ${item.overall}`, "mobile-player-identity", { club: item.fromClub })}
           <p>Valor final: <strong>${App.utils.formatCurrency(item.totalCost)}</strong></p>
         </article>
       `;
