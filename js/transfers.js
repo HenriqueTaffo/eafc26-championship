@@ -776,6 +776,29 @@ App.transfers = {
     return [...new Set(candidates)];
   },
 
+  getPlayerAvatarSourceClass(url = "") {
+    const normalized = App.utils.normalizeText(url);
+    if (normalized.includes("sofifa") || normalized.includes("cdn.sofifa")) {
+      return "avatar-source-sofifa";
+    }
+    if (normalized.includes("fifaratings")) return "avatar-source-fifaratings";
+    if (normalized.includes("transfermarkt")) return "avatar-source-transfermarkt";
+    if (normalized.includes("futbin")) return "avatar-source-futbin";
+    return "avatar-source-generic";
+  },
+
+  syncPlayerPhotoSourceClass(container, url = "") {
+    if (!container) return;
+    container.classList.remove(
+      "avatar-source-sofifa",
+      "avatar-source-fifaratings",
+      "avatar-source-transfermarkt",
+      "avatar-source-futbin",
+      "avatar-source-generic",
+    );
+    if (url) container.classList.add(App.transfers.getPlayerAvatarSourceClass(url));
+  },
+
   handlePlayerPhotoError(image) {
     const candidates = (() => {
       try {
@@ -790,6 +813,7 @@ App.transfers = {
     if (nextAvatar) {
       image.dataset.avatarIndex = String(nextIndex);
       image.src = nextAvatar;
+      App.transfers.syncPlayerPhotoSourceClass(image.parentElement, nextAvatar);
       return;
     }
 
@@ -803,9 +827,10 @@ App.transfers = {
     const name = player?.name || rating?.name || "?";
     const fallback = App.utils.escapeHtml(String(name).charAt(0));
     const encodedCandidates = encodeURIComponent(JSON.stringify(avatarCandidates));
+    const sourceClass = avatar ? App.transfers.getPlayerAvatarSourceClass(avatar) : "";
 
     return `
-      <span class="${className} ${avatar ? "has-player-image" : ""}">
+      <span class="${className} player-photo-shell ${sourceClass} ${avatar ? "has-player-image" : ""}">
         ${avatar ? `<img src="${App.utils.escapeHtml(avatar)}" alt="" loading="lazy" referrerpolicy="no-referrer" data-avatar-candidates="${encodedCandidates}" data-avatar-index="0" onerror="App.transfers.handlePlayerPhotoError(this)" />` : ""}
         <i>${fallback}</i>
       </span>

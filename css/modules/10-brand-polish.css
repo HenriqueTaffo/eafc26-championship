@@ -481,6 +481,44 @@ tbody tr:hover td {
   border-color: rgba(255, 255, 255, .14);
 }
 
+/* v73 - retratos de jogadores com enquadramento único em todas as abas */
+.player-photo-shell,
+.player-avatar,
+.market-player-photo,
+.ea-rating-photo,
+.scout-photo {
+  isolation: isolate;
+  overflow: hidden !important;
+  border-radius: var(--radius-card) !important;
+  background:
+    linear-gradient(180deg, rgba(18, 30, 54, .96), rgba(8, 13, 20, .96)) !important;
+}
+
+.player-photo-shell img,
+.player-avatar img,
+.market-player-photo img,
+.ea-rating-photo img,
+.scout-photo img,
+.movement-player .player-avatar img {
+  width: 100% !important;
+  height: 100% !important;
+  padding: 2px 2px 0 !important;
+  object-fit: contain !important;
+  object-position: center bottom !important;
+  background: transparent !important;
+}
+
+.player-photo-shell.avatar-source-transfermarkt img {
+  padding: 4px 4px 0 !important;
+  transform: scale(.88);
+  transform-origin: center bottom;
+}
+
+.player-photo-shell.avatar-source-fifaratings img,
+.player-photo-shell.avatar-source-futbin img {
+  padding: 3px 3px 0 !important;
+}
+
 .club-badge.has-logo,
 .metric-icon.leader-club-icon {
   overflow: hidden;
