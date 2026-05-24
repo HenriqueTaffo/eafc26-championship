@@ -221,19 +221,7 @@ App.calendar = {
   },
 
   renderSummary() {
-    const summary = document.getElementById("calendarSummary");
-    if (!summary) return;
-
-    const events = App.calendar.getCalendarEvents();
-    const pendingTech = events.filter(event => App.calendar.involvesOurTeam(event) && App.calendar.getStatusClass(event) === "pending").length;
-    const done = events.filter(event => App.calendar.getStatusClass(event) === "done").length;
-
-    summary.innerHTML = `
-      ${App.ui.summaryCard("Início", "19/05/2026")}
-      ${App.ui.summaryCard("Jogos", events.length)}
-      ${App.ui.summaryCard("Realizados", done)}
-      ${App.ui.summaryCard("Técnicos pendentes", pendingTech)}
-    `;
+    App.react?.notify?.();
   },
 
   renderWeekBoard(events) {

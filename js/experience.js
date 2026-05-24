@@ -332,18 +332,7 @@ App.experience = {
   },
 
   renderSummary() {
-    const target = document.getElementById("experienceSummary");
-    if (!target) return;
-
-    const profiles = App.experience.getCoachProfiles();
-    const health = App.experience.getLeagueHealth(profiles);
-
-    target.innerHTML = `
-      ${App.ui.summaryCard("Ações abertas", health.queue.length)}
-      ${App.ui.summaryCard("Técnicos críticos", health.critical)}
-      ${App.ui.summaryCard("Placar pendente", health.pendingHuman)}
-      ${App.ui.summaryCard("Índice médio", `${health.avgScore}/100`)}
-    `;
+    App.react?.notify?.();
   },
 
   renderCommandCenter(profiles) {

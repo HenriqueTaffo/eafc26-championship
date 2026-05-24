@@ -128,48 +128,8 @@ App.standings = {
     });
   },
 
-  renderSummaryCards(standings, summary) {
-    const leader = standings[0];
-    const bestCoach = standings.filter(team => team.status === "Nosso")[0];
-    const played = App.standings.getApprovedApiResults()
-      .filter(row => App.utils.normalizeText(row.Competicao) === "championship").length;
-
-    summary.innerHTML = `
-      <article class="summary-card home-metric leader-metric">
-        <div class="metric-icon leader-club-icon">
-          ${leader ? App.standings.getTeamEmblemHtml(leader.team, "metric-club-badge") : "♜"}
-        </div>
-        <div>
-          <span>Líder</span>
-          <strong>${leader?.team || "-"}</strong>
-          <small>${leader ? `${leader.points} pts` : ""}</small>
-        </div>
-      </article>
-      <article class="summary-card home-metric">
-        <div class="metric-icon person">●</div>
-        <div>
-          <span>Melhor técnico</span>
-          <strong>${bestCoach ? `${bestCoach.owner} (${bestCoach.position}º)` : "-"}</strong>
-          <small>${bestCoach ? `${bestCoach.points} pts` : ""}</small>
-        </div>
-      </article>
-      <article class="summary-card home-metric">
-        <div class="metric-icon games">✓</div>
-        <div>
-          <span>Jogos aprovados</span>
-          <strong>${played}</strong>
-          <small>Esta temporada</small>
-        </div>
-      </article>
-      <article class="summary-card home-metric">
-        <div class="metric-icon teams">♟</div>
-        <div>
-          <span>Times</span>
-          <strong>${standings.length}</strong>
-          <small>Na competição</small>
-        </div>
-      </article>
-    `;
+  renderSummaryCards() {
+    App.react?.notify?.();
   },
 
   renderHomeStandings(standings) {
@@ -461,16 +421,10 @@ App.standings = {
   render() {
     const table = document.getElementById("standingsTable");
     const mobile = document.getElementById("standingsMobile");
-    const summary = document.getElementById("standingsSummary");
-    if (!table || !mobile || !summary) return;
+    if (!table || !mobile) return;
+    App.react?.notify?.();
 
     if (!App.state.apiLoaded) {
-      summary.innerHTML = `
-        ${App.ui.summaryCard("Liga", "Sincronizando", "Buscando jogos aprovados")}
-        ${App.ui.summaryCard("Classificação", "Aguarde", "Calculando tabela")}
-        ${App.ui.summaryCard("Mercado", "Aguarde", "Carregando orçamentos")}
-        ${App.ui.summaryCard("Times", App.data.teams.length, "Na competição")}
-      `;
       App.standings.renderHomeStandings([]);
       const homeTable = document.getElementById("homeStandingsTable");
       if (homeTable) {
@@ -495,7 +449,7 @@ App.standings = {
 
     const standings = App.standings.getStandings();
 
-    App.standings.renderSummaryCards(standings, summary);
+    App.standings.renderSummaryCards(standings);
     App.standings.renderHomeStandings(standings);
     App.standings.renderHomeNextGames();
     App.standings.renderRoundCenter();

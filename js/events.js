@@ -473,27 +473,9 @@ App.events = {
 
     const summary = document.getElementById("eventsSummary");
     const grid = document.getElementById("eventsGrid");
-    if (!summary || !grid) return;
-
-    const todayText = new Date().toLocaleDateString("pt-BR");
-    const dynamicEvents = App.state.apiEvents.filter(event => !App.events.isCupPrizeEvent(event));
-    const todayEvents = dynamicEvents.filter(event => App.events.formatEventDate(event.Data || event.Timestamp) === todayText);
-    const automaticTodayEvents = todayEvents.filter(event => {
-      const hour = Number(App.events.getEventDateTime(event).getHours());
-      return App.config.eventSlots.map(Number).includes(hour);
-    });
-    const activeEvents = dynamicEvents.filter(event => App.events.isActiveOrDurationEvent(event));
-    const totalImpact = App.state.apiEvents.reduce((sum, event) => sum + Number(event.ImpactoFinanceiro || 0), 0);
-    const lastSlot = Math.max(...App.config.eventSlots.map(Number));
-    const pendingSlots = Math.max(0, (App.config.eventSlots.length * App.utils.getHumanBuyers().length) - automaticTodayEvents.length);
-
-    summary.classList.add("events-summary-v45");
-    summary.innerHTML = `
-      ${App.ui.summaryCard("Automáticos hoje", automaticTodayEvents.length, "eventos com slot da liga", "event-summary-main")}
-      ${App.ui.summaryCard("Ativos agora", activeEvents.length, "lesões, mercado ou duração")}
-      ${App.ui.summaryCard("Impacto líquido", App.utils.formatCurrency(totalImpact), "somando histórico carregado")}
-      ${App.ui.summaryCard("Slots restantes", pendingSlots, `até ${String(lastSlot).padStart(2, "0")}h`)}
-    `;
+    if (!grid) return;
+    if (summary) summary.classList.add("events-summary-v45");
+    App.react?.notify?.();
 
     const events = App.events.getFilteredEvents();
     const stats = App.events.getEventStats(events);

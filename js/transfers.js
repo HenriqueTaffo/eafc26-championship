@@ -2665,40 +2665,7 @@ App.transfers = {
   },
 
   renderSummary() {
-    const summary = document.getElementById("transferSummary");
-    if (!summary) return;
-
-    const data = App.transfers.getValidTransfers();
-    const purchases = data.filter(
-      (item) => !App.transfers.isCpuSaleTransfer(item),
-    );
-    const cpuSales = data.filter((item) => App.transfers.isCpuSaleTransfer(item));
-    const recent = App.transfers.getRecentTransferMovements(1)[0];
-    const totalMoved = data.reduce(
-      (sum, item) => sum + Number(item.totalCost || 0),
-      0,
-    );
-    const biggest = purchases.reduce(
-      (best, item) =>
-        Number(item.totalCost || 0) > Number(best?.totalCost || 0)
-          ? item
-          : best,
-      purchases[0],
-    );
-    const buyersActive = new Set(purchases.map((item) => item.buyer)).size;
-    const recentLabel =
-      recent && App.transfers.isCpuSaleTransfer(recent)
-        ? `${recent.player} (venda externa)`
-        : recent?.player;
-
-    summary.innerHTML = `
-      ${App.ui.summaryCard("Contratações válidas", purchases.length)}
-      ${App.ui.summaryCard("Total movimentado", App.utils.formatCurrency(totalMoved))}
-      ${App.ui.summaryCard("Maior compra", biggest ? App.utils.formatCurrency(biggest.totalCost) : "-")}
-      ${App.ui.summaryCard("Vendas externas", cpuSales.length)}
-      ${App.ui.summaryCard("Compradores ativos", buyersActive)}
-      ${App.ui.summaryCard("Última movimentação", recentLabel ? App.utils.escapeHtml(recentLabel) : "-")}
-    `;
+    App.react?.notify?.();
   },
 
   render() {

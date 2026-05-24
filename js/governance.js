@@ -303,22 +303,7 @@ App.governance = {
   },
 
   renderSummary() {
-    const target = document.getElementById("commissionerSummary");
-    if (!target) return;
-
-    const phase = App.governance.getMarketPhase();
-    const injuries = App.governance.getActiveInjuries();
-    const auctions = App.state.apiGovernance?.auctions || [];
-    const fairPlay = App.transfers.getFairPlayWatchlist();
-    const audit = App.governance.getIntegrityAudit();
-
-    target.innerHTML = `
-      ${App.ui.summaryCard("Fase do mercado", phase.name, phase.detail)}
-      ${App.ui.summaryCard("Lesões ativas", injuries.length)}
-      ${App.ui.summaryCard("Leilões abertos", auctions.filter(item => item.status === "open").length)}
-      ${App.ui.summaryCard("Fair play", fairPlay.length ? `${fairPlay.length} alerta(s)` : "OK")}
-      ${App.ui.summaryCard("Integridade", `${audit.score}%`, audit.issues.length ? `${audit.issues.length} ponto(s) para revisar` : "Liga sincronizada")}
-    `;
+    App.react?.notify?.();
   },
 
   renderIntegrityAudit() {

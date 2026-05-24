@@ -1,3 +1,14 @@
+import {
+  CalendarSummary,
+  CommissionerSummary,
+  CupsSummary,
+  EventsSummary,
+  ExperienceSummary,
+  PlayersSummary,
+  StandingsSummary,
+  TransfersSummary,
+} from "../views/ViewSummaries.jsx";
+
 const MASCOT_SRC = "./assets/mistura-mascot.png?v=20260524-sponsor-icons-v1";
 
 function GlobalLoader() {
@@ -150,10 +161,9 @@ function StandingsView() {
   return (
     <>
       <section id="standingsView" className="view active">
-        <section
-          className="summary home-summary"
-          id="standingsSummary"
-        ></section>
+        <section className="summary home-summary" id="standingsSummary">
+          <StandingsSummary />
+        </section>
 
         <section className="round-center" id="roundCenter"></section>
 
@@ -280,7 +290,9 @@ function CalendarView() {
   return (
     <>
       <section id="calendarView" className="view">
-        <section className="summary" id="calendarSummary"></section>
+        <section className="summary" id="calendarSummary">
+          <CalendarSummary />
+        </section>
         <section className="controls">
           <input
             id="calendarSearchInput"
@@ -346,7 +358,9 @@ function CupsView() {
   return (
     <>
       <section id="cupsView" className="view">
-        <section className="summary" id="cupsSummary"></section>
+        <section className="summary" id="cupsSummary">
+          <CupsSummary />
+        </section>
         <section className="controls">
           <input
             id="cupsSearchInput"
@@ -410,7 +424,9 @@ function PlayersView() {
   return (
     <>
       <section id="playersView" className="view">
-        <section className="summary" id="playersSummary"></section>
+        <section className="summary" id="playersSummary">
+          <PlayersSummary />
+        </section>
         <section className="controls">
           <input
             id="playersSearchInput"
@@ -451,7 +467,9 @@ function EventsView() {
   return (
     <>
       <section id="eventsView" className="view">
-        <section className="summary" id="eventsSummary"></section>
+        <section className="summary" id="eventsSummary">
+          <EventsSummary />
+        </section>
         <section className="countdown-card events-command-card">
           <div>
             <span>Central de Eventos</span>
@@ -529,7 +547,9 @@ function ExperienceView() {
   return (
     <>
       <section id="experienceView" className="view">
-        <section className="summary" id="experienceSummary"></section>
+        <section className="summary" id="experienceSummary">
+          <ExperienceSummary />
+        </section>
         <section className="submit-hero experience-hero">
           <div>
             <span className="modal-kicker">Sala de análise</span>
@@ -555,7 +575,9 @@ function TransfersView() {
   return (
     <>
       <section id="transfersView" className="view">
-        <section className="summary" id="transferSummary"></section>
+        <section className="summary" id="transferSummary">
+          <TransfersSummary />
+        </section>
         <section className="countdown-card">
           <span>Janela de transferências</span>
           <strong id="nextTransferCountdown">Calculando...</strong>
@@ -844,7 +866,9 @@ function CommissionerView() {
         <section
           className="summary commissioner-summary"
           id="commissionerSummary"
-        ></section>
+        >
+          <CommissionerSummary />
+        </section>
         <section className="submit-hero commissioner-hero">
           <div>
             <span className="modal-kicker">Governança da liga</span>

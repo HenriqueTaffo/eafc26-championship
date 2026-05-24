@@ -1342,17 +1342,11 @@ App.players = {
   },
 
   render() {
-    const summary = document.getElementById("playersSummary");
     const grid = document.getElementById("playersGrid");
-    if (!summary || !grid) return;
+    if (!grid) return;
+    App.react?.notify?.();
 
     if (!App.state.apiLoaded) {
-      summary.innerHTML = `
-        ${App.ui.summaryCard("Técnicos", App.data.teams.filter(team => team.status === "Nosso").length)}
-        ${App.ui.summaryCard("Dados", "Sincronizando", "Buscando campanha e orçamento")}
-        ${App.ui.summaryCard("Transferências", "Aguarde", "Carregando mercado")}
-        ${App.ui.summaryCard("Alertas", "Aguarde", "Calculando escritório")}
-      `;
       grid.innerHTML = `
         <article class="coach-panel-card">
           <div class="home-panel-header">
@@ -1399,22 +1393,6 @@ App.players = {
 
     const sessionTeam = session?.managerName ? teams.find(team => App.utils.normalizeText(team.owner) === App.utils.normalizeText(session.managerName)) : null;
     const activeTeam = filteredTeams[0] || (isPersonalOffice ? sessionTeam : null) || teams[0];
-    const totalTransfers = App.transfers.getTransfersWithStats().filter(item => !item.isBlockedDuplicate).length;
-    const totalAlerts = teams.reduce((sum, team) => {
-      const standing = standings.find(item => App.utils.sameTeamName(item.team, team.team));
-      const budget = budgetInfo[team.owner] || {};
-      const next = App.players.getNextMatchForTeam(team.team);
-      const todayCount = App.transfers.getTodayTransferCountByBuyer(team.owner);
-      const canViewPrivate = App.auth?.canViewManagerPrivate ? App.auth.canViewManagerPrivate(team.owner) : false;
-      return sum + App.players.getCoachAlerts(team, standing, budget, next, todayCount, canViewPrivate).length;
-    }, 0);
-
-    summary.innerHTML = `
-      ${App.ui.summaryCard("Técnicos", teams.length)}
-      ${App.ui.summaryCard("Líder entre técnicos", ranking[0]?.team.owner || "-")}
-      ${App.ui.summaryCard("Transferências", totalTransfers)}
-      ${App.ui.summaryCard("Alertas ativos", totalAlerts)}
-    `;
 
     if (!activeTeam) {
       grid.innerHTML = `<article class="calendar-card"><h3>Nenhum técnico encontrado</h3></article>`;

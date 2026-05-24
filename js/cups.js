@@ -267,19 +267,7 @@ App.cups = {
   },
 
   renderSummary() {
-    const summary = document.getElementById("cupsSummary");
-    if (!summary) return;
-    const cupEvents = App.calendar.getCalendarEvents().filter(event => event.competition !== "Championship");
-    const finished = cupEvents.filter(event => App.calendar.getStatusClass(event) === "done").length;
-    const pending = cupEvents.filter(event => event.status === "Pendente").length;
-    const waiting = cupEvents.filter(event => String(event.status || "").includes("Aguardando")).length;
-
-    summary.innerHTML = `
-      ${App.ui.summaryCard("Jogos de copa", cupEvents.length)}
-      ${App.ui.summaryCard("Finalizados", finished)}
-      ${App.ui.summaryCard("Pendentes", pending)}
-      ${App.ui.summaryCard("Aguardando chave", waiting)}
-    `;
+    App.react?.notify?.();
   },
 
   getCompetitionClass(competition) {
