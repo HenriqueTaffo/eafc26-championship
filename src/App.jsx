@@ -1,5 +1,6 @@
-import { useEffect } from "react";
-import legacyShellHtml from "./legacyShell";
+import { useEffect, useMemo } from "react";
+import staticShellMarkup from "./legacyShell";
+import { htmlToReact } from "./shell/htmlToReact.jsx";
 
 const ACCORDION_SELECTOR = [
   "#submitView .submit-card",
@@ -68,11 +69,7 @@ function useAccordionEnhancement() {
 
 export default function App() {
   useAccordionEnhancement();
+  const shell = useMemo(() => htmlToReact(staticShellMarkup), []);
 
-  return (
-    <div
-      className="react-legacy-shell"
-      dangerouslySetInnerHTML={{ __html: legacyShellHtml }}
-    />
-  );
+  return <div className="react-shell">{shell}</div>;
 }
