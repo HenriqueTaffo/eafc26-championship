@@ -341,6 +341,12 @@ App.forms = {
       ${App.ui.summaryCard("Transfers", approvedTransfers)}
       ${App.ui.summaryCard("Eventos", events)}
     `;
+
+    const transferForm = document.getElementById("transferForm");
+    if (transferForm && App.state.apiLoaded) {
+      App.transfers.populateExchangePlayers(transferForm);
+      App.transfers.renderTransferPreview(transferForm);
+    }
   },
 
   setupPenaltyControls(form) {
@@ -370,6 +376,9 @@ App.forms = {
     transferForm.elements.buyer?.addEventListener("change", () => {
       App.transfers.populateExchangePlayers(transferForm);
       App.transfers.renderTransferPreview(transferForm);
+    });
+    transferForm.elements.exchangePlayer?.addEventListener("focus", () => {
+      App.transfers.populateExchangePlayers(transferForm);
     });
 
     transferForm.querySelectorAll('input[name="transferType"]').forEach(field => {
