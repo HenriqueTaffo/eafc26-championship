@@ -1,25 +1,25 @@
--- Sistema de patrocinio por tecnico.
+-- Sistema de patrocínio por técnico.
 --
 -- Como aplicar:
 -- 1. Abra Supabase > SQL Editor.
 -- 2. Rode este arquivo inteiro.
--- 3. Entre no app como tecnico e abra o Painel para assinar patrocinadores.
+-- 3. Entre no app como técnico e abra o Painel para assinar patrocinadores.
 --
 -- Categorias disponiveis:
 -- - Fornecedor de material esportivo
--- - Naming Rights de Estadio
+-- - Naming Rights de Estádio
 -- - Naming Rights de CT
 -- - Patrocinador master
--- - Logistica e viagens
--- - Midia e conteudo
+-- - Logística e viagens
+-- - Mídia e conteúdo
 --
--- Condicoes disponiveis:
--- - clean_sheet: bonus quando o time nao sofre gol.
--- - three_goals: bonus quando o time marca 3+ gols.
--- - win_by_2: bonus quando vence por 2+ gols.
--- - any_win: bonus por qualquer vitoria.
--- - home_win: bonus por vitoria como mandante.
--- - away_win: bonus por vitoria como visitante.
+-- Condições disponíveis:
+-- - clean_sheet: bônus quando o time não sofre gol.
+-- - three_goals: bônus quando o time marca 3+ gols.
+-- - win_by_2: bônus quando vence por 2+ gols.
+-- - any_win: bônus por qualquer vitória.
+-- - home_win: bônus por vitória como mandante.
+-- - away_win: bônus por vitória como visitante.
 
 drop function if exists public.app_accept_sponsorship(bigint, text, text);
 drop function if exists public.app_process_sponsorship_rewards(bigint, text);
@@ -35,7 +35,7 @@ create table if not exists public.sponsorship_contracts (
   club_name text not null,
   sponsor_id text not null,
   sponsor_name text not null,
-  category text not null default 'Patrocinio',
+  category text not null default 'Patrocínio',
   title text not null,
   description text not null,
   condition_type text not null,
@@ -48,7 +48,7 @@ create table if not exists public.sponsorship_contracts (
 );
 
 alter table public.sponsorship_contracts
-  add column if not exists category text not null default 'Patrocinio';
+  add column if not exists category text not null default 'Patrocínio';
 
 alter table public.sponsorship_contracts
   add column if not exists baseline_result_keys jsonb not null default '[]'::jsonb;
@@ -90,11 +90,11 @@ as $$
       'id', 'aurora_kits',
       'sponsorName', 'Aurora Kits',
       'category', 'Fornecedor de material esportivo',
-      'title', 'Colecao campea',
-      'description', 'Linha premium, pouco adiantamento e bonus alto quando a camisa aparece em vitorias fortes.',
+      'title', 'Coleção campeã',
+      'description', 'Linha premium, pouco adiantamento e bônus alto quando a camisa aparece em vitórias fortes.',
       'conditionType', 'win_by_2',
       'conditionLabel', 'Vencer por 2+ gols',
-      'riskLevel', 'Alta exigencia',
+      'riskLevel', 'Alta exigência',
       'signingBonus', 500000,
       'rewardValue', 1400000,
       'maxClaims', 4
@@ -104,10 +104,10 @@ as $$
       'sponsorName', 'Nova Sportswear',
       'category', 'Fornecedor de material esportivo',
       'title', 'Uniforme de alcance',
-      'description', 'Contrato mais seguro: paga menos por meta, mas aceita qualquer vitoria como exposicao valida.',
+      'description', 'Contrato mais seguro: paga menos por meta, mas aceita qualquer vitória como exposição válida.',
       'conditionType', 'any_win',
       'conditionLabel', 'Vencer qualquer partida',
-      'riskLevel', 'Baixa exigencia',
+      'riskLevel', 'Baixa exigência',
       'signingBonus', 250000,
       'rewardValue', 650000,
       'maxClaims', 6
@@ -115,12 +115,12 @@ as $$
     jsonb_build_object(
       'id', 'horizonte_arena',
       'sponsorName', 'Banco Horizonte',
-      'category', 'Naming Rights de Estadio',
+      'category', 'Naming Rights de Estádio',
       'title', 'Horizonte Arena',
-      'description', 'Naming rights pesado, mas o banco so paga bonus quando o mando vira resultado.',
+      'description', 'Naming rights pesado, mas o banco só paga bônus quando o mando vira resultado.',
       'conditionType', 'home_win',
       'conditionLabel', 'Vencer como mandante',
-      'riskLevel', 'Media exigencia',
+      'riskLevel', 'Média exigência',
       'signingBonus', 700000,
       'rewardValue', 1300000,
       'maxClaims', 4
@@ -128,12 +128,12 @@ as $$
     jsonb_build_object(
       'id', 'fortress_arena',
       'sponsorName', 'Fortress Telecom',
-      'category', 'Naming Rights de Estadio',
+      'category', 'Naming Rights de Estádio',
       'title', 'Fortress Stadium',
-      'description', 'Oferta agressiva para clubes dominantes em casa: menos parcelas, premio maior.',
+      'description', 'Oferta agressiva para clubes dominantes em casa: menos parcelas, prêmio maior.',
       'conditionType', 'win_by_2',
       'conditionLabel', 'Vencer por 2+ gols',
-      'riskLevel', 'Alta exigencia',
+      'riskLevel', 'Alta exigência',
       'signingBonus', 350000,
       'rewardValue', 1700000,
       'maxClaims', 3
@@ -143,10 +143,10 @@ as $$
       'sponsorName', 'NeuroFit Performance',
       'category', 'Naming Rights de CT',
       'title', 'CT NeuroFit',
-      'description', 'Centro de performance focado em defesa: paga bem quando o time nao sofre gols.',
+      'description', 'Centro de performance focado em defesa: paga bem quando o time não sofre gols.',
       'conditionType', 'clean_sheet',
-      'conditionLabel', 'Nao sofrer gols',
-      'riskLevel', 'Media exigencia',
+      'conditionLabel', 'Não sofrer gols',
+      'riskLevel', 'Média exigência',
       'signingBonus', 400000,
       'rewardValue', 950000,
       'maxClaims', 5
@@ -156,10 +156,10 @@ as $$
       'sponsorName', 'IronLab',
       'category', 'Naming Rights de CT',
       'title', 'IronLab Training Center',
-      'description', 'Marca de preparacao fisica quer desempenho ofensivo e paga por jogos de tres gols.',
+      'description', 'Marca de preparacao fisica quer desempenho ofensivo e paga por jogos de três gols.',
       'conditionType', 'three_goals',
       'conditionLabel', 'Marcar 3+ gols',
-      'riskLevel', 'Alta exigencia',
+      'riskLevel', 'Alta exigência',
       'signingBonus', 300000,
       'rewardValue', 1300000,
       'maxClaims', 4
@@ -169,10 +169,10 @@ as $$
       'sponsorName', 'Atlas Bank',
       'category', 'Patrocinador master',
       'title', 'Camisa pesada',
-      'description', 'Master de elite: baixa luva inicial, teto alto e exigencia de show ofensivo.',
+      'description', 'Master de elite: baixa luva inicial, teto alto e exigência de show ofensivo.',
       'conditionType', 'three_goals',
       'conditionLabel', 'Marcar 3+ gols',
-      'riskLevel', 'Alta exigencia',
+      'riskLevel', 'Alta exigência',
       'signingBonus', 650000,
       'rewardValue', 1500000,
       'maxClaims', 4
@@ -182,10 +182,10 @@ as $$
       'sponsorName', 'Pioneer Motors',
       'category', 'Patrocinador master',
       'title', 'Frente da camisa',
-      'description', 'Contrato equilibrado para quem prefere consistencia a grandes picos de receita.',
+      'description', 'Contrato equilibrado para quem prefere consistência a grandes picos de receita.',
       'conditionType', 'any_win',
       'conditionLabel', 'Vencer qualquer partida',
-      'riskLevel', 'Baixa exigencia',
+      'riskLevel', 'Baixa exigência',
       'signingBonus', 450000,
       'rewardValue', 800000,
       'maxClaims', 5
@@ -193,12 +193,12 @@ as $$
     jsonb_build_object(
       'id', 'voasul_logistics',
       'sponsorName', 'VoaSul',
-      'category', 'Logistica e viagens',
-      'title', 'Milhas da delegacao',
+      'category', 'Logística e viagens',
+      'title', 'Milhas da delegação',
       'description', 'Ajuda viagens, mas so vira dinheiro forte quando o time ganha longe de casa.',
       'conditionType', 'away_win',
       'conditionLabel', 'Vencer como visitante',
-      'riskLevel', 'Media exigencia',
+      'riskLevel', 'Média exigência',
       'signingBonus', 300000,
       'rewardValue', 1100000,
       'maxClaims', 5
@@ -206,12 +206,12 @@ as $$
     jsonb_build_object(
       'id', 'cargo11_logistics',
       'sponsorName', 'Cargo11',
-      'category', 'Logistica e viagens',
+      'category', 'Logística e viagens',
       'title', 'Rota continental',
-      'description', 'Menos luvas, mais premio: ideal para quem confia em arrancar resultados fora.',
+      'description', 'Menos luvas, mais prêmio: ideal para quem confia em arrancar resultados fora.',
       'conditionType', 'away_win',
       'conditionLabel', 'Vencer como visitante',
-      'riskLevel', 'Alta exigencia',
+      'riskLevel', 'Alta exigência',
       'signingBonus', 150000,
       'rewardValue', 1400000,
       'maxClaims', 4
@@ -219,12 +219,12 @@ as $$
     jsonb_build_object(
       'id', 'streamplay_media',
       'sponsorName', 'StreamPlay Sports',
-      'category', 'Midia e conteudo',
-      'title', 'Serie de bastidores',
+      'category', 'Mídia e conteúdo',
+      'title', 'Série de bastidores',
       'description', 'Contrato de conteudo com retorno constante, mas teto menor que os grandes naming rights.',
       'conditionType', 'any_win',
       'conditionLabel', 'Vencer qualquer partida',
-      'riskLevel', 'Baixa exigencia',
+      'riskLevel', 'Baixa exigência',
       'signingBonus', 200000,
       'rewardValue', 700000,
       'maxClaims', 6
@@ -232,12 +232,12 @@ as $$
     jsonb_build_object(
       'id', 'primecam_media',
       'sponsorName', 'PrimeCam',
-      'category', 'Midia e conteudo',
+      'category', 'Mídia e conteúdo',
       'title', 'Noite de gala',
       'description', 'Parceiro de transmissao paga melhor quando o time entrega jogo movimentado.',
       'conditionType', 'three_goals',
       'conditionLabel', 'Marcar 3+ gols',
-      'riskLevel', 'Media exigencia',
+      'riskLevel', 'Média exigência',
       'signingBonus', 250000,
       'rewardValue', 1100000,
       'maxClaims', 4
@@ -373,12 +373,12 @@ begin
   where id = p_manager_id;
 
   if v_manager.id is null then
-    return jsonb_build_object('ok', false, 'message', 'Login do tecnico invalido.');
+    return jsonb_build_object('ok', false, 'message', 'Login do técnico inválido.');
   end if;
 
   v_login := public.app_login_manager(v_manager.display_name, p_access_code)::jsonb;
   if coalesce((v_login ->> 'ok')::boolean, false) is false then
-    return jsonb_build_object('ok', false, 'message', 'Login do tecnico invalido.');
+    return jsonb_build_object('ok', false, 'message', 'Login do técnico inválido.');
   end if;
 
   select count(*)
@@ -388,7 +388,7 @@ begin
     and status = 'active';
 
   if v_active_count >= v_max_active then
-    return jsonb_build_object('ok', false, 'message', 'Limite comercial atingido: cada tecnico pode manter ate 2 patrocinios ativos.');
+    return jsonb_build_object('ok', false, 'message', 'Limite comercial atingido: cada técnico pode manter até 2 patrocínios ativos.');
   end if;
 
   select offers.offer
@@ -397,7 +397,7 @@ begin
   where offers.offer ->> 'id' = p_offer_id;
 
   if v_offer is null then
-    return jsonb_build_object('ok', false, 'message', 'Patrocinador nao encontrado.');
+    return jsonb_build_object('ok', false, 'message', 'Patrocinador não encontrado.');
   end if;
 
   v_club_name := coalesce(v_login #>> '{manager,club}', v_manager.display_name);
@@ -411,7 +411,7 @@ begin
     v_club_name,
     v_offer ->> 'id',
     v_offer ->> 'sponsorName',
-    coalesce(v_offer ->> 'category', 'Patrocinio'),
+    coalesce(v_offer ->> 'category', 'Patrocínio'),
     v_offer ->> 'title',
     v_offer ->> 'description',
     v_offer ->> 'conditionType',
@@ -424,19 +424,19 @@ begin
   returning id into v_contract_id;
 
   if v_contract_id is null then
-    return jsonb_build_object('ok', false, 'message', 'Voce ja tem um patrocinio ativo nessa categoria.');
+    return jsonb_build_object('ok', false, 'message', 'Você já tem um patrocínio ativo nessa categoria.');
   end if;
 
   perform public.app_insert_financial_event(
     coalesce(v_login #>> '{manager,name}', v_manager.display_name),
-    'Patrocinio assinado: ' || (v_offer ->> 'sponsorName'),
-    coalesce(v_offer ->> 'category', 'Patrocinio') || ' fechado por ' || coalesce(v_login #>> '{manager,name}', v_manager.display_name) || '.',
-    '+' || (v_offer ->> 'signingBonus') || ' creditado como bonus de assinatura.',
-    'Patrocinio',
+    'Patrocínio assinado: ' || (v_offer ->> 'sponsorName'),
+    coalesce(v_offer ->> 'category', 'Patrocínio') || ' fechado por ' || coalesce(v_login #>> '{manager,name}', v_manager.display_name) || '.',
+    '+' || (v_offer ->> 'signingBonus') || ' creditado como bônus de assinatura.',
+    'Patrocínio',
     coalesce((v_offer ->> 'signingBonus')::numeric, 0)
   );
 
-  return jsonb_build_object('ok', true, 'message', 'Patrocinio assinado com sucesso.');
+  return jsonb_build_object('ok', true, 'message', 'Patrocínio assinado com sucesso.');
 end;
 $$;
 
@@ -467,12 +467,12 @@ begin
   where id = p_manager_id;
 
   if v_manager.id is null then
-    return jsonb_build_object('ok', false, 'message', 'Login do tecnico invalido.');
+    return jsonb_build_object('ok', false, 'message', 'Login do técnico inválido.');
   end if;
 
   v_login := public.app_login_manager(v_manager.display_name, p_access_code)::jsonb;
   if coalesce((v_login ->> 'ok')::boolean, false) is false then
-    return jsonb_build_object('ok', false, 'message', 'Login do tecnico invalido.');
+    return jsonb_build_object('ok', false, 'message', 'Login do técnico inválido.');
   end if;
 
   v_results := coalesce(public.app_get_data()::jsonb -> 'results', '[]'::jsonb);
@@ -565,10 +565,10 @@ begin
 
       perform public.app_insert_financial_event(
         v_contract.manager_name,
-        'Bonus de patrocinio: ' || v_contract.sponsor_name,
+        'Bônus de patrocínio: ' || v_contract.sponsor_name,
         v_contract.title || ' cumprido por ' || v_contract.club_name || '.',
-        '+' || v_contract.reward_value::text || ' creditado por meta de patrocinio.',
-        'Patrocinio',
+        '+' || v_contract.reward_value::text || ' creditado por meta de patrocínio.',
+        'Patrocínio',
         v_contract.reward_value
       );
     end loop;
@@ -683,10 +683,10 @@ begin
 
       perform public.app_insert_financial_event(
         v_contract.manager_name,
-        'Bonus de patrocinio: ' || v_contract.sponsor_name,
+        'Bônus de patrocínio: ' || v_contract.sponsor_name,
         v_contract.title || ' cumprido por ' || v_contract.club_name || '.',
-        '+' || v_contract.reward_value::text || ' creditado por meta de patrocinio.',
-        'Patrocinio',
+        '+' || v_contract.reward_value::text || ' creditado por meta de patrocínio.',
+        'Patrocínio',
         v_contract.reward_value
       );
     end loop;
@@ -785,6 +785,7 @@ as $$
       "ImpactoFinanceiro" numeric
     )
     where lower(coalesce("Titulo", '')) like '%bonus de patrocinio%'
+       or lower(coalesce("Titulo", '')) like '%bônus de patrocínio%'
     group by "Jogador"
   ),
   raw_budgets as (
@@ -870,7 +871,7 @@ begin
           when 'win_by_2' then 'Vencer por 2+ gols'
           when 'any_win' then 'Vencer qualquer partida'
           when 'home_win' then 'Vencer como mandante'
-          when 'clean_sheet' then 'Nao sofrer gols'
+          when 'clean_sheet' then 'Não sofrer gols'
           when 'three_goals' then 'Marcar 3+ gols'
           when 'away_win' then 'Vencer como visitante'
           else 'Meta comercial cumprida'
@@ -918,7 +919,7 @@ begin
     from public.sponsorship_contracts c
     where c.manager_id = v_manager.id
       and c.status = 'active'
-      and (c.sponsor_id = offers.offer ->> 'id' or c.category = coalesce(offers.offer ->> 'category', 'Patrocinio'))
+      and (c.sponsor_id = offers.offer ->> 'id' or c.category = coalesce(offers.offer ->> 'category', 'Patrocínio'))
   )
   and v_active_count < v_max_active;
 

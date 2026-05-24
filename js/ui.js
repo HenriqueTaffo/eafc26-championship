@@ -18,9 +18,9 @@ App.ui = {
     const classes = ["summary-card", className].filter(Boolean).join(" ");
     return `
       <article class="${App.utils.escapeHtml(classes)}">
-        <span>${App.utils.escapeHtml(label)}</span>
+        <span>${App.utils.escapeDisplay(label)}</span>
         <strong>${value}</strong>
-        ${detail ? `<small>${App.utils.escapeHtml(detail)}</small>` : ""}
+        ${detail ? `<small>${App.utils.escapeDisplay(detail)}</small>` : ""}
       </article>
     `;
   },
@@ -28,8 +28,8 @@ App.ui = {
   emptyCard(title, text = "", className = "calendar-card") {
     return `
       <article class="${App.utils.escapeHtml(className)}">
-        <h3>${App.utils.escapeHtml(title)}</h3>
-        ${text ? `<p class="calendar-muted">${App.utils.escapeHtml(text)}</p>` : ""}
+        <h3>${App.utils.escapeDisplay(title)}</h3>
+        ${text ? `<p class="calendar-muted">${App.utils.escapeDisplay(text)}</p>` : ""}
       </article>
     `;
   }

@@ -334,39 +334,46 @@ body.auth-gated {
   min-height: 100vh;
   overflow-x: hidden;
   background:
-    linear-gradient(180deg, rgba(6, 10, 12, .96), rgba(5, 8, 10, .98)),
-    repeating-linear-gradient(90deg, rgba(45, 212, 191, .06) 0 1px, transparent 1px 96px),
-    repeating-linear-gradient(0deg, rgba(251, 191, 36, .045) 0 1px, transparent 1px 96px) !important;
+    radial-gradient(circle at 24% 18%, rgba(45, 212, 191, .14), transparent 30%),
+    radial-gradient(circle at 82% 82%, rgba(251, 191, 36, .08), transparent 28%),
+    linear-gradient(180deg, #050809, #070c0d 48%, #050708) !important;
 }
 
 body.auth-gated::before {
   content: "";
   position: fixed;
-  inset: -28%;
-  z-index: -2;
+  inset: -24%;
+  z-index: 0;
   pointer-events: none;
-  opacity: .46;
+  opacity: .62;
   background-image:
-    linear-gradient(90deg, transparent calc(50% - 1px), rgba(125, 211, 252, .22) calc(50% - 1px) calc(50% + 1px), transparent calc(50% + 1px)),
-    linear-gradient(0deg, transparent calc(50% - 1px), rgba(45, 212, 191, .18) calc(50% - 1px) calc(50% + 1px), transparent calc(50% + 1px)),
-    repeating-linear-gradient(90deg, rgba(255, 255, 255, .055) 0 1px, transparent 1px 118px),
-    repeating-linear-gradient(0deg, rgba(255, 255, 255, .045) 0 1px, transparent 1px 118px);
-  background-size: 760px 480px, 760px 480px, 118px 118px, 118px 118px;
-  transform: rotate(-8deg) translateZ(0);
-  animation: login-pitch-drift 30s linear infinite;
+    linear-gradient(90deg, transparent calc(50% - 1px), rgba(125, 211, 252, .34) calc(50% - 1px) calc(50% + 1px), transparent calc(50% + 1px)),
+    linear-gradient(0deg, transparent calc(50% - 1px), rgba(45, 212, 191, .30) calc(50% - 1px) calc(50% + 1px), transparent calc(50% + 1px)),
+    linear-gradient(90deg, rgba(45, 212, 191, .20) 0 1px, transparent 1px calc(100% - 1px), rgba(45, 212, 191, .20) calc(100% - 1px)),
+    linear-gradient(0deg, rgba(45, 212, 191, .20) 0 1px, transparent 1px calc(100% - 1px), rgba(45, 212, 191, .20) calc(100% - 1px)),
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, .075) 0 1px, transparent 1px 96px),
+    repeating-linear-gradient(0deg, rgba(255, 255, 255, .055) 0 1px, transparent 1px 96px) !important;
+  background-position: center, center, center, center, 0 0, 0 0;
+  background-size: 760px 460px, 760px 460px, 760px 460px, 760px 460px, 96px 96px, 96px 96px !important;
+  mask-image: none !important;
+  transform: rotate(-7deg) translateZ(0);
+  animation: login-pitch-drift 24s linear infinite;
 }
 
 body.auth-gated::after {
   content: "";
   position: fixed;
-  inset: 13% 7% auto auto;
-  z-index: -1;
-  width: min(38vw, 420px);
+  inset: 8% 8% auto auto;
+  z-index: 0;
+  width: min(42vw, 480px);
   aspect-ratio: 1;
   pointer-events: none;
-  border: 1px solid rgba(45, 212, 191, .16);
+  border: 1px solid rgba(45, 212, 191, .30);
   border-radius: 999px;
-  opacity: .42;
+  opacity: .55;
+  box-shadow:
+    inset 0 0 0 1px rgba(251, 191, 36, .08),
+    0 0 70px rgba(45, 212, 191, .05);
   transform: translateZ(0);
   animation: login-center-circle 18s ease-in-out infinite;
 }
@@ -378,6 +385,8 @@ body.auth-gated #globalLoader {
 body.auth-gated .app {
   display: grid;
   place-items: center;
+  position: relative;
+  z-index: 1;
   width: 100%;
   min-height: 100vh;
   padding: 24px;
@@ -600,17 +609,30 @@ body:not(.is-commissioner) #submitView {
     rgba(45, 212, 191, .08);
 }
 
-.manager-login-mascot-stage img {
+.manager-login-flip-card {
   position: relative;
   z-index: 1;
+  width: 100%;
+  height: 100%;
+  display: block;
+  transform-style: preserve-3d;
+  animation: login-mascot-flip 7.5s cubic-bezier(.76, 0, .24, 1) infinite;
+}
+
+.manager-login-face {
+  position: absolute;
+  inset: 0;
   width: 100%;
   height: 100%;
   border: 1px solid rgba(255, 255, 255, .18);
   border-radius: 8px;
   object-fit: cover;
   backface-visibility: hidden;
-  transform-style: preserve-3d;
-  animation: login-mascot-flip 7.5s cubic-bezier(.76, 0, .24, 1) infinite;
+  background: rgba(2, 6, 23, .38);
+}
+
+.manager-login-face-back {
+  transform: rotateY(180deg);
 }
 
 .manager-login-meta {
@@ -2264,8 +2286,23 @@ tbody tr:hover td {
 @media (prefers-reduced-motion: reduce) {
   body.auth-gated::before,
   body.auth-gated::after,
-  .manager-login-mascot-stage img {
+  .manager-login-flip-card {
     animation: none !important;
+  }
+}
+
+@media (max-width: 760px) {
+  body.auth-gated::before,
+  body.auth-gated::after {
+    display: block !important;
+  }
+
+  body.auth-gated::before {
+    opacity: .42;
+  }
+
+  body.auth-gated::after {
+    opacity: .30;
   }
 }
 

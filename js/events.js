@@ -309,24 +309,24 @@ App.events = {
 
         <div class="event-card-header">
           <div>
-            <h2>${App.utils.escapeHtml(presentation.title)}</h2>
-            <p class="event-flavor">${App.utils.escapeHtml(presentation.description)}</p>
+            <h2>${App.utils.escapeDisplay(presentation.title)}</h2>
+            <p class="event-flavor">${App.utils.escapeDisplay(presentation.description)}</p>
           </div>
           <span class="event-impact ${typeClass}">${App.events.getEventImpactLabel(event)}</span>
         </div>
 
         <div class="event-effect-box">
           <strong>Impacto</strong>
-          <span>${App.utils.escapeHtml(presentation.effect)}</span>
+          <span>${App.utils.escapeDisplay(presentation.effect)}</span>
         </div>
 
         <div class="event-badges">
           ${modifier !== 0 ? `<span class="limit-pill">${modifier > 0 ? "+" : ""}${modifier} transferência(s) hoje</span>` : ""}
           ${event.JogadorAfetado ? `<span class="injury-pill">${App.transfers.renderPlayerIdentity(event.JogadorAfetado, "", "event-pill-player-identity")}</span>` : ""}
-          ${durationLabel ? `<span class="duration-pill">${App.utils.escapeHtml(durationLabel)}</span>` : ""}
+          ${durationLabel ? `<span class="duration-pill">${App.utils.escapeDisplay(durationLabel)}</span>` : ""}
         </div>
 
-        <div class="event-meta">${metaItems.map(App.utils.escapeHtml).join(" · ")}</div>
+        <div class="event-meta">${metaItems.map(App.utils.escapeDisplay).join(" · ")}</div>
       </article>
     `;
   },

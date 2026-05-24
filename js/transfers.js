@@ -1809,7 +1809,7 @@ App.transfers = {
         p_existing_owner: preview.duplicate?.buyer || "",
         p_overall: Number(preview.overall || 0),
         p_current_value: Number(preview.finalValue || 0),
-        p_reason: "Disputa por jogador ja contratado",
+        p_reason: "Disputa por jogador já contratado",
       },
       30000,
     );

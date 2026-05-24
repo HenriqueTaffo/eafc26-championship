@@ -15,7 +15,7 @@ as $$
       'sponsorName','Nova Sportswear',
       'category','Fornecedor de material esportivo',
       'title','Uniforme garantido',
-      'description','Caixa previsivel para manter folha e pequenas compras vivas durante a semana.',
+      'description','Caixa previsível para manter folha e pequenas compras vivas durante a semana.',
       'conditionType','weekly_payment',
       'conditionLabel','Pagamento semanal fixo',
       'riskLevel','Receita semanal',
@@ -29,12 +29,12 @@ as $$
       'id','aurora_kits',
       'sponsorName','Aurora Kits',
       'category','Fornecedor de material esportivo',
-      'title','Colecao campea',
+      'title','Coleção campeã',
       'description','Pouca gordura, muita vitrine: paga alto quando o time vence convencendo.',
       'conditionType','win_by_2',
       'conditionLabel','Vencer por 2+ gols',
-      'riskLevel','Alta exigencia',
-      'dealStyle','Premio agressivo',
+      'riskLevel','Alta exigência',
+      'dealStyle','Prêmio agressivo',
       'signingBonus',1400000,
       'rewardValue',2700000,
       'maxClaims',5
@@ -43,11 +43,11 @@ as $$
       'id','adidas_partner',
       'sponsorName','Adidas Originals',
       'category','Fornecedor de material esportivo',
-      'title','Camisa de colecao',
-      'description','Boa luva e meta simples para tecnicos que preferem consistencia.',
+      'title','Camisa de coleção',
+      'description','Boa luva e meta simples para técnicos que preferem consistência.',
       'conditionType','any_win',
       'conditionLabel','Vencer qualquer partida',
-      'riskLevel','Baixa exigencia',
+      'riskLevel','Baixa exigência',
       'dealStyle','Seguro premium',
       'signingBonus',2400000,
       'rewardValue',1450000,
@@ -57,7 +57,7 @@ as $$
     jsonb_build_object(
       'id','redwood_monthly',
       'sponsorName','Redwood Capital',
-      'category','Naming Rights de Estadio',
+      'category','Naming Rights de Estádio',
       'title','Redwood Park mensal',
       'description','Naming rights de impacto: poucos vencimentos, todos grandes.',
       'conditionType','monthly_payment',
@@ -72,12 +72,12 @@ as $$
     jsonb_build_object(
       'id','fortress_arena',
       'sponsorName','Fortress Telecom',
-      'category','Naming Rights de Estadio',
+      'category','Naming Rights de Estádio',
       'title','Fortress Stadium',
-      'description','Marca barulhenta para times fortes em casa e noites de pressao.',
+      'description','Marca barulhenta para times fortes em casa e noites de pressão.',
       'conditionType','home_win',
       'conditionLabel','Vencer como mandante',
-      'riskLevel','Media exigencia',
+      'riskLevel','Média exigência',
       'dealStyle','Casa forte',
       'signingBonus',1800000,
       'rewardValue',2400000,
@@ -86,13 +86,13 @@ as $$
     jsonb_build_object(
       'id','spotify_arena_weekly',
       'sponsorName','Spotify',
-      'category','Naming Rights de Estadio',
+      'category','Naming Rights de Estádio',
       'title','Matchday Arena',
-      'description','Ativacao semanal com dinheiro constante e teto total competitivo.',
+      'description','Ativação semanal com dinheiro constante e teto total competitivo.',
       'conditionType','weekly_payment',
       'conditionLabel','Pagamento semanal fixo',
       'riskLevel','Receita semanal',
-      'dealStyle','Constancia alta',
+      'dealStyle','Constância alta',
       'signingBonus',1800000,
       'rewardValue',1600000,
       'maxClaims',10,
@@ -119,10 +119,10 @@ as $$
       'sponsorName','Pioneer Motors',
       'category','Patrocinador master',
       'title','Frente da camisa',
-      'description','Master equilibrado para quem quer receita constante por qualquer vitoria.',
+      'description','Master equilibrado para quem quer receita constante por qualquer vitória.',
       'conditionType','any_win',
       'conditionLabel','Vencer qualquer partida',
-      'riskLevel','Baixa exigencia',
+      'riskLevel','Baixa exigência',
       'dealStyle','Volume seguro',
       'signingBonus',2800000,
       'rewardValue',1500000,
@@ -136,7 +136,7 @@ as $$
       'description','Paga como marca grande quando o ataque transforma jogo em evento.',
       'conditionType','three_goals',
       'conditionLabel','Marcar 3+ gols',
-      'riskLevel','Alta exigencia',
+      'riskLevel','Alta exigência',
       'dealStyle','Ataque premiado',
       'signingBonus',2300000,
       'rewardValue',3100000,
@@ -147,10 +147,10 @@ as $$
       'sponsorName','Atlas Bank',
       'category','Patrocinador master',
       'title','Camisa pesada',
-      'description','Master classico com premio alto para noites ofensivas.',
+      'description','Master clássico com prêmio alto para noites ofensivas.',
       'conditionType','three_goals',
       'conditionLabel','Marcar 3+ gols',
-      'riskLevel','Alta exigencia',
+      'riskLevel','Alta exigência',
       'dealStyle','Master ofensivo',
       'signingBonus',2200000,
       'rewardValue',2900000,
@@ -162,7 +162,7 @@ as $$
       'sponsorName','Sony Xperia',
       'category','Parceiro premium',
       'title','Tech mensal',
-      'description','Parceiro premium com parcela mensal alta para acelerar reconstrucoes.',
+      'description','Parceiro premium com parcela mensal alta para acelerar reconstruções.',
       'conditionType','monthly_payment',
       'conditionLabel','Pagamento mensal fixo',
       'riskLevel','Receita mensal forte',
@@ -180,7 +180,7 @@ as $$
       'description','Contrato agressivo para quem busca placares largos e retorno imediato.',
       'conditionType','win_by_2',
       'conditionLabel','Vencer por 2+ gols',
-      'riskLevel','Alta exigencia',
+      'riskLevel','Alta exigência',
       'dealStyle','Alto upside',
       'signingBonus',2200000,
       'rewardValue',2800000,
@@ -191,7 +191,7 @@ as $$
       'sponsorName','Prime Video',
       'category','Parceiro premium',
       'title','Matchday series',
-      'description','Pagamento semanal menor, mas muito confiavel para atravessar o calendario.',
+      'description','Pagamento semanal menor, mas muito confiável para atravessar o calendário.',
       'conditionType','weekly_payment',
       'conditionLabel','Pagamento semanal fixo',
       'riskLevel','Receita semanal',
@@ -205,12 +205,12 @@ as $$
     jsonb_build_object(
       'id','voasul_logistics',
       'sponsorName','VoaSul',
-      'category','Logistica e viagens',
-      'title','Milhas da delegacao',
+      'category','Logística e viagens',
+      'title','Milhas da delegação',
       'description','Ajuda viagem e paga forte quando o clube ganha como visitante.',
       'conditionType','away_win',
       'conditionLabel','Vencer como visitante',
-      'riskLevel','Media exigencia',
+      'riskLevel','Média exigência',
       'dealStyle','Visitante forte',
       'signingBonus',1400000,
       'rewardValue',2000000,
@@ -219,7 +219,7 @@ as $$
     jsonb_build_object(
       'id','dhl_weekly',
       'sponsorName','DHL Express',
-      'category','Logistica e viagens',
+      'category','Logística e viagens',
       'title','Entrega semanal',
       'description','Dinheiro cai no fechamento semanal sem depender de placar.',
       'conditionType','weekly_payment',
@@ -234,12 +234,12 @@ as $$
     jsonb_build_object(
       'id','maersk_logistics',
       'sponsorName','Maersk',
-      'category','Logistica e viagens',
+      'category','Logística e viagens',
       'title','Rota do norte',
-      'description','Bonus robusto para clubes que roubam pontos longe de casa.',
+      'description','Bônus robusto para clubes que roubam pontos longe de casa.',
       'conditionType','away_win',
       'conditionLabel','Vencer como visitante',
-      'riskLevel','Media exigencia',
+      'riskLevel','Média exigência',
       'dealStyle','Visitante forte',
       'signingBonus',1700000,
       'rewardValue',2300000,
@@ -249,12 +249,12 @@ as $$
     jsonb_build_object(
       'id','netflix_media',
       'sponsorName','Netflix Sports',
-      'category','Midia e conteudo',
+      'category','Mídia e conteúdo',
       'title','Docuserie da temporada',
-      'description','Luva alta, marca grande e premio por vitorias que rendem manchete.',
+      'description','Luva alta, marca grande e prêmio por vitórias que rendem manchete.',
       'conditionType','win_by_2',
       'conditionLabel','Vencer por 2+ gols',
-      'riskLevel','Alta exigencia',
+      'riskLevel','Alta exigência',
       'dealStyle','Vitrine global',
       'signingBonus',3200000,
       'rewardValue',2300000,
@@ -263,9 +263,9 @@ as $$
     jsonb_build_object(
       'id','streamplay_weekly',
       'sponsorName','StreamPlay Sports',
-      'category','Midia e conteudo',
+      'category','Mídia e conteúdo',
       'title','Bastidores semanais',
-      'description','Conteudo recorrente com receita leve e constante para todo perfil de elenco.',
+      'description','Conteúdo recorrente com receita leve e constante para todo perfil de elenco.',
       'conditionType','weekly_payment',
       'conditionLabel','Pagamento semanal fixo',
       'riskLevel','Receita semanal',
@@ -278,12 +278,12 @@ as $$
     jsonb_build_object(
       'id','primecam_media',
       'sponsorName','PrimeCam',
-      'category','Midia e conteudo',
+      'category','Mídia e conteúdo',
       'title','Noite de gala',
-      'description','Transmissao paga melhor quando o time entrega jogo de gols.',
+      'description','Transmissão paga melhor quando o time entrega jogo de gols.',
       'conditionType','three_goals',
       'conditionLabel','Marcar 3+ gols',
-      'riskLevel','Media exigencia',
+      'riskLevel','Média exigência',
       'dealStyle','Show ofensivo',
       'signingBonus',1100000,
       'rewardValue',2100000,
@@ -319,12 +319,12 @@ begin
   where id = p_manager_id;
 
   if v_manager.id is null then
-    return jsonb_build_object('ok', false, 'message', 'Login do tecnico invalido.');
+    return jsonb_build_object('ok', false, 'message', 'Login do técnico inválido.');
   end if;
 
   v_login := public.app_login_manager(v_manager.display_name, p_access_code)::jsonb;
   if coalesce((v_login ->> 'ok')::boolean, false) is false then
-    return jsonb_build_object('ok', false, 'message', 'Login do tecnico invalido.');
+    return jsonb_build_object('ok', false, 'message', 'Login do técnico inválido.');
   end if;
 
   select offers.offer into v_offer
@@ -332,7 +332,7 @@ begin
   where offers.offer ->> 'id' = p_offer_id;
 
   if v_offer is null then
-    return jsonb_build_object('ok', false, 'message', 'Patrocinador nao encontrado.');
+    return jsonb_build_object('ok', false, 'message', 'Patrocinador não encontrado.');
   end if;
 
   select count(*) into v_active_count
@@ -343,16 +343,16 @@ begin
   from public.sponsorship_contracts
   where manager_id = v_manager.id
     and status = 'active'
-    and category = coalesce(v_offer ->> 'category', 'Patrocinio')
+    and category = coalesce(v_offer ->> 'category', 'Patrocínio')
   order by created_at desc
   limit 1;
 
   if v_existing.id is null and v_active_count >= v_max_active then
-    return jsonb_build_object('ok', false, 'message', 'Limite comercial atingido: cada tecnico pode manter ate 3 patrocinios ativos.');
+    return jsonb_build_object('ok', false, 'message', 'Limite comercial atingido: cada técnico pode manter até 3 patrocínios ativos.');
   end if;
 
   if v_existing.sponsor_id = (v_offer ->> 'id') then
-    return jsonb_build_object('ok', false, 'message', 'Este patrocinio ja esta ativo.');
+    return jsonb_build_object('ok', false, 'message', 'Este patrocínio já está ativo.');
   end if;
 
   v_club_name := coalesce(v_login #>> '{manager,club}', v_manager.display_name);
@@ -372,10 +372,10 @@ begin
 
     perform public.app_insert_financial_event(
       coalesce(v_login #>> '{manager,name}', v_manager.display_name),
-      'Rescisao de patrocinio: ' || v_existing.sponsor_name,
+      'Rescisão de patrocínio: ' || v_existing.sponsor_name,
       v_existing.category || ' encerrado para abrir espaco a ' || (v_offer ->> 'sponsorName') || '.',
-      '-' || v_termination_fee::text || ' debitado como multa de rescisao.',
-      'Patrocinio',
+      '-' || v_termination_fee::text || ' debitado como multa de rescisão.',
+      'Patrocínio',
       -v_termination_fee
     );
   end if;
@@ -389,7 +389,7 @@ begin
     v_club_name,
     v_offer ->> 'id',
     v_offer ->> 'sponsorName',
-    coalesce(v_offer ->> 'category', 'Patrocinio'),
+    coalesce(v_offer ->> 'category', 'Patrocínio'),
     v_offer ->> 'title',
     v_offer ->> 'description',
     v_offer ->> 'conditionType',
@@ -416,18 +416,18 @@ begin
 
   perform public.app_insert_financial_event(
     coalesce(v_login #>> '{manager,name}', v_manager.display_name),
-    'Luva de patrocinio: ' || (v_offer ->> 'sponsorName'),
-    coalesce(v_offer ->> 'category', 'Patrocinio') || ' fechado por ' || coalesce(v_login #>> '{manager,name}', v_manager.display_name) || '.',
+    'Luva de patrocínio: ' || (v_offer ->> 'sponsorName'),
+    coalesce(v_offer ->> 'category', 'Patrocínio') || ' fechado por ' || coalesce(v_login #>> '{manager,name}', v_manager.display_name) || '.',
     '+' || v_signing_bonus::text || ' creditado como luva de assinatura.',
-    'Patrocinio',
+    'Patrocínio',
     v_signing_bonus
   );
 
   return jsonb_build_object(
     'ok', true,
     'message', case when v_existing.id is not null
-      then 'Patrocinio substituido com multa de rescisao aplicada e luva creditada.'
-      else 'Patrocinio assinado com luva creditada.'
+      then 'Patrocínio substituído com multa de rescisão aplicada e luva creditada.'
+      else 'Patrocínio assinado com luva creditada.'
     end,
     'terminationFee', v_termination_fee,
     'signingBonus', v_signing_bonus,
@@ -468,12 +468,12 @@ begin
   where id = p_manager_id;
 
   if v_manager.id is null then
-    return jsonb_build_object('ok', false, 'message', 'Login do tecnico invalido.');
+    return jsonb_build_object('ok', false, 'message', 'Login do técnico inválido.');
   end if;
 
   v_login := public.app_login_manager(v_manager.display_name, p_access_code)::jsonb;
   if coalesce((v_login ->> 'ok')::boolean, false) is false then
-    return jsonb_build_object('ok', false, 'message', 'Login do tecnico invalido.');
+    return jsonb_build_object('ok', false, 'message', 'Login do técnico inválido.');
   end if;
 
   v_results := coalesce(public.app_get_data()::jsonb -> 'results', '[]'::jsonb);
@@ -520,13 +520,13 @@ begin
 
           perform public.app_insert_financial_event(
             v_contract.manager_name,
-            'Parcela de patrocinio: ' || v_contract.sponsor_name,
+            'Parcela de patrocínio: ' || v_contract.sponsor_name,
             case when v_contract.condition_type = 'monthly_payment'
-              then 'Pagamento mensal fixo de patrocinio.'
-              else 'Pagamento semanal fixo de patrocinio.'
+              then 'Pagamento mensal fixo de patrocínio.'
+              else 'Pagamento semanal fixo de patrocínio.'
             end,
             '+' || v_contract.reward_value::text || ' creditado por contrato recorrente.',
-            'Patrocinio',
+            'Patrocínio',
             v_contract.reward_value
           );
         end if;
@@ -615,10 +615,10 @@ begin
 
       perform public.app_insert_financial_event(
         v_contract.manager_name,
-        'Bonus de patrocinio: ' || v_contract.sponsor_name,
+        'Bônus de patrocínio: ' || v_contract.sponsor_name,
         v_contract.title || ' cumprido por ' || v_contract.club_name || '.',
-        '+' || v_contract.reward_value::text || ' creditado por meta de patrocinio.',
-        'Patrocinio',
+        '+' || v_contract.reward_value::text || ' creditado por meta de patrocínio.',
+        'Patrocínio',
         v_contract.reward_value
       );
     end loop;
@@ -670,7 +670,7 @@ begin
           when 'win_by_2' then 'Vencer por 2+ gols'
           when 'any_win' then 'Vencer qualquer partida'
           when 'home_win' then 'Vencer como mandante'
-          when 'clean_sheet' then 'Nao sofrer gols'
+          when 'clean_sheet' then 'Não sofrer gols'
           when 'three_goals' then 'Marcar 3+ gols'
           when 'away_win' then 'Vencer como visitante'
           when 'weekly_payment' then 'Pagamento semanal fixo'
@@ -765,7 +765,7 @@ begin
     left join public.sponsorship_contracts c
       on c.manager_id = v_manager.id
      and c.status = 'active'
-     and c.category = coalesce(offers.offer ->> 'category', 'Patrocinio')
+     and c.category = coalesce(offers.offer ->> 'category', 'Patrocínio')
     where not exists (
       select 1
       from public.sponsorship_contracts same
@@ -872,8 +872,9 @@ as $$
     )
     where coalesce("ImpactoFinanceiro", 0) > 0
       and (
-        lower(coalesce("Tipo", '')) = 'patrocinio'
+        lower(coalesce("Tipo", '')) in ('patrocinio', 'patrocínio')
         or lower(coalesce("Titulo", '')) like '%patrocinio%'
+        or lower(coalesce("Titulo", '')) like '%patrocínio%'
       )
     group by "Jogador"
   ),

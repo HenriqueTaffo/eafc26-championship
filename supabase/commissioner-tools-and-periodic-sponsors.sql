@@ -58,12 +58,12 @@ begin
   v_login := public.app_security_login(p_manager_id, p_access_code)::jsonb;
   if coalesce((v_login ->> 'ok')::boolean, false) is false
     or coalesce((v_login ->> 'isCommissioner')::boolean, false) is false then
-    return jsonb_build_object('ok', false, 'message', 'Apenas o Comissario da Liga pode desfazer transferencias.');
+    return jsonb_build_object('ok', false, 'message', 'Apenas o Comissário da Liga pode desfazer transferências.');
   end if;
 
   v_transfer_table := public.app_find_transfer_table_for_admin();
   if v_transfer_table is null then
-    return jsonb_build_object('ok', false, 'message', 'Nao encontrei a tabela de transferencias.');
+    return jsonb_build_object('ok', false, 'message', 'Não encontrei a tabela de transferências.');
   end if;
 
   execute format('alter table %s add column if not exists "Status" text default ''pendente''', v_transfer_table);
@@ -88,7 +88,7 @@ begin
         where %s = $1
           and lower(coalesce("Status"::text, '''')) in (''aprovado'', ''approved'')',
       v_transfer_table,
-      coalesce(v_login ->> 'managerName', 'Comissario da Liga'),
+      coalesce(v_login ->> 'managerName', 'Comissário da Liga'),
       v_id_col
     )
     using p_transfer_id;
@@ -107,7 +107,7 @@ begin
           and ($4 = '''' or coalesce("Timestamp"::text, '''') = $4)
           and lower(coalesce("Status"::text, '''')) in (''aprovado'', ''approved'')',
       v_transfer_table,
-      coalesce(v_login ->> 'managerName', 'Comissario da Liga')
+      coalesce(v_login ->> 'managerName', 'Comissário da Liga')
     )
     using coalesce(p_buyer, ''), coalesce(p_player, ''), coalesce(p_from_club, ''), coalesce(p_timestamp, '');
     get diagnostics v_rows = row_count;
@@ -129,7 +129,7 @@ begin
           limit 1
         )',
       v_transfer_table,
-      coalesce(v_login ->> 'managerName', 'Comissario da Liga'),
+      coalesce(v_login ->> 'managerName', 'Comissário da Liga'),
       v_transfer_table
     )
     using coalesce(p_buyer, ''), coalesce(p_player, '');
@@ -137,7 +137,7 @@ begin
   end if;
 
   if v_rows = 0 then
-    return jsonb_build_object('ok', false, 'message', 'Transferencia aprovada nao encontrada para desfazer.');
+    return jsonb_build_object('ok', false, 'message', 'Transferência aprovada não encontrada para desfazer.');
   end if;
 
   delete from public.events
@@ -149,7 +149,7 @@ begin
 
   return jsonb_build_object(
     'ok', true,
-    'message', 'Transferencia desfeita. O jogador foi liberado e o orcamento sera recalculado.',
+    'message', 'Transferência desfeita. O jogador foi liberado e o orçamento será recalculado.',
     'rowsUpdated', v_rows
   );
 end;
@@ -162,18 +162,18 @@ stable
 as $$
   select jsonb_build_array(
     jsonb_build_object('id','nova_kits_weekly','sponsorName','Nova Sportswear','category','Fornecedor de material esportivo','title','Uniforme garantido','description','Pagamento fixo toda semana, bom para manter folha e pequenas compras vivas.','conditionType','weekly_payment','conditionLabel','Pagamento semanal fixo','riskLevel','Receita semanal','signingBonus',800000,'rewardValue',1200000,'maxClaims',8,'paymentCadence','weekly'),
-    jsonb_build_object('id','dhl_weekly','sponsorName','DHL Express','category','Logistica e viagens','title','Entrega semanal','description','Contrato previsivel: dinheiro cai no fechamento semanal sem depender de placar.','conditionType','weekly_payment','conditionLabel','Pagamento semanal fixo','riskLevel','Receita semanal','signingBonus',1000000,'rewardValue',1500000,'maxClaims',8,'paymentCadence','weekly'),
-    jsonb_build_object('id','streamplay_weekly','sponsorName','StreamPlay Sports','category','Midia e conteudo','title','Bastidores semanais','description','Conteudo recorrente com receita leve e constante para todos os perfis de elenco.','conditionType','weekly_payment','conditionLabel','Pagamento semanal fixo','riskLevel','Receita semanal','signingBonus',700000,'rewardValue',1000000,'maxClaims',10,'paymentCadence','weekly'),
-    jsonb_build_object('id','redwood_monthly','sponsorName','Redwood Capital','category','Naming Rights de Estadio','title','Redwood Park mensal','description','Cheque mensal chamativo para clubes que querem impacto real no mercado.','conditionType','monthly_payment','conditionLabel','Pagamento mensal fixo','riskLevel','Receita mensal forte','signingBonus',2500000,'rewardValue',8500000,'maxClaims',3,'paymentCadence','monthly'),
+    jsonb_build_object('id','dhl_weekly','sponsorName','DHL Express','category','Logística e viagens','title','Entrega semanal','description','Contrato previsível: dinheiro cai no fechamento semanal sem depender de placar.','conditionType','weekly_payment','conditionLabel','Pagamento semanal fixo','riskLevel','Receita semanal','signingBonus',1000000,'rewardValue',1500000,'maxClaims',8,'paymentCadence','weekly'),
+    jsonb_build_object('id','streamplay_weekly','sponsorName','StreamPlay Sports','category','Mídia e conteúdo','title','Bastidores semanais','description','Conteúdo recorrente com receita leve e constante para todos os perfis de elenco.','conditionType','weekly_payment','conditionLabel','Pagamento semanal fixo','riskLevel','Receita semanal','signingBonus',700000,'rewardValue',1000000,'maxClaims',10,'paymentCadence','weekly'),
+    jsonb_build_object('id','redwood_monthly','sponsorName','Redwood Capital','category','Naming Rights de Estádio','title','Redwood Park mensal','description','Cheque mensal chamativo para clubes que querem impacto real no mercado.','conditionType','monthly_payment','conditionLabel','Pagamento mensal fixo','riskLevel','Receita mensal forte','signingBonus',2500000,'rewardValue',8500000,'maxClaims',3,'paymentCadence','monthly'),
     jsonb_build_object('id','emirates_monthly','sponsorName','Emirates','category','Patrocinador master','title','Global front shirt','description','Contrato master de alto impacto: poucos pagamentos, todos grandes.','conditionType','monthly_payment','conditionLabel','Pagamento mensal fixo','riskLevel','Receita mensal forte','signingBonus',4000000,'rewardValue',11000000,'maxClaims',3,'paymentCadence','monthly'),
-    jsonb_build_object('id','sony_monthly','sponsorName','Sony Xperia','category','Parceiro premium','title','Tech mensal','description','Parceiro premium com parcela mensal alta para acelerar reconstrucoes.','conditionType','monthly_payment','conditionLabel','Pagamento mensal fixo','riskLevel','Receita mensal forte','signingBonus',3000000,'rewardValue',9500000,'maxClaims',3,'paymentCadence','monthly'),
+    jsonb_build_object('id','sony_monthly','sponsorName','Sony Xperia','category','Parceiro premium','title','Tech mensal','description','Parceiro premium com parcela mensal alta para acelerar reconstruções.','conditionType','monthly_payment','conditionLabel','Pagamento mensal fixo','riskLevel','Receita mensal forte','signingBonus',3000000,'rewardValue',9500000,'maxClaims',3,'paymentCadence','monthly'),
 
-    jsonb_build_object('id','aurora_kits','sponsorName','Aurora Kits','category','Fornecedor de material esportivo','title','Colecao campea','description','Linha premium: pouca luva e bonus alto por vitorias fortes.','conditionType','win_by_2','conditionLabel','Vencer por 2+ gols','riskLevel','Alta exigencia','signingBonus',800000,'rewardValue',1800000,'maxClaims',5),
-    jsonb_build_object('id','fortress_arena','sponsorName','Fortress Telecom','category','Naming Rights de Estadio','title','Fortress Stadium','description','Oferta agressiva para clubes dominantes em casa.','conditionType','win_by_2','conditionLabel','Vencer por 2+ gols','riskLevel','Alta exigencia','signingBonus',900000,'rewardValue',2300000,'maxClaims',4),
-    jsonb_build_object('id','atlas_master','sponsorName','Atlas Bank','category','Patrocinador master','title','Camisa pesada','description','Master de elite: teto alto e exigencia ofensiva.','conditionType','three_goals','conditionLabel','Marcar 3+ gols','riskLevel','Alta exigencia','signingBonus',1600000,'rewardValue',2200000,'maxClaims',5),
-    jsonb_build_object('id','pioneer_master','sponsorName','Pioneer Motors','category','Patrocinador master','title','Frente da camisa','description','Contrato equilibrado para consistencia.','conditionType','any_win','conditionLabel','Vencer qualquer partida','riskLevel','Baixa exigencia','signingBonus',1800000,'rewardValue',1100000,'maxClaims',6),
-    jsonb_build_object('id','voasul_logistics','sponsorName','VoaSul','category','Logistica e viagens','title','Milhas da delegacao','description','Ajuda viagens e paga quando o time ganha longe de casa.','conditionType','away_win','conditionLabel','Vencer como visitante','riskLevel','Media exigencia','signingBonus',900000,'rewardValue',1400000,'maxClaims',6),
-    jsonb_build_object('id','primecam_media','sponsorName','PrimeCam','category','Midia e conteudo','title','Noite de gala','description','Transmissao paga melhor quando o time entrega gols.','conditionType','three_goals','conditionLabel','Marcar 3+ gols','riskLevel','Media exigencia','signingBonus',700000,'rewardValue',1500000,'maxClaims',5)
+    jsonb_build_object('id','aurora_kits','sponsorName','Aurora Kits','category','Fornecedor de material esportivo','title','Coleção campeã','description','Linha premium: pouca luva e bônus alto por vitórias fortes.','conditionType','win_by_2','conditionLabel','Vencer por 2+ gols','riskLevel','Alta exigência','signingBonus',800000,'rewardValue',1800000,'maxClaims',5),
+    jsonb_build_object('id','fortress_arena','sponsorName','Fortress Telecom','category','Naming Rights de Estádio','title','Fortress Stadium','description','Oferta agressiva para clubes dominantes em casa.','conditionType','win_by_2','conditionLabel','Vencer por 2+ gols','riskLevel','Alta exigência','signingBonus',900000,'rewardValue',2300000,'maxClaims',4),
+    jsonb_build_object('id','atlas_master','sponsorName','Atlas Bank','category','Patrocinador master','title','Camisa pesada','description','Master de elite: teto alto e exigência ofensiva.','conditionType','three_goals','conditionLabel','Marcar 3+ gols','riskLevel','Alta exigência','signingBonus',1600000,'rewardValue',2200000,'maxClaims',5),
+    jsonb_build_object('id','pioneer_master','sponsorName','Pioneer Motors','category','Patrocinador master','title','Frente da camisa','description','Contrato equilibrado para consistência.','conditionType','any_win','conditionLabel','Vencer qualquer partida','riskLevel','Baixa exigência','signingBonus',1800000,'rewardValue',1100000,'maxClaims',6),
+    jsonb_build_object('id','voasul_logistics','sponsorName','VoaSul','category','Logística e viagens','title','Milhas da delegação','description','Ajuda viagens e paga quando o time ganha longe de casa.','conditionType','away_win','conditionLabel','Vencer como visitante','riskLevel','Média exigência','signingBonus',900000,'rewardValue',1400000,'maxClaims',6),
+    jsonb_build_object('id','primecam_media','sponsorName','PrimeCam','category','Mídia e conteúdo','title','Noite de gala','description','Transmissão paga melhor quando o time entrega gols.','conditionType','three_goals','conditionLabel','Marcar 3+ gols','riskLevel','Média exigência','signingBonus',700000,'rewardValue',1500000,'maxClaims',5)
   );
 $$;
 
@@ -226,13 +226,13 @@ begin
 
         perform public.app_insert_financial_event(
           v_contract.manager_name,
-          'Parcela de patrocinio: ' || v_contract.sponsor_name,
+          'Parcela de patrocínio: ' || v_contract.sponsor_name,
           case when v_contract.condition_type = 'monthly_payment'
-            then 'Pagamento mensal fixo de patrocinio.'
-            else 'Pagamento semanal fixo de patrocinio.'
+            then 'Pagamento mensal fixo de patrocínio.'
+            else 'Pagamento semanal fixo de patrocínio.'
           end,
           '+' || v_contract.reward_value::text || ' creditado por contrato recorrente.',
-          'Patrocinio',
+          'Patrocínio',
           v_contract.reward_value
         );
 
@@ -265,7 +265,7 @@ begin
   v_login := public.app_security_login(p_manager_id, p_access_code)::jsonb;
   if coalesce((v_login ->> 'ok')::boolean, false) is false
     or coalesce((v_login ->> 'isCommissioner')::boolean, false) is false then
-    return jsonb_build_object('ok', false, 'message', 'Apenas o Comissario da Liga pode executar auditoria.');
+    return jsonb_build_object('ok', false, 'message', 'Apenas o Comissário da Liga pode executar auditoria.');
   end if;
 
   if p_action = 'process_sponsorships' then
@@ -275,7 +275,7 @@ begin
     v_periodic := public.app_process_periodic_sponsorships();
     return jsonb_build_object(
       'ok', true,
-      'message', 'Patrocinios reprocessados. Parcelas recorrentes pagas: ' || coalesce(v_periodic ->> 'paid', '0') || '.'
+      'message', 'Patrocínios reprocessados. Parcelas recorrentes pagas: ' || coalesce(v_periodic ->> 'paid', '0') || '.'
     );
   elsif p_action = 'refresh_finance' then
     return jsonb_build_object(
@@ -288,10 +288,10 @@ begin
        set status = 'completed'
      where status = 'active'
        and claims_used >= max_claims;
-    return jsonb_build_object('ok', true, 'message', 'Patrocinios completos encerrados.');
+    return jsonb_build_object('ok', true, 'message', 'Patrocínios completos encerrados.');
   end if;
 
-  return jsonb_build_object('ok', false, 'message', 'Acao de auditoria desconhecida.');
+  return jsonb_build_object('ok', false, 'message', 'Ação de auditoria desconhecida.');
 end;
 $$;
 

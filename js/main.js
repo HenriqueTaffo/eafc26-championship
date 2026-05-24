@@ -326,9 +326,9 @@ App.main = {
         role="option"
         data-global-search-index="${index}"
       >
-        <span>${App.utils.escapeHtml(item.type)}</span>
-        <strong>${App.utils.escapeHtml(item.title)}</strong>
-        <small>${App.utils.escapeHtml(item.detail || "")}</small>
+        <span>${App.utils.escapeDisplay(item.type)}</span>
+        <strong>${App.utils.escapeDisplay(item.title)}</strong>
+        <small>${App.utils.escapeDisplay(item.detail || "")}</small>
       </button>
     `).join("") : `<div class="global-search-empty">Nenhum resultado encontrado.</div>`;
 

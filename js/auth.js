@@ -68,7 +68,7 @@ App.auth = {
   },
 
   getTransferProposalSourceLabel(item = {}) {
-    if (!App.auth.isCpuProposal(item)) return item.buyer || "outro tecnico";
+    if (!App.auth.isCpuProposal(item)) return item.buyer || "outro técnico";
     return App.utils.normalizeText(item.buyer || "") === "cpu"
       ? "clube interessado"
       : item.buyer || "clube interessado";
@@ -127,7 +127,7 @@ App.auth = {
       sessionStorage.setItem(App.auth.storageKey, JSON.stringify(session));
       localStorage.removeItem(App.auth.legacyStorageKey);
     } catch (error) {
-      console.warn("Sessao temporaria indisponivel:", error);
+      console.warn("Sessão temporária indisponível:", error);
     }
   },
 
@@ -137,7 +137,7 @@ App.auth = {
       localStorage.removeItem(App.auth.storageKey);
       localStorage.removeItem(App.auth.legacyStorageKey);
     } catch (error) {
-      console.warn("Nao consegui limpar a sessao local:", error);
+      console.warn("Não consegui limpar a sessão local:", error);
     }
   },
 
@@ -213,7 +213,7 @@ App.auth = {
         p_access_code: accessCode
       }, 30000);
     } catch (sessionError) {
-      console.warn("Sessao temporaria indisponivel, usando login legado nesta aba:", sessionError);
+      console.warn("Sessão temporária indisponível, usando login legado nesta aba:", sessionError);
       if (App.utils.normalizeText(managerName).includes("comiss")) {
         result = await App.api.rpc("app_login_commissioner", {
           p_manager_name: managerName,
@@ -279,7 +279,7 @@ App.auth = {
       App.api.rpc("app_revoke_manager_session", {
         p_manager_id: session.managerId,
         p_session_token: session.sessionToken
-      }, 15000).catch(error => console.warn("Revogacao de sessao indisponivel:", error));
+      }, 15000).catch(error => console.warn("Revogação de sessão indisponível:", error));
     }
 
     App.auth.currentSession = null;
@@ -476,7 +476,7 @@ App.auth = {
       App.auth.myTransferProposals = Array.isArray(result) ? result : [];
       return App.auth.myTransferProposals;
     } catch (error) {
-      console.warn("Propostas de transferencia indisponiveis:", error);
+      console.warn("Propostas de transferência indisponíveis:", error);
       App.auth.myTransferProposals = [];
       return [];
     }
@@ -875,7 +875,10 @@ App.auth = {
         <div class="manager-login-brand">
           <span class="manager-login-mascot-stage manager-login-avatar-large" aria-hidden="true">
             <span class="manager-login-mascot-ring"></span>
-            <img src="./assets/mistura-mascot.png?v=${App.config.assetVersion}" alt="" loading="lazy" />
+            <span class="manager-login-flip-card">
+              <img class="manager-login-face manager-login-face-front" src="./assets/login-cat-icon.gif?v=${App.config.assetVersion}" alt="" loading="lazy" />
+              <img class="manager-login-face manager-login-face-back" src="./assets/mistura-mascot.png?v=${App.config.assetVersion}" alt="" loading="lazy" />
+            </span>
           </span>
           <div>
             <span>Mistura Managers League</span>
@@ -974,7 +977,7 @@ App.auth = {
             <strong>Arquivados recentes</strong>
             ${resolved.map(item => `
               <div>
-                <span>${App.utils.escapeHtml(item.title)}</span>
+                <span>${App.utils.escapeDisplay(item.title)}</span>
                 <b>${item.selected_option === "yes" ? "Sim" : "Não"}</b>
               </div>
             `).join("")}
@@ -1117,7 +1120,7 @@ App.auth = {
             <strong>Arquivados recentes</strong>
             ${resolved.map(item => `
               <div>
-                <span>${App.utils.escapeHtml(item.title)}</span>
+                <span>${App.utils.escapeDisplay(item.title)}</span>
                 <b>${item.status === "expired" ? "Expirou" : item.selected_option === "yes" ? "Sim" : "Não"}</b>
               </div>
             `).join("")}
@@ -1210,20 +1213,20 @@ App.auth = {
                 <div class="sponsor-brand-shell">
                   <span class="sponsor-brand-mark">${App.utils.escapeHtml(App.auth.getSponsorInitials(sponsorName))}</span>
                   <div class="sponsor-brand-copy">
-                    <span>${App.utils.escapeHtml(item.category || "Patrocínio")}</span>
-                    <strong>${App.utils.escapeHtml(item.title)}</strong>
-                    <em>${App.utils.escapeHtml(sponsorName)}</em>
+                    <span>${App.utils.escapeDisplay(item.category || "Patrocínio")}</span>
+                    <strong>${App.utils.escapeDisplay(item.title)}</strong>
+                    <em>${App.utils.escapeDisplay(sponsorName)}</em>
                   </div>
                   <div class="sponsor-badge-stack">
                     <b class="sponsor-cadence-badge ${App.auth.getSponsorshipCadenceClass(item)}">${App.utils.escapeHtml(App.auth.getSponsorshipCadenceLabel(item))}</b>
-                    <b>${App.utils.escapeHtml(dealStyle)}</b>
+                    <b>${App.utils.escapeDisplay(dealStyle)}</b>
                   </div>
                 </div>
 
                 <div class="sponsor-contract-hero">
                   <span>${primaryLabel}</span>
-                  <strong>${App.utils.formatCurrency(rewardValue)} <small>${App.utils.escapeHtml(frequencyLabel)}</small></strong>
-                  <p>${cadence ? `Próximo pagamento: ${App.utils.escapeHtml(nextPaymentLabel)}` : App.utils.escapeHtml(nextPaymentLabel)}</p>
+                  <strong>${App.utils.formatCurrency(rewardValue)} <small>${App.utils.escapeDisplay(frequencyLabel)}</small></strong>
+                  <p>${cadence ? `Próximo pagamento: ${App.utils.escapeDisplay(nextPaymentLabel)}` : App.utils.escapeDisplay(nextPaymentLabel)}</p>
                 </div>
 
                 <div class="sponsor-terms-row">
@@ -1253,7 +1256,7 @@ App.auth = {
                 </div>
 
                 <p class="sponsor-condition-line">
-                  ${App.utils.escapeHtml(App.auth.getSponsorshipConditionLabel(item))}
+                  ${App.utils.escapeDisplay(App.auth.getSponsorshipConditionLabel(item))}
                   ${Number(item.termination_fee || 0) > 0 ? ` · multa atual ${App.utils.formatCurrency(item.termination_fee)}` : ""}
                 </p>
                 </div>
@@ -1271,7 +1274,7 @@ App.auth = {
             ${offerCategories.map(category => `
               <section class="sponsor-category-group">
                 <div class="sponsor-category-header">
-                  <strong>${App.utils.escapeHtml(category)}</strong>
+                  <strong>${App.utils.escapeDisplay(category)}</strong>
                   <span>${offersByCategory[category].length} proposta(s)</span>
                 </div>
                 <div class="sponsor-offer-grid">
@@ -1303,22 +1306,22 @@ App.auth = {
                         <div class="sponsor-brand-shell sponsor-offer-shell">
                           <span class="sponsor-brand-mark">${App.utils.escapeHtml(App.auth.getSponsorInitials(offer.sponsorName))}</span>
                           <div class="sponsor-brand-copy">
-                            <span>${App.utils.escapeHtml(offer.riskLevel || "Meta comercial")}</span>
-                            <strong>${App.utils.escapeHtml(offer.title)}</strong>
-                            <em>${App.utils.escapeHtml(offer.sponsorName)}</em>
+                            <span>${App.utils.escapeDisplay(offer.riskLevel || "Meta comercial")}</span>
+                            <strong>${App.utils.escapeDisplay(offer.title)}</strong>
+                            <em>${App.utils.escapeDisplay(offer.sponsorName)}</em>
                           </div>
                           <div class="sponsor-badge-stack">
                             <b class="sponsor-cadence-badge ${cadenceClass}">${App.utils.escapeHtml(cadenceLabel)}</b>
-                            <b>${App.utils.escapeHtml(offerStyle)}</b>
+                            <b>${App.utils.escapeDisplay(offerStyle)}</b>
                           </div>
                         </div>
-                        <p class="sponsor-offer-story">${App.utils.escapeHtml(offer.description)}</p>
+                        <p class="sponsor-offer-story">${App.utils.escapeDisplay(offer.description)}</p>
                         <div class="sponsor-contract-hero sponsor-offer-hero">
                           <span>Total possível</span>
                           <strong>${App.utils.formatCurrency(totalValue)} <small>${Number(offer.maxClaims || 0)} pagamento(s)</small></strong>
                           <p>
-                            ${App.utils.escapeHtml(offer.conditionLabel || "Meta cumprida")}
-                            ${offer.isReplacement ? ` · substitui ${App.utils.escapeHtml(offer.currentSponsorName || "contrato atual")}` : ""}
+                            ${App.utils.escapeDisplay(offer.conditionLabel || "Meta cumprida")}
+                            ${offer.isReplacement ? ` · substitui ${App.utils.escapeDisplay(offer.currentSponsorName || "contrato atual")}` : ""}
                           </p>
                         </div>
                         <div class="sponsor-terms-row sponsor-offer-terms">
@@ -1330,7 +1333,7 @@ App.auth = {
                           <span>
                             <b>${cadence ? "Parcela" : "Bônus"}</b>
                             <strong>${App.utils.formatCurrency(offer.rewardValue || 0)}</strong>
-                            <small>${frequencyLabel}</small>
+                            <small>${App.utils.escapeDisplay(frequencyLabel)}</small>
                           </span>
                           <span>
                             <b>${offer.isReplacement ? "Multa" : "Vaga"}</b>
@@ -1358,7 +1361,7 @@ App.auth = {
             </div>
             ${visibleRewards.map(item => `
               <div class="sponsor-reward-item">
-                <span>${App.utils.escapeHtml(App.auth.getSponsorshipRewardKind(item))} · ${App.utils.escapeHtml(item.sponsor_name)}</span>
+                <span>${App.utils.escapeDisplay(App.auth.getSponsorshipRewardKind(item))} · ${App.utils.escapeDisplay(item.sponsor_name)}</span>
                 <b>${App.utils.formatCurrency(item.reward_value)}</b>
               </div>
             `).join("")}
@@ -1589,7 +1592,7 @@ App.auth = {
   renderTransferProposalCard(item) {
     const isCpuOffer = App.auth.isCpuProposal(item);
     const sourceLabel = App.auth.getTransferProposalSourceLabel(item);
-    const sourceLabelEscaped = App.utils.escapeHtml(sourceLabel);
+    const sourceLabelEscaped = App.utils.escapeDisplay(sourceLabel);
     const proposedValue = Number(item.proposed_value || 0);
     const status = App.utils.normalizeText(item.status || "pending");
     const statusLabel =
@@ -1661,26 +1664,26 @@ App.auth = {
     return `
       <article class="decision-card decision-email-message priority-${meta.tone}">
         <div class="decision-card-top email-message-top">
-          <span>${App.utils.escapeHtml(meta.sender)}</span>
-          <b>${App.utils.escapeHtml(statusLabel)}</b>
+          <span>${App.utils.escapeDisplay(meta.sender)}</span>
+          <b>${App.utils.escapeDisplay(statusLabel)}</b>
         </div>
         <div class="email-message-subject">
-          <strong>${App.utils.escapeHtml(item.title)}</strong>
-          <small>${App.utils.escapeHtml(meta.folder)} · prioridade ${App.utils.escapeHtml(meta.priority)}</small>
+          <strong>${App.utils.escapeDisplay(item.title)}</strong>
+          <small>${App.utils.escapeDisplay(meta.folder)} · prioridade ${App.utils.escapeDisplay(meta.priority)}</small>
         </div>
-        <p>${App.utils.escapeHtml(item.description)}</p>
+        <p>${App.utils.escapeDisplay(item.description)}</p>
         <div class="email-message-preview">
-          <span>${App.utils.escapeHtml(item.yes_label || "Sim")}: ${App.utils.escapeHtml(item.yes_preview || "Aplicar consequência positiva/arriscada.")}</span>
-          <span>${App.utils.escapeHtml(item.no_label || "Não")}: ${App.utils.escapeHtml(item.no_preview || "Recusar e aceitar a consequência alternativa.")}</span>
+          <span>${App.utils.escapeDisplay(item.yes_label || "Sim")}: ${App.utils.escapeDisplay(item.yes_preview || "Aplicar consequência positiva/arriscada.")}</span>
+          <span>${App.utils.escapeDisplay(item.no_label || "Não")}: ${App.utils.escapeDisplay(item.no_preview || "Recusar e aceitar a consequência alternativa.")}</span>
         </div>
         <div class="decision-options email-response-actions">
           <button type="button" data-decision-answer data-decision-id="${item.id}" data-choice="yes">
-            <strong>Responder: ${App.utils.escapeHtml(item.yes_label || "Sim")}</strong>
-            <small>${App.utils.escapeHtml(item.yes_preview || "Aplicar consequência positiva/arriscada.")}</small>
+            <strong>Responder: ${App.utils.escapeDisplay(item.yes_label || "Sim")}</strong>
+            <small>${App.utils.escapeDisplay(item.yes_preview || "Aplicar consequência positiva/arriscada.")}</small>
           </button>
           <button type="button" data-decision-answer data-decision-id="${item.id}" data-choice="no">
-            <strong>Responder: ${App.utils.escapeHtml(item.no_label || "Não")}</strong>
-            <small>${App.utils.escapeHtml(item.no_preview || "Recusar e aceitar a consequência alternativa.")}</small>
+            <strong>Responder: ${App.utils.escapeDisplay(item.no_label || "Não")}</strong>
+            <small>${App.utils.escapeDisplay(item.no_preview || "Recusar e aceitar a consequência alternativa.")}</small>
           </button>
         </div>
       </article>
@@ -1767,7 +1770,7 @@ App.auth = {
             App.auth.persistSession(App.auth.buildSessionFromLogin(nextSession, session.accessCode));
           }
         } catch (sessionError) {
-          console.warn("PIN alterado, mas nao consegui renovar a sessao temporaria:", sessionError);
+          console.warn("PIN alterado, mas não consegui renovar a sessão temporária:", sessionError);
         }
 
         form.reset();
@@ -1800,14 +1803,14 @@ App.auth = {
             <strong>Notificações</strong>
             ${notifications.length ? notifications.slice(0, 4).map(item => `
               <span class="manager-qol-pill ${App.utils.escapeHtml(item.tone || "info")} ${item.is_read ? "is-read" : ""}">
-                ${App.utils.escapeHtml(item.title)} · ${App.utils.escapeHtml(item.body || "")}
+                ${App.utils.escapeDisplay(item.title)} · ${App.utils.escapeDisplay(item.body || "")}
               </span>
             `).join("") : `<span class="calendar-muted">Nenhum aviso privado agora.</span>`}
           </div>
           <div>
             <strong>Favoritos</strong>
             ${favorites.length ? favorites.slice(0, 5).map(item => `
-              <span class="manager-qol-pill info">${App.utils.escapeHtml(item.title)} · ${App.utils.escapeHtml(item.detail || item.item_type || "")}</span>
+              <span class="manager-qol-pill info">${App.utils.escapeDisplay(item.title)} · ${App.utils.escapeDisplay(item.detail || item.item_type || "")}</span>
             `).join("") : `<span class="calendar-muted">Favorite alvos e atalhos no escritório do técnico.</span>`}
           </div>
         </div>
@@ -1894,19 +1897,19 @@ App.auth = {
         ${lead ? `
           <div class="league-news-layout">
             <article class="league-news-feature tone-${App.utils.escapeHtml(lead.tone)}">
-              <span>${App.utils.escapeHtml(lead.managerLabel)}</span>
-              <strong>${App.utils.escapeHtml(lead.headline)}</strong>
-              <p>${App.utils.escapeHtml(lead.summary)}</p>
-              <small>${App.utils.escapeHtml(lead.impact)}</small>
+              <span>${App.utils.escapeDisplay(lead.managerLabel)}</span>
+              <strong>${App.utils.escapeDisplay(lead.headline)}</strong>
+              <p>${App.utils.escapeDisplay(lead.summary)}</p>
+              <small>${App.utils.escapeDisplay(lead.impact)}</small>
             </article>
             ${briefs.length ? `
               <div class="league-news-list">
                 ${briefs.map(item => `
                   <article class="tone-${App.utils.escapeHtml(item.tone)}">
-                    <span>${App.utils.escapeHtml(item.managerLabel)}</span>
-                    <strong>${App.utils.escapeHtml(item.headline)}</strong>
-                    <p>${App.utils.escapeHtml(item.summary)}</p>
-                    <small>${App.utils.escapeHtml(item.impact)}</small>
+                    <span>${App.utils.escapeDisplay(item.managerLabel)}</span>
+                    <strong>${App.utils.escapeDisplay(item.headline)}</strong>
+                    <p>${App.utils.escapeDisplay(item.summary)}</p>
+                    <small>${App.utils.escapeDisplay(item.impact)}</small>
                   </article>
                 `).join("")}
               </div>

@@ -8,42 +8,42 @@ language sql
 stable
 as $$
   select jsonb_build_array(
-    jsonb_build_object('id','aurora_kits','sponsorName','Aurora Kits','category','Fornecedor de material esportivo','title','Colecao campea','description','Linha premium: pouca luva e bonus alto por vitorias fortes.','conditionType','win_by_2','conditionLabel','Vencer por 2+ gols','riskLevel','Alta exigencia','signingBonus',800000,'rewardValue',1800000,'maxClaims',5),
-    jsonb_build_object('id','nova_kits','sponsorName','Nova Sportswear','category','Fornecedor de material esportivo','title','Uniforme de alcance','description','Contrato seguro: paga menos, mas qualquer vitoria gera exposicao.','conditionType','any_win','conditionLabel','Vencer qualquer partida','riskLevel','Baixa exigencia','signingBonus',900000,'rewardValue',900000,'maxClaims',7),
-    jsonb_build_object('id','umbra_elite','sponsorName','Umbra Elite','category','Fornecedor de material esportivo','title','Camisa de vitrine','description','Marca internacional paga bem quando o time marca tres gols.','conditionType','three_goals','conditionLabel','Marcar 3+ gols','riskLevel','Media exigencia','signingBonus',1200000,'rewardValue',1500000,'maxClaims',5),
-    jsonb_build_object('id','castore_lab','sponsorName','Castore Lab','category','Fornecedor de material esportivo','title','Performance kit','description','Contrato equilibrado para elenco competitivo e regular.','conditionType','any_win','conditionLabel','Vencer qualquer partida','riskLevel','Baixa exigencia','signingBonus',1500000,'rewardValue',750000,'maxClaims',8),
-    jsonb_build_object('id','hummel_heritage','sponsorName','Hummel Heritage','category','Fornecedor de material esportivo','title','Camisa retro premium','description','Bonus forte para noites sem sofrer gols.','conditionType','clean_sheet','conditionLabel','Nao sofrer gols','riskLevel','Media exigencia','signingBonus',700000,'rewardValue',1600000,'maxClaims',5),
+    jsonb_build_object('id','aurora_kits','sponsorName','Aurora Kits','category','Fornecedor de material esportivo','title','Coleção campeã','description','Linha premium: pouca luva e bônus alto por vitórias fortes.','conditionType','win_by_2','conditionLabel','Vencer por 2+ gols','riskLevel','Alta exigência','signingBonus',800000,'rewardValue',1800000,'maxClaims',5),
+    jsonb_build_object('id','nova_kits','sponsorName','Nova Sportswear','category','Fornecedor de material esportivo','title','Uniforme de alcance','description','Contrato seguro: paga menos, mas qualquer vitória gera exposição.','conditionType','any_win','conditionLabel','Vencer qualquer partida','riskLevel','Baixa exigência','signingBonus',900000,'rewardValue',900000,'maxClaims',7),
+    jsonb_build_object('id','umbra_elite','sponsorName','Umbra Elite','category','Fornecedor de material esportivo','title','Camisa de vitrine','description','Marca internacional paga bem quando o time marca três gols.','conditionType','three_goals','conditionLabel','Marcar 3+ gols','riskLevel','Média exigência','signingBonus',1200000,'rewardValue',1500000,'maxClaims',5),
+    jsonb_build_object('id','castore_lab','sponsorName','Castore Lab','category','Fornecedor de material esportivo','title','Performance kit','description','Contrato equilibrado para elenco competitivo e regular.','conditionType','any_win','conditionLabel','Vencer qualquer partida','riskLevel','Baixa exigência','signingBonus',1500000,'rewardValue',750000,'maxClaims',8),
+    jsonb_build_object('id','hummel_heritage','sponsorName','Hummel Heritage','category','Fornecedor de material esportivo','title','Camisa retrô premium','description','Bônus forte para noites sem sofrer gols.','conditionType','clean_sheet','conditionLabel','Não sofrer gols','riskLevel','Média exigência','signingBonus',700000,'rewardValue',1600000,'maxClaims',5),
 
-    jsonb_build_object('id','horizonte_arena','sponsorName','Banco Horizonte','category','Naming Rights de Estadio','title','Horizonte Arena','description','Naming rights pesado, com gatilho por vitoria em casa.','conditionType','home_win','conditionLabel','Vencer como mandante','riskLevel','Media exigencia','signingBonus',1500000,'rewardValue',1700000,'maxClaims',5),
-    jsonb_build_object('id','fortress_arena','sponsorName','Fortress Telecom','category','Naming Rights de Estadio','title','Fortress Stadium','description','Oferta agressiva para clubes dominantes em casa.','conditionType','win_by_2','conditionLabel','Vencer por 2+ gols','riskLevel','Alta exigencia','signingBonus',900000,'rewardValue',2300000,'maxClaims',4),
-    jsonb_build_object('id','redwood_arena','sponsorName','Redwood Capital','category','Naming Rights de Estadio','title','Redwood Park','description','Mais luvas, bonus moderado e previsivel por qualquer vitoria.','conditionType','any_win','conditionLabel','Vencer qualquer partida','riskLevel','Baixa exigencia','signingBonus',3000000,'rewardValue',700000,'maxClaims',7),
-    jsonb_build_object('id','volt_arena','sponsorName','Volt Energy','category','Naming Rights de Estadio','title','Volt Stadium','description','Energia extra para jogos ofensivos em casa ou fora.','conditionType','three_goals','conditionLabel','Marcar 3+ gols','riskLevel','Media exigencia','signingBonus',1700000,'rewardValue',1650000,'maxClaims',5),
+    jsonb_build_object('id','horizonte_arena','sponsorName','Banco Horizonte','category','Naming Rights de Estádio','title','Horizonte Arena','description','Naming rights pesado, com gatilho por vitória em casa.','conditionType','home_win','conditionLabel','Vencer como mandante','riskLevel','Média exigência','signingBonus',1500000,'rewardValue',1700000,'maxClaims',5),
+    jsonb_build_object('id','fortress_arena','sponsorName','Fortress Telecom','category','Naming Rights de Estádio','title','Fortress Stadium','description','Oferta agressiva para clubes dominantes em casa.','conditionType','win_by_2','conditionLabel','Vencer por 2+ gols','riskLevel','Alta exigência','signingBonus',900000,'rewardValue',2300000,'maxClaims',4),
+    jsonb_build_object('id','redwood_arena','sponsorName','Redwood Capital','category','Naming Rights de Estádio','title','Redwood Park','description','Mais luvas, bônus moderado e previsível por qualquer vitória.','conditionType','any_win','conditionLabel','Vencer qualquer partida','riskLevel','Baixa exigência','signingBonus',3000000,'rewardValue',700000,'maxClaims',7),
+    jsonb_build_object('id','volt_arena','sponsorName','Volt Energy','category','Naming Rights de Estádio','title','Volt Stadium','description','Energia extra para jogos ofensivos em casa ou fora.','conditionType','three_goals','conditionLabel','Marcar 3+ gols','riskLevel','Média exigência','signingBonus',1700000,'rewardValue',1650000,'maxClaims',5),
 
-    jsonb_build_object('id','neurofit_ct','sponsorName','NeuroFit Performance','category','Naming Rights de CT','title','CT NeuroFit','description','Centro de performance focado em defesa.','conditionType','clean_sheet','conditionLabel','Nao sofrer gols','riskLevel','Media exigencia','signingBonus',900000,'rewardValue',1300000,'maxClaims',6),
-    jsonb_build_object('id','ironlab_ct','sponsorName','IronLab','category','Naming Rights de CT','title','IronLab Training Center','description','Preparacao fisica paga por jogos de tres gols.','conditionType','three_goals','conditionLabel','Marcar 3+ gols','riskLevel','Alta exigencia','signingBonus',700000,'rewardValue',1900000,'maxClaims',5),
-    jsonb_build_object('id','apex_ct','sponsorName','Apex Analytics','category','Naming Rights de CT','title','Apex Data Center','description','Contrato de performance com meta simples e teto menor.','conditionType','any_win','conditionLabel','Vencer qualquer partida','riskLevel','Baixa exigencia','signingBonus',1400000,'rewardValue',800000,'maxClaims',6),
-    jsonb_build_object('id','medcore_ct','sponsorName','MedCore Sports','category','Naming Rights de CT','title','MedCore Campus','description','Paga bem quando o time controla o jogo e nao sofre gols.','conditionType','clean_sheet','conditionLabel','Nao sofrer gols','riskLevel','Media exigencia','signingBonus',1200000,'rewardValue',1500000,'maxClaims',5),
+    jsonb_build_object('id','neurofit_ct','sponsorName','NeuroFit Performance','category','Naming Rights de CT','title','CT NeuroFit','description','Centro de performance focado em defesa.','conditionType','clean_sheet','conditionLabel','Não sofrer gols','riskLevel','Média exigência','signingBonus',900000,'rewardValue',1300000,'maxClaims',6),
+    jsonb_build_object('id','ironlab_ct','sponsorName','IronLab','category','Naming Rights de CT','title','IronLab Training Center','description','Preparação física paga por jogos de três gols.','conditionType','three_goals','conditionLabel','Marcar 3+ gols','riskLevel','Alta exigência','signingBonus',700000,'rewardValue',1900000,'maxClaims',5),
+    jsonb_build_object('id','apex_ct','sponsorName','Apex Analytics','category','Naming Rights de CT','title','Apex Data Center','description','Contrato de performance com meta simples e teto menor.','conditionType','any_win','conditionLabel','Vencer qualquer partida','riskLevel','Baixa exigência','signingBonus',1400000,'rewardValue',800000,'maxClaims',6),
+    jsonb_build_object('id','medcore_ct','sponsorName','MedCore Sports','category','Naming Rights de CT','title','MedCore Campus','description','Paga bem quando o time controla o jogo e não sofre gols.','conditionType','clean_sheet','conditionLabel','Não sofrer gols','riskLevel','Média exigência','signingBonus',1200000,'rewardValue',1500000,'maxClaims',5),
 
-    jsonb_build_object('id','atlas_master','sponsorName','Atlas Bank','category','Patrocinador master','title','Camisa pesada','description','Master de elite: teto alto e exigencia ofensiva.','conditionType','three_goals','conditionLabel','Marcar 3+ gols','riskLevel','Alta exigencia','signingBonus',1600000,'rewardValue',2200000,'maxClaims',5),
-    jsonb_build_object('id','pioneer_master','sponsorName','Pioneer Motors','category','Patrocinador master','title','Frente da camisa','description','Contrato equilibrado para consistencia.','conditionType','any_win','conditionLabel','Vencer qualquer partida','riskLevel','Baixa exigencia','signingBonus',1800000,'rewardValue',1100000,'maxClaims',6),
-    jsonb_build_object('id','emirates_master','sponsorName','Emirates','category','Patrocinador master','title','Global front shirt','description','Marca global com luvas fortes e bonus por vitoria convincente.','conditionType','win_by_2','conditionLabel','Vencer por 2+ gols','riskLevel','Alta exigencia','signingBonus',3500000,'rewardValue',2400000,'maxClaims',4),
-    jsonb_build_object('id','etihad_master','sponsorName','Etihad Airways','category','Patrocinador master','title','Flight plan','description','Boa luva, bonus por vitoria fora e apelo internacional.','conditionType','away_win','conditionLabel','Vencer como visitante','riskLevel','Media exigencia','signingBonus',2600000,'rewardValue',1900000,'maxClaims',5),
-    jsonb_build_object('id','redbull_master','sponsorName','Red Bull','category','Patrocinador master','title','High tempo deal','description','Contrato agressivo para times de placar elastico.','conditionType','three_goals','conditionLabel','Marcar 3+ gols','riskLevel','Alta exigencia','signingBonus',2200000,'rewardValue',2500000,'maxClaims',4),
-    jsonb_build_object('id','spotify_master','sponsorName','Spotify','category','Patrocinador master','title','Matchday playlist','description','Baixa exigencia, retorno constante e teto controlado.','conditionType','any_win','conditionLabel','Vencer qualquer partida','riskLevel','Baixa exigencia','signingBonus',2400000,'rewardValue',950000,'maxClaims',7),
+    jsonb_build_object('id','atlas_master','sponsorName','Atlas Bank','category','Patrocinador master','title','Camisa pesada','description','Master de elite: teto alto e exigência ofensiva.','conditionType','three_goals','conditionLabel','Marcar 3+ gols','riskLevel','Alta exigência','signingBonus',1600000,'rewardValue',2200000,'maxClaims',5),
+    jsonb_build_object('id','pioneer_master','sponsorName','Pioneer Motors','category','Patrocinador master','title','Frente da camisa','description','Contrato equilibrado para consistência.','conditionType','any_win','conditionLabel','Vencer qualquer partida','riskLevel','Baixa exigência','signingBonus',1800000,'rewardValue',1100000,'maxClaims',6),
+    jsonb_build_object('id','emirates_master','sponsorName','Emirates','category','Patrocinador master','title','Global front shirt','description','Marca global com luvas fortes e bônus por vitória convincente.','conditionType','win_by_2','conditionLabel','Vencer por 2+ gols','riskLevel','Alta exigência','signingBonus',3500000,'rewardValue',2400000,'maxClaims',4),
+    jsonb_build_object('id','etihad_master','sponsorName','Etihad Airways','category','Patrocinador master','title','Flight plan','description','Boa luva, bônus por vitória fora e apelo internacional.','conditionType','away_win','conditionLabel','Vencer como visitante','riskLevel','Média exigência','signingBonus',2600000,'rewardValue',1900000,'maxClaims',5),
+    jsonb_build_object('id','redbull_master','sponsorName','Red Bull','category','Patrocinador master','title','High tempo deal','description','Contrato agressivo para times de placar elástico.','conditionType','three_goals','conditionLabel','Marcar 3+ gols','riskLevel','Alta exigência','signingBonus',2200000,'rewardValue',2500000,'maxClaims',4),
+    jsonb_build_object('id','spotify_master','sponsorName','Spotify','category','Patrocinador master','title','Matchday playlist','description','Baixa exigência, retorno constante e teto controlado.','conditionType','any_win','conditionLabel','Vencer qualquer partida','riskLevel','Baixa exigência','signingBonus',2400000,'rewardValue',950000,'maxClaims',7),
 
-    jsonb_build_object('id','voasul_logistics','sponsorName','VoaSul','category','Logistica e viagens','title','Milhas da delegacao','description','Ajuda viagens e paga quando o time ganha longe de casa.','conditionType','away_win','conditionLabel','Vencer como visitante','riskLevel','Media exigencia','signingBonus',900000,'rewardValue',1400000,'maxClaims',6),
-    jsonb_build_object('id','cargo11_logistics','sponsorName','Cargo11','category','Logistica e viagens','title','Rota continental','description','Menos luvas, premio alto por resultado fora.','conditionType','away_win','conditionLabel','Vencer como visitante','riskLevel','Alta exigencia','signingBonus',500000,'rewardValue',1900000,'maxClaims',5),
-    jsonb_build_object('id','dhl_logistics','sponsorName','DHL Express','category','Logistica e viagens','title','Entrega rapida','description','Contrato seguro para qualquer vitoria aprovada.','conditionType','any_win','conditionLabel','Vencer qualquer partida','riskLevel','Baixa exigencia','signingBonus',1300000,'rewardValue',850000,'maxClaims',7),
-    jsonb_build_object('id','maersk_logistics','sponsorName','Maersk','category','Logistica e viagens','title','Rota do norte','description','Bonus robusto por vitoria fora de casa.','conditionType','away_win','conditionLabel','Vencer como visitante','riskLevel','Media exigencia','signingBonus',1400000,'rewardValue',1600000,'maxClaims',5),
+    jsonb_build_object('id','voasul_logistics','sponsorName','VoaSul','category','Logística e viagens','title','Milhas da delegação','description','Ajuda viagens e paga quando o time ganha longe de casa.','conditionType','away_win','conditionLabel','Vencer como visitante','riskLevel','Média exigência','signingBonus',900000,'rewardValue',1400000,'maxClaims',6),
+    jsonb_build_object('id','cargo11_logistics','sponsorName','Cargo11','category','Logística e viagens','title','Rota continental','description','Menos luvas, prêmio alto por resultado fora.','conditionType','away_win','conditionLabel','Vencer como visitante','riskLevel','Alta exigência','signingBonus',500000,'rewardValue',1900000,'maxClaims',5),
+    jsonb_build_object('id','dhl_logistics','sponsorName','DHL Express','category','Logística e viagens','title','Entrega rápida','description','Contrato seguro para qualquer vitória aprovada.','conditionType','any_win','conditionLabel','Vencer qualquer partida','riskLevel','Baixa exigência','signingBonus',1300000,'rewardValue',850000,'maxClaims',7),
+    jsonb_build_object('id','maersk_logistics','sponsorName','Maersk','category','Logística e viagens','title','Rota do norte','description','Bônus robusto por vitória fora de casa.','conditionType','away_win','conditionLabel','Vencer como visitante','riskLevel','Média exigência','signingBonus',1400000,'rewardValue',1600000,'maxClaims',5),
 
-    jsonb_build_object('id','streamplay_media','sponsorName','StreamPlay Sports','category','Midia e conteudo','title','Serie de bastidores','description','Retorno constante com teto menor.','conditionType','any_win','conditionLabel','Vencer qualquer partida','riskLevel','Baixa exigencia','signingBonus',900000,'rewardValue',850000,'maxClaims',7),
-    jsonb_build_object('id','primecam_media','sponsorName','PrimeCam','category','Midia e conteudo','title','Noite de gala','description','Transmissao paga melhor quando o time entrega gols.','conditionType','three_goals','conditionLabel','Marcar 3+ gols','riskLevel','Media exigencia','signingBonus',700000,'rewardValue',1500000,'maxClaims',5),
-    jsonb_build_object('id','netflix_media','sponsorName','Netflix Sports','category','Midia e conteudo','title','Docuserie da temporada','description','Luva alta e bonus por vitorias marcantes.','conditionType','win_by_2','conditionLabel','Vencer por 2+ gols','riskLevel','Alta exigencia','signingBonus',2500000,'rewardValue',1700000,'maxClaims',4),
-    jsonb_build_object('id','twitch_media','sponsorName','Twitch Rivals','category','Midia e conteudo','title','Watch party oficial','description','Contrato leve para engajar em qualquer vitoria.','conditionType','any_win','conditionLabel','Vencer qualquer partida','riskLevel','Baixa exigencia','signingBonus',1200000,'rewardValue',750000,'maxClaims',8),
+    jsonb_build_object('id','streamplay_media','sponsorName','StreamPlay Sports','category','Mídia e conteúdo','title','Série de bastidores','description','Retorno constante com teto menor.','conditionType','any_win','conditionLabel','Vencer qualquer partida','riskLevel','Baixa exigência','signingBonus',900000,'rewardValue',850000,'maxClaims',7),
+    jsonb_build_object('id','primecam_media','sponsorName','PrimeCam','category','Mídia e conteúdo','title','Noite de gala','description','Transmissão paga melhor quando o time entrega gols.','conditionType','three_goals','conditionLabel','Marcar 3+ gols','riskLevel','Média exigência','signingBonus',700000,'rewardValue',1500000,'maxClaims',5),
+    jsonb_build_object('id','netflix_media','sponsorName','Netflix Sports','category','Mídia e conteúdo','title','Docuserie da temporada','description','Luva alta e bônus por vitórias marcantes.','conditionType','win_by_2','conditionLabel','Vencer por 2+ gols','riskLevel','Alta exigência','signingBonus',2500000,'rewardValue',1700000,'maxClaims',4),
+    jsonb_build_object('id','twitch_media','sponsorName','Twitch Rivals','category','Mídia e conteúdo','title','Watch party oficial','description','Contrato leve para engajar em qualquer vitória.','conditionType','any_win','conditionLabel','Vencer qualquer partida','riskLevel','Baixa exigência','signingBonus',1200000,'rewardValue',750000,'maxClaims',8),
 
-    jsonb_build_object('id','betfair_partner','sponsorName','Betfair','category','Parceiro premium','title','Odds boost','description','Parceiro premium paga por vitorias fortes.','conditionType','win_by_2','conditionLabel','Vencer por 2+ gols','riskLevel','Alta exigencia','signingBonus',2000000,'rewardValue',2100000,'maxClaims',4),
-    jsonb_build_object('id','adidas_partner','sponsorName','Adidas Originals','category','Parceiro premium','title','Capsule collection','description','Bom equilibrio entre luvas e gatilho por qualquer vitoria.','conditionType','any_win','conditionLabel','Vencer qualquer partida','riskLevel','Baixa exigencia','signingBonus',2800000,'rewardValue',900000,'maxClaims',6),
-    jsonb_build_object('id','sony_partner','sponsorName','Sony Xperia','category','Parceiro premium','title','Matchday tech','description','Paga por clean sheets e controle defensivo.','conditionType','clean_sheet','conditionLabel','Nao sofrer gols','riskLevel','Media exigencia','signingBonus',1700000,'rewardValue',1600000,'maxClaims',5)
+    jsonb_build_object('id','betfair_partner','sponsorName','Betfair','category','Parceiro premium','title','Odds boost','description','Parceiro premium paga por vitórias fortes.','conditionType','win_by_2','conditionLabel','Vencer por 2+ gols','riskLevel','Alta exigência','signingBonus',2000000,'rewardValue',2100000,'maxClaims',4),
+    jsonb_build_object('id','adidas_partner','sponsorName','Adidas Originals','category','Parceiro premium','title','Capsule collection','description','Bom equilíbrio entre luvas e gatilho por qualquer vitória.','conditionType','any_win','conditionLabel','Vencer qualquer partida','riskLevel','Baixa exigência','signingBonus',2800000,'rewardValue',900000,'maxClaims',6),
+    jsonb_build_object('id','sony_partner','sponsorName','Sony Xperia','category','Parceiro premium','title','Matchday tech','description','Paga por clean sheets e controle defensivo.','conditionType','clean_sheet','conditionLabel','Não sofrer gols','riskLevel','Média exigência','signingBonus',1700000,'rewardValue',1600000,'maxClaims',5)
   );
 $$;
 
@@ -88,12 +88,12 @@ declare
 begin
   select id, display_name into v_manager from public.managers where id = p_manager_id;
   if v_manager.id is null then
-    return jsonb_build_object('ok', false, 'message', 'Login do tecnico invalido.');
+    return jsonb_build_object('ok', false, 'message', 'Login do técnico inválido.');
   end if;
 
   v_login := public.app_login_manager(v_manager.display_name, p_access_code)::jsonb;
   if coalesce((v_login ->> 'ok')::boolean, false) is false then
-    return jsonb_build_object('ok', false, 'message', 'Login do tecnico invalido.');
+    return jsonb_build_object('ok', false, 'message', 'Login do técnico inválido.');
   end if;
 
   select offers.offer into v_offer
@@ -101,7 +101,7 @@ begin
   where offers.offer ->> 'id' = p_offer_id;
 
   if v_offer is null then
-    return jsonb_build_object('ok', false, 'message', 'Patrocinador nao encontrado.');
+    return jsonb_build_object('ok', false, 'message', 'Patrocinador não encontrado.');
   end if;
 
   select count(*) into v_active_count
@@ -112,16 +112,16 @@ begin
   from public.sponsorship_contracts
   where manager_id = v_manager.id
     and status = 'active'
-    and category = coalesce(v_offer ->> 'category', 'Patrocinio')
+    and category = coalesce(v_offer ->> 'category', 'Patrocínio')
   order by created_at desc
   limit 1;
 
   if v_existing.id is null and v_active_count >= v_max_active then
-    return jsonb_build_object('ok', false, 'message', 'Limite comercial atingido: cada tecnico pode manter ate 3 patrocinios ativos.');
+    return jsonb_build_object('ok', false, 'message', 'Limite comercial atingido: cada técnico pode manter até 3 patrocínios ativos.');
   end if;
 
   if v_existing.sponsor_id = (v_offer ->> 'id') then
-    return jsonb_build_object('ok', false, 'message', 'Este patrocinio ja esta ativo.');
+    return jsonb_build_object('ok', false, 'message', 'Este patrocínio já está ativo.');
   end if;
 
   v_club_name := coalesce(v_login #>> '{manager,club}', v_manager.display_name);
@@ -140,10 +140,10 @@ begin
 
     perform public.app_insert_financial_event(
       coalesce(v_login #>> '{manager,name}', v_manager.display_name),
-      'Rescisao de patrocinio: ' || v_existing.sponsor_name,
+      'Rescisão de patrocínio: ' || v_existing.sponsor_name,
       v_existing.category || ' encerrado para abrir espaco a ' || (v_offer ->> 'sponsorName') || '.',
-      '-' || v_termination_fee::text || ' debitado como multa de rescisao.',
-      'Patrocinio',
+      '-' || v_termination_fee::text || ' debitado como multa de rescisão.',
+      'Patrocínio',
       -v_termination_fee
     );
   end if;
@@ -157,7 +157,7 @@ begin
     v_club_name,
     v_offer ->> 'id',
     v_offer ->> 'sponsorName',
-    coalesce(v_offer ->> 'category', 'Patrocinio'),
+    coalesce(v_offer ->> 'category', 'Patrocínio'),
     v_offer ->> 'title',
     v_offer ->> 'description',
     v_offer ->> 'conditionType',
@@ -170,18 +170,18 @@ begin
 
   perform public.app_insert_financial_event(
     coalesce(v_login #>> '{manager,name}', v_manager.display_name),
-    'Patrocinio assinado: ' || (v_offer ->> 'sponsorName'),
-    coalesce(v_offer ->> 'category', 'Patrocinio') || ' fechado por ' || coalesce(v_login #>> '{manager,name}', v_manager.display_name) || '.',
-    '+' || (v_offer ->> 'signingBonus') || ' creditado como bonus de assinatura.',
-    'Patrocinio',
+    'Patrocínio assinado: ' || (v_offer ->> 'sponsorName'),
+    coalesce(v_offer ->> 'category', 'Patrocínio') || ' fechado por ' || coalesce(v_login #>> '{manager,name}', v_manager.display_name) || '.',
+    '+' || (v_offer ->> 'signingBonus') || ' creditado como bônus de assinatura.',
+    'Patrocínio',
     coalesce((v_offer ->> 'signingBonus')::numeric, 0)
   );
 
   return jsonb_build_object(
     'ok', true,
     'message', case when v_existing.id is not null
-      then 'Patrocinio substituido com multa de rescisao aplicada.'
-      else 'Patrocinio assinado com sucesso.'
+      then 'Patrocínio substituído com multa de rescisão aplicada.'
+      else 'Patrocínio assinado com sucesso.'
     end,
     'terminationFee', v_termination_fee,
     'contractId', v_contract_id
@@ -297,6 +297,7 @@ as $$
       "ImpactoFinanceiro" numeric
     )
     where lower(coalesce("Titulo", '')) like '%bonus de patrocinio%'
+       or lower(coalesce("Titulo", '')) like '%bônus de patrocínio%'
     group by "Jogador"
   ),
   raw_budgets as (
@@ -394,7 +395,7 @@ begin
   v_manager_name := coalesce(v_login ->> 'managerName', '');
 
   if not v_is_commissioner and lower(trim(v_manager_name)) <> lower(trim(p_buyer)) then
-    return jsonb_build_object('ok', false, 'message', 'A transferencia precisa ser enviada pelo comprador logado.');
+    return jsonb_build_object('ok', false, 'message', 'A transferência precisa ser enviada pelo comprador logado.');
   end if;
 
   v_rate := case
@@ -416,7 +417,7 @@ begin
   end if;
 
   if v_transfers_today >= v_transfer_limit then
-    return jsonb_build_object('ok', false, 'message', format('%s ja atingiu o limite diario.', p_buyer));
+    return jsonb_build_object('ok', false, 'message', format('%s já atingiu o limite diário.', p_buyer));
   end if;
 
   if v_final_value > v_remaining then
@@ -469,7 +470,7 @@ begin
           when 'win_by_2' then 'Vencer por 2+ gols'
           when 'any_win' then 'Vencer qualquer partida'
           when 'home_win' then 'Vencer como mandante'
-          when 'clean_sheet' then 'Nao sofrer gols'
+          when 'clean_sheet' then 'Não sofrer gols'
           when 'three_goals' then 'Marcar 3+ gols'
           when 'away_win' then 'Vencer como visitante'
           else 'Meta comercial cumprida'
@@ -514,7 +515,7 @@ begin
     left join public.sponsorship_contracts c
       on c.manager_id = v_manager.id
      and c.status = 'active'
-     and c.category = coalesce(offers.offer ->> 'category', 'Patrocinio')
+     and c.category = coalesce(offers.offer ->> 'category', 'Patrocínio')
     where not exists (
       select 1
       from public.sponsorship_contracts same
