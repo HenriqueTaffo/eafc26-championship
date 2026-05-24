@@ -4,16 +4,21 @@ App.governance = {
   async loadData() {
     try {
       const session = App.auth?.getSession ? App.auth.getSession() : null;
-      const result = await App.api.rpc("app_get_governance_data", {
-        p_manager_id: session?.managerId || "",
-        p_access_code: session?.accessCode || ""
-      }, 30000);
+      const [result, weeklyCloseStatus] = await Promise.all([
+        App.api.rpc("app_get_governance_data", {
+          p_manager_id: session?.managerId || "",
+          p_access_code: session?.accessCode || ""
+        }, 30000),
+        App.api.rpc("app_get_weekly_close_status", {}, 30000).catch(() => null)
+      ]);
 
       App.state.apiGovernance = result || { auctions: [], medicalActions: [], weeklyReviews: [] };
+      App.state.apiWeeklyCloseStatus = weeklyCloseStatus || null;
       return App.state.apiGovernance;
     } catch (error) {
       console.warn("Governança indisponível:", error);
       App.state.apiGovernance = App.state.apiGovernance || { auctions: [], medicalActions: [], weeklyReviews: [] };
+      App.state.apiWeeklyCloseStatus = App.state.apiWeeklyCloseStatus || null;
       return App.state.apiGovernance;
     }
   },
@@ -587,6 +592,11 @@ App.governance = {
   renderWeekly() {
     const rows = App.governance.getWeeklyObjectiveRows();
     const reviews = App.state.apiGovernance?.weeklyReviews || [];
+    const closeStatus = App.state.apiWeeklyCloseStatus || {};
+    const lastClosure = closeStatus.lastClosure || {};
+    const lastClosureLabel = lastClosure.closed_at
+      ? `${App.utils.escapeHtml(lastClosure.period_key || "")} · ${App.utils.formatDateTime(lastClosure.closed_at)} · ${App.utils.escapeHtml(lastClosure.source || "")}`
+      : "Nenhum fechamento automático registrado ainda.";
     const canAct = App.auth?.isCommissioner?.();
 
     return `
@@ -605,6 +615,11 @@ App.governance = {
               <span>${App.utils.escapeHtml(item.team)} · ${App.utils.escapeHtml(item.verdict)}</span>
             </div>
           `).join("")}
+        </div>
+        <div class="commissioner-sublist">
+          <strong>Automação</strong>
+          <span>${closeStatus.automatic ? `Ativa · ${App.utils.escapeHtml(closeStatus.scheduledLabel || "Domingo, 23:00 (BRT)")}` : "Inativa"}</span>
+          <span>Último fechamento: ${lastClosureLabel}</span>
         </div>
         <div class="commissioner-sublist">
           <strong>Fechamentos recentes</strong>
