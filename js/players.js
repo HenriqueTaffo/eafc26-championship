@@ -407,36 +407,42 @@ App.players = {
       return `
         <div class="coach-empty-state">
           <span>🧾</span>
-          <strong>Mercado silencioso</strong>
+          <strong>Nenhuma compra aprovada</strong>
           <p>Nenhuma contratação aprovada para este técnico até agora.</p>
         </div>
       `;
     }
 
+    const visibleTransfers = transfers.slice(0, 6);
     const total = transfers.reduce((sum, item) => sum + Number(item.totalCost || 0), 0);
     const topTransfer = transfers.reduce((best, item) => Number(item.totalCost || 0) > Number(best?.totalCost || 0) ? item : best, transfers[0]);
 
     return `
       <div class="coach-market-header">
         <div>
-          <span>Pacote recente</span>
-          <strong>${transfers.length} jogador(es)</strong>
+          <span>Últimas compras</span>
+          <strong>${visibleTransfers.length} de ${transfers.length}</strong>
+          <small>contratações aprovadas</small>
         </div>
         <div>
-          <span>Maior compra</span>
+          <span>Maior compra geral</span>
           ${topTransfer ? App.transfers.renderPlayerIdentity(topTransfer.player, topTransfer.fromClub || "", "coach-header-player-identity", { club: topTransfer.fromClub }) : `<strong>-</strong>`}
         </div>
         <div>
-          <span>Total exibido</span>
+          <span>Gasto em compras</span>
           <strong>${App.utils.formatCurrency(total)}</strong>
+          <small>total aprovado no histórico</small>
         </div>
       </div>
 
       <div class="coach-transfer-timeline">
-        ${transfers.map((item, index) => `
+        ${visibleTransfers.map((item) => `
           <div class="coach-transfer-item">
             ${App.transfers.renderPlayerIdentity(item.player, item.fromClub || "Clube não informado", "coach-transfer-player-identity", { club: item.fromClub })}
-            <b>${App.utils.formatCurrency(item.totalCost)}</b>
+            <span class="coach-transfer-value">
+              <small>Custo final</small>
+              <b>${App.utils.formatCurrency(item.totalCost)}</b>
+            </span>
           </div>
         `).join("")}
       </div>
@@ -465,14 +471,20 @@ App.players = {
           };
           const impact = App.events.getEventImpactLabel ? App.events.getEventImpactLabel(event) : "";
           const duration = App.events.getEventDurationLabel ? App.events.getEventDurationLabel(event) : "";
+          const impactValue = Number(event.ImpactoFinanceiro || 0);
+          const impactClass = impactValue > 0 ? "positive" : impactValue < 0 ? "negative" : "neutral";
+          const impactLabel = impactValue > 0 ? "Entrada no caixa" : impactValue < 0 ? "Saída do caixa" : "Efeito";
           return `
-            <div class="coach-event-item">
+            <div class="coach-event-item ${impactClass}">
               <span class="coach-event-icon">${presentation.icon}</span>
               <div>
                 <strong>${App.utils.escapeHtml(presentation.title)}</strong>
                 <small>${App.utils.escapeHtml(presentation.categoryLabel)}${duration ? ` · ${App.utils.escapeHtml(duration)}` : ""}</small>
               </div>
-              <b>${App.utils.escapeHtml(impact)}</b>
+              <span class="coach-event-impact ${impactClass}">
+                <small>${impactLabel}</small>
+                <b>${App.utils.escapeHtml(impact)}</b>
+              </span>
             </div>
           `;
         }).join("")}
@@ -1008,7 +1020,6 @@ App.players = {
     const spent = App.players.getSpentByBuyer(activeTeam.owner);
     const breakdown = App.players.getBudgetBreakdown(budget, spent);
     const transfers = App.players.getApprovedTransfersForBuyer(activeTeam.owner);
-    const visibleTransfers = transfers.slice(0, 6);
     const payrollWeekly = App.players.getWeeklyPayrollForBuyer(activeTeam.owner, transfers);
     const next = App.players.getNextMatchForTeam(activeTeam.team);
     const recentForm = App.players.getRecentForm(activeTeam.team);
@@ -1107,16 +1118,16 @@ App.players = {
           <div class="coach-flow-v55">
             <article class="coach-panel-card coach-market-card">
               <div class="home-panel-header">
-                <h2>Mercado do técnico</h2>
-                <span class="coach-section-kicker">${transfers.length} contratação(ões)</span>
+                <h2>Contratações aprovadas</h2>
+                <span class="coach-section-kicker">${transfers.length} no histórico</span>
               </div>
-              ${App.players.renderCoachTransferDeck(visibleTransfers)}
+              ${App.players.renderCoachTransferDeck(transfers)}
             </article>
 
             <article class="coach-panel-card coach-event-radar-card">
               <div class="home-panel-header">
-                <h2>Radar de ocorrências</h2>
-                <span class="coach-section-kicker">${events.length} evento(s)</span>
+                <h2>Extrato e ocorrências</h2>
+                <span class="coach-section-kicker">${events.length} lançamento(s)</span>
               </div>
               ${App.players.renderCoachEventDeck(events)}
             </article>
