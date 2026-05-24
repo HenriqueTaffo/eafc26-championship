@@ -378,14 +378,16 @@ App.standings = {
       const value = isCpuSale
         ? row.ValorNegociado || row.negotiated_value || row.ValorFinal
         : row.ValorFinal || row.ValorTransfermarkt;
+      const seller = row.Vendedor || row.CompradorRegistro || row.Comprador || "-";
+      const destination = row.ClubeDestino || row.Destino || row.destination_club || row.Comprador || "clube interessado";
       return {
         type: "Transferência",
         date: row.Timestamp || "",
         title: isCpuSale
-          ? `${row.Comprador || "-"} vendeu ${row.Jogador || "-"} para CPU`
+          ? `${seller} vendeu ${row.Jogador || "-"} para ${destination}`
           : `${row.Comprador || "-"} contratou ${row.Jogador || "-"}`,
         detail: `${App.utils.formatCurrency(value || 0)} · ${
-          isCpuSale ? "Venda para CPU" : row.ClubeOrigem || ""
+          isCpuSale ? `Venda externa para ${destination}` : row.ClubeOrigem || ""
         }`,
       };
     });

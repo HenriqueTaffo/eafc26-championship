@@ -760,6 +760,7 @@ App.transfers = {
       .map((row, index) => {
         const transferType = row.TipoTransferencia || row.transfer_type || "";
         const isCpuSale = App.utils.normalizeText(transferType) === "cpu_sale";
+        const destinationClub = row.ClubeDestino || row.Destino || row.destination_club || "";
         const negotiatedValue = Number(
           row.ValorNegociado ??
             row.negotiated_value ??
@@ -771,10 +772,11 @@ App.transfers = {
         return {
           id: row.Id || row.id || "",
           player: row.Jogador,
-          buyer: isCpuSale ? "CPU" : row.Comprador,
-          seller: row.Vendedor || (isCpuSale ? row.Comprador : ""),
-          originalBuyer: row.Comprador || "",
-          fromClub: isCpuSale ? row.ClubeOrigem || "Venda para CPU" : row.ClubeOrigem,
+          buyer: isCpuSale ? destinationClub || row.Comprador || "Clube interessado" : row.Comprador,
+          seller: row.Vendedor || (isCpuSale ? row.CompradorRegistro || "" : ""),
+          originalBuyer: row.CompradorRegistro || row.Comprador || "",
+          destinationClub,
+          fromClub: row.ClubeOrigem || (isCpuSale ? `Venda para ${destinationClub || "clube interessado"}` : row.ClubeOrigem),
           overall: Number(row.Overall),
           marketValue: Number(isCpuSale ? negotiatedValue : row.ValorTransfermarkt),
           negotiatedValue,
@@ -819,6 +821,19 @@ App.transfers = {
       reason === "venda para cpu" ||
       fromClub === "venda para cpu"
     );
+  },
+
+  getCpuSaleDestination(item = {}) {
+    const destination =
+      item.destinationClub ||
+      item.ClubeDestino ||
+      item.Destino ||
+      item.destination_club ||
+      item.buyer ||
+      "";
+    return App.utils.normalizeText(destination) === "cpu" || !String(destination).trim()
+      ? "clube interessado"
+      : destination;
   },
 
   getMovementValue(item = {}) {
@@ -1144,7 +1159,7 @@ App.transfers = {
       return "Recusada";
     }
     if (item.isBlockedDuplicate) return "Duplicado";
-    if (App.transfers.isCpuSaleTransfer(item)) return "Venda CPU";
+    if (App.transfers.isCpuSaleTransfer(item)) return "Venda externa";
     if (item.runningSpent > item.currentBudget) return "Revisar";
     return "Válido";
   },
@@ -1758,18 +1773,21 @@ App.transfers = {
           const spotlightOwner = isSpotlightSale
             ? spotlight.seller || spotlight.originalBuyer || "Técnico"
             : spotlight.buyer;
+          const spotlightDestination = isSpotlightSale
+            ? App.transfers.getCpuSaleDestination(spotlight)
+            : "";
           return `
       <article class="transfer-movement-card transfer-impact-spotlight ${isSpotlightSale ? "is-cpu-sale-transfer" : ""}">
         <div class="movement-card-header">
           <span>${isSpotlightSale ? "Venda impactante" : "Contratação impactante"}</span>
-          <small>${isSpotlightSale ? "CPU · OVR 89+" : "OVR 89+"}</small>
+          <small>${isSpotlightSale ? `${App.utils.escapeHtml(spotlightDestination)} · OVR 89+` : "OVR 89+"}</small>
         </div>
         <div class="impact-spotlight-grid">
           <div class="impact-spotlight-main">
             ${App.transfers.renderPlayerIdentity(
               spotlight.player,
               isSpotlightSale
-                ? `${spotlightOwner} vendeu para CPU`
+                ? `${spotlightOwner} vendeu para ${spotlightDestination}`
                 : `${spotlight.fromClub || "Clube não informado"} · ${spotlight.buyer}`,
               "impact-player-identity",
               { club: spotlight.fromClub },
@@ -1783,11 +1801,12 @@ App.transfers = {
                 const owner = isSale
                   ? item.seller || item.originalBuyer || "Técnico"
                   : item.buyer;
+                const destination = isSale ? App.transfers.getCpuSaleDestination(item) : "";
                 return `
               <div>
                 <span>OVR ${item.displayOverall}</span>
                 <b>${App.utils.escapeHtml(item.player)}</b>
-                <small>${App.utils.escapeHtml(isSale ? `${owner} vendeu` : owner)} · ${App.utils.formatCurrency(item.totalCost)}</small>
+                <small>${App.utils.escapeHtml(isSale ? `${owner} -> ${destination}` : owner)} · ${App.utils.formatCurrency(item.totalCost)}</small>
               </div>
             `;
               })
@@ -1812,6 +1831,7 @@ App.transfers = {
           const ownerLabel = isCpuSale
             ? item.seller || item.originalBuyer || "Técnico"
             : item.buyer;
+          const destinationLabel = isCpuSale ? App.transfers.getCpuSaleDestination(item) : "";
           const marketValue = Number(item.marketValue || 0);
           const feePercent = Math.round(Number(item.feeRate || 0) * 100);
           const valueBreakdown = marketValue
@@ -1825,27 +1845,27 @@ App.transfers = {
         <article class="transfer-movement-card ${movementClass}">
           <div class="movement-card-header">
             ${App.ui.ownerBadge(ownerLabel)}
-            <small>${isCpuSale ? "Venda para CPU · " : isImpact ? "Impactante · " : ""}${App.utils.escapeHtml(date)}</small>
+            <small>${isCpuSale ? "Venda externa · " : isImpact ? "Impactante · " : ""}${App.utils.escapeHtml(date)}</small>
           </div>
           <div class="movement-player">
             <span>${isCpuSale ? "Venda concluída" : "Contratação"}</span>
             ${App.transfers.renderPlayerIdentity(
               item.player,
               isCpuSale
-                ? `${ownerLabel} vendeu para CPU`
+                ? `${ownerLabel} vendeu para ${destinationLabel}`
                 : item.fromClub || "Clube não informado",
               "movement-player-identity",
               { club: item.fromClub },
             )}
           </div>
           <div class="movement-meta">
-            <span>${App.utils.escapeHtml(isCpuSale ? "Destino: CPU" : item.fromClub || "Clube não informado")}</span>
+            <span>${App.utils.escapeHtml(isCpuSale ? `Destino: ${destinationLabel}` : item.fromClub || "Clube não informado")}</span>
             <span>OVR ${overall || "-"}</span>
           </div>
           <div class="movement-value">
             <span>${isCpuSale ? "Valor recebido" : "Valor final"}</span>
             <div class="movement-value-copy">
-              <small>${App.utils.escapeHtml(isCpuSale ? "Oferta aceita da CPU" : valueBreakdown)}</small>
+              <small>${App.utils.escapeHtml(isCpuSale ? `Oferta aceita de ${destinationLabel}` : valueBreakdown)}</small>
               <strong>${App.utils.formatCurrency(item.totalCost)}</strong>
             </div>
           </div>
@@ -1918,14 +1938,15 @@ App.transfers = {
                     const owner = isCpuSale
                       ? item.seller || item.originalBuyer || "Técnico"
                       : item.buyer;
+                    const destination = isCpuSale ? App.transfers.getCpuSaleDestination(item) : "";
                     return `
           <div class="insight-row">
             <span>${App.transfers.renderPlayerIdentity(
               item.player,
-              isCpuSale ? `${owner} vendeu para CPU` : item.buyer,
+              isCpuSale ? `${owner} vendeu para ${destination}` : item.buyer,
               "insight-player-identity",
             )}</span>
-            <strong>${App.utils.escapeHtml(isCpuSale ? "Venda CPU" : item.buyer)}</strong>
+            <strong>${App.utils.escapeHtml(isCpuSale ? destination : item.buyer)}</strong>
           </div>
         `;
                   },
@@ -2231,14 +2252,14 @@ App.transfers = {
     const buyersActive = new Set(purchases.map((item) => item.buyer)).size;
     const recentLabel =
       recent && App.transfers.isCpuSaleTransfer(recent)
-        ? `${recent.player} (venda CPU)`
+        ? `${recent.player} (venda externa)`
         : recent?.player;
 
     summary.innerHTML = `
       ${App.ui.summaryCard("Contratações válidas", purchases.length)}
       ${App.ui.summaryCard("Total movimentado", App.utils.formatCurrency(totalMoved))}
       ${App.ui.summaryCard("Maior compra", biggest ? App.utils.formatCurrency(biggest.totalCost) : "-")}
-      ${App.ui.summaryCard("Vendas para CPU", cpuSales.length)}
+      ${App.ui.summaryCard("Vendas externas", cpuSales.length)}
       ${App.ui.summaryCard("Compradores ativos", buyersActive)}
       ${App.ui.summaryCard("Última movimentação", recentLabel ? App.utils.escapeHtml(recentLabel) : "-")}
     `;
@@ -2271,7 +2292,7 @@ App.transfers = {
         const ownerLabel = isCpuSale
           ? item.seller || item.originalBuyer || "Técnico"
           : item.buyer;
-        const destinationLabel = isCpuSale ? "CPU" : item.buyer;
+        const destinationLabel = isCpuSale ? App.transfers.getCpuSaleDestination(item) : item.buyer;
         const originLabel = isCpuSale
           ? ownerLabel
           : item.fromClub || "-";
@@ -2279,7 +2300,7 @@ App.transfers = {
         <tr class="ours-row">
           <td class="calendar-match">${App.transfers.renderPlayerIdentity(
             item.player,
-            isCpuSale ? `${ownerLabel} vendeu para CPU` : item.fromClub || "-",
+            isCpuSale ? `${ownerLabel} vendeu para ${destinationLabel}` : item.fromClub || "-",
             "table-player-identity",
             { club: item.fromClub },
           )}</td>
@@ -2301,13 +2322,13 @@ App.transfers = {
         const ownerLabel = isCpuSale
           ? item.seller || item.originalBuyer || "Técnico"
           : item.buyer;
-        const destinationLabel = isCpuSale ? "CPU" : item.buyer;
+        const destinationLabel = isCpuSale ? App.transfers.getCpuSaleDestination(item) : item.buyer;
         return `
         <article class="calendar-card ours-row">
           <div class="calendar-card-header">${App.ui.ownerBadge(destinationLabel, App.data.ownerColors["Livre / CPU"])}<span class="transfer-status ${App.transfers.getTransferStatusClass(item)}">${App.transfers.getTransferStatusLabel(item)}</span></div>
           ${App.transfers.renderPlayerIdentity(
             item.player,
-            `${isCpuSale ? `${ownerLabel} vendeu para CPU` : item.fromClub || "-"} · OVR ${item.overall}`,
+            `${isCpuSale ? `${ownerLabel} vendeu para ${destinationLabel}` : item.fromClub || "-"} · OVR ${item.overall}`,
             "mobile-player-identity",
             { club: item.fromClub },
           )}

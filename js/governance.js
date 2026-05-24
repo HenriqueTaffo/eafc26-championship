@@ -503,11 +503,11 @@ App.governance = {
         <div class="home-panel-header">
           <div>
             <span class="modal-kicker">Mercado ativo</span>
-            <h2>Propostas da CPU</h2>
+            <h2>Propostas externas</h2>
           </div>
-          <span class="coach-section-kicker">CPU x Técnico</span>
+          <span class="coach-section-kicker">Clubes x Técnico</span>
         </div>
-        <p class="calendar-muted">Gere ofertas automáticas para jogadores dos técnicos. O técnico recebe no painel privado e decide aceitar ou recusar.</p>
+        <p class="calendar-muted">Gere ofertas automáticas de clubes reais por jogadores dos técnicos. O técnico recebe no painel privado e decide aceitar ou recusar.</p>
         ${canAct ? `
           <form class="commissioner-inline-form" data-cpu-transfer-offers-form>
             <select name="targetManager">
@@ -517,7 +517,7 @@ App.governance = {
             <input name="count" type="number" min="1" max="12" value="4" aria-label="Quantidade de propostas" />
             <button class="secondary-button success" type="submit">Gerar propostas</button>
           </form>
-        ` : `<p class="calendar-muted">Faça login como Comissário da Liga para gerar propostas da CPU.</p>`}
+        ` : `<p class="calendar-muted">Faça login como Comissário da Liga para gerar propostas externas.</p>`}
       </article>
     `;
   },
@@ -829,7 +829,7 @@ App.governance = {
             p_target_manager: payload.targetManager || ""
           });
           await App.auth?.loadMyTransferProposals?.();
-          App.utils.setMessage(message, result.message || "Propostas da CPU geradas.", "success");
+          App.utils.setMessage(message, result.message || "Propostas externas geradas.", "success");
         } catch (error) {
           App.utils.setMessage(message, error.message, "error");
         } finally {

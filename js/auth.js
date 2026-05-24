@@ -40,7 +40,10 @@ App.auth = {
   },
 
   getTransferProposalSourceLabel(item = {}) {
-    return App.auth.isCpuProposal(item) ? "CPU" : (item.buyer || "outro tecnico");
+    if (!App.auth.isCpuProposal(item)) return item.buyer || "outro tecnico";
+    return App.utils.normalizeText(item.buyer || "") === "cpu"
+      ? "clube interessado"
+      : item.buyer || "clube interessado";
   },
 
   getDecisionEmailMeta(item = {}) {
@@ -584,7 +587,7 @@ App.auth = {
 
       return result;
     } catch (error) {
-      console.warn("Geração automática de propostas da CPU indisponível:", error);
+      console.warn("Geração automática de propostas externas indisponível:", error);
       return null;
     } finally {
       App.auth.autoCpuOfferRunning = false;
@@ -967,7 +970,7 @@ App.auth = {
         <div class="home-panel-header">
           <div>
             <h2>Propostas recebidas</h2>
-            <p class="coach-card-subtitle">Ofertas internas e propostas da CPU pelos seus jogadores.</p>
+            <p class="coach-card-subtitle">Ofertas internas e sondagens externas pelos seus jogadores.</p>
           </div>
           <span class="coach-section-kicker">${pending.length} pendente(s)</span>
         </div>
@@ -1362,7 +1365,7 @@ App.auth = {
     return `
       <article class="decision-card transfer-proposal-item proposal-status-${status}">
         <div class="decision-card-top">
-          <span>${isCpuOffer ? "Oferta da CPU" : "Oferta interna"}</span>
+          <span>${isCpuOffer ? "Oferta externa" : "Oferta interna"}</span>
           <b>${statusLabel}</b>
         </div>
         <h3>${App.utils.escapeHtml(item.player)}</h3>
@@ -1380,7 +1383,7 @@ App.auth = {
             data-proposal-source-label="${sourceLabelEscaped}"
           >
             <strong>Aceitar</strong>
-            <small>${isCpuOffer ? `Vende para a CPU e recebe ${App.utils.formatCurrency(proposedValue)}.` : "Vende o jogador e recebe o valor."}</small>
+            <small>${isCpuOffer ? `Vende para ${sourceLabelEscaped} e recebe ${App.utils.formatCurrency(proposedValue)}.` : "Vende o jogador e recebe o valor."}</small>
           </button>
           <button
             type="button"
@@ -1409,7 +1412,7 @@ App.auth = {
       <article class="proposal-summary-item proposal-status-${status}">
         <span>${statusLabel}</span>
         <strong>${App.utils.escapeHtml(item.player)}</strong>
-        <small>${App.utils.escapeHtml(item.seller)} · ${App.utils.formatCurrency(item.proposed_value)}</small>
+        <small>${App.utils.escapeHtml(item.seller)} · ${App.utils.escapeHtml(App.auth.getTransferProposalSourceLabel(item))} · ${App.utils.formatCurrency(item.proposed_value)}</small>
       </article>
     `;
   },
