@@ -2232,28 +2232,12 @@
 
 .coach-favorite-list {
   display: grid;
-  gap: 9px;
+  gap: 10px;
 }
 
 .coach-favorite-item {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 4px 10px;
-  align-items: center;
-  border: 1px solid rgba(148, 163, 184, .14);
-  border-radius: 12px;
-  padding: 10px;
-  background: rgba(2, 6, 23, .24);
-}
-
-.coach-favorite-item strong,
-.coach-favorite-item span {
-  display: block;
-}
-
-.coach-favorite-item span {
-  color: #94a3b8;
-  font-size: 12px;
+  border-color: rgba(45, 212, 191, .14);
+  background: rgba(2, 6, 23, .26);
 }
 
 @media (max-width: 640px) {

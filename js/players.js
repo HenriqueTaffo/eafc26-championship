@@ -905,6 +905,14 @@ App.players = {
     const session = App.auth?.getSession?.();
     if (!session || App.utils.normalizeText(session.managerName) !== App.utils.normalizeText(owner)) return "";
     const favorites = App.auth.myFavorites || [];
+    const favoriteNames = favorites.map(item => String(item.title || "").trim()).filter(Boolean);
+    const hydrationKey = favoriteNames.slice().sort().join("|");
+    if (hydrationKey && App.players.favoritePortraitHydrationKey !== hydrationKey && App.api?.loadMarketPlayersForNames) {
+      App.players.favoritePortraitHydrationKey = hydrationKey;
+      App.api.loadMarketPlayersForNames(favoriteNames, 2)
+        .then(() => App.main?.renderCurrentView?.())
+        .catch(error => console.warn("Fotos dos favoritos indisponíveis:", error));
+    }
 
     return `
       <article class="coach-panel-card coach-favorites-card">
@@ -912,14 +920,28 @@ App.players = {
           <h2>Favoritos privados</h2>
           <span class="coach-section-kicker">${favorites.length} item(ns)</span>
         </div>
-        <div class="coach-favorite-list">
-          ${favorites.length ? favorites.map(item => `
-            <div class="coach-favorite-item">
-              <strong>${App.utils.escapeHtml(item.title)}</strong>
-              <span>${App.utils.escapeHtml(item.detail || item.item_type || "")}</span>
-              <button type="button" class="icon-action-button remove-action-button" aria-label="Remover favorito" data-remove-favorite-type="${App.utils.escapeHtml(item.item_type)}" data-remove-favorite-key="${App.utils.escapeHtml(item.item_key)}"></button>
+        <div class="coach-target-list coach-favorite-list">
+          ${favorites.length ? favorites.map(item => {
+            const title = item.title || "Favorito";
+            const detail = item.detail || item.item_type || "";
+            const detailParts = String(detail).split("·").map(part => part.trim()).filter(Boolean);
+            const club = detailParts.find(part => !/^prioridade/i.test(part) && !/^monitorar/i.test(part) && !/^plano b/i.test(part) && !/^oportunidade/i.test(part)) || "";
+            const marketPlayer = App.transfers.findMarketPlayerByName(title, { club }) || { name: title, club };
+            const rating = App.transfers.getRatingForPlayerName(title, { club });
+
+            return `
+            <div class="coach-target-item coach-favorite-item">
+              ${App.transfers.renderPlayerPhoto(marketPlayer, rating, "player-avatar")}
+              <div class="coach-target-copy">
+                <strong>${App.utils.escapeHtml(title)}</strong>
+                <small>${App.utils.escapeHtml(detail || "Atalho privado")}</small>
+              </div>
+              <div class="coach-target-actions">
+                <button type="button" class="icon-action-button remove-action-button" title="Remover favorito" aria-label="Remover favorito" data-remove-favorite-type="${App.utils.escapeHtml(item.item_type)}" data-remove-favorite-key="${App.utils.escapeHtml(item.item_key)}"></button>
+              </div>
             </div>
-          `).join("") : `
+          `;
+          }).join("") : `
             <div class="coach-empty-state compact">
               <strong>Nenhum favorito salvo</strong>
               <p>Use a estrela nos alvos privados para criar atalhos persistentes.</p>
