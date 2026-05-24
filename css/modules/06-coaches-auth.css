@@ -365,7 +365,7 @@
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  gap: 4px;
+  gap: 8px;
 }
 
 .icon-action-button {
@@ -391,41 +391,57 @@
 }
 
 .favorite-action-button {
-  color: #7dd3fc;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 30px;
+  border: 1px solid rgba(125, 211, 252, .22);
+  border-radius: 999px;
+  padding: 5px 10px 5px 6px;
+  background: rgba(14, 165, 233, .08);
+  color: #bae6fd;
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 900;
+  line-height: 1;
+  transition: background .16s ease, border-color .16s ease, color .16s ease, transform .16s ease;
+}
+
+.favorite-action-button:hover {
+  border-color: rgba(125, 211, 252, .36);
+  background: rgba(14, 165, 233, .14);
+  transform: translateY(-1px);
 }
 
 .favorite-action-button span {
-  position: relative;
-  display: block;
-  width: 9px;
-  height: 13px;
-  border: 1.6px solid currentColor;
-  border-bottom: 0;
-  border-radius: 3px 3px 1px 1px;
+  display: inline-grid;
+  width: 18px;
+  height: 18px;
+  place-items: center;
+  border-radius: 999px;
+  background: rgba(125, 211, 252, .16);
+  color: #e0f2fe;
+  font-size: 13px;
+  font-weight: 1000;
 }
 
-.favorite-action-button span::after {
-  content: "";
-  position: absolute;
-  left: 50%;
-  bottom: -3.5px;
-  width: 6px;
-  height: 6px;
-  border-right: 1.6px solid currentColor;
-  border-bottom: 1.6px solid currentColor;
-  background: rgba(2, 6, 23, .98);
-  transform: translateX(-50%) rotate(45deg);
+.favorite-action-button b {
+  color: inherit;
+  font-size: 12px;
+  font-weight: 900;
+  white-space: nowrap;
 }
 
 .favorite-action-button.is-active {
-  border-color: rgba(45, 212, 191, .52);
-  background: rgba(20, 184, 166, .16);
+  border-color: rgba(45, 212, 191, .34);
+  background: rgba(20, 184, 166, .12);
   color: #99f6e4;
 }
 
-.favorite-action-button.is-active span,
-.favorite-action-button.is-active span::after {
-  background: currentColor;
+.favorite-action-button.is-active span {
+  background: rgba(45, 212, 191, .22);
+  color: #ccfbf1;
 }
 
 .remove-action-button {

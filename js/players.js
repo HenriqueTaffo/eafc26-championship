@@ -550,13 +550,16 @@ App.players = {
                 <div class="coach-target-actions">
                   <button
                     type="button"
-                    class="icon-action-button favorite-action-button ${isFavorite ? "is-active" : ""}"
+                    class="favorite-action-button ${isFavorite ? "is-active" : ""}"
                     title="${isFavorite ? "Remover dos favoritos" : "Favoritar alvo"}"
                     aria-label="${isFavorite ? "Remover dos favoritos" : "Favoritar alvo"}"
                     data-favorite-target="${App.utils.escapeHtml(favoriteKey)}"
                     data-favorite-title="${App.utils.escapeHtml(target.player)}"
                     data-favorite-detail="${App.utils.escapeHtml([target.priority, target.club].filter(Boolean).join(" · "))}"
-                  ><span aria-hidden="true"></span></button>
+                  >
+                    <span aria-hidden="true">${isFavorite ? "✓" : "+"}</span>
+                    <b>${isFavorite ? "Salvo" : "Favoritar"}</b>
+                  </button>
                   <button type="button" class="icon-action-button remove-action-button" title="Remover alvo" aria-label="Remover alvo" data-remove-private-target="${App.utils.escapeHtml(target.id)}"></button>
                 </div>
               </div>
