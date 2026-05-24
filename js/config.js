@@ -5,7 +5,7 @@ App.config = {
   API_URL: "https://fdippspwpugnxwxmjnqf.supabase.co",
   SUPABASE_URL: "https://fdippspwpugnxwxmjnqf.supabase.co",
   SUPABASE_PUBLISHABLE_KEY: "sb_publishable_9YyrYEk9jH5CuatQK_Ejpg_VfQq6qCK",
-  assetVersion: "20260524-transfer-submit-fast-v1",
+  assetVersion: "20260524-office-cleanup-v1",
   transferBudget: 65000000,
   homeMatchBonus: 1500000,
   winBonus: 1250000,

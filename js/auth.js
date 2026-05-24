@@ -1084,6 +1084,8 @@ App.auth = {
     const active = Array.isArray(data.active) ? data.active : [];
     const offers = Array.isArray(data.offers) ? data.offers : [];
     const rewards = Array.isArray(data.recentRewards) ? data.recentRewards : [];
+    const visibleRewards = rewards.slice(0, 5);
+    const hiddenRewards = Math.max(0, rewards.length - visibleRewards.length);
     const maxActive = Number(data.maxActiveContracts || 2);
     const slotsLeft = Math.max(0, Number(data.activeSlotsLeft ?? (maxActive - active.length)));
     const offersByCategory = offers.reduce((groups, offer) => {
@@ -1226,15 +1228,19 @@ App.auth = {
           </div>
         ` : slotsLeft <= 0 ? `<p class="calendar-muted">Limite comercial preenchido. Novas propostas aparecem quando houver categoria substituível ou vaga livre.</p>` : ""}
 
-        ${rewards.length ? `
+        ${visibleRewards.length ? `
           <div class="sponsor-reward-list">
-            <strong>Últimos pagamentos</strong>
-            ${rewards.map(item => `
-              <div>
+            <div class="sponsor-reward-header">
+              <strong>Últimos pagamentos</strong>
+              <span>${visibleRewards.length}/${rewards.length}</span>
+            </div>
+            ${visibleRewards.map(item => `
+              <div class="sponsor-reward-item">
                 <span>${App.utils.escapeHtml(App.auth.getSponsorshipRewardKind(item))} · ${App.utils.escapeHtml(item.sponsor_name)}</span>
                 <b>${App.utils.formatCurrency(item.reward_value)}</b>
               </div>
             `).join("")}
+            ${hiddenRewards > 0 ? `<p class="sponsor-reward-more">+${hiddenRewards} pagamento(s) já consolidados no extrato.</p>` : ""}
           </div>
         ` : ""}
       </article>
@@ -1351,8 +1357,8 @@ App.auth = {
     return `
       <div class="sponsor-payment-schedule">
         <span>${schedule.cadence}</span>
-        <small>Última parcela: <strong>${lastLabel}</strong></small>
-        <small>Próxima parcela: <strong>${nextLabel}</strong></small>
+        <small><b>Última</b><strong>${lastLabel}</strong></small>
+        <small><b>Próxima</b><strong>${nextLabel}</strong></small>
       </div>
     `;
   },

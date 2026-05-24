@@ -157,6 +157,9 @@ App.players = {
     const entries = App.players.getCoachStatementEntries(owner, budget, breakdown);
     const extraRevenue = Math.max(0, Number(breakdown.totalAccumulated || 0) - Number(breakdown.base || 0));
     const latestExtra = entries.find(entry => entry.label !== "Orçamento inicial");
+    const baseEntry = entries.find(entry => entry.label === "Orçamento inicial");
+    const visibleEntries = entries.filter(entry => entry.label !== "Orçamento inicial").slice(0, 5);
+    const hiddenEntries = Math.max(0, entries.length - visibleEntries.length - (baseEntry ? 1 : 0));
 
     return `
       <div class="coach-full-row-v54">
@@ -167,12 +170,12 @@ App.players = {
           </div>
           <div class="coach-statement-summary">
             <div>
-              <span>Receitas extras</span>
-              <strong>${App.utils.formatCurrency(extraRevenue)}</strong>
-            </div>
-            <div>
               <span>Saldo atual</span>
               <strong>${App.utils.formatCurrency(breakdown.available)}</strong>
+            </div>
+            <div>
+              <span>Receitas extras</span>
+              <strong>${App.utils.formatCurrency(extraRevenue)}</strong>
             </div>
             <div>
               <span>Último crédito</span>
@@ -180,7 +183,7 @@ App.players = {
             </div>
           </div>
           <div class="coach-statement-list">
-            ${entries.map(entry => `
+            ${visibleEntries.map(entry => `
               <div class="coach-statement-item">
                 <div>
                   <strong>${App.utils.escapeHtml(entry.label)}</strong>
@@ -192,6 +195,13 @@ App.players = {
                 </div>
               </div>
             `).join("")}
+            ${baseEntry ? `
+              <div class="coach-statement-base-line">
+                <span>Base da temporada</span>
+                <b>${App.utils.formatCurrency(baseEntry.amount)}</b>
+              </div>
+            ` : ""}
+            ${hiddenEntries > 0 ? `<p class="coach-statement-note">+${hiddenEntries} receita(s) consolidada(s) no saldo atual.</p>` : ""}
           </div>
         </article>
       </div>
@@ -757,7 +767,7 @@ App.players = {
     const spent = Number(budget.spentTotal || 0);
     const spendPct = totalBudget > 0 ? spent / totalBudget : 0;
     const topSix = Number(standing?.position || 99) <= 6;
-    const positiveGoalDiff = Number(standing?.goalDifference || 0) >= 0;
+    const hasMoreWinsThanLosses = Number(standing?.wins || 0) >= Number(standing?.losses || 0);
     const cashDiscipline = remaining >= 0 && spendPct <= .85 && !budget.marketEmbargo;
     const squadDepth = transfers.length >= 4;
 
@@ -768,9 +778,9 @@ App.players = {
         detail: topSix ? "Dentro do G6." : `Atual: ${standing?.position || "-"}º. Diretoria quer G6.`
       },
       {
-        label: "Saldo competitivo",
-        status: positiveGoalDiff ? "ok" : "risk",
-        detail: `Saldo de gols ${App.utils.formatGoalDifference(standing?.goalDifference || 0)}.`
+        label: "Regularidade",
+        status: hasMoreWinsThanLosses ? "ok" : "warn",
+        detail: hasMoreWinsThanLosses ? "Vitórias segurando a campanha." : "Diretoria quer reação nos próximos jogos."
       },
       {
         label: "Fair play financeiro",
@@ -981,7 +991,6 @@ App.players = {
     const todayCount = App.transfers.getTodayTransferCountByBuyer(activeTeam.owner);
     const transferLimit = Number(budget.transferLimit ?? App.transfers.getTransferLimitForBuyer(activeTeam.owner));
     const canViewPrivate = App.auth?.canViewManagerPrivate ? App.auth.canViewManagerPrivate(activeTeam.owner) : false;
-    const alerts = App.players.getCoachAlerts(activeTeam, standing, budget, next, todayCount, canViewPrivate);
     const events = App.players.getCoachEvents(activeTeam.owner);
     const injuries = App.players.getActiveInjuriesForCoach(activeTeam.owner);
     const color = App.data.ownerColors[activeTeam.owner] || "#2563eb";
@@ -1049,7 +1058,6 @@ App.players = {
 
         <section class="coach-quick-grid ${canViewPrivate ? "" : "public-only"}">
           <article><span>Campanha</span><strong>${standing?.wins || 0}/${standing?.draws || 0}/${standing?.losses || 0}</strong><small>V/E/D</small></article>
-          <article><span>Saldo de gols</span><strong>${App.utils.formatGoalDifference(standing?.goalDifference || 0)}</strong><small>${standing?.goalsFor || 0} pró / ${standing?.goalsAgainst || 0} contra</small></article>
           ${canViewPrivate ? `
             <article><span>Saldo mercado</span><strong>${App.utils.formatCurrency(breakdown.available)}</strong><small>${budget.marketEmbargo ? "Mercado bloqueado" : `Gasto ${App.utils.formatCurrency(breakdown.spent)}`}</small></article>
             <article><span>Transfers hoje</span><strong>${todayCount}/${transferLimit}</strong><small>${transfers.length} totais válidas</small></article>
@@ -1073,14 +1081,6 @@ App.players = {
           ${strategyCards}
 
           <div class="coach-flow-v55">
-            <article class="coach-panel-card coach-war-room-card">
-              <div class="home-panel-header">
-                <h2>Sala de guerra</h2>
-                <span class="coach-section-kicker">${alerts.length} alerta(s)</span>
-              </div>
-              ${App.players.renderCoachAlertDeck(alerts)}
-            </article>
-
             <article class="coach-panel-card coach-market-card">
               <div class="home-panel-header">
                 <h2>Mercado do técnico</h2>
@@ -1326,8 +1326,24 @@ App.players = {
       return;
     }
 
-    const search = App.utils.normalizeText(document.getElementById("playersSearchInput")?.value);
-    const filter = document.getElementById("playersFilter")?.value || "all";
+    const session = App.auth?.getSession ? App.auth.getSession() : null;
+    const canSwitchCoaches = App.auth?.isCommissioner?.() === true;
+    const searchInput = document.getElementById("playersSearchInput");
+    const filterInput = document.getElementById("playersFilter");
+    const controls = document.querySelector("#playersView .controls");
+    const isPersonalOffice = !canSwitchCoaches && Boolean(session?.managerName);
+
+    if (isPersonalOffice && filterInput) filterInput.value = session.managerName;
+    if (filterInput) filterInput.hidden = isPersonalOffice;
+    if (controls) controls.classList.toggle("coach-personal-controls", isPersonalOffice);
+    if (searchInput) {
+      searchInput.placeholder = isPersonalOffice
+        ? "Buscar jogador, e-mail, patrocínio ou próximo jogo..."
+        : "Buscar técnico, jogador, time, e-mail ou próximo jogo...";
+    }
+
+    const search = App.utils.normalizeText(searchInput?.value);
+    const filter = isPersonalOffice ? session.managerName : (filterInput?.value || "all");
     const standings = App.standings.getStandings();
     const budgetInfo = App.transfers.getBudgetInfoByBuyer();
     const ranking = App.players.getCoachRanking();
@@ -1343,7 +1359,8 @@ App.players = {
       });
     }
 
-    const activeTeam = filteredTeams[0] || teams[0];
+    const sessionTeam = session?.managerName ? teams.find(team => App.utils.normalizeText(team.owner) === App.utils.normalizeText(session.managerName)) : null;
+    const activeTeam = filteredTeams[0] || (isPersonalOffice ? sessionTeam : null) || teams[0];
     const totalTransfers = App.transfers.getTransfersWithStats().filter(item => !item.isBlockedDuplicate).length;
     const totalAlerts = teams.reduce((sum, team) => {
       const standing = standings.find(item => App.utils.sameTeamName(item.team, team.team));
@@ -1367,7 +1384,7 @@ App.players = {
     }
 
     grid.innerHTML = `
-      ${App.players.renderCoachSelector(teams, activeTeam.owner)}
+      ${canSwitchCoaches ? App.players.renderCoachSelector(teams, activeTeam.owner) : ""}
       ${App.players.renderCoachDashboard(activeTeam, standings, budgetInfo)}
       ${App.players.renderComparison(ranking)}
     `;
