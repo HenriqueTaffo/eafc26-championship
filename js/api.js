@@ -108,6 +108,7 @@ App.api = {
 
       const rows = App.api.applyMarketPlayerOverrides(
         Array.isArray(data) ? data : [],
+        { showContracted: Boolean(showContracted) },
       );
       App.api.mergeMarketPlayers(rows);
       return rows;
@@ -124,6 +125,7 @@ App.api = {
         );
         const rows = App.api.applyMarketPlayerOverrides(
           Array.isArray(data) ? data : [],
+          { showContracted: Boolean(showContracted) },
         );
         App.api.mergeMarketPlayers(rows);
         return rows;
@@ -172,32 +174,95 @@ App.api = {
       return acc;
     }, {});
 
-    App.api.applyMarketPlayerOverrides(rows).forEach((item) => {
-      const key = String(item.id || item.name || "").toLowerCase();
-      if (key) byKey[key] = { ...(byKey[key] || {}), ...item };
-    });
+    App.api
+      .applyMarketPlayerOverrides(rows, { showContracted: true })
+      .forEach((item) => {
+        const key = String(item.id || item.name || "").toLowerCase();
+        if (key) byKey[key] = { ...(byKey[key] || {}), ...item };
+      });
 
     App.state.apiMarketPlayers = Object.values(byKey);
     return App.state.apiMarketPlayers;
   },
 
-  applyMarketPlayerOverrides(players = []) {
-    return players.map((player) => {
-      if (
-        !App.api.isReversedTransfer({
-          Comprador: "Rafael",
-          Jogador: player.name,
-          ClubeOrigem: player.club,
-        })
-      )
-        return player;
+  getLatestMovementByPlayer() {
+    const movements = {};
 
-      return {
-        ...player,
-        alreadyContracted: false,
-        is_contracted: false,
+    (App.state.apiTransfers || []).forEach((row, index) => {
+      const playerName = row.Jogador || row.player || row.player_name || "";
+      const key = App.utils.normalizeText(playerName);
+      if (!key) return;
+
+      const time = new Date(
+        row.Timestamp || row.created_at || row.createdAt || 0,
+      ).getTime();
+      const score = Number.isNaN(time) ? index : time * 1000 + index;
+      if (movements[key] && movements[key].score > score) return;
+
+      movements[key] = {
+        buyer: row.Comprador || row.buyer || row.buyer_id || "",
+        destination:
+          row.ClubeDestino || row.Destino || row.destination_club || "",
+        score,
+        transferType: App.utils.normalizeText(
+          row.TipoTransferencia || row.transfer_type || row.transferType || "",
+        ),
       };
     });
+
+    return movements;
+  },
+
+  applyMarketPlayerOverrides(players = [], options = {}) {
+    const showContracted =
+      options.showContracted === undefined
+        ? true
+        : Boolean(options.showContracted);
+    const latestMovements = App.api.getLatestMovementByPlayer();
+
+    return players
+      .map((player) => {
+        const key = App.utils.normalizeText(player.name || "");
+        const movement = latestMovements[key];
+        let next = { ...player };
+
+        if (movement?.transferType === "cpu_sale" && movement.destination) {
+          next = {
+            ...next,
+            club: movement.destination,
+            original_club: next.original_club || next.club,
+            league: "Mercado externo",
+            alreadyContracted: false,
+            is_contracted: false,
+          };
+        } else if (movement && movement.buyer) {
+          next = {
+            ...next,
+            alreadyContracted: true,
+            is_contracted: true,
+          };
+        }
+
+        if (
+          App.api.isReversedTransfer({
+            Comprador: "Rafael",
+            Jogador: next.name,
+            ClubeOrigem: next.club,
+          })
+        ) {
+          next = {
+            ...next,
+            alreadyContracted: false,
+            is_contracted: false,
+          };
+        }
+
+        return next;
+      })
+      .filter(
+        (player) =>
+          showContracted || !(player.alreadyContracted || player.is_contracted),
+      );
   },
 
   getRatingSourcePriority(item = {}) {

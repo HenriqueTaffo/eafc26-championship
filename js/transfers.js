@@ -2290,9 +2290,9 @@ App.transfers = {
       document.getElementById("showContractedPlayers")?.checked,
     );
     const normalized = App.utils.normalizeText(query);
-    const limit = normalized ? 14 : 8;
+    if (!normalized) return [];
 
-    return App.api.loadMarketPlayers(query, showContracted, limit);
+    return App.api.loadMarketPlayers(query, showContracted, 14);
   },
 
   selectMarketPlayer(playerId) {
@@ -2428,6 +2428,15 @@ App.transfers = {
     if (!target) return;
 
     const query = input?.value || "";
+    if (!App.utils.normalizeText(query)) {
+      target.innerHTML = `
+        <div class="market-empty">
+          Digite o nome, clube, liga ou posição para buscar jogadores no mercado.
+        </div>
+      `;
+      return;
+    }
+
     target.innerHTML = `<div class="market-empty">Buscando jogadores no mercado...</div>`;
 
     const players = await App.transfers.searchMarketPlayers(query);
