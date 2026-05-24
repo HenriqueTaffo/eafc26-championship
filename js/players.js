@@ -10,11 +10,28 @@ App.players = {
   },
 
   getApprovedTransfersForBuyer(buyer) {
-    return App.transfers.getTransfersWithStats().filter(item => item.buyer === buyer && !item.isBlockedDuplicate);
+    return App.transfers.getValidTransfers().filter(item => item.buyer === buyer);
   },
 
   getSpentByBuyer(buyer) {
     return App.players.getApprovedTransfersForBuyer(buyer).reduce((sum, item) => sum + item.totalCost, 0);
+  },
+
+  getFinanceForecastForBuyer(buyer) {
+    return (App.state.apiFinanceForecast || []).find(
+      item =>
+        App.utils.normalizeText(item.manager_name || item.managerName) ===
+        App.utils.normalizeText(buyer),
+    ) || null;
+  },
+
+  getWeeklyPayrollForBuyer(buyer, transfers = []) {
+    const forecast = App.players.getFinanceForecastForBuyer(buyer);
+    const forecastPayroll = Number(forecast?.payroll_weekly ?? forecast?.payrollWeekly);
+    if (Number.isFinite(forecastPayroll) && forecastPayroll > 0) {
+      return forecastPayroll;
+    }
+    return transfers.reduce((sum, item) => sum + App.transfers.estimateWeeklySalary(item), 0);
   },
 
   getBudgetBreakdown(budget, spent) {
@@ -809,7 +826,7 @@ App.players = {
     const objectives = App.players.getCoachObjectives(activeTeam, standing, budget, transfers);
     const morale = App.players.getCoachMorale(activeTeam, standing, budget, injuries, recentForm);
     const fairPlay = App.players.getFairPlayFlags(budget, transfers);
-    const payrollWeekly = transfers.reduce((sum, item) => sum + App.transfers.estimateWeeklySalary(item), 0);
+    const payrollWeekly = App.players.getWeeklyPayrollForBuyer(activeTeam.owner, transfers);
     const runwayWeeks = payrollWeekly > 0
       ? Math.floor(Math.max(0, Number(budget.remainingBudget ?? App.config.transferBudget)) / payrollWeekly)
       : null;
@@ -859,7 +876,9 @@ App.players = {
     const budget = budgetInfo[activeTeam.owner] || {};
     const spent = App.players.getSpentByBuyer(activeTeam.owner);
     const breakdown = App.players.getBudgetBreakdown(budget, spent);
-    const transfers = App.players.getApprovedTransfersForBuyer(activeTeam.owner).slice(0, 6);
+    const transfers = App.players.getApprovedTransfersForBuyer(activeTeam.owner);
+    const visibleTransfers = transfers.slice(0, 6);
+    const payrollWeekly = App.players.getWeeklyPayrollForBuyer(activeTeam.owner, transfers);
     const next = App.players.getNextMatchForTeam(activeTeam.team);
     const recentForm = App.players.getRecentForm(activeTeam.team);
     const todayCount = App.transfers.getTodayTransferCountByBuyer(activeTeam.owner);
@@ -936,7 +955,7 @@ App.players = {
           ${canViewPrivate ? `
             <article><span>Saldo mercado</span><strong>${App.utils.formatCurrency(breakdown.available)}</strong><small>Gasto ${App.utils.formatCurrency(breakdown.spent)}</small></article>
             <article><span>Transfers hoje</span><strong>${todayCount}/${transferLimit}</strong><small>${transfers.length} totais válidas</small></article>
-            <article><span>Folha semanal</span><strong>${App.utils.formatCurrency(transfers.reduce((sum, item) => sum + App.transfers.estimateWeeklySalary(item), 0))}</strong><small>Estimativa por elenco contratado</small></article>
+            <article><span>Folha semanal</span><strong>${App.utils.formatCurrency(payrollWeekly)}</strong><small>Estimativa por elenco contratado</small></article>
           ` : ""}
         </section>
 
@@ -967,7 +986,7 @@ App.players = {
                 <h2>Mercado do técnico</h2>
                 <span class="coach-section-kicker">${transfers.length} contratação(ões)</span>
               </div>
-              ${App.players.renderCoachTransferDeck(transfers)}
+              ${App.players.renderCoachTransferDeck(visibleTransfers)}
             </article>
 
             <article class="coach-panel-card coach-event-radar-card">

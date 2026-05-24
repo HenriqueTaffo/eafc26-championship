@@ -940,12 +940,14 @@ App.api = {
       if (data.dailyTransferLimit !== undefined)
         App.config.baseDailyTransferLimit = Number(data.dailyTransferLimit);
 
-      const [budgetReconciliation, sponsorshipRewardTotals] = await Promise.all(
-        [
-          App.api.loadBudgetReconciliation(),
-          App.api.loadSponsorshipRewardTotals(),
-        ],
-      );
+      const [
+        budgetReconciliation,
+        sponsorshipRewardTotals,
+      ] = await Promise.all([
+        App.api.loadBudgetReconciliation(),
+        App.api.loadSponsorshipRewardTotals(),
+        App.api.loadFinanceRulesAndForecast?.(),
+      ]);
 
       App.state.apiResults = data.results || [];
       App.state.apiTransfers = (data.transfers || []).filter(
