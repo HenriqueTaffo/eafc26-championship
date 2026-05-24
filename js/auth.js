@@ -1107,45 +1107,81 @@ App.auth = {
         </div>
 
         ${active.length ? `
-          <div class="sponsor-active-list">
+          <div class="sponsor-active-list sponsor-portfolio-list">
             ${active.map(item => {
               const cadence = App.auth.getSponsorshipCadence(item);
               const claimLabel = cadence ? "parcelas" : "bônus";
               const paidTotal = Number(item.paid_total || item.paidTotal || 0);
               const signingPaidAt = App.auth.parseSponsorshipDate(item.signing_paid_at || item.signingPaidAt);
               const toneClass = cadence === "monthly" ? "monthly" : cadence === "weekly" ? "weekly" : "goal";
+              const sponsorName = item.sponsor_name || item.sponsorName || "Marca";
+              const rewardValue = Number(item.reward_value || item.rewardValue || 0);
+              const signingBonus = Number(item.signing_bonus || item.signingBonus || 0);
+              const claimsUsed = Number(item.claims_used || item.claimsUsed || 0);
+              const maxClaims = Number(item.max_claims || item.maxClaims || 0);
+              const progress = maxClaims > 0 ? Math.min(100, Math.round((claimsUsed / maxClaims) * 100)) : 0;
+              const schedule = App.auth.getRecurringSponsorshipSchedule(item);
+              const nextPaymentLabel = schedule?.nextPaymentAt
+                ? App.utils.formatDate(schedule.nextPaymentAt)
+                : schedule ? "contrato completo" : App.auth.getSponsorshipConditionLabel(item);
+              const primaryLabel = cadence === "monthly"
+                ? "Parcela mensal"
+                : cadence === "weekly" ? "Parcela semanal" : "Bônus por meta";
+              const frequencyLabel = App.auth.getSponsorshipFrequencyLabel(item);
+              const dealStyle = item.deal_style || item.dealStyle || item.risk_level || item.riskLevel || "Contrato ativo";
+              const contractTotal = App.auth.getSponsorshipTotalValue(item);
 
               return `
               <div class="sponsor-active-item sponsor-active-item-${toneClass}">
-                <div class="sponsor-card-top">
-                  <span>${App.utils.escapeHtml(item.category || "Patrocínio")}</span>
-                  <b class="sponsor-cadence-badge ${App.auth.getSponsorshipCadenceClass(item)}">${App.utils.escapeHtml(App.auth.getSponsorshipCadenceLabel(item))}</b>
-                  <b>${App.utils.escapeHtml(item.deal_style || item.dealStyle || item.risk_level || item.riskLevel || "Contrato ativo")}</b>
-                </div>
-                  <strong>${App.utils.escapeHtml(item.title)}</strong>
-                  <em>${App.utils.escapeHtml(item.sponsor_name || item.sponsorName)}</em>
-                  <div class="sponsor-value-strip">
-                    <div>
-                      <span>Luva</span>
-                      <strong>${App.utils.formatCurrency(item.signing_bonus || item.signingBonus || 0)}</strong>
-                      <small>${signingPaidAt ? `paga em ${App.utils.formatDate(signingPaidAt)}` : "pagamento inicial"}</small>
-                    </div>
-                    <div>
-                      <span>${cadence ? "Parcela" : "Bônus"}</span>
-                      <strong>${App.utils.formatCurrency(item.reward_value || item.rewardValue || 0)}</strong>
-                      <small>${App.auth.getSponsorshipFrequencyLabel(item)}</small>
-                    </div>
-                    <div>
-                      <span>Total pago</span>
-                      <strong>${App.utils.formatCurrency(paidTotal)}</strong>
-                      <small>${Number(item.claims_used || 0)}/${Number(item.max_claims || 0)} ${claimLabel}</small>
-                    </div>
+                <div class="sponsor-brand-shell">
+                  <span class="sponsor-brand-mark">${App.utils.escapeHtml(App.auth.getSponsorInitials(sponsorName))}</span>
+                  <div class="sponsor-brand-copy">
+                    <span>${App.utils.escapeHtml(item.category || "Patrocínio")}</span>
+                    <strong>${App.utils.escapeHtml(item.title)}</strong>
+                    <em>${App.utils.escapeHtml(sponsorName)}</em>
                   </div>
-                  <p class="sponsor-condition-line">
-                    Critério: ${App.utils.escapeHtml(App.auth.getSponsorshipConditionLabel(item))}
-                    ${Number(item.termination_fee || 0) > 0 ? ` · multa atual ${App.utils.formatCurrency(item.termination_fee)}` : ""}
-                  </p>
-                  ${App.auth.renderSponsorshipPaymentSchedule(item)}
+                  <div class="sponsor-badge-stack">
+                    <b class="sponsor-cadence-badge ${App.auth.getSponsorshipCadenceClass(item)}">${App.utils.escapeHtml(App.auth.getSponsorshipCadenceLabel(item))}</b>
+                    <b>${App.utils.escapeHtml(dealStyle)}</b>
+                  </div>
+                </div>
+
+                <div class="sponsor-contract-hero">
+                  <span>${primaryLabel}</span>
+                  <strong>${App.utils.formatCurrency(rewardValue)} <small>${App.utils.escapeHtml(frequencyLabel)}</small></strong>
+                  <p>${cadence ? `Próximo pagamento: ${App.utils.escapeHtml(nextPaymentLabel)}` : App.utils.escapeHtml(nextPaymentLabel)}</p>
+                </div>
+
+                <div class="sponsor-terms-row">
+                  <span>
+                    <b>Luva</b>
+                    <strong>${App.utils.formatCurrency(signingBonus)}</strong>
+                    <small>${signingPaidAt ? `paga em ${App.utils.formatDate(signingPaidAt)}` : "pagamento inicial"}</small>
+                  </span>
+                  <span>
+                    <b>Total pago</b>
+                    <strong>${App.utils.formatCurrency(paidTotal)}</strong>
+                    <small>${claimsUsed}/${maxClaims} ${claimLabel}</small>
+                  </span>
+                  <span>
+                    <b>Potencial</b>
+                    <strong>${App.utils.formatCurrency(contractTotal)}</strong>
+                    <small>teto do contrato</small>
+                  </span>
+                </div>
+
+                <div class="sponsor-progress-row">
+                  <div>
+                    <span>Contrato utilizado</span>
+                    <b>${progress}%</b>
+                  </div>
+                  <i><span style="width:${progress}%"></span></i>
+                </div>
+
+                <p class="sponsor-condition-line">
+                  ${App.utils.escapeHtml(App.auth.getSponsorshipConditionLabel(item))}
+                  ${Number(item.termination_fee || 0) > 0 ? ` · multa atual ${App.utils.formatCurrency(item.termination_fee)}` : ""}
+                </p>
                 </div>
               `;
             }).join("")}
@@ -1185,37 +1221,49 @@ App.auth = {
                     const toneClass = cadence === "monthly" ? "monthly" : cadence === "weekly" ? "weekly" : "goal";
                     const cadenceLabel = App.auth.getSponsorshipCadenceLabel(offer);
                     const cadenceClass = App.auth.getSponsorshipCadenceClass(offer);
+                    const frequencyLabel = App.auth.getSponsorshipFrequencyLabel(offer);
+                    const offerStyle = offer.dealStyle || frequencyLabel;
 
                     return `
                       <article class="sponsor-offer-card sponsor-offer-card-${toneClass}">
-                        <div class="sponsor-card-top">
-                          <span>${App.utils.escapeHtml(offer.riskLevel || "Meta comercial")}</span>
-                          <b class="sponsor-cadence-badge ${cadenceClass}">${App.utils.escapeHtml(cadenceLabel)}</b>
-                          <b>${App.utils.escapeHtml(offer.dealStyle || App.auth.getSponsorshipFrequencyLabel(offer))}</b>
+                        <div class="sponsor-brand-shell sponsor-offer-shell">
+                          <span class="sponsor-brand-mark">${App.utils.escapeHtml(App.auth.getSponsorInitials(offer.sponsorName))}</span>
+                          <div class="sponsor-brand-copy">
+                            <span>${App.utils.escapeHtml(offer.riskLevel || "Meta comercial")}</span>
+                            <strong>${App.utils.escapeHtml(offer.title)}</strong>
+                            <em>${App.utils.escapeHtml(offer.sponsorName)}</em>
+                          </div>
+                          <div class="sponsor-badge-stack">
+                            <b class="sponsor-cadence-badge ${cadenceClass}">${App.utils.escapeHtml(cadenceLabel)}</b>
+                            <b>${App.utils.escapeHtml(offerStyle)}</b>
+                          </div>
                         </div>
-                        <strong>${App.utils.escapeHtml(offer.title)}</strong>
-                        <em>${App.utils.escapeHtml(offer.sponsorName)}</em>
-                        <p>${App.utils.escapeHtml(offer.description)}</p>
-                        <div class="sponsor-value-strip">
-                          <div>
-                            <span>Luva agora</span>
+                        <p class="sponsor-offer-story">${App.utils.escapeHtml(offer.description)}</p>
+                        <div class="sponsor-contract-hero sponsor-offer-hero">
+                          <span>Total possível</span>
+                          <strong>${App.utils.formatCurrency(totalValue)} <small>${Number(offer.maxClaims || 0)} pagamento(s)</small></strong>
+                          <p>
+                            ${App.utils.escapeHtml(offer.conditionLabel || "Meta cumprida")}
+                            ${offer.isReplacement ? ` · substitui ${App.utils.escapeHtml(offer.currentSponsorName || "contrato atual")}` : ""}
+                          </p>
+                        </div>
+                        <div class="sponsor-terms-row sponsor-offer-terms">
+                          <span>
+                            <b>Luva agora</b>
                             <strong>${App.utils.formatCurrency(offer.signingBonus || 0)}</strong>
-                          </div>
-                          <div>
-                            <span>${cadence ? "Parcela" : "Bônus"}</span>
+                            <small>entrada imediata</small>
+                          </span>
+                          <span>
+                            <b>${cadence ? "Parcela" : "Bônus"}</b>
                             <strong>${App.utils.formatCurrency(offer.rewardValue || 0)}</strong>
-                            <small>${App.auth.getSponsorshipFrequencyLabel(offer)}</small>
-                          </div>
-                          <div>
-                            <span>Teto</span>
-                            <strong>${App.utils.formatCurrency(totalValue)}</strong>
-                            <small>${Number(offer.maxClaims || 0)} pagamento(s)</small>
-                          </div>
+                            <small>${frequencyLabel}</small>
+                          </span>
+                          <span>
+                            <b>${offer.isReplacement ? "Multa" : "Vaga"}</b>
+                            <strong>${offer.isReplacement ? App.utils.formatCurrency(offer.terminationFee || 0) : "Livre"}</strong>
+                            <small>${offer.isReplacement ? "rescisão atual" : "sem troca de marca"}</small>
+                          </span>
                         </div>
-                        <small class="sponsor-offer-detail">
-                          ${App.utils.escapeHtml(offer.conditionLabel || "Meta cumprida")}
-                          ${offer.isReplacement ? ` · substitui ${App.utils.escapeHtml(offer.currentSponsorName || "contrato atual")} por ${App.utils.formatCurrency(offer.terminationFee || 0)}` : ""}
-                        </small>
                         <button type="button" data-sponsor-offer="${App.utils.escapeHtml(offer.id)}" data-sponsor-fee="${Number(offer.terminationFee || 0)}" data-sponsor-replacement="${offer.isReplacement ? "true" : "false"}" data-sponsor-signing="${Number(offer.signingBonus || 0)}" data-sponsor-reward="${Number(offer.rewardValue || 0)}" data-sponsor-cadence="${App.utils.escapeHtml(cadence || "goal")}">
                           ${offer.isReplacement ? "Trocar marca" : "Assinar contrato"}
                         </button>
@@ -1264,6 +1312,20 @@ App.auth = {
     };
 
     return labels[condition] || "Meta comercial cumprida";
+  },
+
+  getSponsorInitials(name = "") {
+    const words = String(name || "Marca")
+      .replace(/[^\p{L}\p{N}\s]/gu, " ")
+      .trim()
+      .split(/\s+/)
+      .filter(Boolean);
+    if (!words.length) return "M";
+    return words
+      .slice(0, 2)
+      .map(word => word.charAt(0))
+      .join("")
+      .toUpperCase();
   },
 
   getSponsorshipCadence(item = {}) {
