@@ -48,8 +48,6 @@ App.transfers = {
   manualPlayerAvatarOverrides: [
     {
       name: "Jeremie Frimpong",
-      club: "Liverpool Football Club",
-      requiresClub: true,
       avatar_url:
         "https://img.a.transfermarkt.technology/portrait/big/484547-1689710682.jpg?lm=1",
       source_url:
@@ -73,6 +71,12 @@ App.transfers = {
       source_url:
         "https://www.transfermarkt.co.uk/talisca/profil/spieler/258626",
       source_name: "Transfermarkt portrait override",
+    },
+    {
+      name: "Barış Alper Yılmaz",
+      avatar_url: "https://cdn.sofifa.net/players/263/205/26_240.png",
+      source_url: "https://sofifa.com/player/263205/baris-alper-yilmaz",
+      source_name: "SoFIFA portrait override",
     },
   ],
 
@@ -1331,6 +1335,43 @@ App.transfers = {
       .slice(0, limit);
   },
 
+  hydratePlayerPortraitsForTransfers(transfers = []) {
+    const names = [
+      ...new Set(
+        (transfers || [])
+          .map((item) => item?.player)
+          .map((name) => String(name || "").trim())
+          .filter(Boolean),
+      ),
+    ].slice(0, 12);
+
+    if (!names.length || !App.api?.loadMarketPlayersForNames) return;
+
+    const hydrationKey = [...names].sort().join("|");
+    if (
+      App.transfers.portraitHydrationKey === hydrationKey ||
+      App.transfers.portraitHydrationRunning === hydrationKey
+    )
+      return;
+
+    App.transfers.portraitHydrationRunning = hydrationKey;
+    App.api
+      .loadMarketPlayersForNames(names, 2)
+      .then(() => App.api?.loadRatingsForPlayerNames?.(names, 2))
+      .then(() => {
+        App.transfers.portraitHydrationKey = hydrationKey;
+        App.main?.renderAll?.();
+      })
+      .catch((error) => {
+        console.warn("Fotos de jogadores indisponiveis:", error);
+      })
+      .finally(() => {
+        if (App.transfers.portraitHydrationRunning === hydrationKey) {
+          App.transfers.portraitHydrationRunning = "";
+        }
+      });
+  },
+
   getTransferOverall(item) {
     const transferOverall = Number(item?.overall || 0);
     if (transferOverall > 0) return transferOverall;
@@ -2003,6 +2044,7 @@ App.transfers = {
 
     const data = App.transfers.getRecentTransferMovements(5);
     const impactTransfers = App.transfers.getImpactTransferSpotlights(3);
+    App.transfers.hydratePlayerPortraitsForTransfers([...data, ...impactTransfers]);
 
     if (!data.length) {
       target.innerHTML = `
