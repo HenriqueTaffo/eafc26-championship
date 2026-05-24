@@ -344,6 +344,9 @@
 .sponsor-brand-mark {
   display: grid;
   place-items: center;
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
   width: 52px;
   height: 52px;
   border: 1px solid color-mix(in srgb, var(--sponsor-accent, #2dd4bf), transparent 45%);
@@ -354,6 +357,92 @@
   font-size: 17px;
   font-weight: 1000;
   letter-spacing: 0;
+}
+
+.sponsor-brand-mark::after {
+  content: "";
+  position: absolute;
+  inset: 1px;
+  z-index: -1;
+  border-radius: inherit;
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, .16), transparent 42%),
+    radial-gradient(circle at 72% 24%, rgba(255, 255, 255, .18), transparent 28%);
+  opacity: .75;
+}
+
+.sponsor-brand-icon {
+  width: 28px;
+  height: 28px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.sponsor-brand-initial {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+}
+
+.sponsor-brand-mark-adidas,
+.sponsor-brand-mark-kit {
+  color: #f8fafc;
+  background: linear-gradient(145deg, rgba(15, 23, 42, .88), rgba(21, 128, 61, .44));
+}
+
+.sponsor-brand-mark-adidas .sponsor-brand-icon path:first-child {
+  fill: currentColor;
+  stroke: none;
+}
+
+.sponsor-brand-mark-aurora {
+  color: #fde68a;
+  background: linear-gradient(145deg, rgba(120, 53, 15, .78), rgba(217, 119, 6, .44));
+}
+
+.sponsor-brand-mark-xperia,
+.sponsor-brand-mark-media {
+  color: #bfdbfe;
+  background: linear-gradient(145deg, rgba(15, 23, 42, .90), rgba(29, 78, 216, .48));
+}
+
+.sponsor-brand-mark-airline {
+  color: #bae6fd;
+  background: linear-gradient(145deg, rgba(12, 74, 110, .82), rgba(14, 165, 233, .35));
+}
+
+.sponsor-brand-mark-finance {
+  color: #fef3c7;
+  background: linear-gradient(145deg, rgba(113, 63, 18, .78), rgba(217, 119, 6, .38));
+}
+
+.sponsor-brand-mark-fortress {
+  color: #c4b5fd;
+  background: linear-gradient(145deg, rgba(46, 16, 101, .82), rgba(124, 58, 237, .42));
+}
+
+.sponsor-brand-mark-odds {
+  color: #bbf7d0;
+  background: linear-gradient(145deg, rgba(20, 83, 45, .82), rgba(22, 163, 74, .42));
+}
+
+.sponsor-brand-mark-motors {
+  color: #fecaca;
+  background: linear-gradient(145deg, rgba(127, 29, 29, .82), rgba(220, 38, 38, .42));
+}
+
+.sponsor-brand-mark-logistics {
+  color: #fde68a;
+  background: linear-gradient(145deg, rgba(113, 63, 18, .82), rgba(234, 179, 8, .36));
+}
+
+.sponsor-brand-mark-performance {
+  color: #a7f3d0;
+  background: linear-gradient(145deg, rgba(6, 78, 59, .82), rgba(20, 184, 166, .40));
 }
 
 .sponsor-brand-copy {
@@ -689,6 +778,11 @@
   height: 48px;
   border-radius: 14px;
   font-size: 15px;
+}
+
+.sponsor-offer-shell .sponsor-brand-icon {
+  width: 26px;
+  height: 26px;
 }
 
 .sponsor-offer-card p {
@@ -1105,6 +1199,12 @@
   .sponsor-offer-shell .sponsor-brand-mark {
     width: 44px;
     height: 44px;
+  }
+
+  .sponsor-brand-icon,
+  .sponsor-offer-shell .sponsor-brand-icon {
+    width: 24px;
+    height: 24px;
   }
 
   .sponsor-badge-stack {

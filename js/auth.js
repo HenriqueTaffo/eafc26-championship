@@ -1211,7 +1211,7 @@ App.auth = {
               return `
               <div class="sponsor-active-item sponsor-active-item-${toneClass}">
                 <div class="sponsor-brand-shell">
-                  <span class="sponsor-brand-mark">${App.utils.escapeHtml(App.auth.getSponsorInitials(sponsorName))}</span>
+                  ${App.auth.renderSponsorBrandMark(sponsorName)}
                   <div class="sponsor-brand-copy">
                     <span>${App.utils.escapeDisplay(item.category || "Patrocínio")}</span>
                     <strong>${App.utils.escapeDisplay(item.title)}</strong>
@@ -1304,7 +1304,7 @@ App.auth = {
                     return `
                       <article class="sponsor-offer-card sponsor-offer-card-${toneClass}">
                         <div class="sponsor-brand-shell sponsor-offer-shell">
-                          <span class="sponsor-brand-mark">${App.utils.escapeHtml(App.auth.getSponsorInitials(offer.sponsorName))}</span>
+                          ${App.auth.renderSponsorBrandMark(offer.sponsorName)}
                           <div class="sponsor-brand-copy">
                             <span>${App.utils.escapeDisplay(offer.riskLevel || "Meta comercial")}</span>
                             <strong>${App.utils.escapeDisplay(offer.title)}</strong>
@@ -1389,6 +1389,135 @@ App.auth = {
     };
 
     return labels[condition] || "Meta comercial cumprida";
+  },
+
+  renderSponsorBrandMark(name = "") {
+    const sponsorName = String(name || "Marca").trim() || "Marca";
+    const icon = App.auth.getSponsorIcon(sponsorName);
+    const label = App.utils.escapeDisplay(sponsorName);
+
+    return `
+      <span class="sponsor-brand-mark sponsor-brand-mark-${App.utils.escapeHtml(icon.key)}" title="${label}" aria-label="${label}">
+        ${icon.mark}
+      </span>
+    `;
+  },
+
+  makeSponsorIcon(key, shape) {
+    return {
+      key,
+      mark: `
+        <svg class="sponsor-brand-icon" viewBox="0 0 32 32" aria-hidden="true" focusable="false">
+          ${shape}
+        </svg>
+      `
+    };
+  },
+
+  getSponsorIcon(name = "") {
+    const normalized = App.utils.normalizeText(name);
+    const iconMap = [
+      {
+        keys: ["adidas"],
+        icon: App.auth.makeSponsorIcon("adidas", `
+          <path d="M7 23h4V10H7v13Zm7 0h4V7h-4v16Zm7 0h4V13h-4v10Z" />
+          <path d="M5 25h22" />
+        `)
+      },
+      {
+        keys: ["aurora"],
+        icon: App.auth.makeSponsorIcon("aurora", `
+          <path d="M7 21a9 9 0 0 1 18 0" />
+          <path d="M16 5v5M6 12l4 3M26 12l-4 3M5 24h22" />
+        `)
+      },
+      {
+        keys: ["nova"],
+        icon: App.auth.makeSponsorIcon("nova", `
+          <path d="M8 23V9l8 14 8-14v14" />
+          <path d="M10 9h5M17 23h5" />
+        `)
+      },
+      {
+        keys: ["sony", "xperia"],
+        icon: App.auth.makeSponsorIcon("xperia", `
+          <rect x="9" y="5" width="14" height="22" rx="4" />
+          <path d="M13 22h6M14 10h4" />
+        `)
+      },
+      {
+        keys: ["emirates", "etihad", "voasul"],
+        icon: App.auth.makeSponsorIcon("airline", `
+          <path d="M5 18 27 6l-7 20-5-8-8 4 4-7-6 3Z" />
+        `)
+      },
+      {
+        keys: ["redwood", "atlas", "banco", "capital"],
+        icon: App.auth.makeSponsorIcon("finance", `
+          <path d="M5 13 16 6l11 7H5Z" />
+          <path d="M8 14v10M14 14v10M20 14v10M26 14v10M6 25h22" />
+        `)
+      },
+      {
+        keys: ["fortress"],
+        icon: App.auth.makeSponsorIcon("fortress", `
+          <path d="M8 25V10h4V7h4v3h4V7h4v18" />
+          <path d="M8 14h16M14 25v-6a2 2 0 0 1 4 0v6" />
+        `)
+      },
+      {
+        keys: ["spotify", "streamplay", "prime video", "netflix", "twitch", "primecam"],
+        icon: App.auth.makeSponsorIcon("media", `
+          <rect x="5" y="8" width="22" height="16" rx="4" />
+          <path d="m14 13 7 3-7 3v-6Z" />
+        `)
+      },
+      {
+        keys: ["betfair"],
+        icon: App.auth.makeSponsorIcon("odds", `
+          <path d="M10 23V9M10 9l-4 4M10 9l4 4" />
+          <path d="M22 9v14M22 23l-4-4M22 23l4-4" />
+        `)
+      },
+      {
+        keys: ["pioneer", "motors"],
+        icon: App.auth.makeSponsorIcon("motors", `
+          <circle cx="16" cy="16" r="9" />
+          <circle cx="16" cy="16" r="3" />
+          <path d="M16 7v6M16 19v6M7 16h6M19 16h6" />
+        `)
+      },
+      {
+        keys: ["dhl", "maersk", "cargo"],
+        icon: App.auth.makeSponsorIcon("logistics", `
+          <path d="M5 20h16V10H5v10Zm16-6h4l3 3v3h-7v-6Z" />
+          <circle cx="10" cy="23" r="2" />
+          <circle cx="24" cy="23" r="2" />
+          <path d="M7 14h8M7 17h6" />
+        `)
+      },
+      {
+        keys: ["castore", "hummel", "umbra"],
+        icon: App.auth.makeSponsorIcon("kit", `
+          <path d="M11 7h10l5 5-4 4-2-2v11H12V14l-2 2-4-4 5-5Z" />
+          <path d="M13 7a3 3 0 0 0 6 0" />
+        `)
+      },
+      {
+        keys: ["red bull", "volt", "neurofit", "ironlab", "apex", "medcore"],
+        icon: App.auth.makeSponsorIcon("performance", `
+          <path d="M16 5v8h7L13 27v-9H6L16 5Z" />
+        `)
+      }
+    ];
+
+    const found = iconMap.find(item => item.keys.some(key => normalized.includes(key)));
+    if (found) return found.icon;
+
+    return {
+      key: "generic",
+      mark: `<span class="sponsor-brand-initial" aria-hidden="true">${App.utils.escapeHtml(App.auth.getSponsorInitials(name))}</span>`
+    };
   },
 
   getSponsorInitials(name = "") {
