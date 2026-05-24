@@ -45,6 +45,29 @@ App.transfers = {
     "lucas torreira": 10000000,
   },
 
+  manualPlayerAvatarOverrides: [
+    {
+      name: "Jeremie Frimpong",
+      club: "Liverpool Football Club",
+      requiresClub: true,
+      avatar_url:
+        "https://img.a.transfermarkt.technology/portrait/big/484547-1689710682.jpg?lm=1",
+      source_url:
+        "https://www.transfermarkt.co.uk/jeremie-frimpong/profil/spieler/484547",
+      source_name: "Transfermarkt portrait override",
+    },
+    {
+      name: "Gabriel Silva",
+      club: "Sporting Clube de Portugal",
+      requiresClub: true,
+      avatar_url:
+        "https://img.a.transfermarkt.technology/portrait/big/1006454-1771959088.jpg?lm=1",
+      source_url:
+        "https://www.transfermarkt.co.uk/gabriel-silva/profil/spieler/1006454",
+      source_name: "Transfermarkt portrait override",
+    },
+  ],
+
   manualPlayerRatings: {
     "david de gea": {
       name: "David De Gea Quintana",
@@ -420,6 +443,27 @@ App.transfers = {
     return manualKey ? App.transfers.manualPlayerRatings[manualKey] : null;
   },
 
+  getManualPlayerAvatarOverride(playerName, context = {}) {
+    const keys = App.transfers
+      .getPlayerSearchAliases(playerName)
+      .map(App.transfers.normalizePlayerRatingKey);
+    const clubKey = App.utils.normalizeText(
+      context?.club || context?.fromClub || context?.clubName || "",
+    );
+
+    return (
+      App.transfers.manualPlayerAvatarOverrides.find((item) => {
+        const nameKey = App.transfers.normalizePlayerRatingKey(item.name);
+        const itemClubKey = App.utils.normalizeText(item.club || "");
+        if (!keys.includes(nameKey)) return false;
+        if (item.requiresClub && (!clubKey || itemClubKey !== clubKey)) {
+          return false;
+        }
+        return !itemClubKey || !clubKey || itemClubKey === clubKey;
+      }) || null
+    );
+  },
+
   applyManualRatingFallback(rating, playerName) {
     const manual = App.transfers.getManualPlayerRating(playerName);
     if (!manual) return rating || null;
@@ -653,8 +697,15 @@ App.transfers = {
   },
 
   getPlayerAvatarCandidates(player, rating = null) {
+    const manualAvatar = App.transfers.getManualPlayerAvatarOverride(
+      player?.name || rating?.name,
+      {
+        club: player?.club || rating?.club || "",
+      },
+    );
     const manual = App.transfers.getManualPlayerRating(player?.name || rating?.name);
     const candidates = [
+      manualAvatar?.avatar_url,
       rating?.avatar_url,
       manual?.avatar_url,
       player?.avatar_url,
@@ -718,10 +769,34 @@ App.transfers = {
   getRatingForPlayerName(playerName, context = {}) {
     const marketPlayer = App.transfers.findMarketPlayerByName(playerName, context);
     const marketAvatar = App.transfers.getMarketPlayerAvatar(marketPlayer);
+    const manualAvatar = App.transfers.getManualPlayerAvatarOverride(
+      playerName,
+      context,
+    );
+    const rating = App.transfers.findEaRatingForMarketPlayer(
+      marketPlayer || { name: playerName, club: context?.club || "" },
+    );
+    const ratingWithManualAvatar =
+      rating && manualAvatar
+        ? {
+            ...rating,
+            avatar_url: manualAvatar.avatar_url,
+            source_url: manualAvatar.source_url || rating.source_url,
+            source_name: manualAvatar.source_name || rating.source_name,
+          }
+        : rating;
+
     return (
-      App.transfers.findEaRatingForMarketPlayer(
-        marketPlayer || { name: playerName, club: context?.club || "" },
-      ) ||
+      ratingWithManualAvatar ||
+      (manualAvatar
+        ? {
+            name: manualAvatar.name,
+            club: manualAvatar.club,
+            avatar_url: manualAvatar.avatar_url,
+            source_url: manualAvatar.source_url,
+            source_name: manualAvatar.source_name,
+          }
+        : null) ||
       (marketPlayer?.avatar_url || marketAvatar
         ? {
             name: marketPlayer.name,
