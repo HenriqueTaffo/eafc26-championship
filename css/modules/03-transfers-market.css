@@ -1096,6 +1096,43 @@
   min-height: auto;
 }
 
+.transfer-exchange-box {
+  display: grid;
+  grid-template-columns: minmax(160px, .8fr) minmax(220px, 1.2fr);
+  gap: 12px;
+  align-items: end;
+  padding: 14px;
+  border: 1px solid rgba(45,212,191,.18);
+  border-radius: 8px;
+  background:
+    linear-gradient(180deg, rgba(45,212,191,.055), transparent 76%),
+    rgba(2,6,23,.22);
+}
+
+.transfer-exchange-box > div {
+  display: grid;
+  gap: 4px;
+}
+
+.transfer-exchange-box > div span,
+.transfer-exchange-box small {
+  color: #94a3b8;
+  font-size: 12px;
+}
+
+.transfer-exchange-box > div strong {
+  color: #e5e7eb;
+  font-size: 15px;
+}
+
+.transfer-exchange-box label {
+  min-height: auto;
+}
+
+.transfer-exchange-box small {
+  grid-column: 1 / -1;
+}
+
 .market-player-results {
   scrollbar-color: rgba(148,163,184,.45) rgba(2,6,23,.26);
 }
@@ -1116,6 +1153,10 @@
   .market-player-toolbar {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .transfer-exchange-box {
+    grid-template-columns: 1fr;
   }
 
   .market-player-option {

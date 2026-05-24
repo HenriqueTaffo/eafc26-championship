@@ -843,6 +843,10 @@ App.transfers = {
             row.final_value ??
             0,
         );
+        const grossFinalValue = Number(row.ValorFinal ?? row.final_value ?? 0);
+        const tradeInCredit = !isCpuSale && negotiatedValue > 0
+          ? Math.max(0, grossFinalValue - negotiatedValue)
+          : 0;
 
         return {
           id: row.Id || row.id || "",
@@ -855,6 +859,9 @@ App.transfers = {
           overall: Number(row.Overall),
           marketValue: Number(isCpuSale ? negotiatedValue : row.ValorTransfermarkt),
           negotiatedValue,
+          grossFinalValue,
+          tradeInCredit,
+          cashValue: !isCpuSale && negotiatedValue > 0 ? negotiatedValue : 0,
           saleValue: isCpuSale ? negotiatedValue : 0,
           status: row.Status || row.status || "",
           reason: row.Motivo || row.reason || "",
@@ -1176,6 +1183,14 @@ App.transfers = {
         ? 0
         : App.transfers.getTransferRate(Number(transfer.overall));
       const totalCost =
+        transfer.cashValue ||
+        Math.max(
+          0,
+          Number(baseValue || 0) + Number(baseValue || 0) * feeRate -
+            Number(transfer.tradeInCredit || 0),
+        );
+      const grossTotalCost =
+        transfer.grossFinalValue ||
         Number(baseValue || 0) + Number(baseValue || 0) * feeRate;
       const nameKey = App.utils.normalizeText(transfer.player);
       const hasDuplicate = nameCounts[nameKey] > 1;
@@ -1199,6 +1214,7 @@ App.transfers = {
         index,
         feeRate,
         totalCost,
+        grossTotalCost,
         isCpuSale,
         hasDuplicate,
         isBlockedDuplicate,
@@ -1503,6 +1519,19 @@ App.transfers = {
     );
   },
 
+  getExchangePlayerByIndex(buyer, index) {
+    if (index === "" || index === undefined || index === null) return null;
+    return App.transfers.getOwnedTransfersByBuyer(buyer)[Number(index)] || null;
+  },
+
+  getExchangeCredit(grossValue, exchangeValue) {
+    const gross = Number(grossValue || 0);
+    const value = Number(exchangeValue || 0);
+    if (gross <= 0 || value <= 0) return 0;
+    const credit = Math.min(gross * .7, value * .85);
+    return Math.round(credit / 100000) * 100000;
+  },
+
   getTransferPreview(form) {
     if (!form) return null;
 
@@ -1531,6 +1560,25 @@ App.transfers = {
     const finalValue = Number.isNaN(marketValue)
       ? 0
       : marketValue + marketValue * rate;
+    const exchangePlayer =
+      !isInternal
+        ? App.transfers.getExchangePlayerByIndex(
+            buyer,
+            form.elements.exchangePlayer?.value,
+          )
+        : null;
+    const exchangeValue = Number(
+      exchangePlayer?.totalCost || exchangePlayer?.marketValue || 0,
+    );
+    const exchangeCredit = exchangePlayer
+      ? App.transfers.getExchangeCredit(finalValue, exchangeValue)
+      : 0;
+    const exchangeSamePlayer = Boolean(
+      exchangePlayer &&
+        App.transfers.normalizePlayerRatingKey(exchangePlayer.player) ===
+          App.transfers.normalizePlayerRatingKey(player),
+    );
+    const cashFinalValue = Math.max(0, finalValue - exchangeCredit);
     const duplicate = App.transfers.findExistingPlayer(player);
     const internalSellerMismatch = Boolean(
       isInternal && duplicate && seller && duplicate.buyer !== seller,
@@ -1539,7 +1587,7 @@ App.transfers = {
       isInternal && buyer && seller && buyer === seller,
     );
     const duplicateBlock = duplicate && (!isInternal || internalSellerMismatch);
-    const remainingAfter = budget ? budget.remaining - finalValue : 0;
+    const remainingAfter = budget ? budget.remaining - cashFinalValue : 0;
     const weeklySalary = App.transfers.estimateWeeklySalary({
       overall,
       marketValue,
@@ -1561,10 +1609,10 @@ App.transfers = {
       !isInternal && budget
         ? budget.transfersToday >= budget.transferLimit
         : false;
-    const overBudget = budget ? finalValue > budget.remaining : false;
+    const overBudget = budget ? cashFinalValue > budget.remaining : false;
     const hardBlock = Boolean(
       hasEnoughData &&
-      (duplicateBlock || sameBuyerAndSeller || marketEmbargo || limitReached || overBudget || payrollBlocked),
+      (duplicateBlock || sameBuyerAndSeller || exchangeSamePlayer || marketEmbargo || limitReached || overBudget || payrollBlocked),
     );
 
     return {
@@ -1578,6 +1626,11 @@ App.transfers = {
       hasEnoughData,
       rate,
       finalValue,
+      cashFinalValue,
+      exchangePlayer,
+      exchangeValue,
+      exchangeCredit,
+      exchangeSamePlayer,
       duplicate,
       duplicateBlock,
       internalSellerMismatch,
@@ -1656,6 +1709,10 @@ App.transfers = {
       messages.push("Comprador e vendedor precisam ser técnicos diferentes.");
     }
 
+    if (preview.exchangeSamePlayer) {
+      messages.push("O jogador oferecido na troca precisa ser diferente do alvo da compra.");
+    }
+
     if (preview.marketEmbargo) {
       messages.push(
         "Mercado bloqueado por dívida salarial ou saldo negativo. Venda jogadores ou aguarde receita vencida.",
@@ -1712,6 +1769,12 @@ App.transfers = {
       messages.push("A folha pós-compra deixa pouco fôlego de caixa para as próximas semanas.");
     }
 
+    if (preview.exchangePlayer && preview.exchangeCredit > 0) {
+      messages.push(
+        `${preview.exchangePlayer.player} entra como troca e abate ${App.utils.formatCurrency(preview.exchangeCredit)} do pagamento em dinheiro.`,
+      );
+    }
+
     if (submitButton && !submitButton.dataset.submitting) {
       submitButton.disabled = preview.hardBlock;
     }
@@ -1732,6 +1795,19 @@ App.transfers = {
         label: preview.isInternal ? "Valor negociado" : "Custo final",
         value: App.utils.formatCurrency(preview.finalValue),
       },
+      ...(preview.exchangePlayer
+        ? [
+            {
+              label: "Abatimento troca",
+              value: App.utils.formatCurrency(preview.exchangeCredit),
+              tone: "warning",
+            },
+            {
+              label: "Dinheiro a pagar",
+              value: App.utils.formatCurrency(preview.cashFinalValue),
+            },
+          ]
+        : []),
       {
         label: "Saldo após compra",
         value: App.utils.formatCurrency(preview.remainingAfter),
@@ -1807,11 +1883,46 @@ App.transfers = {
     if (!isInternal) {
       if (form.elements.seller) form.elements.seller.value = "";
       App.transfers.populateInternalTransferPlayers(form);
+      App.transfers.populateExchangePlayers(form);
       return;
     }
 
     App.transfers.populateInternalTransferPlayers(form);
+    App.transfers.populateExchangePlayers(form);
     App.transfers.selectInternalTransferPlayer(form);
+  },
+
+  populateExchangePlayers(form) {
+    const select = document.getElementById("transferExchangePlayer");
+    const hint = document.getElementById("transferExchangeHint");
+    if (!select || !form) return;
+
+    const buyer = form.elements.buyer?.value || "";
+    const players = buyer
+      ? App.transfers.getOwnedTransfersByBuyer(buyer)
+      : [];
+    const currentValue = select.value;
+
+    select.innerHTML = `
+      <option value="">Sem jogador na troca</option>
+      ${players
+        .map(
+          (item, index) => `
+        <option value="${index}">${App.utils.escapeHtml(item.player)} · ${App.utils.formatCurrency(item.totalCost)}</option>
+      `,
+        )
+        .join("")}
+    `;
+
+    if ([...select.options].some((option) => option.value === currentValue)) {
+      select.value = currentValue;
+    }
+
+    if (hint) {
+      hint.textContent = players.length
+        ? "Opcional. O abatimento aparece na prévia antes do envio."
+        : "Este comprador ainda não tem jogadores disponíveis para troca.";
+    }
   },
 
   populateInternalTransferPlayers(form) {
@@ -1953,8 +2064,9 @@ App.transfers = {
           const destinationLabel = isCpuSale ? App.transfers.getCpuSaleDestination(item) : "";
           const marketValue = Number(item.marketValue || 0);
           const feePercent = Math.round(Number(item.feeRate || 0) * 100);
+          const tradeInCredit = Number(item.tradeInCredit || 0);
           const valueBreakdown = marketValue
-            ? `Base ${App.utils.formatCurrency(marketValue)}${feePercent ? ` + ${feePercent}% OVR` : ""}`
+            ? `Base ${App.utils.formatCurrency(marketValue)}${feePercent ? ` + ${feePercent}% OVR` : ""}${tradeInCredit ? ` · troca -${App.utils.formatCurrency(tradeInCredit)}` : ""}`
             : "Base não informada";
           const movementClass = [
             isImpact ? "is-impact-transfer" : "",

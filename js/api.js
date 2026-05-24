@@ -1160,8 +1160,11 @@ App.api = {
         );
       }
 
+      const hasTradeIn =
+        payload.tradeInPlayer && Number(payload.tradeInCredit || 0) > 0;
+
       return App.api.rpc(
-        "app_add_transfer",
+        hasTradeIn ? "app_add_transfer_with_trade" : "app_add_transfer",
         {
           ...App.api.getAuthPayload(),
           p_buyer: payload.buyer,
@@ -1169,6 +1172,12 @@ App.api = {
           p_from_club: payload.fromClub,
           p_overall: Number(payload.overall),
           p_market_value: Number(payload.marketValue),
+          ...(hasTradeIn
+            ? {
+                p_trade_in_player: payload.tradeInPlayer,
+                p_trade_in_credit: Number(payload.tradeInCredit || 0),
+              }
+            : {}),
         },
         45000,
       );

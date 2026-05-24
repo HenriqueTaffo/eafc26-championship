@@ -208,6 +208,10 @@ App.forms = {
         }
         payload.managerId = session.managerId;
         payload.accessCode = session.accessCode;
+        if (preview?.exchangePlayer) {
+          payload.tradeInPlayer = preview.exchangePlayer.player;
+          payload.tradeInCredit = preview.exchangeCredit;
+        }
       }
 
       if (!preview || !payload.buyer || !payload.player || !payload.fromClub || !payload.overall || !payload.marketValue) {
@@ -224,7 +228,12 @@ App.forms = {
         `Clube origem: ${payload.fromClub}`,
         `Overall: ${payload.overall}`,
         `${isInternal ? "Valor negociado" : "Valor base"}: ${App.utils.formatCurrency(Number(payload.marketValue))}`,
-        `${isInternal ? "Débito estimado" : "Valor final estimado"}: ${App.utils.formatCurrency(Number(preview.finalValue || 0))}`
+        `${isInternal ? "Débito estimado" : "Valor final estimado"}: ${App.utils.formatCurrency(Number(preview.finalValue || 0))}`,
+        ...(!isInternal && preview.exchangePlayer ? [
+          `Troca: ${preview.exchangePlayer.player}`,
+          `Abatimento: ${App.utils.formatCurrency(Number(preview.exchangeCredit || 0))}`,
+          `Dinheiro a pagar: ${App.utils.formatCurrency(Number(preview.cashFinalValue || 0))}`
+        ] : [])
       ].join("\n");
 
       if (!window.confirm(confirmationText)) {
@@ -234,6 +243,8 @@ App.forms = {
       if (preview?.hardBlock) {
         const reason = preview.sameBuyerAndSeller
           ? "Comprador e vendedor precisam ser técnicos diferentes."
+          : preview.exchangeSamePlayer
+          ? "O jogador oferecido na troca precisa ser diferente do alvo."
           : preview.duplicateBlock
           ? `Jogador já contratado por ${preview.duplicate.buyer}.`
           : preview.limitReached
@@ -349,11 +360,16 @@ App.forms = {
     if (!transferForm || transferForm.dataset.previewReady === "true") return;
 
     transferForm.dataset.previewReady = "true";
-    ["buyer", "seller", "internalPlayer", "player", "fromClub", "overall", "marketValue"].forEach(name => {
+    ["buyer", "seller", "internalPlayer", "exchangePlayer", "player", "fromClub", "overall", "marketValue"].forEach(name => {
       const field = transferForm.elements[name];
       if (!field) return;
       field.addEventListener("input", () => App.transfers.renderTransferPreview(transferForm));
       field.addEventListener("change", () => App.transfers.renderTransferPreview(transferForm));
+    });
+
+    transferForm.elements.buyer?.addEventListener("change", () => {
+      App.transfers.populateExchangePlayers(transferForm);
+      App.transfers.renderTransferPreview(transferForm);
     });
 
     transferForm.querySelectorAll('input[name="transferType"]').forEach(field => {
