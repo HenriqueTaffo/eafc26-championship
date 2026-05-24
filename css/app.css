@@ -11087,6 +11087,11 @@ body.auth-gated .manager-login-fields {
   align-content: end;
 }
 
+body:not(.is-commissioner) .tab-button[data-view="submitView"],
+body:not(.is-commissioner) #submitView {
+  display: none !important;
+}
+
 .manager-login-shell {
   position: relative;
   overflow: hidden;

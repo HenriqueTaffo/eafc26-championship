@@ -42,12 +42,22 @@ App.auth = {
     if (!document.body) return;
 
     const isLocked = !App.auth.isLoggedIn();
+    const isCommissioner = !isLocked && App.auth.isCommissioner();
+
     document.body.classList.toggle("auth-gated", isLocked);
     document.body.classList.toggle("auth-unlocked", !isLocked);
+    document.body.classList.toggle("is-commissioner", isCommissioner);
+    document.body.classList.toggle("is-manager", !isLocked && !isCommissioner);
 
     if (isLocked) {
       App.main?.hideLoader?.(true);
       App.main?.markSynced?.("Faça login para abrir a liga");
+      return;
+    }
+
+    const activeView = document.querySelector(".view.active")?.id;
+    if (!isCommissioner && activeView === "submitView") {
+      App.main?.switchToView?.("playersView");
     }
   },
 

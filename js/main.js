@@ -58,6 +58,11 @@ App.main = {
 
   renderCurrentView() {
     const activeView = document.querySelector(".view.active")?.id;
+    if (activeView && !App.main.canAccessView(activeView)) {
+      App.main.switchToView("playersView");
+      return;
+    }
+
     const render = App.main.viewRenderers[activeView];
 
     if (render) render();
@@ -185,6 +190,8 @@ App.main = {
   setupTabs() {
     document.querySelectorAll(".tab-button").forEach(button => {
       button.addEventListener("click", () => {
+        if (!App.main.canAccessView(button.dataset.view)) return;
+
         document.querySelectorAll(".tab-button").forEach(item => item.classList.remove("active"));
         document.querySelectorAll(".view").forEach(view => view.classList.remove("active"));
         button.classList.add("active");
@@ -192,6 +199,11 @@ App.main = {
         App.main.renderCurrentView();
       });
     });
+  },
+
+  canAccessView(viewId) {
+    if (viewId === "submitView") return App.auth?.isCommissioner?.() === true;
+    return true;
   },
 
   setupManualSync() {
@@ -216,8 +228,11 @@ App.main = {
   },
 
   switchToView(viewId) {
-    const button = document.querySelector(`.tab-button[data-view="${viewId}"]`);
-    const view = document.getElementById(viewId);
+    const targetViewId = App.main.canAccessView(viewId)
+      ? viewId
+      : (App.auth?.isCommissioner?.() ? "commissionerView" : "playersView");
+    const button = document.querySelector(`.tab-button[data-view="${targetViewId}"]`);
+    const view = document.getElementById(targetViewId);
     if (!button || !view) return;
 
     document.querySelectorAll(".tab-button").forEach(item => item.classList.remove("active"));

@@ -272,6 +272,11 @@ App.standings = {
     const cpuText = data.cpuReady
       ? `${data.weekCpuPending.length} jogo(s) CPU x CPU prontos para simular.`
       : `${data.weekCpuPending.length} jogo(s) CPU x CPU pendente(s).`;
+    const cpuCardContent = `
+      <span>CPU x CPU</span>
+      <strong>${data.cpuReady ? "Pode simular" : "Aguardando técnicos"}</strong>
+      <small>${App.auth?.isCommissioner?.() ? `${data.weekCpuPending.length} jogo(s) pendente(s)` : "Simulação liberada ao comissário"}</small>
+    `;
 
     target.innerHTML = `
       <article class="round-center-card">
@@ -288,11 +293,15 @@ App.standings = {
               <small>${item.done}/${item.total || 0} enviados</small>
             </div>
           `).join("")}
-          <button class="round-cpu-card ${data.cpuReady ? "is-ready" : ""}" type="button" data-view-target="submitView">
-            <span>CPU x CPU</span>
-            <strong>${data.cpuReady ? "Pode simular" : "Aguardando técnicos"}</strong>
-            <small>${data.weekCpuPending.length} jogo(s) pendente(s)</small>
-          </button>
+          ${App.auth?.isCommissioner?.() ? `
+            <button class="round-cpu-card ${data.cpuReady ? "is-ready" : ""}" type="button" data-view-target="submitView">
+              ${cpuCardContent}
+            </button>
+          ` : `
+            <div class="round-cpu-card ${data.cpuReady ? "is-ready" : ""}">
+              ${cpuCardContent}
+            </div>
+          `}
         </div>
       </article>
     `;
