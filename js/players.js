@@ -587,7 +587,7 @@ App.players = {
           </label>
           <label>
             Pedida
-            <input name="askingPrice" type="number" min="0" step="100000" placeholder="Auto" data-sale-listing-price />
+            <input name="askingPrice" type="number" min="0" step="100000" placeholder="Ex.: 11 ou 11000000" data-sale-listing-price />
           </label>
           <label class="target-note-field">
             Recado
@@ -1158,6 +1158,13 @@ App.players = {
         const baseValue = Number(option?.dataset.baseValue || 0);
         if (priceInput && baseValue > 0 && !priceInput.value) {
           priceInput.value = Math.round((baseValue * 1.12) / 100000) * 100000;
+        }
+      });
+
+      priceInput?.addEventListener("blur", () => {
+        const value = Number(priceInput.value || 0);
+        if (value > 0 && value < 1000) {
+          priceInput.value = String(value * 1000000);
         }
       });
 

@@ -336,12 +336,17 @@ App.auth = {
   async upsertTransferSaleListing(payload = {}) {
     const session = App.auth.getSession();
     if (!session || session.isCommissioner) throw new Error("Faça login como técnico para listar jogadores.");
+    const rawAskingPrice = Number(payload.askingPrice || 0);
+    const askingPrice =
+      rawAskingPrice > 0 && rawAskingPrice < 1000
+        ? rawAskingPrice * 1000000
+        : rawAskingPrice;
 
     const result = await App.api.rpc("app_upsert_transfer_sale_listing", {
       p_manager_id: session.managerId,
       p_access_code: session.accessCode,
       p_player: payload.player || "",
-      p_asking_price: Number(payload.askingPrice || 0),
+      p_asking_price: askingPrice,
       p_note: payload.note || ""
     }, 30000);
 
