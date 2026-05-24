@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "vite --host 127.0.0.1",
-    "build": "vite build",
+    "build": "vite build && node scripts/copy-static-assets.cjs",
     "preview": "vite preview --host 127.0.0.1",
     "check": "npm run check:js && npm run build",
     "check:js": "node scripts/check-js.cjs",

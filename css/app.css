@@ -11231,7 +11231,7 @@ body.auth-gated::before {
   transform-origin: center;
   will-change: transform, opacity;
   contain: paint;
-  animation: login-pitch-drift 34s ease-in-out infinite alternate;
+  animation: login-pitch-drift 18s ease-in-out infinite alternate;
 }
 
 body.auth-gated::after {
@@ -11251,17 +11251,11 @@ body.auth-gated::after {
   transform: translateZ(0);
   will-change: transform, opacity;
   contain: paint;
-  animation: login-center-circle 28s ease-in-out infinite;
-}
-
-body.auth-gated:focus-within::before,
-body.auth-gated:focus-within::after,
-body.auth-gated:focus-within .manager-login-flip-card {
-  animation-play-state: paused;
+  animation: login-center-circle 14s ease-in-out infinite;
 }
 
 body.auth-gated:focus-within::before {
-  opacity: .46;
+  opacity: .56;
 }
 
 body.auth-gated #globalLoader {
@@ -11476,6 +11470,14 @@ body:not(.is-commissioner) #submitView {
   contain: layout paint style;
 }
 
+.manager-login-fields label,
+.manager-login-fields select,
+.manager-login-fields input,
+.manager-login-submit {
+  min-width: 0;
+  width: 100%;
+}
+
 .manager-login-mascot-stage {
   position: relative;
   display: grid;
@@ -11494,6 +11496,8 @@ body:not(.is-commissioner) #submitView {
   background:
     linear-gradient(135deg, rgba(251, 191, 36, .12), transparent 48%),
     rgba(45, 212, 191, .08);
+  will-change: transform, opacity;
+  animation: login-mascot-ring-pulse 2.8s ease-in-out infinite;
 }
 
 .manager-login-flip-card {
@@ -11504,7 +11508,7 @@ body:not(.is-commissioner) #submitView {
   display: block;
   transform-style: preserve-3d;
   will-change: transform;
-  animation: login-mascot-flip 9s cubic-bezier(.76, 0, .24, 1) infinite;
+  animation: login-mascot-flip 7s cubic-bezier(.76, 0, .24, 1) infinite;
 }
 
 .manager-login-face {
@@ -11546,11 +11550,11 @@ body:not(.is-commissioner) #submitView {
 
 @keyframes login-pitch-drift {
   0% {
-    transform: translate3d(-1.5%, -.8%, 0) rotate(-7deg) scale(1.02);
+    transform: translate3d(-4%, -2%, 0) rotate(-7deg) scale(1.02);
   }
 
   100% {
-    transform: translate3d(1.5%, .8%, 0) rotate(-7deg) scale(1.02);
+    transform: translate3d(4%, 2%, 0) rotate(-7deg) scale(1.02);
   }
 }
 
@@ -11560,7 +11564,19 @@ body:not(.is-commissioner) #submitView {
   }
 
   50% {
-    transform: translate3d(-18px, 10px, 0) scale(1.05);
+    transform: translate3d(-28px, 16px, 0) scale(1.06);
+  }
+}
+
+@keyframes login-mascot-ring-pulse {
+  0%, 100% {
+    opacity: .72;
+    transform: scale(.98);
+  }
+
+  50% {
+    opacity: 1;
+    transform: scale(1.04);
   }
 }
 
@@ -13061,12 +13077,22 @@ tbody tr:hover td {
   }
 
   body.auth-gated .app {
-    padding: 16px;
+    width: 100%;
+    max-width: 100vw;
+    padding: 16px 12px;
     align-items: center;
+    justify-items: center;
+  }
+
+  body.auth-gated .manager-login-panel {
+    width: min(420px, calc(100vw - 24px));
+    max-width: calc(100vw - 24px);
   }
 
   body.auth-gated .manager-login-card.manager-login-shell {
     grid-template-columns: 1fr;
+    width: 100%;
+    max-width: 100%;
     padding: 20px;
   }
 
@@ -13168,6 +13194,38 @@ tbody tr:hover td {
   .email-archive-list div {
     grid-template-columns: 1fr;
     gap: 6px;
+  }
+}
+
+@media (max-width: 480px) {
+  body.auth-gated .manager-login-card.manager-login-shell {
+    gap: 16px;
+    padding: 18px;
+  }
+
+  body.auth-gated .manager-login-brand {
+    display: grid;
+    grid-template-columns: 86px minmax(0, 1fr);
+    gap: 14px;
+  }
+
+  body.auth-gated .manager-login-avatar-large {
+    width: 80px;
+    height: 80px;
+  }
+
+  body.auth-gated .manager-login-card strong {
+    font-size: clamp(30px, 9.5vw, 38px);
+  }
+
+  body.auth-gated .manager-login-card small {
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 360px) {
+  body.auth-gated .manager-login-brand {
+    grid-template-columns: 1fr;
   }
 }
 
