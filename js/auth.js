@@ -850,7 +850,7 @@ App.auth = {
         <div class="manager-session-card is-logged manager-login-shell">
           <div class="manager-login-identity">
             <span class="manager-login-avatar">
-              <img src="./assets/login-cat-icon.gif?v=${App.config.assetVersion}" alt="" loading="lazy" />
+              <img src="./assets/mistura-mascot.png?v=${App.config.assetVersion}" alt="" loading="lazy" />
             </span>
             <div>
               <span>${session.isCommissioner ? "Comissário" : "Técnico conectado"}</span>
@@ -873,28 +873,35 @@ App.auth = {
     panel.innerHTML = `
       <form class="manager-login-card manager-login-shell" id="managerLoginForm">
         <div class="manager-login-brand">
-          <span class="manager-login-avatar manager-login-avatar-large">
-            <img src="./assets/login-cat-icon.gif?v=${App.config.assetVersion}" alt="" loading="lazy" />
+          <span class="manager-login-mascot-stage manager-login-avatar-large" aria-hidden="true">
+            <span class="manager-login-mascot-ring"></span>
+            <img src="./assets/mistura-mascot.png?v=${App.config.assetVersion}" alt="" loading="lazy" />
           </span>
           <div>
             <span>Mistura Managers League</span>
-            <strong>Escritório privado</strong>
-            <small>Acesso reservado para técnicos e comissário da liga.</small>
+            <strong>Acesso da liga</strong>
+            <small>Entre para abrir seu escritório, calendário e decisões privadas.</small>
+            <div class="manager-login-meta" aria-hidden="true">
+              <b>Temporada 2026</b>
+              <b>Área privada</b>
+            </div>
           </div>
         </div>
-        <div class="manager-login-fields">
-          <label>
-            Perfil
-            <select name="managerName" required>
-              ${loginOptions.map(name => `<option value="${App.utils.escapeHtml(name)}">${App.utils.escapeHtml(name)}</option>`).join("")}
-            </select>
-          </label>
-          <label>
-            Código
-            <input name="accessCode" type="password" inputmode="numeric" placeholder="PIN" autocomplete="current-password" required />
-          </label>
+        <div class="manager-login-form-panel">
+          <div class="manager-login-fields">
+            <label>
+              Perfil
+              <select name="managerName" required>
+                ${loginOptions.map(name => `<option value="${App.utils.escapeHtml(name)}">${App.utils.escapeHtml(name)}</option>`).join("")}
+              </select>
+            </label>
+            <label>
+              Código
+              <input name="accessCode" type="password" inputmode="numeric" placeholder="PIN" autocomplete="current-password" required />
+            </label>
+          </div>
+          <button type="submit" class="primary-button manager-login-submit">Entrar no escritório</button>
         </div>
-        <button type="submit" class="primary-button manager-login-submit">Entrar</button>
       </form>
     `;
 
@@ -910,7 +917,7 @@ App.auth = {
         alert(error.message);
       } finally {
         button.disabled = false;
-        button.textContent = "Entrar";
+        button.textContent = "Entrar no escritório";
       }
     });
   },
