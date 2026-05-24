@@ -66,9 +66,30 @@ App.transfers = {
         "https://www.transfermarkt.co.uk/gabriel-silva/profil/spieler/1006454",
       source_name: "Transfermarkt portrait override",
     },
+    {
+      name: "Talisca",
+      avatar_url:
+        "https://img.a.transfermarkt.technology/portrait/big/258626-1738664288.jpg?lm=1",
+      source_url:
+        "https://www.transfermarkt.co.uk/talisca/profil/spieler/258626",
+      source_name: "Transfermarkt portrait override",
+    },
   ],
 
   manualPlayerRatings: {
+    talisca: {
+      name: "Talisca",
+      club: "Fenerbahce",
+      position: "CAM",
+      nation: "Brazil",
+      overall: 81,
+      gender: "Men's Football",
+      avatar_url:
+        "https://img.a.transfermarkt.technology/portrait/big/258626-1738664288.jpg?lm=1",
+      source_url:
+        "https://www.transfermarkt.co.uk/talisca/profil/spieler/258626",
+      source_name: "Manual rating fallback + Transfermarkt portrait",
+    },
     "david de gea": {
       name: "David De Gea Quintana",
       club: "Fiorentina",
