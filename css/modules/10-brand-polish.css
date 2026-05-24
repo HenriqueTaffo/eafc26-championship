@@ -1137,11 +1137,13 @@ tbody tr:hover td {
 .calendar-month-board {
   display: grid;
   gap: 16px;
+  min-width: 0;
 }
 
 .calendar-month-card {
   content-visibility: auto;
   contain-intrinsic-size: 820px;
+  min-width: 0;
   border: 1px solid rgba(148, 163, 184, .16);
   border-radius: 8px;
   padding: 14px;
@@ -1212,7 +1214,9 @@ tbody tr:hover td {
 
 .calendar-day-cell {
   min-width: 0;
+  max-width: 100%;
   min-height: 184px;
+  overflow: hidden;
   border: 1px solid rgba(148, 163, 184, .13);
   border-radius: 8px;
   padding: 10px;
@@ -1283,13 +1287,17 @@ tbody tr:hover td {
   display: grid;
   gap: 8px;
   max-height: 390px;
-  overflow: auto;
+  min-width: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
   padding-right: 2px;
   scrollbar-color: rgba(45, 212, 191, .45) rgba(255, 255, 255, .04);
 }
 
 .calendar-event-card {
   min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
   border: 1px solid rgba(148, 163, 184, .14);
   border-radius: 8px;
   padding: 9px;
@@ -1314,10 +1322,20 @@ tbody tr:hover td {
   align-items: center;
   justify-content: space-between;
   gap: 8px;
+  min-width: 0;
 }
 
 .calendar-event-head {
+  flex-wrap: wrap;
   margin-bottom: 8px;
+}
+
+.calendar-event-card .competition-badge,
+.calendar-event-status-dot {
+  max-width: 100%;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .calendar-event-status-dot {
@@ -1336,6 +1354,35 @@ tbody tr:hover td {
 .calendar-event-match {
   min-width: 0;
   margin: 8px 0;
+}
+
+.calendar-event-card .matchup.calendar-grid-match {
+  grid-template-columns: 1fr;
+  gap: 5px;
+}
+
+.calendar-event-card .calendar-grid-match .matchup-x {
+  display: none;
+}
+
+.calendar-event-card .calendar-grid-match .matchup-side.home,
+.calendar-event-card .calendar-grid-match .matchup-side.away {
+  grid-template-columns: 24px minmax(0, 1fr);
+  justify-content: stretch;
+  text-align: left;
+}
+
+.calendar-event-card .calendar-grid-match .matchup-side.home .matchup-name {
+  order: 2;
+}
+
+.calendar-event-card .calendar-grid-match .matchup-side.home .club-badge {
+  order: 1;
+}
+
+.calendar-event-card .calendar-grid-match .matchup-name {
+  border: 0;
+  font-size: 12px;
 }
 
 .matchup.calendar-grid-match {
@@ -1374,6 +1421,7 @@ tbody tr:hover td {
 }
 
 .calendar-event-phase {
+  flex-wrap: wrap;
   color: #9aa8b4;
   font-size: 12px;
   line-height: 1.35;
@@ -1381,15 +1429,17 @@ tbody tr:hover td {
 
 .calendar-event-phase span:first-child {
   min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .calendar-event-phase span:last-child {
-  flex: 0 0 auto;
+  flex: 0 1 auto;
   color: #7dd3fc;
 }
 
 .calendar-event-meta {
   align-items: flex-start;
+  flex-direction: column;
   margin-top: 8px;
 }
 
@@ -1401,9 +1451,10 @@ tbody tr:hover td {
 }
 
 .calendar-event-meta > span {
-  flex: 0 0 auto;
+  flex: 0 1 auto;
   color: #a9b3b8;
   font-size: 12px;
+  overflow-wrap: anywhere;
 }
 
 .calendar-owner-pill {
@@ -1427,11 +1478,17 @@ tbody tr:hover td {
 
 .calendar-event-action .calendar-action-cell {
   width: 100%;
+  min-width: 0;
+  align-items: stretch;
+  flex-direction: column;
   justify-content: space-between;
+  gap: 7px;
 }
 
 .calendar-event-action .status-pill {
   max-width: 100%;
+  justify-content: center;
+  overflow-wrap: anywhere;
   white-space: normal;
 }
 
@@ -1452,6 +1509,29 @@ tbody tr:hover td {
 
 .calendar-empty-panel span {
   color: #9aa8b4;
+}
+
+@media (max-width: 1180px) {
+  .calendar-weekday-row {
+    display: none;
+  }
+
+  .calendar-month-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .calendar-day-cell-empty,
+  .calendar-day-empty {
+    display: none;
+  }
+
+  .calendar-day-cell {
+    min-height: 0;
+  }
+
+  .calendar-day-events {
+    max-height: none;
+  }
 }
 
 @media (max-width: 900px) {
