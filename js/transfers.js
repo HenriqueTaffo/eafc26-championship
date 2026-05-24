@@ -593,6 +593,40 @@ App.transfers = {
     return Number(player?.market_value_eur || player?.marketValue || 0);
   },
 
+  getTransfermarktPlayerId(value) {
+    return (
+      String(value || "").match(/\/spieler\/(\d+)/)?.[1] ||
+      String(value || "").match(/^(\d+)$/)?.[1] ||
+      ""
+    );
+  },
+
+  hasMarketAvatarCache() {
+    return Boolean(App.data?.marketPlayerAvatars);
+  },
+
+  ensureMarketAvatarCacheLoaded() {
+    if (App.transfers.hasMarketAvatarCache()) return Promise.resolve(true);
+    if (App.transfers.marketAvatarCachePromise) {
+      return App.transfers.marketAvatarCachePromise;
+    }
+
+    App.transfers.marketAvatarCachePromise = new Promise((resolve) => {
+      const script = document.createElement("script");
+      const version = App.config?.assetVersion || Date.now();
+      script.src = `./js/market-avatars.js?v=${encodeURIComponent(version)}`;
+      script.defer = true;
+      script.onload = () => resolve(true);
+      script.onerror = () => {
+        console.warn("Cache local de fotos do mercado indisponível.");
+        resolve(false);
+      };
+      document.head.appendChild(script);
+    });
+
+    return App.transfers.marketAvatarCachePromise;
+  },
+
   getTransferRate(overall) {
     if (overall >= 89) return 0.25;
     if (overall >= 84) return 0.15;
@@ -780,15 +814,34 @@ App.transfers = {
 
   getMarketPlayerAvatar(player) {
     const transfermarktId =
-      String(player?.transfermarkt_id || player?.transfermarktId || "").trim() ||
-      String(player?.transfermarkt_url || player?.transfermarktUrl || "").match(
-        /\/spieler\/(\d+)/,
-      )?.[1] ||
+      App.transfers.getTransfermarktPlayerId(
+        player?.transfermarkt_id || player?.transfermarktId || "",
+      ) ||
+      App.transfers.getTransfermarktPlayerId(
+        player?.transfermarkt_url || player?.transfermarktUrl || "",
+      ) ||
       "";
     if (!transfermarktId) return "";
 
     const avatar = App.data?.marketPlayerAvatars?.[transfermarktId] || "";
     return App.transfers.isUsablePlayerAvatar(avatar) ? avatar : "";
+  },
+
+  needsMarketAvatarCacheForTransfers(transfers = []) {
+    if (App.transfers.hasMarketAvatarCache()) return false;
+
+    return (transfers || []).some((item) => {
+      const marketPlayer = App.transfers.findMarketPlayerByName(item?.player, {
+        club: item?.fromClub,
+      });
+      if (!marketPlayer) return false;
+      if (App.transfers.isUsablePlayerAvatar(marketPlayer.avatar_url)) return false;
+      return Boolean(
+        App.transfers.getTransfermarktPlayerId(
+          marketPlayer.transfermarkt_url || marketPlayer.transfermarktUrl,
+        ),
+      );
+    });
   },
 
   getRatingForPlayerName(playerName, context = {}) {
@@ -1343,7 +1396,7 @@ App.transfers = {
           .map((name) => String(name || "").trim())
           .filter(Boolean),
       ),
-    ].slice(0, 12);
+    ].slice(0, 40);
 
     if (!names.length || !App.api?.loadMarketPlayersForNames) return;
 
@@ -1358,6 +1411,11 @@ App.transfers = {
     App.api
       .loadMarketPlayersForNames(names, 2)
       .then(() => App.api?.loadRatingsForPlayerNames?.(names, 2))
+      .then(() =>
+        App.transfers.needsMarketAvatarCacheForTransfers(transfers)
+          ? App.transfers.ensureMarketAvatarCacheLoaded()
+          : true,
+      )
       .then(() => {
         App.transfers.portraitHydrationKey = hydrationKey;
         App.main?.renderAll?.();

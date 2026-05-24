@@ -257,6 +257,11 @@ App.api = {
           };
         }
 
+        const cachedAvatar = App.transfers?.getMarketPlayerAvatar?.(next) || "";
+        if (!App.transfers?.isUsablePlayerAvatar?.(next.avatar_url) && cachedAvatar) {
+          next = { ...next, avatar_url: cachedAvatar };
+        }
+
         return next;
       })
       .filter(
@@ -402,7 +407,17 @@ App.api = {
       uniqueNames,
       6,
       (name) =>
-        App.api.loadMarketPlayers(name, true, limitPerName).catch(() => []),
+        App.api
+          .fetchMarketPlayersDirect(name, limitPerName)
+          .then((rows) =>
+            App.api.applyMarketPlayerOverrides(
+              Array.isArray(rows) ? rows : [],
+              { showContracted: true },
+            ),
+          )
+          .catch(() =>
+            App.api.loadMarketPlayers(name, true, limitPerName).catch(() => []),
+          ),
     );
 
     App.api.mergeMarketPlayers(groups.flat());

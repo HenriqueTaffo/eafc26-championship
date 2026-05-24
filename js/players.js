@@ -401,6 +401,8 @@ App.players = {
   },
 
   renderCoachTransferDeck(transfers) {
+    App.transfers.hydratePlayerPortraitsForTransfers?.(transfers);
+
     if (!transfers.length) {
       return `
         <div class="coach-empty-state">
