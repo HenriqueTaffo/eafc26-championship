@@ -824,7 +824,7 @@ App.auth = {
         <div class="manager-session-card is-logged manager-login-shell">
           <div class="manager-login-identity">
             <span class="manager-login-avatar">
-              <img src="./assets/login-cat-icon.jpg?v=${App.config.assetVersion}" alt="" loading="lazy" />
+              <img src="./assets/login-cat-icon.gif?v=${App.config.assetVersion}" alt="" loading="lazy" />
             </span>
             <div>
               <span>${session.isCommissioner ? "Comissário" : "Técnico conectado"}</span>
@@ -848,7 +848,7 @@ App.auth = {
       <form class="manager-login-card manager-login-shell" id="managerLoginForm">
         <div class="manager-login-brand">
           <span class="manager-login-avatar manager-login-avatar-large">
-            <img src="./assets/login-cat-icon.jpg?v=${App.config.assetVersion}" alt="" loading="lazy" />
+            <img src="./assets/login-cat-icon.gif?v=${App.config.assetVersion}" alt="" loading="lazy" />
           </span>
           <div>
             <span>Mistura Managers League</span>
