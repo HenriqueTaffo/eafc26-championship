@@ -400,7 +400,7 @@ App.forms = {
       try {
         button.disabled = true;
         await App.transfers.createAutoAuctionFromPreview(preview);
-        App.utils.setMessage(message, "Leilão automático registrado na Liga+.", "success");
+        App.utils.setMessage(message, "Leilão automático registrado na Central de Inteligência.", "success");
       } catch (error) {
         App.utils.setMessage(message, error.message, "error");
       } finally {

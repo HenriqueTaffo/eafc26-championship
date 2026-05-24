@@ -1443,7 +1443,7 @@ App.transfers = {
       )
       .then(() => {
         App.transfers.portraitHydrationKey = hydrationKey;
-        App.main?.renderAll?.();
+        App.main?.renderCurrentView?.();
       })
       .catch((error) => {
         console.warn("Fotos de jogadores indisponiveis:", error);

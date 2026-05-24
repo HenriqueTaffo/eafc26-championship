@@ -7,7 +7,7 @@
     <meta http-equiv="Pragma" content="no-cache" />
     <meta http-equiv="Expires" content="0" />
     <title>Mistura Managers League</title>
-    <link rel="stylesheet" href="./css/styles.css?v=20260524-player-photo-standard-v1" />
+    <link rel="stylesheet" href="./css/app.css?v=20260524-intelligence-center-v1" />
   </head>
   <body>
     <div
@@ -33,7 +33,7 @@
             <div class="loader-orbit"></div>
             <img
               class="loader-mascot"
-              src="./assets/mistura-mascot.png?v=20260524-player-photo-standard-v1"
+              src="./assets/mistura-mascot.png?v=20260524-intelligence-center-v1"
               alt=""
             />
           </div>
@@ -67,7 +67,7 @@
         <div class="league-seal" aria-hidden="true">
           <div class="league-seal-ring">
             <span class="seal-top">MISTURA</span>
-            <img src="./assets/mistura-mascot.png?v=20260524-player-photo-standard-v1" alt="" />
+            <img src="./assets/mistura-mascot.png?v=20260524-intelligence-center-v1" alt="" />
             <span class="seal-left">20</span>
             <span class="seal-right">24</span>
             <span class="seal-bottom">MANAGERS LEAGUE</span>
@@ -100,7 +100,7 @@
           <span class="tab-icon">▣</span>Escritório
         </button>
         <button class="tab-button" data-view="experienceView">
-          <span class="tab-icon">◎</span>Liga+
+          <span class="tab-icon">◇</span>Inteligência
         </button>
         <button class="tab-button" data-view="eventsView">
           <span class="tab-icon">✦</span>Eventos
@@ -294,24 +294,11 @@
           </div>
         </section>
         <section class="calendar-week-board" id="calendarWeekBoard"></section>
-        <section class="table-wrapper calendar-table-wrapper">
-          <table class="calendar-table">
-            <thead>
-              <tr>
-                <th>Data</th>
-                <th>Semana</th>
-                <th>Competição</th>
-                <th>Rodada/Fase</th>
-                <th>Jogo</th>
-                <th>Envolvidos</th>
-                <th>Tipo</th>
-                <th>Status/Placar</th>
-              </tr>
-            </thead>
-            <tbody id="calendarTable"></tbody>
-          </table>
-        </section>
-        <section class="mobile-list" id="calendarMobile"></section>
+        <section
+          class="calendar-month-board"
+          id="calendarBoard"
+          aria-live="polite"
+        ></section>
       </section>
 
       <section id="cupsView" class="view">
@@ -473,17 +460,17 @@
         <section class="summary" id="experienceSummary"></section>
         <section class="submit-hero experience-hero">
           <div>
-            <span class="modal-kicker">Camada de jogatina</span>
-            <h2>Liga+</h2>
+            <span class="modal-kicker">Sala de análise</span>
+            <h2>Central de Inteligência</h2>
             <p>
-              Diretoria, reputação, scout de overall, oportunidades, leilões e
-              notícias automáticas em um painel só.
+              Diagnóstico operacional da liga: ações urgentes, risco financeiro,
+              rodada de impacto e postura recomendada para cada técnico.
             </p>
           </div>
           <div class="submit-hero-actions">
-            <a href="#directorBoard">Diretoria</a>
-            <a href="#eaScoutBoard">Scout EA</a>
-            <a href="#opportunityBoard">Oportunidades</a>
+            <a href="#intelligenceQueue">Fila de ação</a>
+            <a href="#intelligencePower">Power index</a>
+            <a href="#intelligenceMarket">Mercado</a>
           </div>
         </section>
         <section class="experience-grid" id="experienceGrid"></section>
@@ -1063,22 +1050,22 @@
       </section>
     </main>
 
-    <script src="./js/config.js?v=20260524-player-photo-standard-v1"></script>
-    <script src="./js/data.js?v=20260524-player-photo-standard-v1"></script>
-    <script src="./js/utils.js?v=20260524-player-photo-standard-v1"></script>
-    <script src="./js/ui.js?v=20260524-player-photo-standard-v1"></script>
-    <script src="./js/clubs.js?v=20260524-player-photo-standard-v1"></script>
-    <script src="./js/api.js?v=20260524-player-photo-standard-v1"></script>
-    <script src="./js/auth.js?v=20260524-player-photo-standard-v1"></script>
-    <script src="./js/standings.js?v=20260524-player-photo-standard-v1"></script>
-    <script src="./js/calendar.js?v=20260524-player-photo-standard-v1"></script>
-    <script src="./js/cups.js?v=20260524-player-photo-standard-v1"></script>
-    <script src="./js/transfers.js?v=20260524-player-photo-standard-v1"></script>
-    <script src="./js/events.js?v=20260524-player-photo-standard-v1"></script>
-    <script src="./js/players.js?v=20260524-player-photo-standard-v1"></script>
-    <script src="./js/experience.js?v=20260524-player-photo-standard-v1"></script>
-    <script src="./js/governance.js?v=20260524-player-photo-standard-v1"></script>
-    <script src="./js/forms.js?v=20260524-player-photo-standard-v1"></script>
-    <script src="./js/main.js?v=20260524-player-photo-standard-v1"></script>
+    <script defer src="./js/config.js?v=20260524-intelligence-center-v1"></script>
+    <script defer src="./js/data.js?v=20260524-intelligence-center-v1"></script>
+    <script defer src="./js/utils.js?v=20260524-intelligence-center-v1"></script>
+    <script defer src="./js/ui.js?v=20260524-intelligence-center-v1"></script>
+    <script defer src="./js/clubs.js?v=20260524-intelligence-center-v1"></script>
+    <script defer src="./js/api.js?v=20260524-intelligence-center-v1"></script>
+    <script defer src="./js/auth.js?v=20260524-intelligence-center-v1"></script>
+    <script defer src="./js/standings.js?v=20260524-intelligence-center-v1"></script>
+    <script defer src="./js/calendar.js?v=20260524-intelligence-center-v1"></script>
+    <script defer src="./js/cups.js?v=20260524-intelligence-center-v1"></script>
+    <script defer src="./js/transfers.js?v=20260524-intelligence-center-v1"></script>
+    <script defer src="./js/events.js?v=20260524-intelligence-center-v1"></script>
+    <script defer src="./js/players.js?v=20260524-intelligence-center-v1"></script>
+    <script defer src="./js/experience.js?v=20260524-intelligence-center-v1"></script>
+    <script defer src="./js/governance.js?v=20260524-intelligence-center-v1"></script>
+    <script defer src="./js/forms.js?v=20260524-intelligence-center-v1"></script>
+    <script defer src="./js/main.js?v=20260524-intelligence-center-v1"></script>
   </body>
 </html>

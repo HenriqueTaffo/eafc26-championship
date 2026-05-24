@@ -1,7 +1,8 @@
 window.App = window.App || {};
 
 App.auth = {
-  storageKey: "mistura_manager_session_v1",
+  storageKey: "mistura_manager_session_v2",
+  legacyStorageKey: "mistura_manager_session_v1",
   currentSession: null,
   publicNews: [],
   myDecisions: [],
@@ -21,7 +22,8 @@ App.auth = {
 
   init() {
     try {
-      const raw = localStorage.getItem(App.auth.storageKey);
+      localStorage.removeItem(App.auth.legacyStorageKey);
+      const raw = sessionStorage.getItem(App.auth.storageKey);
       App.auth.currentSession = raw ? JSON.parse(raw) : null;
     } catch (error) {
       App.auth.currentSession = null;
@@ -29,8 +31,6 @@ App.auth = {
 
     App.auth.renderAll();
     App.auth.bootstrapSessionState();
-    App.auth.generateDueDecisions();
-    App.auth.generateDueCpuTransferProposals();
   },
 
   getSession() {
@@ -97,6 +97,38 @@ App.auth = {
     return Boolean(session?.managerId && session?.accessCode);
   },
 
+  persistSession(session) {
+    App.auth.currentSession = session;
+    try {
+      sessionStorage.setItem(App.auth.storageKey, JSON.stringify(session));
+      localStorage.removeItem(App.auth.legacyStorageKey);
+    } catch (error) {
+      console.warn("Sessao temporaria indisponivel:", error);
+    }
+  },
+
+  clearStoredSession() {
+    try {
+      sessionStorage.removeItem(App.auth.storageKey);
+      localStorage.removeItem(App.auth.storageKey);
+      localStorage.removeItem(App.auth.legacyStorageKey);
+    } catch (error) {
+      console.warn("Nao consegui limpar a sessao local:", error);
+    }
+  },
+
+  buildSessionFromLogin(result, fallbackAccessCode = "") {
+    return {
+      managerId: result.manager.id,
+      managerName: result.manager.name,
+      clubName: result.manager.club || "",
+      isCommissioner: Boolean(result.manager.isCommissioner),
+      accessCode: result.sessionToken || fallbackAccessCode,
+      sessionToken: result.sessionToken || "",
+      sessionExpiresAt: result.expiresAt || ""
+    };
+  },
+
   async bootstrapSessionState() {
     if (!App.auth.isLoggedIn()) return;
 
@@ -151,33 +183,31 @@ App.auth = {
   async login(managerName, accessCode) {
     let result;
 
-    if (App.utils.normalizeText(managerName).includes("comiss")) {
-      result = await App.api.rpc("app_login_commissioner", {
+    try {
+      result = await App.api.rpc("app_create_manager_session", {
         p_manager_name: managerName,
         p_access_code: accessCode
       }, 30000);
-    } else {
-      result = await App.api.rpc("app_login_manager", {
-        p_manager_name: managerName,
-        p_access_code: accessCode
-      }, 30000);
+    } catch (sessionError) {
+      console.warn("Sessao temporaria indisponivel, usando login legado nesta aba:", sessionError);
+      if (App.utils.normalizeText(managerName).includes("comiss")) {
+        result = await App.api.rpc("app_login_commissioner", {
+          p_manager_name: managerName,
+          p_access_code: accessCode
+        }, 30000);
+      } else {
+        result = await App.api.rpc("app_login_manager", {
+          p_manager_name: managerName,
+          p_access_code: accessCode
+        }, 30000);
+      }
     }
 
     if (!result.ok) throw new Error(result.message || "Login não autorizado.");
 
-    App.auth.currentSession = {
-      managerId: result.manager.id,
-      managerName: result.manager.name,
-      clubName: result.manager.club || "",
-      isCommissioner: Boolean(result.manager.isCommissioner),
-      accessCode
-    };
-
-    localStorage.setItem(App.auth.storageKey, JSON.stringify(App.auth.currentSession));
+    App.auth.persistSession(App.auth.buildSessionFromLogin(result, accessCode));
 
     if (!App.auth.currentSession.isCommissioner) {
-      await App.auth.generateDueDecisions();
-      await App.auth.generateDueCpuTransferProposals();
       await App.auth.loadMyDecisions();
       await App.auth.loadMyTransferProposals();
       await App.auth.loadMyTransferTargets();
@@ -220,6 +250,14 @@ App.auth = {
   },
 
   logout() {
+    const session = App.auth.currentSession;
+    if (session?.sessionToken) {
+      App.api.rpc("app_revoke_manager_session", {
+        p_manager_id: session.managerId,
+        p_session_token: session.sessionToken
+      }, 15000).catch(error => console.warn("Revogacao de sessao indisponivel:", error));
+    }
+
     App.auth.currentSession = null;
     App.auth.myDecisions = [];
     App.auth.myTransferProposals = [];
@@ -230,7 +268,7 @@ App.auth = {
     App.auth.myQoL = null;
     App.auth.myFavorites = [];
     App.auth.myNotifications = [];
-    localStorage.removeItem(App.auth.storageKey);
+    App.auth.clearStoredSession();
     App.auth.renderAll();
     App.main?.renderCurrentView?.();
   },
@@ -425,15 +463,6 @@ App.auth = {
     if (!session?.managerId || !session?.accessCode) {
       App.auth.mySponsorships = null;
       return null;
-    }
-
-    try {
-      await App.api.rpc("app_process_sponsorship_rewards", {
-        p_manager_id: session.managerId,
-        p_access_code: session.accessCode
-      }, 45000);
-    } catch (error) {
-      console.warn("Processamento de bônus de patrocínio indisponível:", error);
     }
 
     try {
@@ -792,11 +821,16 @@ App.auth = {
 
     if (session) {
       panel.innerHTML = `
-        <div class="manager-session-card is-logged">
-          <div>
-            <span>${session.isCommissioner ? "Login do comissário" : "Login do técnico"}</span>
-            <strong>${App.utils.escapeHtml(session.managerName)}</strong>
-            <small>${App.utils.escapeHtml(session.clubName || "Clube vinculado")} · ${session.isCommissioner ? "governança liberada" : "e-mail privado liberado"}</small>
+        <div class="manager-session-card is-logged manager-login-shell">
+          <div class="manager-login-identity">
+            <span class="manager-login-avatar">
+              <img src="./assets/login-cat-icon.jpg?v=${App.config.assetVersion}" alt="" loading="lazy" />
+            </span>
+            <div>
+              <span>${session.isCommissioner ? "Comissário" : "Técnico conectado"}</span>
+              <strong>${App.utils.escapeHtml(session.managerName)}</strong>
+              <small>${App.utils.escapeHtml(session.clubName || "Clube vinculado")} · ${session.isCommissioner ? "governança liberada" : "escritório liberado"}</small>
+            </div>
           </div>
           <div class="manager-session-actions">
             <button type="button" class="ghost-button" data-auth-action="logout">Sair</button>
@@ -811,23 +845,30 @@ App.auth = {
     }
 
     panel.innerHTML = `
-      <form class="manager-login-card" id="managerLoginForm">
-        <div>
-          <span>Login da liga</span>
-          <strong>Área privada</strong>
-          <small>Técnicos acessam o escritório privado. O comissário acessa as ferramentas de governança.</small>
+      <form class="manager-login-card manager-login-shell" id="managerLoginForm">
+        <div class="manager-login-brand">
+          <span class="manager-login-avatar manager-login-avatar-large">
+            <img src="./assets/login-cat-icon.jpg?v=${App.config.assetVersion}" alt="" loading="lazy" />
+          </span>
+          <div>
+            <span>Mistura Managers League</span>
+            <strong>Escritório privado</strong>
+            <small>Acesso reservado para técnicos e comissário da liga.</small>
+          </div>
         </div>
-        <label>
-          Perfil
-          <select name="managerName" required>
-            ${loginOptions.map(name => `<option value="${App.utils.escapeHtml(name)}">${App.utils.escapeHtml(name)}</option>`).join("")}
-          </select>
-        </label>
-        <label>
-          Código
-          <input name="accessCode" type="password" inputmode="numeric" placeholder="PIN" required />
-        </label>
-        <button type="submit" class="primary-button">Entrar</button>
+        <div class="manager-login-fields">
+          <label>
+            Perfil
+            <select name="managerName" required>
+              ${loginOptions.map(name => `<option value="${App.utils.escapeHtml(name)}">${App.utils.escapeHtml(name)}</option>`).join("")}
+            </select>
+          </label>
+          <label>
+            Código
+            <input name="accessCode" type="password" inputmode="numeric" placeholder="PIN" autocomplete="current-password" required />
+          </label>
+        </div>
+        <button type="submit" class="primary-button manager-login-submit">Entrar</button>
       </form>
     `;
 
@@ -1684,9 +1725,17 @@ App.auth = {
 
         if (!result.ok) throw new Error(result.message || "Não foi possível atualizar o PIN.");
 
-        session.accessCode = newPin;
-        App.auth.currentSession = session;
-        localStorage.setItem(App.auth.storageKey, JSON.stringify(session));
+        try {
+          const nextSession = await App.api.rpc("app_create_manager_session", {
+            p_manager_name: session.managerName,
+            p_access_code: newPin
+          }, 30000);
+          if (nextSession?.ok) {
+            App.auth.persistSession(App.auth.buildSessionFromLogin(nextSession, session.accessCode));
+          }
+        } catch (sessionError) {
+          console.warn("PIN alterado, mas nao consegui renovar a sessao temporaria:", sessionError);
+        }
 
         form.reset();
         App.utils.setMessage(message, "PIN atualizado com sucesso.", "success");

@@ -447,7 +447,6 @@ App.api = {
         App.api.loadManagerOnboarding?.(),
         App.api.loadFinanceRulesAndForecast?.(),
         App.governance?.loadData?.(),
-        App.auth?.generateDueDecisions?.(),
         App.auth?.loadPublicNews?.(),
         App.auth?.loadMyDecisions?.(),
         App.auth?.loadMyTransferProposals?.(),
@@ -580,7 +579,7 @@ App.api = {
     }, {});
   },
 
-  getPerformanceBudgetStats(results = []) {
+  getPerformanceBudgetStats() {
     return App.utils.getHumanBuyers().reduce((acc, buyer) => {
       acc[buyer] = { homeMatches: 0, wins: 0 };
       return acc;
@@ -998,12 +997,26 @@ App.api = {
   async loadApiData(options = {}) {
     const {
       showLoader = true,
+      force = false,
+      cacheTtlMs = 0,
       variant = App.main?.getDefaultLoaderVariant
         ? App.main.getDefaultLoaderVariant()
         : "match",
       title = "Atualizando dados",
       message = "Aguarde enquanto os dados mais recentes são consultados.",
     } = options;
+
+    const now = Date.now();
+    if (
+      !force &&
+      App.state.apiLoaded &&
+      App.state.lastApiPayload &&
+      cacheTtlMs > 0 &&
+      now - Number(App.state.lastApiLoadAt || 0) < cacheTtlMs
+    ) {
+      App.main?.renderCurrentView?.();
+      return App.state.lastApiPayload;
+    }
 
     if (showLoader && App.main?.showLoader) {
       App.main.showLoader({ variant, title, message });
@@ -1048,34 +1061,34 @@ App.api = {
       }
 
       App.state.apiLoaded = true;
-      App.main.renderAll();
+      App.state.lastApiPayload = data;
+      App.state.lastApiLoadAt = Date.now();
+      App.main.renderCurrentView();
       App.main?.markSynced?.();
 
-      await Promise.all([
-        App.api.loadMatches(),
-        App.api.loadMarketPlayers(),
-      ]);
+      const activeView = document.querySelector(".view.active")?.id;
+      const requiredLoads = [App.api.loadMatches()];
+      if (activeView === "playersView" || activeView === "transfersView") {
+        requiredLoads.push(App.api.loadMarketPlayers());
+      }
+      await Promise.all(requiredLoads);
 
-      App.main.renderAll();
+      App.main.renderCurrentView();
       App.main?.markSynced?.();
 
       if (!options.skipBackgroundRefresh) {
-        App.api
-          .processSponsorshipsInBackground()
-          .then(() =>
-            App.api.loadApiData({
-              showLoader: false,
-              skipBackgroundRefresh: true,
-            }),
-          )
-          .catch((error) =>
-            console.warn("Atualização de patrocínios indisponível:", error),
-          );
-        App.api
-          .hydrateSecondaryData(data)
-          .catch((error) =>
-            console.warn("Hidratação complementar indisponível:", error),
-          );
+        const runHydration = () => {
+          App.api
+            .hydrateSecondaryData(data)
+            .catch((error) =>
+              console.warn("Hidratação complementar indisponível:", error),
+            );
+        };
+        if ("requestIdleCallback" in window) {
+          window.requestIdleCallback(runHydration, { timeout: 2500 });
+        } else {
+          setTimeout(runHydration, 500);
+        }
       }
       return data;
     } catch (error) {

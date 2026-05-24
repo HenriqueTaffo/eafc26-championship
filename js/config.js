@@ -1,11 +1,10 @@
-const API_URL = "https://fdippspwpugnxwxmjnqf.supabase.co";
 window.App = window.App || {};
 
 App.config = {
   API_URL: "https://fdippspwpugnxwxmjnqf.supabase.co",
   SUPABASE_URL: "https://fdippspwpugnxwxmjnqf.supabase.co",
   SUPABASE_PUBLISHABLE_KEY: "sb_publishable_9YyrYEk9jH5CuatQK_Ejpg_VfQq6qCK",
-  assetVersion: "20260524-player-photo-standard-v1",
+  assetVersion: "20260524-intelligence-center-v1",
   transferBudget: 65000000,
   homeMatchBonus: 1500000,
   winBonus: 1250000,
@@ -48,5 +47,7 @@ App.state = {
   loadingCount: 0,
   silentSyncRunning: false,
   autoEventGenerationRunning: false,
-  lastAutoEventCheckKey: ""
+  lastAutoEventCheckKey: "",
+  lastApiPayload: null,
+  lastApiLoadAt: 0
 };

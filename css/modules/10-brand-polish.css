@@ -324,6 +324,134 @@ textarea:focus-visible {
   min-height: 150px;
 }
 
+.manager-login-panel {
+  margin: 18px 0;
+}
+
+.manager-login-shell {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  border: 1px solid rgba(45, 212, 191, .18) !important;
+  background:
+    linear-gradient(120deg, rgba(251, 191, 36, .10), transparent 28%),
+    linear-gradient(135deg, rgba(11, 18, 19, .96), rgba(13, 22, 26, .88)) !important;
+  box-shadow: 0 18px 46px rgba(0, 0, 0, .26);
+}
+
+.manager-login-shell::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    linear-gradient(90deg, rgba(255, 255, 255, .08), transparent 24%),
+    radial-gradient(circle at 88% 20%, rgba(45, 212, 191, .14), transparent 34%);
+}
+
+.manager-login-card.manager-login-shell {
+  grid-template-columns: minmax(310px, 1.1fr) minmax(320px, .9fr) auto;
+  gap: 18px;
+  align-items: center;
+  padding: 18px;
+}
+
+.manager-login-brand,
+.manager-login-identity {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  gap: 14px;
+}
+
+.manager-login-avatar {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 58px;
+  height: 58px;
+  overflow: hidden;
+  border-radius: 8px;
+  border: 1px solid rgba(251, 191, 36, .34);
+  background: rgba(255, 255, 255, .04);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .10);
+}
+
+.manager-login-avatar-large {
+  width: 82px;
+  height: 82px;
+}
+
+.manager-login-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 54% 50%;
+  transform: scale(1.06);
+}
+
+.manager-login-brand > div,
+.manager-login-identity > div {
+  min-width: 0;
+}
+
+.manager-login-card span,
+.manager-session-card span {
+  color: #9ff3e8 !important;
+}
+
+.manager-login-card strong,
+.manager-session-card strong {
+  color: #fffef8 !important;
+  font-size: clamp(22px, 2.2vw, 34px);
+  line-height: 1.02;
+}
+
+.manager-session-card strong {
+  font-size: 22px;
+}
+
+.manager-login-card small,
+.manager-session-card small {
+  display: block;
+  margin-top: 6px;
+  max-width: 430px;
+  color: #b9c8c6 !important;
+  line-height: 1.45;
+}
+
+.manager-login-fields {
+  display: grid;
+  grid-template-columns: minmax(150px, .85fr) minmax(140px, .65fr);
+  gap: 12px;
+  align-items: end;
+}
+
+.manager-login-fields label {
+  margin: 0;
+  color: #d9e5e2;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.manager-login-fields select,
+.manager-login-fields input {
+  min-height: 46px;
+  margin-top: 7px;
+}
+
+.manager-login-submit {
+  min-width: 118px;
+  min-height: 46px;
+  white-space: nowrap;
+}
+
+.manager-session-card.manager-login-shell {
+  grid-template-columns: minmax(0, 1fr) auto;
+  padding: 14px 16px;
+}
+
 .summary-card::before,
 .home-metric::before {
   content: "";
@@ -704,6 +832,190 @@ tbody tr:hover td {
   color: #9ee7dd;
 }
 
+/* v78 - performance visual: menos pintura pesada e render sob demanda */
+:root {
+  --shadow-soft: 0 12px 32px rgba(0, 0, 0, .22);
+  --shadow-tight: 0 7px 18px rgba(0, 0, 0, .18);
+}
+
+.view {
+  contain: layout paint style;
+}
+
+.view:not(.active) {
+  content-visibility: hidden;
+  contain-intrinsic-size: 900px;
+}
+
+.view.active {
+  content-visibility: visible;
+}
+
+.home-panel,
+.full-standings-block,
+.calendar-week-board,
+.calendar-month-card,
+.cup-board,
+.event-card-v45,
+.events-command-card,
+.transfer-movement-card,
+.coach-panel-card,
+.commissioner-card,
+.submit-card,
+.experience-card,
+.league-news-card,
+.decision-card,
+.decision-private-card,
+.budget-panel,
+.budget-hero {
+  contain: layout paint style;
+}
+
+.home-panel,
+.full-standings-block,
+.calendar-week-board,
+.calendar-month-card,
+.cup-board,
+.event-card-v45,
+.transfer-movement-card,
+.coach-panel-card,
+.commissioner-card,
+.submit-card,
+.experience-card,
+.league-news-card {
+  content-visibility: auto;
+  contain-intrinsic-size: 340px;
+}
+
+.calendar-month-card,
+.full-standings-block,
+.submit-card,
+.commissioner-card,
+.experience-card {
+  contain-intrinsic-size: 520px;
+}
+
+.tabs,
+.app-status-bar,
+.global-search-results,
+.result-modal,
+.modal,
+.modal-backdrop,
+.calendar-week-board,
+.table-wrapper {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+.tab-button,
+.attention-item,
+.home-link,
+.mini-action-button,
+.primary-button,
+.secondary-button,
+.market-player-option,
+.event-card-v45,
+.transfer-movement-card,
+.calendar-event-card,
+.calendar-day-cell,
+.experience-card,
+.intelligence-action-row,
+.intelligence-market-card,
+.sponsor-offer-card,
+.sponsorship-card {
+  transition:
+    background-color .12s ease,
+    border-color .12s ease,
+    color .12s ease,
+    opacity .12s ease !important;
+}
+
+.tab-button:hover,
+.attention-item:hover,
+.home-link:hover,
+.mini-action-button:hover,
+.primary-button:hover,
+.secondary-button:hover,
+.market-player-option:hover,
+.event-card-v45:hover,
+.transfer-movement-card:hover,
+.calendar-event-card:hover,
+.calendar-day-cell:hover,
+.experience-card:hover,
+.intelligence-action-row:hover,
+.intelligence-market-card:hover,
+.sponsor-offer-card:hover,
+.sponsorship-card:hover {
+  transform: none !important;
+  filter: none !important;
+}
+
+.player-avatar img,
+.market-player-photo img,
+.ea-rating-photo img,
+.scout-photo img,
+.club-badge img {
+  will-change: auto;
+}
+
+.calendar-day-events,
+.email-archive-list,
+.experience-list,
+.intelligence-action-list,
+.intelligence-power-list,
+.intelligence-market-grid,
+.commissioner-sublist,
+.commissioner-split-list,
+.market-player-results,
+.ea-rating-results {
+  overscroll-behavior: contain;
+}
+
+@media (max-width: 760px) {
+  body::before {
+    display: none;
+  }
+
+  .league-hero,
+  .summary-card,
+  .home-metric,
+  .home-panel,
+  .full-standings-block,
+  .calendar-week-board,
+  .calendar-month-card,
+  .calendar-day-cell,
+  .calendar-event-card,
+  .event-card-v45,
+  .transfer-movement-card,
+  .coach-panel-card,
+  .commissioner-card,
+  .submit-card,
+  .experience-card,
+  .budget-panel,
+  .budget-hero,
+  .manager-login-shell {
+    box-shadow: none !important;
+  }
+
+  .view.active {
+    contain: layout paint;
+  }
+
+  .tabs,
+  .app-status-bar {
+    position: sticky;
+    transform: translateZ(0);
+  }
+
+  .tab-button,
+  button,
+  input,
+  select,
+  textarea {
+    transition-duration: .08s !important;
+  }
+}
+
 .transfer-proposal-card,
 .commissioner-transfer-reversal-card,
 .commissioner-cpu-offers-card {
@@ -760,7 +1072,748 @@ tbody tr:hover td {
   gap: 8px;
 }
 
+/* v76 - calendário com leitura de mês, dia e evento */
+.calendar-month-board {
+  display: grid;
+  gap: 16px;
+}
+
+.calendar-month-card {
+  content-visibility: auto;
+  contain-intrinsic-size: 820px;
+  border: 1px solid rgba(148, 163, 184, .16);
+  border-radius: 8px;
+  padding: 14px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, .025), transparent 52%),
+    rgba(10, 16, 19, .88);
+  box-shadow: var(--shadow-tight);
+}
+
+.calendar-month-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 12px;
+}
+
+.calendar-month-header h2 {
+  margin: 4px 0 0;
+  color: #f8fafc;
+  font-size: 24px;
+  line-height: 1.12;
+  text-transform: capitalize;
+}
+
+.calendar-month-stats {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.calendar-month-stats span,
+.calendar-day-count,
+.calendar-event-status-dot,
+.calendar-chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  border: 1px solid rgba(148, 163, 184, .18);
+  border-radius: 999px;
+  padding: 5px 8px;
+  color: #c7d2fe;
+  background: rgba(15, 23, 42, .66);
+  font-size: 11px;
+  font-weight: 850;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.calendar-weekday-row,
+.calendar-month-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.calendar-weekday-row {
+  margin-bottom: 8px;
+}
+
+.calendar-weekday-row span {
+  color: #7dd3fc;
+  font-size: 11px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.calendar-day-cell {
+  min-width: 0;
+  min-height: 184px;
+  border: 1px solid rgba(148, 163, 184, .13);
+  border-radius: 8px;
+  padding: 10px;
+  background: rgba(2, 6, 23, .28);
+}
+
+.calendar-day-cell.has-events {
+  border-color: rgba(45, 212, 191, .18);
+  background:
+    linear-gradient(180deg, rgba(45, 212, 191, .06), transparent 38%),
+    rgba(8, 13, 18, .86);
+}
+
+.calendar-day-cell.has-human-match {
+  box-shadow: inset 3px 0 0 rgba(167, 139, 250, .85);
+}
+
+.calendar-day-cell.has-pending {
+  border-color: rgba(96, 165, 250, .24);
+}
+
+.calendar-day-cell-empty {
+  opacity: .28;
+}
+
+.calendar-day-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.calendar-day-top time {
+  display: grid;
+  gap: 2px;
+}
+
+.calendar-day-top time span {
+  color: #f8fafc;
+  font-size: 24px;
+  font-weight: 900;
+  line-height: .95;
+}
+
+.calendar-day-top time small {
+  color: #93a4af;
+  font-size: 11px;
+  font-weight: 850;
+  text-transform: uppercase;
+}
+
+.calendar-day-count {
+  color: #9ff3e8;
+  white-space: nowrap;
+  background: rgba(20, 184, 166, .10);
+  border-color: rgba(20, 184, 166, .24);
+}
+
+.calendar-day-empty {
+  display: inline-block;
+  margin-top: 28px;
+  color: #65737e;
+  font-size: 13px;
+}
+
+.calendar-day-events {
+  display: grid;
+  gap: 8px;
+  max-height: 390px;
+  overflow: auto;
+  padding-right: 2px;
+  scrollbar-color: rgba(45, 212, 191, .45) rgba(255, 255, 255, .04);
+}
+
+.calendar-event-card {
+  min-width: 0;
+  border: 1px solid rgba(148, 163, 184, .14);
+  border-radius: 8px;
+  padding: 9px;
+  background: rgba(15, 23, 42, .66);
+}
+
+.calendar-event-card.is-ours {
+  border-color: rgba(167, 139, 250, .34);
+  background:
+    linear-gradient(135deg, rgba(124, 58, 237, .14), transparent 48%),
+    rgba(15, 23, 42, .72);
+}
+
+.calendar-event-card.done {
+  opacity: .68;
+}
+
+.calendar-event-head,
+.calendar-event-phase,
+.calendar-event-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.calendar-event-head {
+  margin-bottom: 8px;
+}
+
+.calendar-event-status-dot {
+  color: #bfdbfe;
+  white-space: nowrap;
+  background: rgba(59, 130, 246, .12);
+  border-color: rgba(96, 165, 250, .24);
+}
+
+.calendar-event-status-dot.done {
+  color: #bbf7d0;
+  background: rgba(34, 197, 94, .11);
+  border-color: rgba(34, 197, 94, .24);
+}
+
+.calendar-event-match {
+  min-width: 0;
+  margin: 8px 0;
+}
+
+.matchup.calendar-grid-match {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 16px minmax(0, 1fr);
+  align-items: center;
+  gap: 7px;
+  width: 100%;
+}
+
+.calendar-grid-match .matchup-side.home {
+  grid-template-columns: minmax(0, 1fr) 24px;
+}
+
+.calendar-grid-match .matchup-side.away {
+  grid-template-columns: 24px minmax(0, 1fr);
+}
+
+.calendar-grid-match .club-badge.small {
+  width: 24px;
+  height: 24px;
+  flex-basis: 24px;
+}
+
+.calendar-grid-match .matchup-name {
+  color: #f8fafc;
+  font-size: 13px;
+  font-weight: 900;
+  letter-spacing: 0;
+}
+
+.calendar-grid-match .matchup-x {
+  width: 16px;
+  color: #94a3b8;
+  font-size: 11px;
+}
+
+.calendar-event-phase {
+  color: #9aa8b4;
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.calendar-event-phase span:first-child {
+  min-width: 0;
+}
+
+.calendar-event-phase span:last-child {
+  flex: 0 0 auto;
+  color: #7dd3fc;
+}
+
+.calendar-event-meta {
+  align-items: flex-start;
+  margin-top: 8px;
+}
+
+.calendar-event-meta > div {
+  display: flex;
+  min-width: 0;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.calendar-event-meta > span {
+  flex: 0 0 auto;
+  color: #a9b3b8;
+  font-size: 12px;
+}
+
+.calendar-owner-pill {
+  min-width: 0;
+  max-width: 92px;
+  overflow: hidden;
+  color: #fff;
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.calendar-chip-muted {
+  color: #93a4af;
+  background: rgba(148, 163, 184, .08);
+}
+
+.calendar-event-action {
+  margin-top: 10px;
+}
+
+.calendar-event-action .calendar-action-cell {
+  width: 100%;
+  justify-content: space-between;
+}
+
+.calendar-event-action .status-pill {
+  max-width: 100%;
+  white-space: normal;
+}
+
+.calendar-event-action .mini-action-button {
+  min-height: 34px;
+  border-radius: 8px;
+}
+
+.calendar-empty-panel {
+  display: grid;
+  gap: 6px;
+  border: 1px dashed rgba(125, 211, 252, .28);
+  border-radius: 8px;
+  padding: 22px;
+  color: #dbeafe;
+  background: rgba(15, 23, 42, .42);
+}
+
+.calendar-empty-panel span {
+  color: #9aa8b4;
+}
+
+@media (max-width: 900px) {
+  .calendar-month-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .calendar-month-stats {
+    justify-content: flex-start;
+  }
+
+  .calendar-weekday-row {
+    display: none;
+  }
+
+  .calendar-month-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .calendar-day-cell {
+    min-height: 0;
+  }
+
+  .calendar-day-cell-empty,
+  .calendar-day-empty {
+    display: none;
+  }
+
+  .calendar-day-events {
+    max-height: none;
+  }
+
+  .matchup.calendar-grid-match {
+    grid-template-columns: 1fr;
+  }
+
+  .calendar-grid-match .matchup-x {
+    display: none;
+  }
+
+  .calendar-grid-match .matchup-side.home,
+  .calendar-grid-match .matchup-side.away {
+    grid-template-columns: 24px minmax(0, 1fr);
+    text-align: left;
+  }
+
+  .calendar-grid-match .matchup-side.home .matchup-name {
+    order: 2;
+  }
+
+  .calendar-grid-match .matchup-side.home .club-badge {
+    order: 1;
+  }
+}
+
+/* v77 - Central de Inteligência */
+.experience-hero {
+  border-color: rgba(45, 212, 191, .28) !important;
+  background:
+    linear-gradient(120deg, rgba(45, 212, 191, .11), transparent 44%),
+    linear-gradient(180deg, rgba(255, 255, 255, .035), transparent 72%),
+    rgba(10, 16, 18, .92) !important;
+}
+
+.intelligence-command {
+  display: grid;
+  grid-template-columns: minmax(280px, .9fr) minmax(360px, 1.1fr);
+  gap: 16px;
+  align-items: stretch;
+  border-color: rgba(45, 212, 191, .24) !important;
+}
+
+.intelligence-command-main {
+  display: grid;
+  align-content: center;
+  gap: 10px;
+  min-height: 220px;
+  border: 1px solid rgba(45, 212, 191, .16);
+  border-radius: 8px;
+  padding: 18px;
+  background:
+    linear-gradient(135deg, rgba(45, 212, 191, .12), transparent 62%),
+    rgba(2, 6, 23, .24);
+}
+
+.intelligence-command-main h2 {
+  margin: 0;
+  color: #f8fafc;
+  font-size: 30px;
+  line-height: 1.08;
+}
+
+.intelligence-command-main p {
+  max-width: 620px;
+  margin: 0;
+}
+
+.intelligence-command-main .mini-action-button {
+  justify-self: start;
+  border-radius: 8px;
+}
+
+.intelligence-pulse-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.intelligence-pulse-grid article,
+.intelligence-action-row,
+.intelligence-market-card,
+.intelligence-parity-list div,
+.intelligence-match-card,
+.intelligence-power-row {
+  border: 1px solid rgba(148, 163, 184, .14);
+  border-radius: 8px;
+  background: rgba(2, 6, 23, .26);
+}
+
+.intelligence-pulse-grid article {
+  display: grid;
+  align-content: space-between;
+  min-height: 104px;
+  padding: 14px;
+}
+
+.intelligence-pulse-grid span,
+.intelligence-action-row > span,
+.intelligence-market-card dt,
+.intelligence-parity-list span,
+.intelligence-match-card span {
+  color: #9ee7dd;
+  font-size: 11px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.intelligence-pulse-grid strong {
+  color: #f8fafc;
+  font-size: 28px;
+  line-height: 1;
+}
+
+.intelligence-queue .home-panel-header small {
+  color: #9ee7dd;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.intelligence-action-list,
+.intelligence-power-list,
+.intelligence-match-list,
+.intelligence-parity-list {
+  display: grid;
+  gap: 10px;
+}
+
+.intelligence-action-row {
+  display: grid;
+  grid-template-columns: 92px minmax(0, 1fr) minmax(92px, auto) 74px;
+  align-items: center;
+  gap: 12px;
+  min-height: 76px;
+  padding: 12px;
+}
+
+.intelligence-action-row strong,
+.intelligence-market-card strong,
+.intelligence-match-card strong,
+.intelligence-parity-list strong {
+  color: #f8fafc;
+}
+
+.intelligence-action-row small,
+.intelligence-market-card p,
+.intelligence-parity-list small,
+.intelligence-match-card small,
+.intelligence-match-card p,
+.intelligence-power-row small {
+  color: #a9b3b8;
+  line-height: 1.4;
+}
+
+.intelligence-action-row b {
+  justify-self: end;
+  color: #bfdbfe;
+  white-space: nowrap;
+}
+
+.intelligence-action-row button {
+  min-height: 36px;
+  border: 1px solid rgba(45, 212, 191, .22);
+  border-radius: 8px;
+  color: #dffdf8;
+  background: rgba(20, 184, 166, .12);
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.intelligence-action-row.severity-critical {
+  border-color: rgba(248, 113, 113, .26);
+  box-shadow: inset 3px 0 0 rgba(248, 113, 113, .88);
+}
+
+.intelligence-action-row.severity-warning {
+  border-color: rgba(251, 191, 36, .26);
+  box-shadow: inset 3px 0 0 rgba(251, 191, 36, .88);
+}
+
+.intelligence-action-row.severity-medium {
+  border-color: rgba(96, 165, 250, .24);
+  box-shadow: inset 3px 0 0 rgba(96, 165, 250, .82);
+}
+
+.intelligence-power-list {
+  margin-top: 12px;
+}
+
+.intelligence-power-row {
+  display: grid;
+  grid-template-columns: 28px 34px minmax(0, 1fr) 42px;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+}
+
+.intelligence-power-row i {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 8px;
+  color: #dffdf8;
+  background: rgba(45, 212, 191, .12);
+  font-style: normal;
+  font-weight: 900;
+}
+
+.intelligence-power-row div {
+  min-width: 0;
+}
+
+.intelligence-power-row strong,
+.intelligence-power-row small {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.intelligence-power-row span {
+  display: block;
+  height: 6px;
+  margin-top: 7px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(148, 163, 184, .14);
+}
+
+.intelligence-power-row span em {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--brand-teal), var(--brand-amber));
+}
+
+.intelligence-power-row > b {
+  color: #f8fafc;
+  text-align: right;
+}
+
+.intelligence-power-row.tone-critical {
+  border-color: rgba(248, 113, 113, .22);
+}
+
+.intelligence-power-row.tone-warning {
+  border-color: rgba(251, 191, 36, .22);
+}
+
+.intelligence-power-row.tone-positive {
+  border-color: rgba(45, 212, 191, .24);
+}
+
+.intelligence-match-list {
+  margin-top: 12px;
+}
+
+.intelligence-match-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 8px;
+  padding: 12px;
+}
+
+.intelligence-match-card .matchup.calendar-grid-match {
+  margin: 6px 0;
+}
+
+.intelligence-match-card p {
+  margin: 0;
+}
+
+.intelligence-market-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.intelligence-market-card {
+  display: grid;
+  gap: 12px;
+  padding: 12px;
+}
+
+.intelligence-market-card > div:first-child {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.intelligence-market-card p {
+  margin: 0;
+}
+
+.intelligence-market-card dl {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+}
+
+.intelligence-market-card dl div {
+  display: grid;
+  gap: 2px;
+}
+
+.intelligence-market-card dd {
+  margin: 0;
+  color: #f8fafc;
+  font-weight: 900;
+}
+
+.intelligence-market-card.tone-critical {
+  border-color: rgba(248, 113, 113, .24);
+  background: linear-gradient(180deg, rgba(248, 113, 113, .08), rgba(2, 6, 23, .26));
+}
+
+.intelligence-market-card.tone-warning {
+  border-color: rgba(251, 191, 36, .24);
+  background: linear-gradient(180deg, rgba(251, 191, 36, .08), rgba(2, 6, 23, .26));
+}
+
+.intelligence-market-card.tone-positive {
+  border-color: rgba(45, 212, 191, .24);
+  background: linear-gradient(180deg, rgba(45, 212, 191, .08), rgba(2, 6, 23, .26));
+}
+
+.intelligence-parity-list {
+  margin-top: 12px;
+}
+
+.intelligence-parity-list div {
+  display: grid;
+  gap: 6px;
+  padding: 12px;
+}
+
+.intelligence-parity-list strong {
+  font-size: 22px;
+  line-height: 1.05;
+}
+
+.intelligence-empty-state {
+  display: grid;
+  gap: 5px;
+  border: 1px dashed rgba(45, 212, 191, .28);
+  border-radius: 8px;
+  padding: 18px;
+}
+
+.intelligence-empty-state strong {
+  color: #f8fafc;
+}
+
+.intelligence-empty-state span {
+  color: #a9b3b8;
+}
+
+@media (max-width: 1180px) {
+  .intelligence-market-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 900px) {
+  .intelligence-command,
+  .intelligence-action-row {
+    grid-template-columns: 1fr;
+  }
+
+  .intelligence-action-row b,
+  .intelligence-action-row button {
+    justify-self: start;
+  }
+
+  .intelligence-market-grid,
+  .intelligence-pulse-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 @media (max-width: 980px) {
+  .manager-login-card.manager-login-shell {
+    grid-template-columns: 1fr;
+    align-items: stretch;
+  }
+
+  .manager-login-fields {
+    grid-template-columns: 1fr 1fr;
+  }
+
   .league-hero {
     align-items: center;
     gap: 14px;
@@ -779,6 +1832,28 @@ tbody tr:hover td {
 }
 
 @media (max-width: 720px) {
+  .manager-login-brand,
+  .manager-login-identity {
+    align-items: flex-start;
+  }
+
+  .manager-login-fields {
+    grid-template-columns: 1fr;
+  }
+
+  .manager-login-avatar-large {
+    width: 66px;
+    height: 66px;
+  }
+
+  .manager-session-card.manager-login-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .manager-login-submit {
+    width: 100%;
+  }
+
   .app {
     width: min(100% - 20px, 640px);
     padding-top: 10px;

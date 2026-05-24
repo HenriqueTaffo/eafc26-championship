@@ -16,6 +16,7 @@
     "sync:market-avatar-cache-db:dry": "node scripts/sync-market-avatars-from-cache.js --dry-run",
     "sync:market-avatars": "node scripts/backfill-player-avatars.js",
     "sync:market-avatars:dry": "node scripts/backfill-player-avatars.js --dry-run",
+    "build:css": "node scripts/build-css-bundle.js",
     "format": "prettier --write \"**/*.{html,css,js,json,md}\"",
     "format:check": "prettier --check \"**/*.{html,css,js,json,md}\"",
     "lint": "eslint js"
