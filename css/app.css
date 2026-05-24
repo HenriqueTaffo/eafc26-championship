@@ -5140,6 +5140,244 @@ body.modal-active {
   }
 }
 
+/* v79 — auditoria CPU enxuta: mapa por semana antes de renderizar jogos */
+.sim-preview-shell {
+  gap: 12px;
+  padding: 12px;
+  border-radius: 8px;
+  border-color: rgba(148, 163, 184, .14);
+  background: rgba(8, 13, 18, .78);
+  box-shadow: none;
+}
+
+.sim-preview-title {
+  align-items: center;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(148, 163, 184, .12);
+}
+
+.sim-preview-title > div {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.sim-preview-title strong {
+  font-size: 18px;
+  line-height: 1.18;
+}
+
+.sim-preview-title span,
+.sim-preview-title small {
+  color: #9aa8b4;
+  font-size: 12px;
+  line-height: 1.35;
+  text-align: left;
+}
+
+.sim-preview-title small {
+  flex: 0 0 auto;
+  color: #9ff3e8;
+  font-weight: 850;
+}
+
+.sim-map-button {
+  min-height: 34px;
+  border: 1px solid rgba(125, 211, 252, .22);
+  border-radius: 8px;
+  padding: 0 11px;
+  color: #dbeafe;
+  background: rgba(15, 23, 42, .66);
+  font-weight: 850;
+  cursor: pointer;
+}
+
+.sim-preview-summary {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.sim-preview-summary article {
+  min-height: 70px;
+  border-radius: 8px;
+  padding: 10px;
+  background: rgba(15, 23, 42, .42);
+}
+
+.sim-preview-summary span {
+  color: #9aa8b4;
+  letter-spacing: 0;
+  line-height: 1.12;
+}
+
+.sim-preview-summary strong {
+  margin-top: 6px;
+  font-size: 24px;
+  line-height: 1;
+}
+
+.sim-week-board {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(154px, 1fr));
+  gap: 8px;
+}
+
+.sim-week-card {
+  position: relative;
+  display: grid;
+  gap: 7px;
+  min-height: 96px;
+  overflow: hidden;
+  border: 1px solid rgba(148, 163, 184, .14);
+  border-radius: 8px;
+  padding: 12px;
+  color: #e5edf3;
+  text-align: left;
+  background: rgba(2, 6, 23, .28);
+  cursor: pointer;
+  transition: border-color .12s ease, background-color .12s ease;
+}
+
+.sim-week-card:hover,
+.sim-week-card:focus-visible {
+  border-color: rgba(125, 211, 252, .36);
+  background: rgba(15, 23, 42, .62);
+}
+
+.sim-week-card.is-ready {
+  border-color: rgba(45, 212, 191, .28);
+}
+
+.sim-week-card.is-blocked {
+  border-color: rgba(251, 191, 36, .25);
+}
+
+.sim-week-card span {
+  color: #9ff3e8;
+  font-size: 11px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.sim-week-card strong {
+  color: #f8fafc;
+  font-size: 21px;
+  line-height: 1;
+}
+
+.sim-week-card small {
+  color: #a9b3b8;
+  font-size: 12px;
+  line-height: 1.25;
+}
+
+.sim-week-card i {
+  position: absolute;
+  inset: auto 0 0 0;
+  height: 3px;
+  background:
+    linear-gradient(90deg, rgba(45, 212, 191, .9) var(--sim-progress), rgba(148, 163, 184, .14) 0);
+}
+
+.sim-preview-grid {
+  max-height: min(62vh, 620px);
+  overflow: auto;
+  padding-right: 2px;
+  content-visibility: auto;
+  contain-intrinsic-size: 620px;
+  scrollbar-color: rgba(45, 212, 191, .45) rgba(255, 255, 255, .04);
+}
+
+.sim-competition-block {
+  content-visibility: auto;
+  contain-intrinsic-size: 260px;
+  border-radius: 8px;
+  padding: 10px;
+  background: rgba(15, 23, 42, .34);
+}
+
+.sim-competition-header {
+  margin-bottom: 8px;
+}
+
+.sim-competition-header strong {
+  color: #f8fafc;
+  font-size: 15px;
+}
+
+.sim-competition-header span {
+  color: #9ff3e8;
+  font-size: 12px;
+}
+
+.sim-match-list {
+  gap: 6px;
+}
+
+.sim-match-row {
+  grid-template-columns: minmax(0, 1fr) auto;
+  min-height: 50px;
+  border-radius: 8px;
+  padding: 8px 10px;
+  background: rgba(2, 6, 23, .22);
+}
+
+.sim-match-main {
+  min-width: 0;
+}
+
+.sim-match-main strong {
+  overflow-wrap: anywhere;
+  font-size: 14px;
+  line-height: 1.18;
+}
+
+.sim-match-main strong span {
+  padding: 0 4px;
+}
+
+.sim-match-main small {
+  font-size: 12px;
+  line-height: 1.25;
+}
+
+.sim-match-row b {
+  min-width: 0;
+  color: #dbeafe;
+  font-size: 13px;
+}
+
+@media (max-width: 760px) {
+  .sim-preview-title {
+    gap: 8px;
+  }
+
+  .sim-preview-title small,
+  .sim-map-button {
+    justify-self: start;
+  }
+
+  .sim-preview-summary,
+  .sim-week-board {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .sim-week-card {
+    min-height: 92px;
+  }
+
+  .sim-preview-grid {
+    max-height: none;
+    overflow: visible;
+  }
+}
+
+@media (max-width: 460px) {
+  .sim-preview-summary,
+  .sim-week-board {
+    grid-template-columns: 1fr;
+  }
+}
 
 
 /* css/modules/05-events-mobile.css */

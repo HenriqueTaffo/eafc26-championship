@@ -457,13 +457,17 @@ App.forms = {
       const weekField = cpuSimulationForm.elements.week;
       if (weekField) {
         let previewTimer = null;
+        let previewLoaded = false;
         const updatePreview = () => {
+          previewLoaded = true;
           clearTimeout(previewTimer);
           previewTimer = setTimeout(() => App.api.renderCpuSimulationPreview(weekField.value), 250);
         };
         weekField.addEventListener("input", updatePreview);
         weekField.addEventListener("change", updatePreview);
-        App.api.renderCpuSimulationPreview(null);
+        weekField.addEventListener("focus", () => {
+          if (!previewLoaded) updatePreview();
+        });
       }
     }
   },

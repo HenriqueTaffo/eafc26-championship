@@ -838,74 +838,134 @@ App.api = {
     }
 
     const summary = audit.summary || {};
-    const pendingWeeks = [
-      ...new Set(
-        matches
-          .filter((match) => match.status !== "approved")
-          .map((match) => match.week)
-          .filter(Boolean),
-      ),
-    ].sort((a, b) => Number(a) - Number(b));
+    const isApprovedMatch = (match) =>
+      App.utils.normalizeText(match.status || "") === "approved";
+    const isCpuMatch = (match) =>
+      App.utils.normalizeText(match.match_type || "") === "cpu x cpu";
 
-    const grouped = matches.reduce((acc, match) => {
-      const key = week
-        ? match.competition
-        : `Semana ${match.week || "-"} · ${match.competition}`;
-      if (!acc[key]) acc[key] = [];
-      acc[key].push(match);
-      return acc;
-    }, {});
+    const weekRows = [
+      ...matches
+        .reduce((acc, match) => {
+          const key = Number(match.week || 0);
+          if (!key) return acc;
 
-    const blocks = Object.entries(grouped)
-      .map(
-        ([title, items]) => `
-      <article class="sim-competition-block">
-        <div class="sim-competition-header">
-          <strong>${App.utils.escapeHtml(title)}</strong>
-          <span>${items.length} jogo(s)</span>
-        </div>
-        <div class="sim-match-list">
-          ${items
-            .map((match) => {
-              const isDone = match.status === "approved";
-              const isCpu = match.match_type === "CPU x CPU";
-              const statusLabel = isDone
-                ? `${match.home_score} x ${match.away_score}${match.penalty_winner ? ` · Pên.: ${match.penalty_winner} ${match.penalty_score || ""}` : ""}`
-                : match.status_label || "Pendente";
+          if (!acc.has(key)) {
+            acc.set(key, {
+              week: key,
+              total: 0,
+              cpuPending: 0,
+              humanPending: 0,
+              approved: 0,
+              competitions: new Set(),
+            });
+          }
 
-              return `
-              <div class="sim-match-row ${isCpu ? "is-cpu" : "has-human"} ${isDone ? "is-done" : ""}">
-                <div class="sim-match-main">
-                  <strong>${App.utils.escapeHtml(match.home)} <span>x</span> ${App.utils.escapeHtml(match.away)}</strong>
-                  <small>${App.utils.escapeHtml(match.phase || "-")} · ${App.utils.escapeHtml(match.match_type || "-")}</small>
-                </div>
-                <b>${App.utils.escapeHtml(statusLabel)}</b>
-              </div>
-            `;
-            })
-            .join("")}
-        </div>
-      </article>
-    `,
+          const row = acc.get(key);
+          const isDone = isApprovedMatch(match);
+          row.total += 1;
+          row.competitions.add(match.competition || "Liga");
+
+          if (isDone) row.approved += 1;
+          else if (isCpuMatch(match)) row.cpuPending += 1;
+          else row.humanPending += 1;
+
+          return acc;
+        }, new Map())
+        .values(),
+    ]
+      .map((row) => ({
+        ...row,
+        pending: row.cpuPending + row.humanPending,
+        donePercent: row.total ? Math.round((row.approved / row.total) * 100) : 0,
+        competitionsLabel: [...row.competitions].slice(0, 2).join(" · "),
+      }))
+      .sort((a, b) => Number(a.week) - Number(b.week));
+
+    const pendingWeeks = weekRows
+      .filter((row) => row.pending > 0)
+      .map((row) => row.week);
+
+    const blocks = week
+      ? Object.entries(
+        matches.reduce((acc, match) => {
+          const key = match.competition || "Liga";
+          if (!acc[key]) acc[key] = [];
+          acc[key].push(match);
+          return acc;
+        }, {}),
       )
-      .join("");
+        .map(
+          ([title, items]) => `
+        <article class="sim-competition-block">
+          <div class="sim-competition-header">
+            <strong>${App.utils.escapeHtml(title)}</strong>
+            <span>${items.length} jogo(s)</span>
+          </div>
+          <div class="sim-match-list">
+            ${items
+              .map((match) => {
+                const isDone = isApprovedMatch(match);
+                const isCpu = isCpuMatch(match);
+                const statusLabel = isDone
+                  ? `${match.home_score} x ${match.away_score}${match.penalty_winner ? ` · Pên.: ${match.penalty_winner} ${match.penalty_score || ""}` : ""}`
+                  : match.status_label || "Pendente";
+
+                return `
+                <div class="sim-match-row ${isCpu ? "is-cpu" : "has-human"} ${isDone ? "is-done" : ""}">
+                  <div class="sim-match-main">
+                    <strong>${App.utils.escapeHtml(match.home)} <span>x</span> ${App.utils.escapeHtml(match.away)}</strong>
+                    <small>${App.utils.escapeHtml(match.phase || "-")} · ${App.utils.escapeHtml(match.match_type || "-")}</small>
+                  </div>
+                  <b>${App.utils.escapeHtml(statusLabel)}</b>
+                </div>
+              `;
+              })
+              .join("")}
+          </div>
+        </article>
+      `,
+        )
+        .join("")
+      : "";
 
     const canSimulate =
       Number(summary.human_pending || 0) === 0 &&
       Number(summary.cpu_pending || 0) > 0;
 
+    const weekOverview = weekRows.filter((row) => row.pending > 0 || row.approved > 0);
+
     container.innerHTML = `
-      <div class="sim-preview-shell">
+      <div class="sim-preview-shell ${week ? "is-week-detail" : "is-week-map"}">
         <div class="sim-preview-title">
-          <strong>${week ? `Semana ${week}` : "Pendências por semana"}</strong>
-          <span>${week ? "Auditoria oficial do Supabase antes da simulação." : "Informe uma semana para simular; abaixo está o mapa geral."}</span>
+          <div>
+            <strong>${week ? `Semana ${week}` : "Simulação CPU x CPU"}</strong>
+            <span>${week ? "Auditoria oficial antes de simular esta semana." : "Escolha uma semana para ver detalhes e liberar a simulação."}</span>
+          </div>
+          ${week ? `<button type="button" class="sim-map-button" data-clear-sim-week>Mapa geral</button>` : `<small>${pendingWeeks.length} semana(s) com pendências</small>`}
         </div>
 
         ${
-          !week && pendingWeeks.length
+          !week
             ? `
-          <div class="sim-week-pills">
-            ${pendingWeeks.map((item) => `<button type="button" data-fill-sim-week="${item}">Semana ${item}</button>`).join("")}
+          <div class="sim-week-board">
+            ${weekOverview
+              .map((item) => {
+                const ready = item.cpuPending > 0 && item.humanPending === 0;
+                const blocked = item.humanPending > 0;
+                return `
+                  <button
+                    type="button"
+                    class="sim-week-card ${ready ? "is-ready" : ""} ${blocked ? "is-blocked" : ""}"
+                    data-fill-sim-week="${item.week}"
+                  >
+                    <span>Semana ${item.week}</span>
+                    <strong>${item.cpuPending} CPU</strong>
+                    <small>${blocked ? `${item.humanPending} com técnico pendente` : ready ? "pronta para simular" : `${item.approved}/${item.total} finalizados`}</small>
+                    <i style="--sim-progress:${item.donePercent}%"></i>
+                  </button>
+                `;
+              })
+              .join("")}
           </div>
         `
             : ""
@@ -944,7 +1004,7 @@ App.api = {
             : ""
         }
 
-        <div class="sim-preview-grid">${blocks}</div>
+        ${week ? `<div class="sim-preview-grid">${blocks}</div>` : ""}
       </div>
     `;
 
@@ -955,6 +1015,12 @@ App.api = {
         form.elements.week.value = button.dataset.fillSimWeek;
         App.api.renderCpuSimulationPreview(button.dataset.fillSimWeek);
       });
+    });
+
+    container.querySelector("[data-clear-sim-week]")?.addEventListener("click", () => {
+      const form = document.getElementById("cpuSimulationForm");
+      if (form?.elements.week) form.elements.week.value = "";
+      App.api.renderCpuSimulationPreview("");
     });
   },
 
