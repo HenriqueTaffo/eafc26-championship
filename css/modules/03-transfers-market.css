@@ -27,6 +27,7 @@
 .transfer-movement-card {
   display: grid;
   align-content: start;
+  min-width: 0;
   background:
     radial-gradient(circle at top right, rgba(37, 99, 235, .12), transparent 35%),
     rgba(17, 28, 51, .88);
@@ -146,6 +147,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 10px;
+  min-width: 0;
 }
 
 .movement-card-header small,
@@ -173,10 +175,17 @@
   font-weight: 900;
 }
 
+.movement-card-header > span,
+.movement-card-header small {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
 .movement-player .movement-player-identity {
   grid-template-columns: 44px minmax(0, 1fr);
   align-items: center;
   min-height: 50px;
+  width: 100%;
 }
 
 .movement-player .player-avatar {
@@ -203,10 +212,11 @@
   display: -webkit-box;
   overflow: hidden;
   min-height: 0;
-  max-height: 46px;
-  font-size: clamp(16px, 1.45vw, 21px);
+  max-height: 42px;
+  font-size: clamp(15px, 1.1vw, 20px);
   line-height: 1.08;
   white-space: normal;
+  overflow-wrap: anywhere;
   text-overflow: clip;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
@@ -225,8 +235,13 @@
   white-space: nowrap;
 }
 
+.movement-meta span:last-child {
+  flex: 0 0 auto;
+}
+
 .movement-value {
   margin-top: 12px;
+  align-items: flex-start;
 }
 
 .movement-value-copy {
@@ -234,6 +249,7 @@
   justify-items: end;
   gap: 3px;
   min-width: 0;
+  max-width: 68%;
 }
 
 .movement-value-copy small {
@@ -241,6 +257,7 @@
   font-size: 11px;
   line-height: 1.2;
   text-align: right;
+  overflow-wrap: anywhere;
 }
 
 .movement-value strong {
@@ -1032,6 +1049,26 @@
 
   .market-player-option {
     grid-template-columns: 1fr;
+  }
+
+  .movement-card-header,
+  .movement-meta,
+  .movement-value {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .movement-value-copy {
+    justify-items: start;
+    max-width: 100%;
+  }
+
+  .movement-value-copy small {
+    text-align: left;
+  }
+
+  .movement-player .player-identity-copy strong {
+    font-size: 18px;
   }
 }
 
