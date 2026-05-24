@@ -18,35 +18,35 @@ App.main = {
     match: {
       cardClass: "loader-card-match",
       chip: "Montando a rodada",
-      speech: "Subornando o VAR...",
+      speech: "Conferindo a rodada...",
       market: {
         label: "Tática montada",
         value: "Rodada pronta",
         detail: "escalando confrontos..."
       },
-      chaosItems: ["⚠ conferindo lesões", "⚠ achando transfer ban", "⚠ morra will"]
+      chaosItems: ["conferindo lesões", "validando calendário", "sincronizando bastidores"]
     },
     market: {
       cardClass: "loader-card-market",
       chip: "Mercado em análise",
-      speech: "Subornando o VAR...",
+      speech: "Validando negociações...",
       market: {
         label: "Scout report",
         value: "OVR 87?",
         detail: "taxa subindo..."
       },
-      chaosItems: ["⚠ conferindo lesões", "⚠ achando transfer ban", "⚠ morra will"]
+      chaosItems: ["checando limites", "validando orçamento", "organizando propostas"]
     },
     chaos: {
       cardClass: "loader-card-chaos",
-      chip: "Modo desespero",
-      speech: "Subornando o VAR...",
+      chip: "Atualizando dados",
+      speech: "Organizando envios...",
       market: {
         label: "Scout report",
         value: "OVR 87?",
         detail: "taxa subindo..."
       },
-      chaosItems: ["⚠ conferindo lesões", "⚠ achando transfer ban", "⚠ morra will"]
+      chaosItems: ["conferindo formulários", "validando registros", "preparando painel"]
     }
   },
 
@@ -108,13 +108,13 @@ App.main = {
     const chaosItem3El = document.getElementById("globalLoaderChaosItem3");
 
     if (chipEl) chipEl.textContent = config.chip || "Carregando";
-    if (speechEl) speechEl.textContent = config.speech || "Subornando o VAR...";
+    if (speechEl) speechEl.textContent = config.speech || "Conferindo a rodada...";
     if (marketLabelEl) marketLabelEl.textContent = config.market?.label || "Scout report";
     if (marketValueEl) marketValueEl.textContent = config.market?.value || "OVR 87?";
     if (marketDetailEl) marketDetailEl.textContent = config.market?.detail || "taxa subindo...";
-    if (chaosItem1El) chaosItem1El.textContent = config.chaosItems?.[0] || "⚠ conferindo lesões";
-    if (chaosItem2El) chaosItem2El.textContent = config.chaosItems?.[1] || "⚠ achando transfer ban";
-    if (chaosItem3El) chaosItem3El.textContent = config.chaosItems?.[2] || "⚠ morra will";
+    if (chaosItem1El) chaosItem1El.textContent = config.chaosItems?.[0] || "conferindo lesões";
+    if (chaosItem2El) chaosItem2El.textContent = config.chaosItems?.[1] || "validando mercado";
+    if (chaosItem3El) chaosItem3El.textContent = config.chaosItems?.[2] || "organizando bastidores";
   },
 
   showLoader(optionsOrTitle = "Carregando dados da liga", legacyMessage = "Aguarde enquanto a classificação, o calendário e os painéis são atualizados.") {

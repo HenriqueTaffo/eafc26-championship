@@ -791,7 +791,7 @@ App.auth = {
           </div>
         ` : `
           <div class="decision-empty email-empty-state">
-            <span>INBOX</span>
+            <span>0</span>
             <strong>Nenhum e-mail pendente</strong>
             <p>Novas mensagens entram automaticamente ao longo do dia e vencem às 23:59.</p>
           </div>
@@ -932,7 +932,7 @@ App.auth = {
           </div>
         ` : `
           <div class="coach-empty-state decision-empty-visible email-empty-state">
-            <span>INBOX</span>
+            <span>0</span>
             <div>
               <strong>Nenhum e-mail pendente</strong>
               <p>Quando uma nova mensagem chegar para ${App.utils.escapeHtml(session.managerName)}, ela aparece aqui com ações de resposta.</p>
