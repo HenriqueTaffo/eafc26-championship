@@ -533,7 +533,7 @@ App.players = {
                     data-favorite-title="${App.utils.escapeHtml(target.player)}"
                     data-favorite-detail="${App.utils.escapeHtml([target.priority, target.club].filter(Boolean).join(" · "))}"
                   ><span aria-hidden="true"></span></button>
-                  <button type="button" class="icon-action-button" title="Remover alvo" aria-label="Remover alvo" data-remove-private-target="${App.utils.escapeHtml(target.id)}">×</button>
+                  <button type="button" class="icon-action-button remove-action-button" title="Remover alvo" aria-label="Remover alvo" data-remove-private-target="${App.utils.escapeHtml(target.id)}"></button>
                 </div>
               </div>
             `;
@@ -615,7 +615,7 @@ App.players = {
                   <span>${offerCount ? `${offerCount} proposta(s) direcionada(s)${lastOfferAt ? ` · última ${App.utils.formatDateTime(lastOfferAt)}` : ""}` : `Base ${App.utils.formatCurrency(baseValue)} · aguardando sondagem`}</span>
                 </div>
                 <div class="coach-target-actions">
-                  <button type="button" class="icon-action-button" title="Remover da lista" aria-label="Remover da lista" data-remove-sale-listing="${App.utils.escapeHtml(item.id)}">×</button>
+                  <button type="button" class="icon-action-button remove-action-button" title="Remover da lista" aria-label="Remover da lista" data-remove-sale-listing="${App.utils.escapeHtml(item.id)}"></button>
                 </div>
               </div>
             `;
@@ -905,7 +905,7 @@ App.players = {
             <div class="coach-favorite-item">
               <strong>${App.utils.escapeHtml(item.title)}</strong>
               <span>${App.utils.escapeHtml(item.detail || item.item_type || "")}</span>
-              <button type="button" class="icon-action-button" data-remove-favorite-type="${App.utils.escapeHtml(item.item_type)}" data-remove-favorite-key="${App.utils.escapeHtml(item.item_key)}">×</button>
+              <button type="button" class="icon-action-button remove-action-button" aria-label="Remover favorito" data-remove-favorite-type="${App.utils.escapeHtml(item.item_type)}" data-remove-favorite-key="${App.utils.escapeHtml(item.item_key)}"></button>
             </div>
           `).join("") : `
             <div class="coach-empty-state compact">

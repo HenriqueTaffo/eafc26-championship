@@ -324,49 +324,59 @@
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  gap: 8px;
+  gap: 6px;
+  padding: 4px;
+  border: 1px solid rgba(148, 163, 184, .10);
+  border-radius: 999px;
+  background: rgba(2, 6, 23, .20);
 }
 
 .icon-action-button {
-  width: 34px;
-  height: 34px;
-  border: 1px solid rgba(248,113,113,.2);
-  border-radius: 12px;
+  position: relative;
+  width: 30px;
+  height: 30px;
+  border: 1px solid rgba(148, 163, 184, .16);
+  border-radius: 999px;
   display: inline-grid;
   place-items: center;
-  background: rgba(127,29,29,.18);
-  color: #fecaca;
+  background: rgba(15, 23, 42, .72);
+  color: #cbd5e1;
   cursor: pointer;
-  font-size: 20px;
+  font-size: 0;
   line-height: 1;
+  transition: background .16s ease, border-color .16s ease, color .16s ease, transform .16s ease;
+}
+
+.icon-action-button:hover {
+  transform: translateY(-1px);
 }
 
 .favorite-action-button {
-  border-color: rgba(45, 212, 191, .24);
-  background: rgba(8, 145, 178, .14);
+  border-color: rgba(45, 212, 191, .28);
+  background: rgba(8, 145, 178, .12);
   color: #67e8f9;
 }
 
 .favorite-action-button span {
   position: relative;
   display: block;
-  width: 13px;
-  height: 17px;
-  border: 2px solid currentColor;
+  width: 10px;
+  height: 14px;
+  border: 1.8px solid currentColor;
   border-bottom: 0;
-  border-radius: 4px 4px 2px 2px;
+  border-radius: 3px 3px 1px 1px;
 }
 
 .favorite-action-button span::after {
   content: "";
   position: absolute;
   left: 50%;
-  bottom: -5px;
-  width: 9px;
-  height: 9px;
-  border-right: 2px solid currentColor;
-  border-bottom: 2px solid currentColor;
-  background: rgba(8, 145, 178, .14);
+  bottom: -4px;
+  width: 7px;
+  height: 7px;
+  border-right: 1.8px solid currentColor;
+  border-bottom: 1.8px solid currentColor;
+  background: rgba(15, 23, 42, .72);
   transform: translateX(-50%) rotate(45deg);
 }
 
@@ -379,6 +389,35 @@
 .favorite-action-button.is-active span,
 .favorite-action-button.is-active span::after {
   background: currentColor;
+}
+
+.remove-action-button {
+  border-color: rgba(248, 113, 113, .24);
+  background: rgba(127, 29, 29, .14);
+  color: #fecaca;
+}
+
+.remove-action-button::before,
+.remove-action-button::after {
+  content: "";
+  position: absolute;
+  width: 11px;
+  height: 1.7px;
+  border-radius: 999px;
+  background: currentColor;
+}
+
+.remove-action-button::before {
+  transform: rotate(45deg);
+}
+
+.remove-action-button::after {
+  transform: rotate(-45deg);
+}
+
+.remove-action-button:hover {
+  border-color: rgba(248, 113, 113, .48);
+  background: rgba(127, 29, 29, .24);
 }
 
 .coach-target-actions .icon-action-button {
@@ -2216,6 +2255,7 @@
 
   .coach-target-actions {
     grid-column: 1 / -1;
+    justify-self: flex-start;
     justify-content: flex-start;
   }
 }
