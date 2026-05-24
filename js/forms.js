@@ -1,6 +1,17 @@
 window.App = window.App || {};
 
 App.forms = {
+  getFriendlyErrorMessage(error) {
+    const message = error?.message || "";
+    if (error?.name === "AbortError") {
+      return "A operacao demorou demais para responder. Verifique o Supabase e tente novamente.";
+    }
+    if (App.utils.normalizeText(message).includes("statement timeout")) {
+      return "O Supabase demorou demais para concluir a acao. Tente novamente em alguns segundos.";
+    }
+    return message;
+  },
+
   updatePenaltyVisibility(form) {
     if (!form) return;
     const competition = form.elements.competition?.value || "";
@@ -116,10 +127,7 @@ App.forms = {
       form.reset();
       App.forms.updatePenaltyVisibility(form);
     } catch (error) {
-      const friendlyMessage = error.name === "AbortError"
-        ? "A operação demorou demais para responder. Verifique o Supabase e tente novamente."
-        : error.message;
-      App.utils.setMessage(message, friendlyMessage, "error");
+      App.utils.setMessage(message, App.forms.getFriendlyErrorMessage(error), "error");
     } finally {
       App.main.hideLoader();
       button.disabled = false;
@@ -157,10 +165,7 @@ App.forms = {
       App.forms.updatePenaltyVisibility(form);
       App.calendar.closeResultModal();
     } catch (error) {
-      const friendlyMessage = error.name === "AbortError"
-        ? "A operação demorou demais para responder. Verifique o Supabase e tente novamente."
-        : error.message;
-      App.utils.setMessage(message, friendlyMessage, "error");
+      App.utils.setMessage(message, App.forms.getFriendlyErrorMessage(error), "error");
     } finally {
       App.main.hideLoader();
       button.disabled = false;
@@ -274,10 +279,7 @@ App.forms = {
           : "Transferência salva. Atualizando orçamento, lista de transferências e painel..."
       });
     } catch (error) {
-      const friendlyMessage = error.name === "AbortError"
-        ? "A operação demorou demais para responder. Verifique o Supabase e tente novamente."
-        : error.message;
-      App.utils.setMessage(message, friendlyMessage, "error");
+      App.utils.setMessage(message, App.forms.getFriendlyErrorMessage(error), "error");
     } finally {
       App.main.hideLoader();
       button.disabled = false;
@@ -318,10 +320,7 @@ App.forms = {
       });
       await App.api.renderCpuSimulationPreview(payload.week);
     } catch (error) {
-      const friendlyMessage = error.name === "AbortError"
-        ? "A operação demorou demais para responder. Verifique o Supabase e tente novamente."
-        : error.message;
-      App.utils.setMessage(message, friendlyMessage, "error");
+      App.utils.setMessage(message, App.forms.getFriendlyErrorMessage(error), "error");
     } finally {
       App.main.hideLoader();
       button.disabled = false;
