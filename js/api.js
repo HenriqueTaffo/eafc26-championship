@@ -433,9 +433,20 @@ App.api = {
       .filter(Boolean);
   },
 
-  async hydrateSecondaryData(data = {}) {
+  async hydrateSecondaryData(data = {}, options = {}) {
+    const { minIntervalMs = 5 * 60 * 1000 } = options;
+    const now = Date.now();
     if (App.state.secondaryHydrationRunning) return;
+    if (
+      minIntervalMs > 0 &&
+      App.state.lastSecondaryHydrationAt &&
+      now - Number(App.state.lastSecondaryHydrationAt || 0) < minIntervalMs
+    ) {
+      return;
+    }
+
     App.state.secondaryHydrationRunning = true;
+    App.state.lastSecondaryHydrationAt = now;
     const names = App.api.getTransferLookupNames(data);
 
     try {

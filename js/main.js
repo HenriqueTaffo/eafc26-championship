@@ -441,12 +441,16 @@ App.main = {
       const activeView = document.querySelector(".view.active")?.id;
       if (activeView === "submitView" || document.body.classList.contains("modal-active")) return;
       App.state.silentSyncRunning = true;
-      App.api.loadApiData({ showLoader: false, cacheTtlMs: 60000 })
+      App.api.loadApiData({
+        showLoader: false,
+        cacheTtlMs: 5 * 60000,
+        skipBackgroundRefresh: true
+      })
         .catch(error => console.warn("Sincronização silenciosa indisponível", error))
         .finally(() => {
           App.state.silentSyncRunning = false;
         });
-    }, 90000);
+    }, 5 * 60000);
   },
 
   init() {

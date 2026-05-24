@@ -783,22 +783,32 @@ App.auth = {
     return result;
   },
 
-  async answerTransferProposal(proposalId, decision) {
+  async answerTransferProposal(proposalId, decision, counterValue = null) {
     const session = App.auth.getSession();
     if (!session) throw new Error("Faça login como técnico vendedor antes de responder propostas.");
 
-    const result = await App.api.rpc("app_answer_internal_transfer_proposal", {
+    const payload = {
       p_manager_id: session.managerId,
       p_access_code: session.accessCode,
       p_proposal_id: Number(proposalId),
       p_decision: decision
-    }, 45000);
+    };
+    const normalizedCounter = counterValue === null ? null : Number(counterValue);
+    if (Number.isFinite(normalizedCounter)) {
+      payload.p_counter_value = normalizedCounter;
+    }
+
+    const result = await App.api.rpc("app_answer_internal_transfer_proposal", payload, 45000);
 
     if (!result.ok) throw new Error(result.message || "Não foi possível responder a proposta.");
 
     await App.api.loadApiData({
       variant: "market",
-      title: decision === "accepted" ? "Transferência aprovada" : "Proposta recusada",
+      title: decision === "counter"
+        ? "Contraoferta enviada"
+        : decision === "accepted"
+          ? "Transferência aprovada"
+          : "Proposta recusada",
       message: "Atualizando propostas, mercado, orçamentos e painel dos técnicos..."
     });
 
@@ -1665,14 +1675,44 @@ App.auth = {
         const target = event.currentTarget;
         const proposalId = target.dataset.proposalId;
         const decision = target.dataset.decision;
-        const label = decision === "accepted" ? "aceitar" : "recusar";
+        const currentOffer = Number(target.dataset.proposalCounterValue || 0);
+        let counterValue = null;
+        let label;
         const sourceLabel = target.dataset.proposalSourceLabel || "esta oferta";
+
+        if (decision === "counter") {
+          const suggestion = Math.max(currentOffer, 1000000);
+          const valueInput = window.prompt(
+            `Digite o valor da contraoferta para ${sourceLabel}:`,
+            String(suggestion)
+          );
+
+          if (valueInput === null) return;
+
+          const normalized = String(valueInput)
+            .trim()
+            .replace(/\./g, "")
+            .replace(/,/g, ".");
+          const parsed = Number(normalized);
+
+          if (!Number.isFinite(parsed) || parsed <= 0) {
+            alert("Informe um valor numérico maior que zero para a contraoferta.");
+            return;
+          }
+
+          counterValue = parsed;
+          label = `fazer contraoferta de ${App.utils.formatCurrency(parsed)}`;
+        } else if (decision === "accepted") {
+          label = "aceitar";
+        } else {
+          label = "recusar";
+        }
 
         if (!confirm(`Deseja ${label} a proposta de ${sourceLabel}?`)) return;
 
         try {
           target.disabled = true;
-          await App.auth.answerTransferProposal(proposalId, decision);
+          await App.auth.answerTransferProposal(proposalId, decision, counterValue);
         } catch (error) {
           alert(error.message);
         } finally {
@@ -1764,6 +1804,19 @@ App.auth = {
             <strong>Recusar</strong>
             <small>A proposta é encerrada sem movimentação.</small>
           </button>
+          ${isCpuOffer ? `
+          <button
+            type="button"
+            data-transfer-proposal-answer
+            data-proposal-id="${App.utils.escapeHtml(item.id)}"
+            data-decision="counter"
+            data-proposal-source-label="${sourceLabelEscaped}"
+            data-proposal-counter-value="${proposedValue}"
+          >
+            <strong>Contraoferta</strong>
+            <small>Propor outro valor e deixar a CPU decidir.</small>
+          </button>
+          ` : ""}
         </div>
       </article>
     `;

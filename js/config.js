@@ -46,6 +46,7 @@ App.state = {
   apiLoadPromise: null,
   loadingCount: 0,
   silentSyncRunning: false,
+  lastSecondaryHydrationAt: 0,
   autoEventGenerationRunning: false,
   lastAutoEventCheckKey: "",
   lastApiPayload: null,
