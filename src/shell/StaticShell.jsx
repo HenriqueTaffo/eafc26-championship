@@ -797,14 +797,7 @@ function TransfersView() {
                     placeholder="Auto: Capology ou regra da liga"
                   />
                 </label>
-                <label className="full" data-market-transfer-field>
-                  <span>URL ou referencia salarial</span>
-                  <input
-                    name="salarySourceUrl"
-                    type="url"
-                    placeholder="Auto: fonte publica ou modelo regulatorio"
-                  />
-                </label>
+                <input type="hidden" name="salarySourceUrl" value="" />
               </div>
 
               <div className="transfer-live-preview" id="transferFormPreview">
@@ -841,6 +834,10 @@ function TransfersView() {
             <section
               className="coach-panel-card transfer-deal-card"
               id="transferDealCenter"
+            ></section>
+            <section
+              className="coach-panel-card transfer-scout-card"
+              id="transferScoutBoard"
             ></section>
             <section
               className="coach-panel-card transfer-shortlist-card"

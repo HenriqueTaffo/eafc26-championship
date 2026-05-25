@@ -99,11 +99,49 @@ const POSITION_LABELS = {
   ATT: "Ataque",
 };
 
+const SCOUT_GROUPS = {
+  GK: {
+    key: "GK",
+    label: "Goleiro",
+    tone: "GK",
+  },
+  DEF: {
+    key: "DEF",
+    label: "Defesa",
+    tone: "DEF",
+  },
+  MID: {
+    key: "MID",
+    label: "Meio",
+    tone: "MID",
+  },
+  ATT: {
+    key: "ATT",
+    label: "Ataque",
+    tone: "ATT",
+  },
+};
+
+const MAX_SCOUT_RECOMMENDATIONS = 8;
+
 const MAX_COMPARE_ITEMS = 3;
+
+function normalizeScoutGroup(value = "") {
+  const candidate = String(value || "").trim().toUpperCase();
+  return SCOUT_GROUPS[candidate] ? candidate : "";
+}
+
+function clampScoutingValue(value = 0, min = 0, max = 5) {
+  const parsed = Number(value || 0);
+  const rounded = Math.round(parsed);
+  if (Number.isNaN(rounded)) return min;
+  return Math.max(min, Math.min(max, rounded));
+}
 
 function getWorkspaceDefaults() {
   return {
     compare: [],
+    scout: {},
   };
 }
 
@@ -262,6 +300,66 @@ Object.assign(App.transfers, {
     state.compare = candidates.map(sanitizeCandidate).filter(Boolean);
     App.transfers.saveWorkspaceState();
     return state.compare;
+  },
+
+  getScoutingState() {
+    return App.transfers.getWorkspaceState().scout || {};
+  },
+
+  getScoutingProfile(buyer = "") {
+    const profile = App.transfers.getSquadNeedProfile(buyer);
+    const raw = App.transfers.getScoutingState();
+    const byBuyer = App.utils.normalizeText(buyer);
+    const manualByGroup = byBuyer ? raw[byBuyer] || {} : {};
+    const normalizedGroups = Object.keys(SCOUT_GROUPS).reduce((acc, group) => {
+      const groupNeed = profile[group] || {};
+      const autoWeight = clampScoutingValue(
+        Number(groupNeed.risk || 0) * 1.5 + Number(groupNeed.depth || 0) * 0.4,
+      );
+      const manualRaw = clampScoutingValue(
+        Number(manualByGroup[group] || manualByGroup[group.toLowerCase()] || 0),
+        0,
+        5,
+      );
+      const total = clampScoutingValue(autoWeight + manualRaw, 0, 9);
+      acc[group] = {
+        ...SCOUT_GROUPS[group],
+        ...groupNeed,
+        autoWeight,
+        manualWeight: manualRaw,
+        totalWeight: total,
+      };
+      return acc;
+    }, {});
+
+    const sortedGroups = Object.values(normalizedGroups).sort(
+      (a, b) => b.totalWeight - a.totalWeight,
+    );
+    const totalWeight = sortedGroups.reduce(
+      (sum, item) => sum + item.totalWeight,
+      0,
+    );
+
+    return {
+      byGroup: normalizedGroups,
+      sortedGroups,
+      totalWeight,
+      buyer,
+      manualEnabled: true,
+    };
+  },
+
+  setScoutingPriority(buyer = "", group = "", weight = 0) {
+    const buyerKey = App.utils.normalizeText(buyer);
+    const normalizedGroup = normalizeScoutGroup(group);
+    if (!buyerKey || !normalizedGroup) return App.transfers.getScoutingProfile(buyer);
+
+    const state = App.transfers.getWorkspaceState();
+    state.scout = state.scout || {};
+    state.scout[buyerKey] = state.scout[buyerKey] || {};
+    state.scout[buyerKey][normalizedGroup] = clampScoutingValue(weight, 0, 5);
+    App.transfers.saveWorkspaceState();
+    return App.transfers.getScoutingProfile(buyer);
   },
 
   getCandidateKey(candidate = {}) {
@@ -1021,6 +1119,159 @@ Object.assign(App.transfers, {
     }, {});
   },
 
+  getScoutingWeightScore(clean = {}, profile = {}) {
+    const group = getPositionGroup(clean.position);
+    const groupProfile = profile.byGroup?.[group] || {};
+    const risk = Number(groupProfile.risk || 0);
+    const depth = Number(groupProfile.depth || 0);
+    const rosterCount = Number(groupProfile.rosterCount || 0);
+    const starterAvg = Number(groupProfile.starterAvg || 0);
+    const rosterAvg = Number(groupProfile.rosterAvg || 0);
+    const manualWeight = Number(groupProfile.manualWeight || 0);
+
+    const baseNeed = risk * 16 + depth * 2 + (rosterCount < 2 ? 6 : 0);
+    const positional =
+      getPositionLabel(group).toLowerCase() + " " + String(groupProfile.label || "");
+    return {
+      auto: Math.round(clampScoutingValue(baseNeed, 0, 12)),
+      manual: manualWeight,
+      depth,
+      rosterCount,
+      starterAvg,
+      rosterAvg,
+      total:
+        Math.round(clampScoutingValue(baseNeed + manualWeight * 2, 0, 20)) + 1,
+      positional,
+      group,
+    };
+  },
+
+  scoreScoutingCandidate(candidate = {}, context = {}) {
+    const clean = sanitizeCandidate(candidate);
+    if (!clean) return null;
+    const buyer = context.buyer || "";
+    const budget = context.budget || {};
+    const profile = context.profile || App.transfers.getScoutingProfile(buyer);
+    const weight = App.transfers.getScoutingWeightScore(clean, profile);
+
+    if (!weight.group) return null;
+    const signals = [];
+    const overall = Number(clean.overall || 0);
+    const marketValue = Number(clean.marketValue || 0);
+    const salary = Number(clean.weeklySalary || 0);
+
+    const roster = new Set(
+      (context.roster || [])
+        .map((item) =>
+          App.transfers.normalizePlayerRatingKey(item.name || item.player || ""),
+        )
+        .filter(Boolean),
+    );
+    const alreadyHas = roster.has(App.transfers.normalizePlayerRatingKey(clean.player));
+
+    let score = 20 + (weight.total || 0) * 3 + Math.max(0, overall - 64) * 1.2;
+    let affordability = 0;
+    if (budget && Number(budget.remaining || 0) > 0) {
+      const remaining = Number(budget.remaining || 0);
+      const ratio = marketValue / remaining;
+      if (ratio <= 0.08) affordability = 18;
+      else if (ratio <= 0.14) affordability = 12;
+      else if (ratio <= 0.20) affordability = 6;
+      else if (ratio <= 0.30) affordability = 0;
+      else affordability = -12;
+    } else {
+      affordability = -8;
+    }
+    score += affordability;
+
+    if (salary > 0 && budget && Number(budget.remaining || 0) > 0) {
+      const annualSalary = salary * 52;
+      const remaining = Number(budget.remaining || 0);
+      const salaryRatio = annualSalary / remaining;
+      if (salaryRatio <= 0.03) signals.push("folha leve");
+      else if (salaryRatio <= 0.05) signals.push("folha tratavel");
+      else if (salaryRatio <= 0.10) signals.push("folha pressionada");
+      else signals.push("folha alta para caixa");
+
+      score +=
+        salaryRatio <= 0.03
+          ? 10
+          : salaryRatio <= 0.05
+            ? 5
+            : salaryRatio <= 0.1
+              ? 0
+              : -8;
+    } else {
+      signals.push("folha a validar");
+    }
+
+    if (weight.depth < 1) signals.push("carencia real de rotacao");
+    if (overall >= Math.max(68, Number(weight.starterAvg || 0))) {
+      signals.push("entra no nivel do elenco");
+    }
+
+    if (alreadyHas) {
+      score = -999;
+      signals.push("ja esta no elenco");
+    }
+
+    return {
+      candidate: clean,
+      score: Math.round(score),
+      signals,
+      weight,
+      alreadyHas: alreadyHas,
+    };
+  },
+
+  getScoutingRecommendations(form = document.getElementById("transferForm")) {
+    const buyer = form?.elements?.buyer?.value || "";
+    if (!buyer) return [];
+
+    const profile = App.transfers.getScoutingProfile(buyer);
+    const budget = App.transfers
+      .getSpendingSummary()
+      .find((item) => item.buyer === buyer);
+    const snapshot = App.transfers.getBuyerRosterSnapshot(buyer);
+    const players = App.transfers.getMarketPlayers();
+    if (!Array.isArray(players) || !players.length) return [];
+
+    const showContracted = Boolean(
+      document.getElementById("showContractedPlayers")?.checked,
+    );
+    const scores = players
+      .map((player) => {
+        if (!showContracted && App.transfers.isMarketPlayerContracted(player))
+          return null;
+        const candidate = App.transfers.buildCandidateFromMarketPlayer(player);
+        if (!candidate.player) return null;
+        return App.transfers.scoreScoutingCandidate(candidate, {
+          buyer,
+          budget,
+          profile,
+          roster: snapshot.roster,
+        });
+      })
+      .filter(Boolean)
+      .sort((a, b) => b.score - a.score)
+      .slice(0, MAX_SCOUT_RECOMMENDATIONS * 3)
+      .map((item) => ({
+        ...item,
+        shortlist: App.transfers.findShortlistTarget(item.candidate),
+      }));
+
+    return scores
+      .filter((item) => item.score > 0)
+      .slice(0, MAX_SCOUT_RECOMMENDATIONS);
+  },
+
+  getScoutingPriorityRows(buyer = "") {
+    const profile = App.transfers.getScoutingProfile(buyer);
+    return (profile.sortedGroups || []).length
+      ? profile.sortedGroups
+      : Object.values(profile.byGroup || {});
+  },
+
   evaluateCandidateFit(candidate = {}, buyer = "") {
     const clean = sanitizeCandidate(candidate);
     if (!clean || !buyer) {
@@ -1338,6 +1589,134 @@ Object.assign(App.transfers, {
           <strong>${pendingReceived + pendingSent}</strong>
           <small>${pendingReceived} recebida(s), ${pendingSent} enviada(s), ${listings} jogador(es) na vitrine.</small>
         </article>
+      `,
+    );
+  },
+
+  renderScoutBoard(form = document.getElementById("transferForm")) {
+    const target = document.getElementById("transferScoutBoard");
+    if (!target) return;
+
+    const session = App.auth?.getSession?.();
+    const buyer = form?.elements?.buyer?.value || session?.managerName || "";
+    if (!buyer) {
+      App.dom.setHtml(
+        target,
+        renderWorkspaceEmpty(
+          "Olheiro",
+          "Escolha um tecnico para receber sugestoes baseadas em carencias.",
+        ),
+      );
+      return;
+    }
+
+    const budget = App.transfers
+      .getSpendingSummary()
+      .find((item) => item.buyer === buyer);
+    const priorities = App.transfers.getScoutingPriorityRows(buyer);
+    const topNeeds = priorities
+      .slice()
+      .sort((a, b) => b.totalWeight - a.totalWeight)
+      .slice(0, 3)
+      .map((item) => App.utils.escapeHtml(item.label || item.group))
+      .join(", ");
+    const recommendations = App.transfers.getScoutingRecommendations(form);
+
+    App.dom.setHtml(
+      target,
+      `
+        <div class="home-panel-header">
+          <div>
+            <h2>Olheiro</h2>
+            <p class="coach-card-subtitle">Sugestoes automáticas com carencias e ajuste do tecnico.</p>
+          </div>
+          ${renderWorkspacePill(String(recommendations.length), recommendations.length ? "ready" : "cold")}
+        </div>
+
+        <div class="scout-priority-panel">
+          <div class="scout-priority-meta">
+            <strong>Carencias ativas</strong>
+            <p>${topNeeds || "Sem carencia destacada."}</p>
+            <small>
+              Caixa: ${App.utils.formatCurrency(Number(budget?.remaining || 0))} ·
+              Folha: ${budget?.payrollWeekly ? `${App.utils.formatCurrency(budget.payrollWeekly)}/sem` : "sem folha ainda"}.
+            </small>
+          </div>
+          <div class="scout-priority-sliders">
+            ${priorities
+              .map(
+                (item) => `
+                  <label class="scout-priority-row">
+                    <span class="scout-priority-title">
+                      <strong>${App.utils.escapeHtml(item.label || item.group)}</strong>
+                      <small>automatica ${App.utils.formatNumber(item.autoWeight || 0, 0)}</small>
+                    </span>
+                    <div class="scout-priority-control">
+                      <span>Ajuste tecnico</span>
+                      <input
+                        type="range"
+                        min="0"
+                        max="5"
+                        step="1"
+                        value="${item.manualWeight || 0}"
+                        data-scout-weight="${App.utils.escapeHtml(item.group)}"
+                      />
+                      <span data-scout-weight-value="${App.utils.escapeHtml(item.group)}">
+                        ${item.manualWeight || 0}
+                      </span>
+                    </div>
+                  </label>
+                `,
+              )
+              .join("")}
+          </div>
+        </div>
+
+        <div class="scout-recommendation-list">
+          ${
+            recommendations.length
+              ? recommendations
+                  .map((item) => {
+                    const encoded = App.utils.escapeHtml(
+                      App.transfers.serializeCandidate(item.candidate),
+                    );
+                    const score = Number(item.score || 0);
+                    const shortlist = item.shortlist;
+                    const reason =
+                      item.signals.slice(0, 2).join(" · ") ||
+                      "Compatibilidade tecnica e financeira equilibrada.";
+                    return `
+                      <article class="scout-recommendation-item">
+                        <div class="scout-recommendation-copy">
+                          <strong>${App.utils.escapeHtml(item.candidate.player)}</strong>
+                          <small>${App.utils.escapeHtml(`${item.weight.positional || ""} · OVR ${item.candidate.overall || 0} · ${App.utils.formatCurrency(item.candidate.marketValue)}`)}</small>
+                        </div>
+                        <p>
+                          <span>${renderWorkspacePill(App.utils.formatNumber(score, 0), score >= 85 ? "hot" : score >= 70 ? "ready" : score >= 55 ? "watch" : "cold")}</span>
+                          ${App.utils.escapeHtml(reason)}
+                        </p>
+                        <small>
+                          Salario:
+                          ${item.candidate.weeklySalary ? `${App.utils.formatCurrency(item.candidate.weeklySalary)}/sem` : "pendente"}
+                        </small>
+                        <div class="scout-recommendation-actions transfer-inline-actions">
+                          <button type="button" class="secondary-button" data-transfer-load-candidate="${encoded}">
+                            Aplicar como candidato
+                          </button>
+                          <button type="button" class="secondary-button" data-transfer-shortlist-save="${encoded}" data-transfer-shortlist-stage="${App.utils.escapeHtml(shortlist?.priority || "Monitorando")}">
+                            ${shortlist ? "Atualizar shortlist" : "Shortlist"}
+                          </button>
+                        </div>
+                      </article>
+                    `;
+                  })
+                  .join("")
+              : renderWorkspaceEmpty(
+                  "Sem recomendacao",
+                  "Sem sugestoes no momento. Ajuste prioridades e aguarde novas leituras do mercado.",
+                )
+          }
+        </div>
       `,
     );
   },
@@ -1864,6 +2243,7 @@ Object.assign(App.transfers, {
   renderWorkspace(form = document.getElementById("transferForm")) {
     App.transfers.renderOpsBoard(form);
     App.transfers.renderDealCenter(form);
+    App.transfers.renderScoutBoard(form);
     App.transfers.renderShortlistBoard();
     App.transfers.renderCompareBoard(form);
     App.transfers.renderNegotiationHub();
@@ -2101,6 +2481,7 @@ Object.assign(App.transfers, {
         App.transfers.renderDealCenter();
         App.transfers.renderShortlistBoard();
         App.transfers.renderMarketPlayerResults();
+        App.transfers.renderScoutBoard();
         App.utils.setMessage(
           message,
           before ? "Jogador removido da comparacao." : "Jogador adicionado ao comparador.",
@@ -2116,6 +2497,7 @@ Object.assign(App.transfers, {
         App.transfers.renderCompareBoard();
         App.transfers.renderDealCenter();
         App.transfers.renderMarketPlayerResults();
+        App.transfers.renderScoutBoard();
         return;
       }
 
@@ -2124,6 +2506,7 @@ Object.assign(App.transfers, {
         App.transfers.renderCompareBoard();
         App.transfers.renderDealCenter();
         App.transfers.renderMarketPlayerResults();
+        App.transfers.renderScoutBoard();
         return;
       }
 
@@ -2149,6 +2532,7 @@ Object.assign(App.transfers, {
         App.transfers.renderDealCenter();
         App.transfers.renderOpsBoard();
         App.transfers.renderMarketPlayerResults();
+        App.transfers.renderScoutBoard();
         return;
       }
 
@@ -2167,6 +2551,7 @@ Object.assign(App.transfers, {
         App.transfers.renderDealCenter();
         App.transfers.renderOpsBoard();
         App.transfers.renderMarketPlayerResults();
+        App.transfers.renderScoutBoard();
         return;
       }
 
@@ -2175,13 +2560,34 @@ Object.assign(App.transfers, {
         if (!form?.elements?.exchangePlayer) return;
         form.elements.exchangePlayer.value = button.dataset.transferApplyExchange;
         App.transfers.refreshWorkspace(form);
+        App.transfers.renderScoutBoard(form);
       }
+    });
+
+    root.addEventListener("input", (event) => {
+      const field = event.target;
+      if (!field || field.tagName !== "INPUT") return;
+      if (!field.matches("input[type='range'][data-scout-weight]")) return;
+
+      const form = document.getElementById("transferForm");
+      const buyer = form?.elements?.buyer?.value || "";
+      const group = field.dataset.scoutWeight || "";
+      const nextWeight = clampScoutingValue(field.value, 0, 5);
+
+      App.transfers.setScoutingPriority(buyer, group, nextWeight);
+
+      const display = root.querySelector(
+        `[data-scout-weight-value="${group}"]`,
+      );
+      if (display) display.textContent = String(nextWeight);
+      App.transfers.renderScoutBoard(form);
     });
 
     root.addEventListener("change", async (event) => {
       const field = event.target;
       if (
-        field instanceof HTMLSelectElement &&
+        field &&
+        field.tagName === "SELECT" &&
         field.hasAttribute("data-transfer-shortlist-status")
       ) {
         const message = document.getElementById("transferMessage");
@@ -2205,6 +2611,7 @@ Object.assign(App.transfers, {
         App.transfers.renderDealCenter();
         App.transfers.renderOpsBoard();
         App.transfers.renderMarketPlayerResults();
+        App.transfers.renderScoutBoard();
       }
     });
   },

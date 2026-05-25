@@ -142,7 +142,10 @@ App.calendar = {
     }
 
     if (![...select.options].some((option) => option.value === managerName)) {
-      select.appendChild(new Option(managerName, managerName));
+      const option = document.createElement("option");
+      option.value = managerName;
+      option.textContent = managerName;
+      select.appendChild(option);
     }
     select.value = managerName;
     select.disabled = true;
