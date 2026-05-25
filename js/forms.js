@@ -309,38 +309,6 @@ App.forms = {
         );
       }
 
-      const confirmationText = [
-        isInternal
-          ? "Enviar proposta de transferência?"
-          : "Confirmar transferência?",
-        "",
-        `Tipo: ${isInternal ? "Entre técnicos" : "Mercado externo"}`,
-        `Comprador: ${payload.buyer}`,
-        ...(isInternal ? [`Vendedor: ${payload.seller}`] : []),
-        `Jogador: ${payload.player}`,
-        `Clube origem: ${payload.fromClub}`,
-        `Overall: ${payload.overall}`,
-        `${isInternal ? "Valor negociado" : "Valor base"}: ${App.utils.formatCurrency(Number(payload.marketValue))}`,
-        `${isInternal ? "Débito estimado" : "Valor final estimado"}: ${App.utils.formatCurrency(Number(preview.finalValue || 0))}`,
-        ...(!isInternal
-          ? [
-              `Salario de folha: ${App.utils.formatCurrency(Number(preview.weeklySalary || 0))}/sem`,
-              `Fonte salarial: ${payload.salarySourceName || preview.salarySourceName || "pendente"}`,
-            ]
-          : []),
-        ...(!isInternal && preview.exchangePlayer
-          ? [
-              `Troca: ${preview.exchangePlayer.player}`,
-              `Abatimento: ${App.utils.formatCurrency(Number(preview.exchangeCredit || 0))}`,
-              `Dinheiro a pagar: ${App.utils.formatCurrency(Number(preview.cashFinalValue || 0))}`,
-            ]
-          : []),
-      ].join("\n");
-
-      if (!window.confirm(confirmationText)) {
-        throw new Error("Transferência cancelada antes do envio.");
-      }
-
       if (preview?.hardBlock) {
         const reason = preview.sameBuyerAndSeller
           ? "Comprador e vendedor precisam ser técnicos diferentes."
@@ -355,6 +323,31 @@ App.forms = {
                   : "Saldo insuficiente para concluir a contratação.";
         throw new Error(reason);
       }
+
+      App.main.hideLoader();
+      const confirmed = await App.transfers.confirmNegotiationSubmission?.({
+        payload,
+        preview,
+        isInternal,
+      });
+      if (!confirmed) {
+        throw new Error("Negociação cancelada antes do envio.");
+      }
+
+      App.utils.setMessage(
+        message,
+        isInternal
+          ? "Enviando e-mail ao vendedor..."
+          : "Abrindo mesa de negociação...",
+        "warning",
+      );
+      App.main.showLoader({
+        variant: "market",
+        title: isInternal ? "Enviando proposta" : "Negociando transferência",
+        message: isInternal
+          ? "Registrando a proposta no inbox do vendedor."
+          : "Simulando resposta do clube vendedor, contrato e validação da liga.",
+      });
 
       const data = await App.api.postToApi({
         action: "addTransfer",
@@ -371,6 +364,12 @@ App.forms = {
         throw new Error(
           data.message || data.error || "Transferência rejeitada.",
         );
+      const negotiationEntry = App.transfers.recordNegotiationResult?.(
+        payload,
+        preview,
+        data,
+        isInternal,
+      );
       App.utils.setMessage(
         message,
         data.message ||
@@ -391,6 +390,10 @@ App.forms = {
           ? "Proposta enviada. Atualizando pendências do mercado..."
           : "Transferência salva. Atualizando orçamento, lista de transferências e painel...",
       });
+      await App.transfers.showNegotiationResultModal?.(
+        negotiationEntry,
+        isInternal,
+      );
     } catch (error) {
       App.utils.setMessage(
         message,

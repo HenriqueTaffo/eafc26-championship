@@ -148,6 +148,7 @@ function formatScoutingNumber(value = 0, maximumFractionDigits = 0) {
 function getWorkspaceDefaults() {
   return {
     compare: [],
+    negotiations: [],
     scout: {},
   };
 }
@@ -252,6 +253,13 @@ function renderWorkspaceEmpty(title, text) {
   `;
 }
 
+function getStageWhen(baseDate, index, total) {
+  const parsed = new Date(baseDate || Date.now()).getTime();
+  if (Number.isNaN(parsed)) return "";
+  const offsetMinutes = Math.max(0, total - index - 1) * 4;
+  return new Date(parsed - offsetMinutes * 60000).toISOString();
+}
+
 Object.assign(App.transfers, {
   compareLimit: MAX_COMPARE_ITEMS,
   shortlistStages: SHORTLIST_STAGES,
@@ -283,6 +291,9 @@ Object.assign(App.transfers, {
     next.compare = Array.isArray(next.compare)
       ? next.compare.map(sanitizeCandidate).filter(Boolean)
       : [];
+    next.negotiations = Array.isArray(next.negotiations)
+      ? next.negotiations.filter(Boolean)
+      : [];
     App.transfers.workspaceStateKey = key;
     App.transfers.workspaceState = next;
     return next;
@@ -307,6 +318,300 @@ Object.assign(App.transfers, {
     state.compare = candidates.map(sanitizeCandidate).filter(Boolean);
     App.transfers.saveWorkspaceState();
     return state.compare;
+  },
+
+  getNegotiationLogs() {
+    return App.transfers.getWorkspaceState().negotiations || [];
+  },
+
+  setNegotiationLogs(entries = []) {
+    const state = App.transfers.getWorkspaceState();
+    state.negotiations = entries.filter(Boolean).slice(0, 20);
+    App.transfers.saveWorkspaceState();
+    return state.negotiations;
+  },
+
+  getTransferNegotiationSignature(item = {}) {
+    const playerKey = App.transfers.normalizePlayerRatingKey(item.player);
+    const buyerKey = App.utils.normalizeText(item.buyer);
+    const value = Math.round(
+      Number(
+        item.totalCost ||
+          item.value ||
+          item.finalValue ||
+          item.cashValue ||
+          item.marketValue ||
+          item.proposed_value ||
+          0,
+      ),
+    );
+    return [playerKey, buyerKey, value].filter(Boolean).join("|");
+  },
+
+  buildTransferNegotiationStages(item = {}, preview = null, options = {}) {
+    const isInternal =
+      options.isInternal ||
+      App.utils.normalizeText(item.transferType || item.transfer_type) ===
+        "internal";
+    const buyer = item.buyer || preview?.buyer || "Comprador";
+    const seller = item.seller || preview?.seller || "";
+    const fromClub = item.fromClub || item.club || preview?.fromClub || "";
+    const player = item.player || preview?.player || "Jogador";
+    const value = Number(
+      options.value ||
+        item.totalCost ||
+        item.value ||
+        item.finalValue ||
+        item.cashValue ||
+        preview?.cashFinalValue ||
+        preview?.finalValue ||
+        item.marketValue ||
+        0,
+    );
+    const salary = Number(
+      item.weeklySalary || preview?.weeklySalary || item.salaryWeekly || 0,
+    );
+    const tradePlayer =
+      item.tradeInPlayer ||
+      item.trade_in_player ||
+      preview?.exchangePlayer?.player ||
+      "";
+    const tradeCredit = Number(
+      item.tradeInCredit || item.trade_in_credit || preview?.exchangeCredit || 0,
+    );
+    const baseDate =
+      item.createdAt ||
+      item.created_at ||
+      item.timestamp ||
+      item.Timestamp ||
+      new Date().toISOString();
+    const stages = [
+      {
+        title: isInternal ? "E-mail ao tecnico vendedor" : "E-mail ao clube vendedor",
+        detail: isInternal
+          ? `${buyer} enviou proposta por ${player} para ${seller || "o vendedor"}.`
+          : `${buyer} abriu contato com ${fromClub || "o clube de origem"} por ${player}.`,
+        tone: "live",
+      },
+      {
+        title: isInternal ? "Proposta em mesa" : "Resposta do vendedor",
+        detail: isInternal
+          ? `O vendedor recebeu a oferta de ${App.utils.formatCurrency(value)} e precisa responder.`
+          : `${fromClub || "O clube vendedor"} respondeu dentro da base de ${App.utils.formatCurrency(value)}.`,
+        tone: "watch",
+      },
+      tradePlayer
+        ? {
+            title: "Troca de contratos",
+            detail: `${tradePlayer} entrou como ativo de troca com abatimento de ${App.utils.formatCurrency(tradeCredit)}.`,
+            tone: "ready",
+          }
+        : {
+            title: "Contrato financeiro",
+            detail: `${App.utils.formatCurrency(value)} em taxa e ${App.utils.formatCurrency(salary)}/sem na folha foram validados.`,
+            tone: "ready",
+          },
+      {
+        title: isInternal ? "Aguardando assinatura" : "Registro da liga",
+        detail: isInternal
+          ? "A negociacao fica no inbox ate a resposta do vendedor."
+          : "Contrato aceito, validado pela liga e publicado no historico de transferencias.",
+        tone: "success",
+      },
+    ];
+
+    return stages.map((stage, index) => ({
+      ...stage,
+      when: getStageWhen(baseDate, index, stages.length),
+    }));
+  },
+
+  recordNegotiationResult(payload = {}, preview = null, data = {}, isInternal = false) {
+    const now = new Date().toISOString();
+    const value = Number(
+      preview?.cashFinalValue ||
+        preview?.finalValue ||
+        payload.marketValue ||
+        payload.proposed_value ||
+        0,
+    );
+    const entry = {
+      id: data.transferId || data.id || `${Date.now()}-${Math.random()}`,
+      createdAt: now,
+      player: payload.player || preview?.player || "",
+      buyer: payload.buyer || preview?.buyer || "",
+      seller: payload.seller || preview?.seller || "",
+      fromClub: payload.fromClub || preview?.fromClub || "",
+      overall: Number(payload.overall || preview?.overall || 0),
+      value,
+      totalCost: value,
+      weeklySalary: Number(preview?.weeklySalary || payload.weeklySalary || 0),
+      tradeInPlayer: payload.tradeInPlayer || preview?.exchangePlayer?.player || "",
+      tradeInCredit: Number(payload.tradeInCredit || preview?.exchangeCredit || 0),
+      transferType: isInternal ? "internal" : "market",
+      status: isInternal ? "sent" : "approved",
+      responseMessage: isInternal
+        ? "Proposta enviada ao vendedor."
+        : data.message || "Clube vendedor aceitou e a liga registrou a transferencia.",
+    };
+    entry.signature = App.transfers.getTransferNegotiationSignature(entry);
+    entry.stages = App.transfers.buildTransferNegotiationStages(entry, preview, {
+      isInternal,
+      value,
+    });
+
+    const current = App.transfers
+      .getNegotiationLogs()
+      .filter((item) => item.signature !== entry.signature);
+    App.transfers.setNegotiationLogs([entry, ...current]);
+    App.transfers.lastNegotiationResult = entry;
+    return entry;
+  },
+
+  getCompletedTransferNegotiationItems(owner = "") {
+    const ownerKey = App.utils.normalizeText(owner);
+    const logs = App.transfers
+      .getNegotiationLogs()
+      .filter(
+        (item) =>
+          item.status !== "sent" &&
+          (!ownerKey || App.utils.normalizeText(item.buyer) === ownerKey),
+      )
+      .map((item) => ({
+        ...item,
+        signature:
+          item.signature || App.transfers.getTransferNegotiationSignature(item),
+        stages: Array.isArray(item.stages)
+          ? item.stages
+          : App.transfers.buildTransferNegotiationStages(item),
+      }));
+    const bySignature = new Map(logs.map((item) => [item.signature, item]));
+
+    App.transfers
+      .getValidTransfers()
+      .filter(
+        (item) =>
+          !App.transfers.isCpuSaleTransfer(item) &&
+          (!ownerKey || App.utils.normalizeText(item.buyer) === ownerKey),
+      )
+      .forEach((item) => {
+        const signature = App.transfers.getTransferNegotiationSignature(item);
+        if (!signature || bySignature.has(signature)) return;
+        bySignature.set(signature, {
+          id: item.id || signature,
+          createdAt: item.timestamp || "",
+          player: item.player || "",
+          buyer: item.buyer || "",
+          seller: item.seller || "",
+          fromClub: item.fromClub || "",
+          overall: Number(item.overall || 0),
+          value: Number(item.totalCost || item.marketValue || 0),
+          totalCost: Number(item.totalCost || item.marketValue || 0),
+          weeklySalary: Number(item.weeklySalary || 0),
+          transferType: item.transferType || "market",
+          status: "approved",
+          signature,
+          stages: App.transfers.buildTransferNegotiationStages(item),
+        });
+      });
+
+    return [...bySignature.values()].sort((a, b) => {
+      const aTime = new Date(a.createdAt || a.timestamp || 0).getTime();
+      const bTime = new Date(b.createdAt || b.timestamp || 0).getTime();
+      return (Number.isNaN(bTime) ? 0 : bTime) - (Number.isNaN(aTime) ? 0 : aTime);
+    });
+  },
+
+  renderNegotiationTimelineSummary(entry = {}) {
+    const stages = Array.isArray(entry.stages)
+      ? entry.stages
+      : App.transfers.buildTransferNegotiationStages(entry);
+    return `
+      <article class="transfer-negotiation-card">
+        <div class="transfer-negotiation-card-head">
+          <div>
+            <span>${App.utils.escapeHtml(entry.createdAt ? App.utils.formatDateTime(entry.createdAt) : "Timeline")}</span>
+            <strong>${App.utils.escapeHtml(entry.player || "-")}</strong>
+            <small>${App.utils.escapeHtml([entry.fromClub, entry.totalCost || entry.value ? App.utils.formatCurrency(entry.totalCost || entry.value) : ""].filter(Boolean).join(" - "))}</small>
+          </div>
+          ${renderWorkspacePill(entry.status === "approved" ? "Aprovada" : "Timeline", "success")}
+        </div>
+        <div class="transfer-negotiation-stage-list">
+          ${stages
+            .slice(-4)
+            .map(
+              (stage) => `
+                <div class="transfer-negotiation-stage is-${App.utils.escapeHtml(stage.tone || "live")}">
+                  <span>${App.utils.escapeHtml(stage.title || "")}</span>
+                  <p>${App.utils.escapeHtml(stage.detail || "")}</p>
+                </div>
+              `,
+            )
+            .join("")}
+        </div>
+      </article>
+    `;
+  },
+
+  async confirmNegotiationSubmission({ payload = {}, preview = null, isInternal = false } = {}) {
+    const value = Number(preview?.cashFinalValue || preview?.finalValue || payload.marketValue || 0);
+    const tradeDetail =
+      !isInternal && preview?.exchangePlayer
+        ? `\nTroca de contrato: ${preview.exchangePlayer.player} abate ${App.utils.formatCurrency(Number(preview.exchangeCredit || 0))}.`
+        : "";
+    const detail = [
+      `1. E-mail inicial para ${isInternal ? payload.seller || "tecnico vendedor" : payload.fromClub || "clube vendedor"}.`,
+      `2. Resposta da contraparte sobre ${payload.player}.`,
+      `3. Conferencia de taxa, folha e documentacao.`,
+      `4. Registro da liga depois da validacao.${tradeDetail}`,
+    ].join("\n");
+
+    if (!App.ui?.confirmAction) {
+      return window.confirm(
+        `Enviar negociacao por ${payload.player} em ${App.utils.formatCurrency(value)}?`,
+      );
+    }
+
+    return App.ui.confirmAction({
+      kicker: "Negociacao de transferencia",
+      title: isInternal ? "Enviar proposta por e-mail" : "Simular mesa de negociacao",
+      message: isInternal
+        ? `A proposta por ${payload.player} vai para o inbox do vendedor.`
+        : `${payload.fromClub || "O clube vendedor"} vai responder antes da liga registrar ${payload.player}.`,
+      detail,
+      tone: "market",
+      cancelLabel: "Revisar proposta",
+      confirmLabel: isInternal ? "Enviar e-mail" : "Iniciar negociacao",
+      confirmVariant: "primary",
+    });
+  },
+
+  async showNegotiationResultModal(entry = {}, isInternal = false) {
+    if (!entry || !App.ui?.openActionModal) return;
+    const stages = Array.isArray(entry.stages)
+      ? entry.stages
+      : App.transfers.buildTransferNegotiationStages(entry, null, {
+          isInternal,
+        });
+    await App.ui.openActionModal({
+      kicker: isInternal ? "Proposta enviada" : "Resposta recebida",
+      title: isInternal ? "E-mail enviado ao vendedor" : "Negociacao registrada",
+      message: isInternal
+        ? `${entry.player} agora depende da resposta do vendedor no inbox.`
+        : `${entry.player} passou por resposta do vendedor, contrato e registro da liga.`,
+      detail: stages
+        .map((stage, index) => `${index + 1}. ${stage.title}: ${stage.detail}`)
+        .join("\n"),
+      tone: "success",
+      actions: [
+        {
+          id: "confirm",
+          label: "Ver no hub",
+          variant: "primary",
+          autofocus: true,
+        },
+      ],
+    });
   },
 
   getScoutingState() {
@@ -1505,11 +1810,15 @@ Object.assign(App.transfers, {
       }
     });
     transfers.forEach((item) => {
-      items.push({
-        when: item.timestamp || "",
-        title: "Transferencia concluida",
-        detail: `${item.buyer} fechou em ${App.utils.formatCurrency(item.totalCost)}.`,
-      });
+      App.transfers
+        .buildTransferNegotiationStages(item)
+        .forEach((stage) => {
+          items.push({
+            when: stage.when || item.timestamp || "",
+            title: stage.title,
+            detail: stage.detail,
+          });
+        });
     });
 
     return items
@@ -2140,6 +2449,10 @@ Object.assign(App.transfers, {
     const resolved = proposals
       .filter((item) => item.status && item.status !== "pending")
       .slice(0, 6);
+    const completedTimelines = App.transfers
+      .getCompletedTransferNegotiationItems(session.managerName)
+      .slice(0, 4);
+    const resolvedTotal = resolved.length + completedTimelines.length;
     const listings = Array.isArray(App.auth?.myTransferSaleListings?.listings)
       ? App.auth.myTransferSaleListings.listings
       : [];
@@ -2193,13 +2506,16 @@ Object.assign(App.transfers, {
           <article class="transfer-hub-card">
             <div class="transfer-hub-card-head">
               <strong>Resolvidas</strong>
-              ${renderWorkspacePill(String(resolved.length), resolved.length ? "live" : "cold")}
+              ${renderWorkspacePill(String(resolvedTotal), resolvedTotal ? "live" : "cold")}
             </div>
             <div class="transfer-hub-card-body transfer-timeline-list">
               ${
-                resolved.length
-                  ? resolved
-                      .map(
+                resolvedTotal
+                  ? [
+                      ...completedTimelines.map((item) =>
+                        App.transfers.renderNegotiationTimelineSummary(item),
+                      ),
+                      ...resolved.map(
                         (item) => `
                           <div class="transfer-timeline-item compact">
                             <span>${App.utils.escapeHtml(item.answered_at ? App.utils.formatDateTime(item.answered_at) : item.created_at ? App.utils.formatDateTime(item.created_at) : "Sem data")}</span>
@@ -2207,8 +2523,8 @@ Object.assign(App.transfers, {
                             <p>${App.utils.escapeHtml(item.response_message || `${item.status} - ${App.utils.formatCurrency(Number(item.proposed_value || 0))}`)}</p>
                           </div>
                         `,
-                      )
-                      .join("")
+                      ),
+                    ].join("")
                   : `<div class="transfer-shortlist-empty">Ainda nao houve respostas fechadas neste login.</div>`
               }
             </div>
@@ -2224,17 +2540,19 @@ Object.assign(App.transfers, {
                 listings.length
                   ? listings
                       .slice(0, 6)
-                      .map((item) => {
-                        const offerCount = Number(item.offerCount || item.offer_count || 0);
-                        const asking = Number(item.askingPrice || item.asking_price || 0);
-                        return `
+                      .map(
+                        (item) => {
+                          const offerCount = Number(item.offerCount || item.offer_count || 0);
+                          const asking = Number(item.askingPrice || item.asking_price || 0);
+                          return `
                           <article class="proposal-summary-item">
                             <span>${offerCount ? `${offerCount} oferta(s)` : "Na vitrine"}</span>
                             <strong>${App.utils.escapeHtml(item.player || item.playerName || "-")}</strong>
                             <small>${App.utils.escapeHtml([item.fromClub || item.from_club || "", asking ? App.utils.formatCurrency(asking) : "", item.note || ""].filter(Boolean).join(" - "))}</small>
                           </article>
                         `;
-                      })
+                        },
+                      )
                       .join("")
                   : `<div class="transfer-shortlist-empty">Nenhum jogador listado para venda.</div>`
               }
