@@ -1,7 +1,7 @@
 import { useSyncExternalStore } from "react";
 import App from "../../js/app.js";
 
-function useAppRuntime() {
+export function useAppRuntime() {
   useSyncExternalStore(
     App.react.subscribe,
     App.react.getSnapshot,

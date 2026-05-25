@@ -1,4 +1,9 @@
 import {
+  CalendarMonthBoard,
+  CalendarWeekBoard,
+  CupsBracket,
+} from "../views/CalendarCupsViews.jsx";
+import {
   CalendarSummary,
   CommissionerSummary,
   CupsSummary,
@@ -340,15 +345,8 @@ function CalendarView() {
             </span>
           </div>
         </section>
-        <section
-          className="calendar-week-board"
-          id="calendarWeekBoard"
-        ></section>
-        <section
-          className="calendar-month-board"
-          id="calendarBoard"
-          aria-live="polite"
-        ></section>
+        <CalendarWeekBoard />
+        <CalendarMonthBoard />
       </section>
     </>
   );
@@ -414,7 +412,7 @@ function CupsView() {
             </span>
           </div>
         </section>
-        <section id="cupsBracket"></section>
+        <CupsBracket />
       </section>
     </>
   );
