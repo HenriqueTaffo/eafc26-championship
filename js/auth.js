@@ -19,6 +19,7 @@ App.auth = {
   myNotifications: [],
   autoDecisionRunning: false,
   autoCpuOfferRunning: false,
+  loginTransitionSession: null,
 
   init() {
     try {
@@ -41,18 +42,31 @@ App.auth = {
   syncAuthGate() {
     if (!document.body) return;
 
-    const isLocked = !App.auth.isLoggedIn();
+    const transitionSession = App.auth.loginTransitionSession;
+    const isTransitioning = Boolean(transitionSession);
+    const isLocked = !App.auth.isLoggedIn() || isTransitioning;
     const isCommissioner = !isLocked && App.auth.isCommissioner();
+    const visualCommissioner =
+      isCommissioner || Boolean(transitionSession?.isCommissioner);
 
     document.body.classList.toggle("auth-gated", isLocked);
+    document.body.classList.toggle("auth-login-success", isTransitioning);
     document.body.classList.toggle("auth-unlocked", !isLocked);
-    document.body.classList.toggle("is-commissioner", isCommissioner);
-    document.body.classList.toggle("is-manager", !isLocked && !isCommissioner);
+    document.body.classList.toggle("is-commissioner", visualCommissioner);
+    document.body.classList.toggle(
+      "is-manager",
+      (!isLocked && !isCommissioner) ||
+        (isTransitioning && !transitionSession?.isCommissioner),
+    );
     App.main?.syncRestrictedNavigation?.();
 
     if (isLocked) {
       App.main?.hideLoader?.(true);
-      App.main?.markSynced?.("Faça login para abrir a liga");
+      App.main?.markSynced?.(
+        isTransitioning
+          ? "Login confirmado. Abrindo escritório..."
+          : "Faça login para abrir a liga",
+      );
       return;
     }
 
@@ -194,6 +208,80 @@ App.auth = {
     };
   },
 
+  getLoginSuccessClubHtml(session = {}) {
+    if (!session || session.isCommissioner || !session.clubName) {
+      return `
+        <span class="login-success-brand-fallback">
+          <img class="brand-icon-img" src="./assets/4linhas-icon-teal.png?v=${App.config.assetVersion}" alt="" loading="eager" />
+        </span>
+      `;
+    }
+
+    if (App.clubs?.getTeamBadgeHtml) {
+      return App.clubs.getTeamBadgeHtml(
+        session.clubName,
+        "login-success-club-badge",
+      );
+    }
+
+    return `
+      <span class="club-badge fallback login-success-club-badge">
+        <span>${App.utils.escapeHtml(String(session.clubName || "").slice(0, 3).toUpperCase())}</span>
+      </span>
+    `;
+  },
+
+  renderLoginSuccessPanel(session = {}) {
+    const panel = document.getElementById("managerLoginPanel");
+    if (!panel) return;
+
+    const clubLabel = session.isCommissioner
+      ? "Governança da Liga"
+      : session.clubName || "Clube vinculado";
+
+    App.dom.setHtml(
+      panel,
+      `
+      <section class="manager-login-success-card manager-login-shell" aria-live="polite">
+        <div class="manager-login-success-stage">
+          <span class="manager-login-mascot-stage manager-login-avatar-large manager-login-brand-mark manager-login-success-mark" aria-hidden="true">
+            <span class="manager-login-mascot-ring"></span>
+            <span class="manager-login-flip-card">
+              <span class="manager-login-face manager-login-face-front manager-login-brand-face">
+                <img class="brand-icon-img" src="./assets/4linhas-icon-teal.png?v=${App.config.assetVersion}" alt="" loading="eager" />
+              </span>
+              <span class="manager-login-face manager-login-face-back manager-login-club-face">
+                ${App.auth.getLoginSuccessClubHtml(session)}
+              </span>
+            </span>
+          </span>
+          <div class="manager-login-success-copy">
+            <strong>Bem-vindo, ${App.utils.escapeHtml(session.managerName || "Técnico")}</strong>
+            <small>${App.utils.escapeHtml(clubLabel)}</small>
+          </div>
+        </div>
+      </section>
+      `,
+    );
+  },
+
+  startLoginSuccessTransition(session = {}) {
+    App.auth.loginTransitionSession = session;
+    App.auth.syncAuthGate();
+    App.auth.renderLoginSuccessPanel(session);
+    return Date.now();
+  },
+
+  async finishLoginSuccessTransition(startedAt = Date.now()) {
+    const minDuration = 1650;
+    const elapsed = Date.now() - startedAt;
+    if (elapsed < minDuration) {
+      await new Promise((resolve) => setTimeout(resolve, minDuration - elapsed));
+    }
+    App.auth.loginTransitionSession = null;
+    App.auth.syncAuthGate();
+  },
+
   async bootstrapSessionState() {
     if (!App.auth.isLoggedIn()) return;
 
@@ -291,23 +379,33 @@ App.auth = {
 
     if (!result.ok) throw new Error(result.message || "Login não autorizado.");
 
-    App.auth.persistSession(App.auth.buildSessionFromLogin(result, accessCode));
+    const session = App.auth.buildSessionFromLogin(result, accessCode);
+    const transitionStartedAt = App.auth.startLoginSuccessTransition(session);
+    App.auth.persistSession(session);
 
-    if (!App.auth.currentSession.isCommissioner) {
-      await App.auth.loadMyDecisions();
-      await App.auth.loadMyTransferProposals();
-      await App.auth.loadMyTransferTargets();
-      await App.auth.loadMyTransferSaleListings();
-      await App.auth.loadMySponsorships();
-      await App.api?.loadMedicalCenterData?.();
-      await App.auth.loadMyQoL();
+    try {
+      if (!App.auth.currentSession.isCommissioner) {
+        await App.auth.loadMyDecisions();
+        await App.auth.loadMyTransferProposals();
+        await App.auth.loadMyTransferTargets();
+        await App.auth.loadMyTransferSaleListings();
+        await App.auth.loadMySponsorships();
+        await App.api?.loadMedicalCenterData?.();
+        await App.auth.loadMyQoL();
+      }
+      await App.governance?.loadData?.();
+      await App.auth.loadPublicNews();
+      await App.auth.ensureLeagueDataReady();
+      await App.auth.finishLoginSuccessTransition(transitionStartedAt);
+      App.auth.renderAll();
+      App.auth.openSessionHome();
+      App.main?.renderCurrentView?.();
+    } catch (error) {
+      App.auth.loginTransitionSession = null;
+      App.auth.syncAuthGate();
+      App.auth.renderAll();
+      throw error;
     }
-    await App.governance?.loadData?.();
-    await App.auth.loadPublicNews();
-    await App.auth.ensureLeagueDataReady();
-    App.auth.renderAll();
-    App.auth.openSessionHome();
-    App.main?.renderCurrentView?.();
 
     return result;
   },
@@ -354,6 +452,7 @@ App.auth = {
     }
 
     App.auth.currentSession = null;
+    App.auth.loginTransitionSession = null;
     App.auth.myDecisions = [];
     App.auth.myTransferProposals = [];
     App.auth.myTransferTargets = [];
@@ -1140,6 +1239,11 @@ App.auth = {
 
     const session = App.auth.getSession();
     App.auth.syncAuthGate();
+
+    if (App.auth.loginTransitionSession) {
+      App.auth.renderLoginSuccessPanel(App.auth.loginTransitionSession);
+      return;
+    }
 
     const managers = App.utils?.getHumanBuyers
       ? App.utils.getHumanBuyers()
