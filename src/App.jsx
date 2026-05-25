@@ -7,6 +7,8 @@ const ACCORDION_SELECTOR = [
   "#eventsView .events-intro-card",
   "#cupsView .cup-prize-card",
   "#transfersView .rule-card",
+  "#squadView .squad-hero-panel",
+  "#squadView .squad-roster-panel",
   ".legend-block",
 ].join(",");
 

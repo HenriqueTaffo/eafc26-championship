@@ -268,6 +268,55 @@ export function PlayersSummary() {
   );
 }
 
+export function SquadSummary() {
+  useAppRuntime();
+
+  return (
+    <SafeSummary fallbackLabel="Elenco">
+      {() => {
+        const data = App.state?.apiSquadManagement || {};
+        const rosters = data.rosters || {};
+        const managers = Array.isArray(data.managers) ? data.managers : [];
+        const finance = Array.isArray(data.finance) ? data.finance : [];
+        const rosterRows = Object.values(rosters).flat();
+        const totalWeekly = finance.reduce(
+          (sum, item) => sum + Number(item.payroll_weekly || 0),
+          0,
+        );
+        const avgOverall = rosterRows.length
+          ? Math.round(
+              rosterRows.reduce(
+                (sum, player) => sum + Number(player.overall || 0),
+                0,
+              ) / rosterRows.length,
+            )
+          : 0;
+        const savedLineups = Object.values(data.lineups || {}).filter(
+          (item) => Object.keys(item?.lineup || {}).length,
+        ).length;
+
+        return (
+          <>
+            <SummaryCard label="Clubes" value={managers.length || 5} />
+            <SummaryCard label="Jogadores" value={rosterRows.length || "-"} />
+            <SummaryCard
+              label="OVR medio"
+              value={avgOverall || "-"}
+              detail="elencos EA FC 26"
+            />
+            <SummaryCard
+              label="Folha semanal"
+              value={totalWeekly ? App.utils.formatCurrency(totalWeekly) : "-"}
+              detail="somando clubes"
+            />
+            <SummaryCard label="Escalacoes salvas" value={savedLineups} />
+          </>
+        );
+      }}
+    </SafeSummary>
+  );
+}
+
 export function EventsSummary() {
   useAppRuntime();
 

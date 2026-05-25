@@ -461,6 +461,7 @@ App.api = {
         App.api.loadExperienceData(),
         App.api.loadManagerOnboarding?.(),
         App.api.loadFinanceRulesAndForecast?.(),
+        App.api.loadSquadManagementData?.(),
         App.governance?.loadData?.(),
         App.auth?.loadPublicNews?.(),
         App.auth?.loadMyDecisions?.(),
@@ -1097,6 +1098,77 @@ App.api = {
     }
   },
 
+  async loadSquadManagementData(options = {}) {
+    const { force = false } = options;
+
+    if (
+      !force &&
+      App.state.apiSquadManagement?.ok &&
+      !App.state.apiSquadManagementLoading
+    ) {
+      return App.state.apiSquadManagement;
+    }
+
+    if (App.state.apiSquadManagementLoading) {
+      return App.state.apiSquadManagement || null;
+    }
+
+    App.state.apiSquadManagementLoading = true;
+
+    try {
+      const data = await App.api.rpc(
+        "app_get_squad_management_data",
+        {},
+        30000,
+      );
+      App.state.apiSquadManagement = data || {
+        ok: false,
+        managers: [],
+        rosters: {},
+        lineups: {},
+        finance: [],
+      };
+      App.react?.notify?.();
+      return App.state.apiSquadManagement;
+    } catch (error) {
+      console.warn("Gestao de elenco indisponivel:", error);
+      App.state.apiSquadManagement = App.state.apiSquadManagement || {
+        ok: false,
+        managers: [],
+        rosters: {},
+        lineups: {},
+        finance: [],
+        error: error.message,
+      };
+      App.react?.notify?.();
+      return App.state.apiSquadManagement;
+    } finally {
+      App.state.apiSquadManagementLoading = false;
+    }
+  },
+
+  async saveSquadLineup({ clubName = "", formation = "", lineup = {} } = {}) {
+    App.api.requireSession("Faca login antes de salvar a escalacao.");
+
+    const result = await App.api.rpc(
+      "app_save_manager_squad_lineup",
+      {
+        ...App.api.getAuthPayload(),
+        p_club_name: clubName || "",
+        p_formation: formation || "4-2-3-1",
+        p_lineup: lineup || {},
+      },
+      30000,
+    );
+
+    if (!result?.ok) {
+      throw new Error(result?.message || "Nao consegui salvar a escalacao.");
+    }
+
+    await App.api.loadSquadManagementData({ force: true });
+    return result;
+  },
+
   async loadApiData(options = {}) {
     const {
       showLoader = true,
@@ -1170,8 +1242,15 @@ App.api = {
 
       const activeView = document.querySelector(".view.active")?.id;
       const requiredLoads = [App.api.loadMatches()];
-      if (activeView === "playersView" || activeView === "transfersView") {
+      if (
+        activeView === "playersView" ||
+        activeView === "transfersView" ||
+        activeView === "squadView"
+      ) {
         requiredLoads.push(App.api.loadMarketPlayers());
+      }
+      if (activeView === "squadView") {
+        requiredLoads.push(App.api.loadSquadManagementData({ force: true }));
       }
       await Promise.all(requiredLoads);
 

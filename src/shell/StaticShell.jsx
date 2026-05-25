@@ -7,6 +7,7 @@ import { CommissionerRuntime } from "../views/CommissionerView.jsx";
 import { ExperienceGrid } from "../views/ExperienceView.jsx";
 import { EventsGrid, EventSlotList } from "../views/EventsView.jsx";
 import { PlayerLeaderboards, PlayersGrid } from "../views/PlayersView.jsx";
+import { SquadManagementView } from "../views/SquadView.jsx";
 import {
   ActivityPanel,
   AttentionPanel,
@@ -26,6 +27,7 @@ import {
   EventsSummary,
   ExperienceSummary,
   PlayersSummary,
+  SquadSummary,
   StandingsSummary,
   TransfersSummary,
 } from "../views/ViewSummaries.jsx";
@@ -135,6 +137,9 @@ function ShellChrome() {
         </button>
         <button className="tab-button" data-view="playersView">
           <span className="tab-icon">▣</span>Escritório
+        </button>
+        <button className="tab-button" data-view="squadView">
+          <span className="tab-icon">XI</span>Elenco
         </button>
         <button className="tab-button" data-view="experienceView">
           <span className="tab-icon">◇</span>Inteligência
@@ -457,6 +462,19 @@ function PlayersView() {
           A lista ao lado mostra as cinco contratações mais caras aprovadas até
           agora.
         </p>
+      </section>
+    </>
+  );
+}
+
+function SquadView() {
+  return (
+    <>
+      <section id="squadView" className="view">
+        <section className="summary squad-summary" id="squadSummary">
+          <SquadSummary />
+        </section>
+        <SquadManagementView />
       </section>
     </>
   );
@@ -804,17 +822,17 @@ function TransfersView() {
           <h2>Regras de transferência</h2>
           <ul>
             <li>
-              Orçamento base por jogador: <strong>65 milhões</strong>.
+              Orçamento base por jogador: <strong>22 milhões</strong>.
             </li>
             <li>
               Receita semanal: <strong>+2M</strong> por semana ativa da
               temporada.
             </li>
             <li>
-              Bônus por mando: <strong>+1,5M</strong> por partida em casa.
+              Bônus por mando: <strong>+400k</strong> por partida em casa.
             </li>
             <li>
-              Bônus por vitória: <strong>+1,25M</strong> por vitória.
+              Bônus por vitória: <strong>+250k</strong> por vitória.
             </li>
             <li>
               Bônus de campanha: blocos de 5 jogos rendem até
@@ -1194,6 +1212,7 @@ export function StaticShell() {
         <CalendarView />
         <CupsView />
         <PlayersView />
+        <SquadView />
         <EventsView />
         <ExperienceView />
         <TransfersView />

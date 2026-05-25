@@ -7,6 +7,7 @@ App.main = {
       calendarView: App.calendar.render,
       cupsView: App.cups.render,
       playersView: App.players.render,
+      squadView: App.squad.render,
       experienceView: App.experience.render,
       eventsView: App.events.render,
       transfersView: App.transfers.render,
@@ -137,6 +138,7 @@ App.main = {
     const activeView = document.querySelector(".view.active")?.id;
     if (
       activeView === "playersView" ||
+      activeView === "squadView" ||
       activeView === "transfersView" ||
       activeView === "commissionerView"
     )
@@ -536,6 +538,7 @@ App.main = {
       if (
         activeView === "eventsView" ||
         activeView === "playersView" ||
+        activeView === "squadView" ||
         activeView === "transfersView"
       ) {
         App.main.renderCurrentView();
