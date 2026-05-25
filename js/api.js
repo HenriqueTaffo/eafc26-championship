@@ -1146,10 +1146,13 @@ App.api = {
 
   async loadSquadManagementData(options = {}) {
     const { force = false } = options;
+    const authPayload = App.api.getAuthPayload();
+    const scopeKey = `${authPayload.p_manager_id || "anon"}:${authPayload.p_access_code ? "auth" : "guest"}`;
 
     if (
       !force &&
       App.state.apiSquadManagement?.ok &&
+      App.state.apiSquadManagementScopeKey === scopeKey &&
       !App.state.apiSquadManagementLoading
     ) {
       return App.state.apiSquadManagement;
@@ -1164,7 +1167,7 @@ App.api = {
     try {
       const data = await App.api.rpc(
         "app_get_squad_management_data",
-        {},
+        authPayload,
         30000,
       );
       App.state.apiSquadManagement = data || {
@@ -1174,6 +1177,7 @@ App.api = {
         lineups: {},
         finance: [],
       };
+      App.state.apiSquadManagementScopeKey = scopeKey;
       App.react?.notify?.();
       return App.state.apiSquadManagement;
     } catch (error) {

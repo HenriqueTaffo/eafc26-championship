@@ -283,8 +283,30 @@ export function SquadSummary() {
         const rosters = data.rosters || {};
         const managers = Array.isArray(data.managers) ? data.managers : [];
         const finance = Array.isArray(data.finance) ? data.finance : [];
-        const rosterRows = Object.values(rosters).flat();
-        const totalWeekly = finance.reduce(
+        const session = App.auth?.getSession ? App.auth.getSession() : null;
+        const isCommissioner = App.auth?.isCommissioner?.() === true;
+        const sessionKey = App.utils.normalizeText(session?.managerName || "");
+        const scopedManagers = isCommissioner
+          ? managers
+          : managers.filter(
+              (manager) =>
+                App.utils.normalizeText(manager.managerName) === sessionKey,
+            );
+        const scopedManagerNames = scopedManagers.map(
+          (manager) => manager.managerName,
+        );
+        const rosterRows = scopedManagerNames.flatMap(
+          (managerName) => rosters[managerName] || [],
+        );
+        const scopedFinance = isCommissioner
+          ? finance
+          : finance.filter(
+              (item) =>
+                App.utils.normalizeText(
+                  item.manager_name || item.managerName,
+                ) === sessionKey,
+            );
+        const totalWeekly = scopedFinance.reduce(
           (sum, item) => sum + Number(item.payroll_weekly || 0),
           0,
         );
@@ -297,22 +319,29 @@ export function SquadSummary() {
             )
           : 0;
         const savedLineups = Object.values(data.lineups || {}).filter(
-          (item) => Object.keys(item?.lineup || {}).length,
+          (item) =>
+            (isCommissioner ||
+              App.utils.normalizeText(item?.managerName) === sessionKey) &&
+            Object.keys(item?.lineup || {}).length,
         ).length;
+        const scopeDetail = isCommissioner ? "somando clubes" : "seu clube";
 
         return (
           <>
-            <SummaryCard label="Clubes" value={managers.length || 5} />
+            <SummaryCard
+              label={isCommissioner ? "Clubes" : "Clube"}
+              value={scopedManagers.length || "-"}
+            />
             <SummaryCard label="Jogadores" value={rosterRows.length || "-"} />
             <SummaryCard
               label="OVR medio"
               value={avgOverall || "-"}
-              detail="elencos EA FC 26"
+              detail={isCommissioner ? "elencos EA FC 26" : "elenco EA FC 26"}
             />
             <SummaryCard
               label="Folha semanal"
               value={totalWeekly ? App.utils.formatCurrency(totalWeekly) : "-"}
-              detail="somando clubes"
+              detail={scopeDetail}
             />
             <SummaryCard label="Escalacoes salvas" value={savedLineups} />
           </>
