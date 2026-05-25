@@ -772,14 +772,14 @@ function TransfersView() {
                   />
                 </label>
                 <label data-market-transfer-field>
-                  <span>Salario semanal publico</span>
+                  <span>Salario semanal de folha</span>
                   <input
                     name="weeklySalary"
                     type="number"
                     min="1"
                     step="1"
                     inputMode="numeric"
-                    placeholder="Ex: 108846"
+                    placeholder="Auto: publico ou regulatorio"
                   />
                 </label>
                 <label data-market-transfer-field>
@@ -787,15 +787,15 @@ function TransfersView() {
                   <input
                     name="salarySourceName"
                     type="text"
-                    placeholder="Ex: Capology"
+                    placeholder="Auto: Capology ou regra da liga"
                   />
                 </label>
                 <label className="full" data-market-transfer-field>
-                  <span>URL publica do salario</span>
+                  <span>URL ou referencia salarial</span>
                   <input
                     name="salarySourceUrl"
                     type="url"
-                    placeholder="https://www.capology.com/player/..."
+                    placeholder="Auto: fonte publica ou modelo regulatorio"
                   />
                 </label>
               </div>
@@ -803,9 +803,8 @@ function TransfersView() {
               <div className="transfer-live-preview" id="transferFormPreview">
                 <strong>Prévia da contratação</strong>
                 <span>
-                  Preencha comprador, jogador, overall, valor e salario
-                  publico para calcular custo final, folha e travas antes de
-                  enviar.
+                  Preencha comprador, jogador, overall e valor para calcular
+                  custo final, folha e travas antes de enviar.
                 </span>
               </div>
 

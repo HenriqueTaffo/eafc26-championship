@@ -1120,6 +1120,30 @@ App.api = {
     }
   },
 
+  async getPlayerSalaryQuote(player = {}) {
+    const result = await App.api.rpc(
+      "app_get_player_salary_quote",
+      {
+        p_player_name: player.name || player.player || player.playerName || "",
+        p_club_name:
+          player.club || player.fromClub || player.clubName || player.ClubeOrigem || "",
+        p_league: player.league || "",
+        p_position: player.position || "",
+        p_overall: Number(player.overall || player.Overall || 0) || null,
+        p_market_value:
+          Number(
+            player.marketValue ||
+              player.market_value_eur ||
+              player.ValorTransfermarkt ||
+              0,
+          ) || null,
+        p_age: Number(player.age || 0) || null,
+      },
+      30000,
+    );
+    return result?.ok === false ? null : result;
+  },
+
   async loadSquadManagementData(options = {}) {
     const { force = false } = options;
 

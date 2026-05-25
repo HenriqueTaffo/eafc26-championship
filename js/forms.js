@@ -324,7 +324,7 @@ App.forms = {
         `${isInternal ? "Débito estimado" : "Valor final estimado"}: ${App.utils.formatCurrency(Number(preview.finalValue || 0))}`,
         ...(!isInternal
           ? [
-              `Salario publico: ${App.utils.formatCurrency(Number(preview.weeklySalary || 0))}/sem`,
+              `Salario de folha: ${App.utils.formatCurrency(Number(preview.weeklySalary || 0))}/sem`,
               `Fonte salarial: ${payload.salarySourceName || preview.salarySourceName || "pendente"}`,
             ]
           : []),
@@ -349,7 +349,7 @@ App.forms = {
             : preview.duplicateBlock
               ? `Jogador já contratado por ${preview.duplicate.buyer}.`
               : preview.salaryReferenceMissing
-                ? "Informe salario semanal e fonte publica antes de enviar."
+                ? "Nao consegui calcular salario de folha antes de enviar."
                 : preview.limitReached
                   ? `${preview.buyer} já atingiu o limite diário.`
                   : "Saldo insuficiente para concluir a contratação.";
