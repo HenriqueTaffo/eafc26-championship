@@ -805,6 +805,16 @@
 .sponsor-offer-card {
   --sponsor-accent: #2dd4bf;
   --sponsor-accent-soft: rgba(45, 212, 191, .10);
+  display: grid;
+  grid-template-rows:
+    minmax(74px, auto)
+    58px
+    minmax(118px, auto)
+    minmax(74px, auto)
+    minmax(58px, 1fr);
+  align-content: stretch;
+  gap: 0;
+  min-height: 462px;
   border-radius: 18px;
   padding: 16px;
   background:
@@ -824,6 +834,26 @@
 
 .sponsor-offer-shell {
   grid-template-columns: 48px minmax(0, 1fr) auto;
+  min-height: 74px;
+}
+
+.sponsor-offer-shell .sponsor-brand-copy {
+  align-self: center;
+}
+
+.sponsor-offer-shell .sponsor-brand-copy strong {
+  display: -webkit-box;
+  min-height: 42px;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.sponsor-offer-shell .sponsor-brand-copy em {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .sponsor-offer-shell .sponsor-brand-mark {
@@ -846,10 +876,15 @@
 }
 
 .sponsor-offer-story {
-  min-height: 44px;
+  display: -webkit-box;
+  align-self: stretch;
+  min-height: 54px;
   margin: 14px 0 0;
+  overflow: hidden;
   color: #cbd5e1;
   font-size: 14px;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
 }
 
 .sponsor-offer-detail {
@@ -858,6 +893,7 @@
 }
 
 .sponsor-offer-hero {
+  align-self: stretch;
   margin: 14px 0;
   padding: 12px 0;
 }
@@ -867,12 +903,14 @@
 }
 
 .sponsor-offer-terms {
+  align-self: start;
   margin-top: 0;
 }
 
 .sponsor-offer-card button {
+  align-self: end;
   width: 100%;
-  margin-top: 14px;
+  margin-top: 16px;
   border: 1px solid color-mix(in srgb, var(--sponsor-accent, #2dd4bf), transparent 35%);
   border-radius: 12px;
   padding: 12px 14px;
@@ -1241,6 +1279,11 @@
   .sponsor-portfolio-list,
   .sponsor-category-group .sponsor-offer-grid {
     grid-template-columns: 1fr;
+  }
+
+  .sponsor-offer-card {
+    grid-template-rows: auto;
+    min-height: 0;
   }
 
   .sponsor-portfolio-list .sponsor-active-item {
