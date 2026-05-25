@@ -10,7 +10,7 @@ App.main = {
       experienceView: App.experience.render,
       eventsView: App.events.render,
       transfersView: App.transfers.render,
-      commissionerView: App.governance.render
+      commissionerView: App.governance.render,
     };
   },
 
@@ -22,9 +22,13 @@ App.main = {
       market: {
         label: "Tática montada",
         value: "Rodada pronta",
-        detail: "escalando confrontos..."
+        detail: "escalando confrontos...",
       },
-      chaosItems: ["conferindo lesões", "validando calendário", "sincronizando bastidores"]
+      chaosItems: [
+        "conferindo lesões",
+        "validando calendário",
+        "sincronizando bastidores",
+      ],
     },
     market: {
       cardClass: "loader-card-market",
@@ -33,9 +37,13 @@ App.main = {
       market: {
         label: "Scout report",
         value: "OVR 87?",
-        detail: "taxa subindo..."
+        detail: "taxa subindo...",
       },
-      chaosItems: ["checando limites", "validando orçamento", "organizando propostas"]
+      chaosItems: [
+        "checando limites",
+        "validando orçamento",
+        "organizando propostas",
+      ],
     },
     chaos: {
       cardClass: "loader-card-chaos",
@@ -44,14 +52,18 @@ App.main = {
       market: {
         label: "Scout report",
         value: "OVR 87?",
-        detail: "taxa subindo..."
+        detail: "taxa subindo...",
       },
-      chaosItems: ["conferindo formulários", "validando registros", "preparando painel"]
-    }
+      chaosItems: [
+        "conferindo formulários",
+        "validando registros",
+        "preparando painel",
+      ],
+    },
   },
 
   renderAll() {
-    Object.values(App.main.viewRenderers).forEach(render => render());
+    Object.values(App.main.viewRenderers).forEach((render) => render());
     App.forms.renderApiSummary();
     App.auth?.renderAll?.();
   },
@@ -77,7 +89,10 @@ App.main = {
     if (!element) return;
 
     const now = new Date();
-    const time = now.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+    const time = now.toLocaleTimeString("pt-BR", {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
     element.textContent = `${label} às ${time}`;
   },
 
@@ -107,7 +122,9 @@ App.main = {
         const cacheNames = await caches.keys();
         await Promise.all(
           cacheNames
-            .filter((name) => name.startsWith("mml-") || name.includes("mistura"))
+            .filter(
+              (name) => name.startsWith("mml-") || name.includes("mistura"),
+            )
             .map((name) => caches.delete(name)),
         );
       }
@@ -118,7 +135,12 @@ App.main = {
 
   getDefaultLoaderVariant() {
     const activeView = document.querySelector(".view.active")?.id;
-    if (activeView === "playersView" || activeView === "transfersView" || activeView === "commissionerView") return "market";
+    if (
+      activeView === "playersView" ||
+      activeView === "transfersView" ||
+      activeView === "commissionerView"
+    )
+      return "market";
     if (activeView === "submitView") return "chaos";
     return "match";
   },
@@ -127,10 +149,16 @@ App.main = {
     const card = document.getElementById("globalLoaderCard");
     if (!card) return;
 
-    const resolvedVariant = App.main.LOADER_VARIANTS[variant] ? variant : "match";
+    const resolvedVariant = App.main.LOADER_VARIANTS[variant]
+      ? variant
+      : "match";
     const config = App.main.LOADER_VARIANTS[resolvedVariant];
 
-    card.classList.remove("loader-card-match", "loader-card-market", "loader-card-chaos");
+    card.classList.remove(
+      "loader-card-match",
+      "loader-card-market",
+      "loader-card-chaos",
+    );
     card.classList.add(config.cardClass);
 
     const chipEl = document.getElementById("globalLoaderChip");
@@ -143,28 +171,42 @@ App.main = {
     const chaosItem3El = document.getElementById("globalLoaderChaosItem3");
 
     if (chipEl) chipEl.textContent = config.chip || "Carregando";
-    if (speechEl) speechEl.textContent = config.speech || "Conferindo a rodada...";
-    if (marketLabelEl) marketLabelEl.textContent = config.market?.label || "Scout report";
-    if (marketValueEl) marketValueEl.textContent = config.market?.value || "OVR 87?";
-    if (marketDetailEl) marketDetailEl.textContent = config.market?.detail || "taxa subindo...";
-    if (chaosItem1El) chaosItem1El.textContent = config.chaosItems?.[0] || "conferindo lesões";
-    if (chaosItem2El) chaosItem2El.textContent = config.chaosItems?.[1] || "validando mercado";
-    if (chaosItem3El) chaosItem3El.textContent = config.chaosItems?.[2] || "organizando bastidores";
+    if (speechEl)
+      speechEl.textContent = config.speech || "Conferindo a rodada...";
+    if (marketLabelEl)
+      marketLabelEl.textContent = config.market?.label || "Scout report";
+    if (marketValueEl)
+      marketValueEl.textContent = config.market?.value || "OVR 87?";
+    if (marketDetailEl)
+      marketDetailEl.textContent = config.market?.detail || "taxa subindo...";
+    if (chaosItem1El)
+      chaosItem1El.textContent = config.chaosItems?.[0] || "conferindo lesões";
+    if (chaosItem2El)
+      chaosItem2El.textContent = config.chaosItems?.[1] || "validando mercado";
+    if (chaosItem3El)
+      chaosItem3El.textContent =
+        config.chaosItems?.[2] || "organizando bastidores";
   },
 
-  showLoader(optionsOrTitle = "Carregando dados da liga", legacyMessage = "Aguarde enquanto a classificação, o calendário e os painéis são atualizados.") {
+  showLoader(
+    optionsOrTitle = "Carregando dados da liga",
+    legacyMessage = "Aguarde enquanto a classificação, o calendário e os painéis são atualizados.",
+  ) {
     const overlay = document.getElementById("globalLoader");
     if (!overlay) return;
 
-    const options = typeof optionsOrTitle === "object" && optionsOrTitle !== null
-      ? optionsOrTitle
-      : { title: optionsOrTitle, message: legacyMessage };
+    const options =
+      typeof optionsOrTitle === "object" && optionsOrTitle !== null
+        ? optionsOrTitle
+        : { title: optionsOrTitle, message: legacyMessage };
 
     const titleEl = document.getElementById("globalLoaderTitle");
     const textEl = document.getElementById("globalLoaderText");
     const variant = options.variant || App.main.getDefaultLoaderVariant();
     const title = options.title || "Carregando dados da liga";
-    const message = options.message || "Aguarde enquanto a classificação, o calendário e os painéis são atualizados.";
+    const message =
+      options.message ||
+      "Aguarde enquanto a classificação, o calendário e os painéis são atualizados.";
 
     App.state.loadingCount = Number(App.state.loadingCount || 0) + 1;
     App.main.applyLoaderVariant(variant);
@@ -179,7 +221,11 @@ App.main = {
     if (!overlay) return;
 
     if (force) App.state.loadingCount = 0;
-    else App.state.loadingCount = Math.max(0, Number(App.state.loadingCount || 0) - 1);
+    else
+      App.state.loadingCount = Math.max(
+        0,
+        Number(App.state.loadingCount || 0) - 1,
+      );
 
     if (App.state.loadingCount > 0) return;
 
@@ -188,12 +234,16 @@ App.main = {
   },
 
   setupTabs() {
-    document.querySelectorAll(".tab-button").forEach(button => {
+    document.querySelectorAll(".tab-button").forEach((button) => {
       button.addEventListener("click", () => {
         if (!App.main.canAccessView(button.dataset.view)) return;
 
-        document.querySelectorAll(".tab-button").forEach(item => item.classList.remove("active"));
-        document.querySelectorAll(".view").forEach(view => view.classList.remove("active"));
+        document
+          .querySelectorAll(".tab-button")
+          .forEach((item) => item.classList.remove("active"));
+        document
+          .querySelectorAll(".view")
+          .forEach((view) => view.classList.remove("active"));
         button.classList.add("active");
         document.getElementById(button.dataset.view)?.classList.add("active");
         App.main.renderCurrentView();
@@ -207,7 +257,7 @@ App.main = {
   },
 
   setupManualSync() {
-    document.querySelectorAll("[data-manual-sync]").forEach(button => {
+    document.querySelectorAll("[data-manual-sync]").forEach((button) => {
       if (button.dataset.bound === "true") return;
       button.dataset.bound = "true";
       button.addEventListener("click", async () => {
@@ -216,7 +266,7 @@ App.main = {
           App.main.markSyncing("Sincronizando manualmente...");
           await App.api.loadApiData({
             showLoader: false,
-            force: true
+            force: true,
           });
         } catch (error) {
           App.main.markSynced("Falha ao sincronizar");
@@ -230,13 +280,21 @@ App.main = {
   switchToView(viewId) {
     const targetViewId = App.main.canAccessView(viewId)
       ? viewId
-      : (App.auth?.isCommissioner?.() ? "commissionerView" : "playersView");
-    const button = document.querySelector(`.tab-button[data-view="${targetViewId}"]`);
+      : App.auth?.isCommissioner?.()
+        ? "commissionerView"
+        : "playersView";
+    const button = document.querySelector(
+      `.tab-button[data-view="${targetViewId}"]`,
+    );
     const view = document.getElementById(targetViewId);
     if (!button || !view) return;
 
-    document.querySelectorAll(".tab-button").forEach(item => item.classList.remove("active"));
-    document.querySelectorAll(".view").forEach(item => item.classList.remove("active"));
+    document
+      .querySelectorAll(".tab-button")
+      .forEach((item) => item.classList.remove("active"));
+    document
+      .querySelectorAll(".view")
+      .forEach((item) => item.classList.remove("active"));
     button.classList.add("active");
     view.classList.add("active");
     App.main.renderCurrentView();
@@ -244,60 +302,77 @@ App.main = {
 
   getGlobalSearchItems() {
     const items = [];
-    const add = item => {
+    const add = (item) => {
       if (!item?.title) return;
       items.push({
         ...item,
-        haystack: App.utils.normalizeText(`${item.title} ${item.detail || ""} ${item.meta || ""}`)
+        haystack: App.utils.normalizeText(
+          `${item.title} ${item.detail || ""} ${item.meta || ""}`,
+        ),
       });
     };
 
-    App.data.teams.forEach(team => add({
-      type: "Clube",
-      title: team.team,
-      detail: `${team.owner || "Sem técnico"} · ${team.status || "Liga"}`,
-      view: "playersView",
-      filterId: "playersSearchInput",
-      filterValue: team.team
-    }));
+    App.data.teams.forEach((team) =>
+      add({
+        type: "Clube",
+        title: team.team,
+        detail: `${team.owner || "Sem técnico"} · ${team.status || "Liga"}`,
+        view: "playersView",
+        filterId: "playersSearchInput",
+        filterValue: team.team,
+      }),
+    );
 
-    (App.calendar.getCalendarEvents?.() || []).forEach(match => add({
-      type: match.competition === "Championship" ? "Jogo" : "Copa",
-      title: `${match.home} x ${match.away}`,
-      detail: `${match.competition} · ${match.phase} · ${App.utils.formatDate(match.date)}`,
-      meta: `${match.homeScore ?? ""} ${match.awayScore ?? ""}`,
-      view: match.competition === "Championship" ? "calendarView" : "cupsView",
-      filterId: match.competition === "Championship" ? "calendarSearchInput" : "cupsSearchInput",
-      filterValue: `${match.home} ${match.away}`
-    }));
+    (App.calendar.getCalendarEvents?.() || []).forEach((match) =>
+      add({
+        type: match.competition === "Championship" ? "Jogo" : "Copa",
+        title: `${match.home} x ${match.away}`,
+        detail: `${match.competition} · ${match.phase} · ${App.utils.formatDate(match.date)}`,
+        meta: `${match.homeScore ?? ""} ${match.awayScore ?? ""}`,
+        view:
+          match.competition === "Championship" ? "calendarView" : "cupsView",
+        filterId:
+          match.competition === "Championship"
+            ? "calendarSearchInput"
+            : "cupsSearchInput",
+        filterValue: `${match.home} ${match.away}`,
+      }),
+    );
 
-    App.transfers.getValidTransfers().forEach(item => add({
-      type: "Transferência",
-      title: item.player,
-      detail: `${item.buyer} · ${item.fromClub || "Mercado"} · ${App.utils.formatCurrency(item.totalCost)}`,
-      meta: `${item.overall || ""}`,
-      view: "transfersView",
-      filterId: "transferSearchInput",
-      filterValue: item.player
-    }));
+    App.transfers.getValidTransfers().forEach((item) =>
+      add({
+        type: "Transferência",
+        title: item.player,
+        detail: `${item.buyer} · ${item.fromClub || "Mercado"} · ${App.utils.formatCurrency(item.totalCost)}`,
+        meta: `${item.overall || ""}`,
+        view: "transfersView",
+        filterId: "transferSearchInput",
+        filterValue: item.player,
+      }),
+    );
 
-    (App.state.apiEvents || []).forEach(event => add({
-      type: event.Tipo || "Evento",
-      title: event.Titulo || event.JogadorAfetado || "Evento da liga",
-      detail: `${event.Jogador || "Liga"} · ${event.JogadorAfetado || event.Descricao || ""}`,
-      view: "eventsView",
-      filterId: "eventsSearchInput",
-      filterValue: event.JogadorAfetado || event.Titulo || event.Jogador || ""
-    }));
+    (App.state.apiEvents || []).forEach((event) =>
+      add({
+        type: event.Tipo || "Evento",
+        title: event.Titulo || event.JogadorAfetado || "Evento da liga",
+        detail: `${event.Jogador || "Liga"} · ${event.JogadorAfetado || event.Descricao || ""}`,
+        view: "eventsView",
+        filterId: "eventsSearchInput",
+        filterValue:
+          event.JogadorAfetado || event.Titulo || event.Jogador || "",
+      }),
+    );
 
-    (App.auth?.myFavorites || []).forEach(item => add({
-      type: "Favorito",
-      title: item.title,
-      detail: item.detail || item.item_type || "Atalho privado",
-      view: "playersView",
-      filterId: "playersSearchInput",
-      filterValue: item.title
-    }));
+    (App.auth?.myFavorites || []).forEach((item) =>
+      add({
+        type: "Favorito",
+        title: item.title,
+        detail: item.detail || item.item_type || "Atalho privado",
+        view: "playersView",
+        filterId: "playersSearchInput",
+        filterValue: item.title,
+      }),
+    );
 
     return items;
   },
@@ -310,16 +385,22 @@ App.main = {
     const normalized = App.utils.normalizeText(query);
     if (normalized.length < 2) {
       target.classList.remove("is-visible");
-      target.innerHTML = "";
+      App.dom.clear(target);
       return;
     }
 
-    const results = App.main.getGlobalSearchItems()
-      .filter(item => item.haystack.includes(normalized))
+    const results = App.main
+      .getGlobalSearchItems()
+      .filter((item) => item.haystack.includes(normalized))
       .slice(0, 10);
 
     target.classList.add("is-visible");
-    target.innerHTML = results.length ? results.map((item, index) => `
+    App.dom.setHtml(
+      target,
+      results.length
+        ? results
+            .map(
+              (item, index) => `
       <button
         type="button"
         class="global-search-item"
@@ -330,9 +411,13 @@ App.main = {
         <strong>${App.utils.escapeDisplay(item.title)}</strong>
         <small>${App.utils.escapeDisplay(item.detail || "")}</small>
       </button>
-    `).join("") : `<div class="global-search-empty">Nenhum resultado encontrado.</div>`;
+    `,
+            )
+            .join("")
+        : `<div class="global-search-empty">Nenhum resultado encontrado.</div>`,
+    );
 
-    target.querySelectorAll("[data-global-search-index]").forEach(button => {
+    target.querySelectorAll("[data-global-search-index]").forEach((button) => {
       button.addEventListener("click", () => {
         const item = results[Number(button.dataset.globalSearchIndex || 0)];
         if (!item) return;
@@ -358,31 +443,48 @@ App.main = {
     let searchTimer = null;
     const requestRender = () => {
       clearTimeout(searchTimer);
-      searchTimer = setTimeout(() => App.main.renderGlobalSearchResults(input.value), 120);
+      searchTimer = setTimeout(
+        () => App.main.renderGlobalSearchResults(input.value),
+        120,
+      );
     };
 
     input.addEventListener("input", requestRender);
-    input.addEventListener("focus", () => App.main.renderGlobalSearchResults(input.value));
-    input.addEventListener("keydown", event => {
+    input.addEventListener("focus", () =>
+      App.main.renderGlobalSearchResults(input.value),
+    );
+    input.addEventListener("keydown", (event) => {
       if (event.key === "Escape") {
         input.value = "";
         target.classList.remove("is-visible");
-        target.innerHTML = "";
+        App.dom.clear(target);
       }
     });
-    document.addEventListener("click", event => {
-      if (!event.target.closest("[data-global-search]")) target.classList.remove("is-visible");
+    document.addEventListener("click", (event) => {
+      if (!event.target.closest("[data-global-search]"))
+        target.classList.remove("is-visible");
     });
   },
 
   setupFilters() {
     [
-      "calendarSearchInput", "calendarCompetitionFilter", "calendarOwnerFilter", "calendarWeekFilter", "calendarStatusFilter",
-      "cupsSearchInput", "cupsCompetitionFilter",
-      "playersSearchInput", "playersFilter",
-      "eventsSearchInput", "eventsOwnerFilter", "eventsTypeFilter", "eventsPeriodFilter",
-      "transferSearchInput", "transferOwnerFilter", "transferStatusFilter"
-    ].forEach(id => {
+      "calendarSearchInput",
+      "calendarCompetitionFilter",
+      "calendarOwnerFilter",
+      "calendarWeekFilter",
+      "calendarStatusFilter",
+      "cupsSearchInput",
+      "cupsCompetitionFilter",
+      "playersSearchInput",
+      "playersFilter",
+      "eventsSearchInput",
+      "eventsOwnerFilter",
+      "eventsTypeFilter",
+      "eventsPeriodFilter",
+      "transferSearchInput",
+      "transferOwnerFilter",
+      "transferStatusFilter",
+    ].forEach((id) => {
       const element = document.getElementById(id);
       if (!element) return;
 
@@ -431,22 +533,38 @@ App.main = {
     setInterval(() => {
       if (!App.state.apiLoaded) return;
       const activeView = document.querySelector(".view.active")?.id;
-      if (activeView === "eventsView" || activeView === "playersView" || activeView === "transfersView") {
+      if (
+        activeView === "eventsView" ||
+        activeView === "playersView" ||
+        activeView === "transfersView"
+      ) {
         App.main.renderCurrentView();
       }
     }, 60000);
 
     setInterval(() => {
-      if (!App.state.apiLoaded || App.state.silentSyncRunning || document.hidden) return;
+      if (
+        !App.state.apiLoaded ||
+        App.state.silentSyncRunning ||
+        document.hidden
+      )
+        return;
       const activeView = document.querySelector(".view.active")?.id;
-      if (activeView === "submitView" || document.body.classList.contains("modal-active")) return;
+      if (
+        activeView === "submitView" ||
+        document.body.classList.contains("modal-active")
+      )
+        return;
       App.state.silentSyncRunning = true;
-      App.api.loadApiData({
-        showLoader: false,
-        cacheTtlMs: 5 * 60000,
-        skipBackgroundRefresh: true
-      })
-        .catch(error => console.warn("Sincronização silenciosa indisponível", error))
+      App.api
+        .loadApiData({
+          showLoader: false,
+          cacheTtlMs: 5 * 60000,
+          skipBackgroundRefresh: true,
+        })
+        .catch((error) =>
+          console.warn("Sincronização silenciosa indisponível", error),
+        )
         .finally(() => {
           App.state.silentSyncRunning = false;
         });
@@ -474,7 +592,8 @@ App.main = {
       force: true,
       variant: "match",
       title: "Carregando dados da liga",
-      message: "Consultando o Supabase e preparando classificação, calendário, copas, eventos e painel."
+      message:
+        "Consultando o Supabase e preparando classificação, calendário, copas, eventos e painel.",
     });
 
     App.state.apiLoadPromise = initialLoad;
@@ -485,7 +604,7 @@ App.main = {
           App.state.apiLoadPromise = null;
         }
       });
-  }
+  },
 };
 
 document.addEventListener("DOMContentLoaded", App.main.init);

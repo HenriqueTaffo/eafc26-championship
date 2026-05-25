@@ -2,45 +2,58 @@ import App from "./app.js";
 
 App.players = {
   getPlayerTeams() {
-    return App.data.teams.filter(team => team.status === "Nosso");
+    return App.data.teams.filter((team) => team.status === "Nosso");
   },
 
   getHumanTeamNames() {
-    return App.players.getPlayerTeams().map(team => team.team);
+    return App.players.getPlayerTeams().map((team) => team.team);
   },
 
   getApprovedTransfersForBuyer(buyer) {
-    return App.transfers.getValidTransfers().filter(item => item.buyer === buyer);
+    return App.transfers
+      .getValidTransfers()
+      .filter((item) => item.buyer === buyer);
   },
 
   getSpentByBuyer(buyer) {
-    return App.players.getApprovedTransfersForBuyer(buyer).reduce((sum, item) => sum + item.totalCost, 0);
+    return App.players
+      .getApprovedTransfersForBuyer(buyer)
+      .reduce((sum, item) => sum + item.totalCost, 0);
   },
 
   getFinanceForecastForBuyer(buyer) {
-    return (App.state.apiFinanceForecast || []).find(
-      item =>
-        App.utils.normalizeText(item.manager_name || item.managerName) ===
-        App.utils.normalizeText(buyer),
-    ) || null;
+    return (
+      (App.state.apiFinanceForecast || []).find(
+        (item) =>
+          App.utils.normalizeText(item.manager_name || item.managerName) ===
+          App.utils.normalizeText(buyer),
+      ) || null
+    );
   },
 
   getSalaryDebtForBuyer(buyer) {
-    return (App.state.apiSalaryDebts || []).find(
-      item =>
-        (item.status === "active" || item.marketEmbargo) &&
-        App.utils.normalizeText(item.managerName || item.manager_name) ===
-        App.utils.normalizeText(buyer),
-    ) || null;
+    return (
+      (App.state.apiSalaryDebts || []).find(
+        (item) =>
+          (item.status === "active" || item.marketEmbargo) &&
+          App.utils.normalizeText(item.managerName || item.manager_name) ===
+            App.utils.normalizeText(buyer),
+      ) || null
+    );
   },
 
   getWeeklyPayrollForBuyer(buyer, transfers = []) {
     const forecast = App.players.getFinanceForecastForBuyer(buyer);
-    const forecastPayroll = Number(forecast?.payroll_weekly ?? forecast?.payrollWeekly);
+    const forecastPayroll = Number(
+      forecast?.payroll_weekly ?? forecast?.payrollWeekly,
+    );
     if (Number.isFinite(forecastPayroll) && forecastPayroll > 0) {
       return forecastPayroll;
     }
-    return transfers.reduce((sum, item) => sum + App.transfers.estimateWeeklySalary(item), 0);
+    return transfers.reduce(
+      (sum, item) => sum + App.transfers.estimateWeeklySalary(item),
+      0,
+    );
   },
 
   getBudgetBreakdown(budget, spent) {
@@ -52,11 +65,27 @@ App.players = {
     const cupRebalanceBonus = Number(budget.cupRebalanceBonus || 0);
     const eventBonus = Number(budget.eventTotal || budget.eventBonus || 0);
     const sponsorshipRewards = Number(budget.sponsorshipRewards || 0);
-    const totalAccumulated = Number(budget.totalBudget ?? (base + homeBonus + winBonus + eventBonus));
+    const totalAccumulated = Number(
+      budget.totalBudget ?? base + homeBonus + winBonus + eventBonus,
+    );
     const spentValue = Number(budget.spentTotal ?? spent ?? 0);
-    const available = Number(budget.remainingBudget ?? (totalAccumulated - spentValue));
+    const available = Number(
+      budget.remainingBudget ?? totalAccumulated - spentValue,
+    );
 
-    return { base, homeBonus, winBonus, weeklyIncome, formBonus, cupRebalanceBonus, eventBonus, sponsorshipRewards, totalAccumulated, spent: spentValue, available };
+    return {
+      base,
+      homeBonus,
+      winBonus,
+      weeklyIncome,
+      formBonus,
+      cupRebalanceBonus,
+      eventBonus,
+      sponsorshipRewards,
+      totalAccumulated,
+      spent: spentValue,
+      available,
+    };
   },
 
   getCoachStatementEntries(owner, budget, breakdown) {
@@ -68,9 +97,16 @@ App.players = {
     };
 
     const positiveEvents = (App.state.apiEvents || [])
-      .filter(event => App.utils.normalizeText(event.Jogador) === App.utils.normalizeText(owner))
-      .filter(event => Number(event.ImpactoFinanceiro || 0) > 0)
-      .sort((a, b) => App.events.getEventDateTime(b) - App.events.getEventDateTime(a))
+      .filter(
+        (event) =>
+          App.utils.normalizeText(event.Jogador) ===
+          App.utils.normalizeText(owner),
+      )
+      .filter((event) => Number(event.ImpactoFinanceiro || 0) > 0)
+      .sort(
+        (a, b) =>
+          App.events.getEventDateTime(b) - App.events.getEventDateTime(a),
+      )
       .slice(0, 4);
 
     positiveEvents.forEach((event, index) => {
@@ -79,18 +115,20 @@ App.players = {
         detail: event.Tipo || "Evento da liga",
         amount: Number(event.ImpactoFinanceiro || 0),
         dateLabel: App.utils.formatDateTime(App.events.getEventDateTime(event)),
-        rank: 10 + index
+        rank: 10 + index,
       });
     });
 
-    const eventRollup = Number(breakdown.eventBonus || 0) - Number(breakdown.sponsorshipRewards || 0);
+    const eventRollup =
+      Number(breakdown.eventBonus || 0) -
+      Number(breakdown.sponsorshipRewards || 0);
     if (!positiveEvents.length && eventRollup > 0) {
       pushEntry({
         label: "Eventos positivos",
         detail: `${Number(budget.eventCount || 0)} ocorrência(s) com impacto financeiro`,
         amount: eventRollup,
         dateLabel: "Atualizado pela liga",
-        rank: 20
+        rank: 20,
       });
     }
 
@@ -99,7 +137,7 @@ App.players = {
       detail: "Bônus comerciais já processados",
       amount: breakdown.sponsorshipRewards,
       dateLabel: "Contratos ativos",
-      rank: 30
+      rank: 30,
     });
 
     pushEntry({
@@ -107,7 +145,7 @@ App.players = {
       detail: `${Number(budget.wins || 0)} vitória(s) aprovada(s)`,
       amount: breakdown.winBonus,
       dateLabel: "Resultados aprovados",
-      rank: 40
+      rank: 40,
     });
 
     pushEntry({
@@ -115,7 +153,7 @@ App.players = {
       detail: "Distribuição fixa por semana ativa",
       amount: breakdown.weeklyIncome,
       dateLabel: "Temporada",
-      rank: 42
+      rank: 42,
     });
 
     pushEntry({
@@ -123,7 +161,7 @@ App.players = {
       detail: `${Number(budget.points || 0)} ponto(s) em ${Number(budget.matchesPlayed || 0)} jogo(s)`,
       amount: breakdown.formBonus,
       dateLabel: "Blocos de 5 jogos",
-      rank: 44
+      rank: 44,
     });
 
     pushEntry({
@@ -131,7 +169,7 @@ App.players = {
       detail: "Rebalanceamento de premiações de avanço",
       amount: breakdown.cupRebalanceBonus,
       dateLabel: "Copas",
-      rank: 46
+      rank: 46,
     });
 
     pushEntry({
@@ -139,7 +177,7 @@ App.players = {
       detail: `${Number(budget.homeMatches || 0)} jogo(s) como mandante`,
       amount: breakdown.homeBonus,
       dateLabel: "Calendário oficial",
-      rank: 50
+      rank: 50,
     });
 
     pushEntry({
@@ -147,19 +185,35 @@ App.players = {
       detail: "Crédito base da temporada",
       amount: breakdown.base,
       dateLabel: "Temporada",
-      rank: 60
+      rank: 60,
     });
 
     return entries.sort((a, b) => a.rank - b.rank);
   },
 
   renderCoachFinancialStatement(owner, budget, breakdown) {
-    const entries = App.players.getCoachStatementEntries(owner, budget, breakdown);
-    const extraRevenue = Math.max(0, Number(breakdown.totalAccumulated || 0) - Number(breakdown.base || 0));
-    const latestExtra = entries.find(entry => entry.label !== "Orçamento inicial");
-    const baseEntry = entries.find(entry => entry.label === "Orçamento inicial");
-    const visibleEntries = entries.filter(entry => entry.label !== "Orçamento inicial").slice(0, 5);
-    const hiddenEntries = Math.max(0, entries.length - visibleEntries.length - (baseEntry ? 1 : 0));
+    const entries = App.players.getCoachStatementEntries(
+      owner,
+      budget,
+      breakdown,
+    );
+    const extraRevenue = Math.max(
+      0,
+      Number(breakdown.totalAccumulated || 0) - Number(breakdown.base || 0),
+    );
+    const latestExtra = entries.find(
+      (entry) => entry.label !== "Orçamento inicial",
+    );
+    const baseEntry = entries.find(
+      (entry) => entry.label === "Orçamento inicial",
+    );
+    const visibleEntries = entries
+      .filter((entry) => entry.label !== "Orçamento inicial")
+      .slice(0, 5);
+    const hiddenEntries = Math.max(
+      0,
+      entries.length - visibleEntries.length - (baseEntry ? 1 : 0),
+    );
 
     return `
       <div class="coach-full-row-v54">
@@ -183,7 +237,9 @@ App.players = {
             </div>
           </div>
           <div class="coach-statement-list">
-            ${visibleEntries.map(entry => `
+            ${visibleEntries
+              .map(
+                (entry) => `
               <div class="coach-statement-item">
                 <div>
                   <strong>${App.utils.escapeHtml(entry.label)}</strong>
@@ -194,13 +250,19 @@ App.players = {
                   <small>${App.utils.escapeHtml(entry.dateLabel)}</small>
                 </div>
               </div>
-            `).join("")}
-            ${baseEntry ? `
+            `,
+              )
+              .join("")}
+            ${
+              baseEntry
+                ? `
               <div class="coach-statement-base-line">
                 <span>Base da temporada</span>
                 <b>${App.utils.formatCurrency(baseEntry.amount)}</b>
               </div>
-            ` : ""}
+            `
+                : ""
+            }
             ${hiddenEntries > 0 ? `<p class="coach-statement-note">+${hiddenEntries} receita(s) consolidada(s) no saldo atual.</p>` : ""}
           </div>
         </article>
@@ -209,17 +271,30 @@ App.players = {
   },
 
   getMatchesForTeam(teamName) {
-    return App.calendar.getCalendarEvents().filter(event => App.utils.sameTeamName(event.home, teamName) || App.utils.sameTeamName(event.away, teamName));
+    return App.calendar
+      .getCalendarEvents()
+      .filter(
+        (event) =>
+          App.utils.sameTeamName(event.home, teamName) ||
+          App.utils.sameTeamName(event.away, teamName),
+      );
   },
 
   getPlayedResultsForTeam(teamName) {
-    return App.standings.getApprovedApiResults()
-      .filter(row => App.utils.normalizeText(row.Competicao) === "championship")
-      .filter(row => App.utils.sameTeamName(row.Mandante, teamName) || App.utils.sameTeamName(row.Visitante, teamName));
+    return App.standings
+      .getApprovedApiResults()
+      .filter(
+        (row) => App.utils.normalizeText(row.Competicao) === "championship",
+      )
+      .filter(
+        (row) =>
+          App.utils.sameTeamName(row.Mandante, teamName) ||
+          App.utils.sameTeamName(row.Visitante, teamName),
+      );
   },
 
   getNextMatchForTeam(teamName) {
-    return App.players.getMatchesForTeam(teamName).find(event => {
+    return App.players.getMatchesForTeam(teamName).find((event) => {
       if (!event) return false;
 
       // Regra central:
@@ -234,47 +309,61 @@ App.players = {
     const humanTeams = App.players.getHumanTeamNames();
     const goalsMap = {};
 
-    humanTeams.forEach(team => {
+    humanTeams.forEach((team) => {
       goalsMap[App.utils.normalizeTeamName(team)] = {
         name: team,
         detail: App.utils.getTeamByName(team)?.owner || "Técnico",
-        count: 0
+        count: 0,
       };
     });
 
-    App.standings.getApprovedApiResults().forEach(row => {
+    App.standings.getApprovedApiResults().forEach((row) => {
       const homeKey = App.utils.normalizeTeamName(row.Mandante);
       const awayKey = App.utils.normalizeTeamName(row.Visitante);
-      if (goalsMap[homeKey]) goalsMap[homeKey].count += Number(row.GolsMandante || 0);
-      if (goalsMap[awayKey]) goalsMap[awayKey].count += Number(row.GolsVisitante || 0);
+      if (goalsMap[homeKey])
+        goalsMap[homeKey].count += Number(row.GolsMandante || 0);
+      if (goalsMap[awayKey])
+        goalsMap[awayKey].count += Number(row.GolsVisitante || 0);
     });
 
-    return Object.values(goalsMap).sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
+    return Object.values(goalsMap).sort(
+      (a, b) => b.count - a.count || a.name.localeCompare(b.name),
+    );
   },
 
   getTopExpensiveTransfers(limit = 5) {
-    return App.transfers.getTransfersWithStats()
-      .filter(item => !item.isBlockedDuplicate)
-      .sort((a, b) => b.totalCost - a.totalCost || a.player.localeCompare(b.player))
+    return App.transfers
+      .getTransfersWithStats()
+      .filter((item) => !item.isBlockedDuplicate)
+      .sort(
+        (a, b) => b.totalCost - a.totalCost || a.player.localeCompare(b.player),
+      )
       .slice(0, limit)
-      .map(item => ({
+      .map((item) => ({
         name: item.player,
         detail: `${item.buyer} • ${item.fromClub || "Clube não informado"}`,
-        count: App.utils.formatCurrency(item.totalCost)
+        count: App.utils.formatCurrency(item.totalCost),
       }));
   },
 
   getCoachRanking() {
     const standings = App.standings.getStandings();
-    return App.players.getPlayerTeams()
-      .map(team => {
-        const standing = standings.find(item => App.utils.sameTeamName(item.team, team.team));
-        const budget = App.transfers.getSpendingSummary().find(item => item.buyer === team.owner);
+    return App.players
+      .getPlayerTeams()
+      .map((team) => {
+        const standing = standings.find((item) =>
+          App.utils.sameTeamName(item.team, team.team),
+        );
+        const budget = App.transfers
+          .getSpendingSummary()
+          .find((item) => item.buyer === team.owner);
         return { team, standing, budget };
       })
-      .sort((a, b) =>
-        Number(b.standing?.points || 0) - Number(a.standing?.points || 0) ||
-        Number(b.standing?.goalDifference || 0) - Number(a.standing?.goalDifference || 0)
+      .sort(
+        (a, b) =>
+          Number(b.standing?.points || 0) - Number(a.standing?.points || 0) ||
+          Number(b.standing?.goalDifference || 0) -
+            Number(a.standing?.goalDifference || 0),
       );
   },
 
@@ -288,36 +377,56 @@ App.players = {
   },
 
   getRecentForm(teamName, limit = 5) {
-    return App.players.getPlayedResultsForTeam(teamName)
+    return App.players
+      .getPlayedResultsForTeam(teamName)
       .slice(-limit)
       .reverse()
-      .map(row => App.players.getResultPerspective(row, teamName));
+      .map((row) => App.players.getResultPerspective(row, teamName));
   },
 
   getCoachEvents(buyer, limit = 5) {
     return (App.state.apiEvents || [])
-      .filter(event => App.utils.normalizeText(event.Jogador) === App.utils.normalizeText(buyer))
-      .sort((a, b) => App.events.getEventDateTime(b) - App.events.getEventDateTime(a))
+      .filter(
+        (event) =>
+          App.utils.normalizeText(event.Jogador) ===
+          App.utils.normalizeText(buyer),
+      )
+      .sort(
+        (a, b) =>
+          App.events.getEventDateTime(b) - App.events.getEventDateTime(a),
+      )
       .slice(0, limit);
   },
 
   getActiveInjuriesForCoach(buyer) {
-    return App.events.getActiveEventsForBuyer(buyer)
-      .filter(event => String(event.JogadorAfetado || "").trim())
-      .filter(event => Number(event.PartidasRestantes || 0) > 0 || App.events.isActiveOrDurationEvent(event));
+    return App.events
+      .getActiveEventsForBuyer(buyer)
+      .filter((event) => String(event.JogadorAfetado || "").trim())
+      .filter(
+        (event) =>
+          Number(event.PartidasRestantes || 0) > 0 ||
+          App.events.isActiveOrDurationEvent(event),
+      );
   },
 
   getPrivateTargetsKey(owner) {
     const session = App.auth?.getSession ? App.auth.getSession() : null;
     const ownerKey = App.utils.normalizeText(owner).replace(/[^a-z0-9]+/g, "-");
-    const sessionKey = String(session?.managerId || ownerKey || "manager").replace(/[^a-zA-Z0-9_-]+/g, "-");
+    const sessionKey = String(
+      session?.managerId || ownerKey || "manager",
+    ).replace(/[^a-zA-Z0-9_-]+/g, "-");
     return `mml-private-transfer-targets-v1:${sessionKey}:${ownerKey}`;
   },
 
   getPrivateTransferTargets(owner) {
     if (!App.auth?.canViewManagerPrivate?.(owner)) return [];
     const session = App.auth?.getSession ? App.auth.getSession() : null;
-    if (session && App.utils.normalizeText(session.managerName) === App.utils.normalizeText(owner) && App.auth.myTransferTargetsLoaded) {
+    if (
+      session &&
+      App.utils.normalizeText(session.managerName) ===
+        App.utils.normalizeText(owner) &&
+      App.auth.myTransferTargetsLoaded
+    ) {
       return App.auth.myTransferTargets;
     }
 
@@ -333,25 +442,33 @@ App.players = {
   savePrivateTransferTargets(owner, targets = []) {
     if (!App.auth?.canViewManagerPrivate?.(owner)) return [];
     const cleanTargets = targets
-      .map(item => ({
-        id: item.id || `target-${Date.now()}-${Math.random().toString(16).slice(2)}`,
-      player: String(item.player || "").trim(),
+      .map((item) => ({
+        id:
+          item.id ||
+          `target-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+        player: String(item.player || "").trim(),
         club: String(item.club || "").trim(),
         value: Number(item.value || 0),
         priority: String(item.priority || "Monitorar"),
         note: String(item.note || "").trim(),
-        createdAt: item.createdAt || new Date().toISOString()
+        createdAt: item.createdAt || new Date().toISOString(),
       }))
-      .filter(item => item.player);
+      .filter((item) => item.player);
 
-    localStorage.setItem(App.players.getPrivateTargetsKey(owner), JSON.stringify(cleanTargets));
+    localStorage.setItem(
+      App.players.getPrivateTargetsKey(owner),
+      JSON.stringify(cleanTargets),
+    );
     return cleanTargets;
   },
 
   addPrivateTransferTarget(owner, payload = {}) {
     const targets = App.players.getPrivateTransferTargets(owner);
     const playerKey = App.transfers.normalizePlayerRatingKey(payload.player);
-    const existing = targets.find(item => App.transfers.normalizePlayerRatingKey(item.player) === playerKey);
+    const existing = targets.find(
+      (item) =>
+        App.transfers.normalizePlayerRatingKey(item.player) === playerKey,
+    );
     const nextTarget = {
       ...(existing || {}),
       player: payload.player,
@@ -359,18 +476,22 @@ App.players = {
       value: payload.value,
       priority: payload.priority,
       note: payload.note,
-      createdAt: existing?.createdAt || new Date().toISOString()
+      createdAt: existing?.createdAt || new Date().toISOString(),
     };
 
     const nextTargets = existing
-      ? targets.map(item => item.id === existing.id ? { ...nextTarget, id: existing.id } : item)
+      ? targets.map((item) =>
+          item.id === existing.id ? { ...nextTarget, id: existing.id } : item,
+        )
       : [{ ...nextTarget, id: `target-${Date.now()}` }, ...targets];
 
     return App.players.savePrivateTransferTargets(owner, nextTargets);
   },
 
   removePrivateTransferTarget(owner, targetId) {
-    const targets = App.players.getPrivateTransferTargets(owner).filter(item => item.id !== targetId);
+    const targets = App.players
+      .getPrivateTransferTargets(owner)
+      .filter((item) => item.id !== targetId);
     return App.players.savePrivateTransferTargets(owner, targets);
   },
 
@@ -387,15 +508,17 @@ App.players = {
 
     return `
       <div class="coach-alert-deck">
-        ${alerts.map((alert, index) => {
-          const icon = index === 0 ? "🚨" : "📌";
-          return `
+        ${alerts
+          .map((alert, index) => {
+            const icon = index === 0 ? "🚨" : "📌";
+            return `
             <div class="coach-alert-card">
               <span>${icon}</span>
               <p>${App.utils.escapeHtml(alert)}</p>
             </div>
           `;
-        }).join("")}
+          })
+          .join("")}
       </div>
     `;
   },
@@ -414,8 +537,17 @@ App.players = {
     }
 
     const visibleTransfers = transfers.slice(0, 6);
-    const total = transfers.reduce((sum, item) => sum + Number(item.totalCost || 0), 0);
-    const topTransfer = transfers.reduce((best, item) => Number(item.totalCost || 0) > Number(best?.totalCost || 0) ? item : best, transfers[0]);
+    const total = transfers.reduce(
+      (sum, item) => sum + Number(item.totalCost || 0),
+      0,
+    );
+    const topTransfer = transfers.reduce(
+      (best, item) =>
+        Number(item.totalCost || 0) > Number(best?.totalCost || 0)
+          ? item
+          : best,
+      transfers[0],
+    );
 
     return `
       <div class="coach-market-header">
@@ -436,7 +568,9 @@ App.players = {
       </div>
 
       <div class="coach-transfer-timeline">
-        ${visibleTransfers.map((item) => `
+        ${visibleTransfers
+          .map(
+            (item) => `
           <div class="coach-transfer-item">
             ${App.transfers.renderPlayerIdentity(item.player, item.fromClub || "Clube não informado", "coach-transfer-player-identity", { club: item.fromClub })}
             <span class="coach-transfer-value">
@@ -444,7 +578,9 @@ App.players = {
               <b>${App.utils.formatCurrency(item.totalCost)}</b>
             </span>
           </div>
-        `).join("")}
+        `,
+          )
+          .join("")}
       </div>
     `;
   },
@@ -462,19 +598,36 @@ App.players = {
 
     return `
       <div class="coach-event-stack">
-        ${events.map(event => {
-          const presentation = App.events.getEventPresentation ? App.events.getEventPresentation(event) : {
-            title: event.Titulo || "Evento",
-            description: event.Descricao || "",
-            categoryLabel: event.Tipo || "Evento",
-            icon: "🎲"
-          };
-          const impact = App.events.getEventImpactLabel ? App.events.getEventImpactLabel(event) : "";
-          const duration = App.events.getEventDurationLabel ? App.events.getEventDurationLabel(event) : "";
-          const impactValue = Number(event.ImpactoFinanceiro || 0);
-          const impactClass = impactValue > 0 ? "positive" : impactValue < 0 ? "negative" : "neutral";
-          const impactLabel = impactValue > 0 ? "Entrada no caixa" : impactValue < 0 ? "Saída do caixa" : "Efeito";
-          return `
+        ${events
+          .map((event) => {
+            const presentation = App.events.getEventPresentation
+              ? App.events.getEventPresentation(event)
+              : {
+                  title: event.Titulo || "Evento",
+                  description: event.Descricao || "",
+                  categoryLabel: event.Tipo || "Evento",
+                  icon: "🎲",
+                };
+            const impact = App.events.getEventImpactLabel
+              ? App.events.getEventImpactLabel(event)
+              : "";
+            const duration = App.events.getEventDurationLabel
+              ? App.events.getEventDurationLabel(event)
+              : "";
+            const impactValue = Number(event.ImpactoFinanceiro || 0);
+            const impactClass =
+              impactValue > 0
+                ? "positive"
+                : impactValue < 0
+                  ? "negative"
+                  : "neutral";
+            const impactLabel =
+              impactValue > 0
+                ? "Entrada no caixa"
+                : impactValue < 0
+                  ? "Saída do caixa"
+                  : "Efeito";
+            return `
             <div class="coach-event-item ${impactClass}">
               <span class="coach-event-icon">${presentation.icon}</span>
               <div>
@@ -487,7 +640,8 @@ App.players = {
               </span>
             </div>
           `;
-        }).join("")}
+          })
+          .join("")}
       </div>
     `;
   },
@@ -531,15 +685,27 @@ App.players = {
         </form>
         <div class="coach-target-search-results" data-private-target-results></div>
         <div class="coach-target-list">
-          ${targets.length ? targets.map(target => {
-            const marketPlayer = App.transfers.findMarketPlayerByName(target.player, { club: target.club }) || {
-              name: target.player,
-              club: target.club
-            };
-            const rating = App.transfers.getRatingForPlayerName(target.player, { club: target.club });
-            const favoriteKey = `target:${target.id || target.player}`;
-            const isFavorite = App.auth?.isFavorite?.("transfer_target", favoriteKey);
-            return `
+          ${
+            targets.length
+              ? targets
+                  .map((target) => {
+                    const marketPlayer = App.transfers.findMarketPlayerByName(
+                      target.player,
+                      { club: target.club },
+                    ) || {
+                      name: target.player,
+                      club: target.club,
+                    };
+                    const rating = App.transfers.getRatingForPlayerName(
+                      target.player,
+                      { club: target.club },
+                    );
+                    const favoriteKey = `target:${target.id || target.player}`;
+                    const isFavorite = App.auth?.isFavorite?.(
+                      "transfer_target",
+                      favoriteKey,
+                    );
+                    return `
               <div class="coach-target-item">
                 ${App.transfers.renderPlayerPhoto(marketPlayer, rating, "player-avatar")}
                 <div class="coach-target-copy">
@@ -564,30 +730,42 @@ App.players = {
                 </div>
               </div>
             `;
-          }).join("") : `
+                  })
+                  .join("")
+              : `
             <div class="coach-empty-state compact">
               <strong>Nenhum alvo pinado</strong>
               <p>Use este bloco para guardar nomes sem expor sua lista para os outros técnicos.</p>
             </div>
-          `}
+          `
+          }
         </div>
       </article>
     `;
   },
 
   renderCoachSaleListCard(owner, transfers = []) {
-    const data = App.auth?.myTransferSaleListings || { listings: [], ownedPlayers: [] };
+    const data = App.auth?.myTransferSaleListings || {
+      listings: [],
+      ownedPlayers: [],
+    };
     const listings = Array.isArray(data.listings) ? data.listings : [];
-    const dbOwnedPlayers = Array.isArray(data.ownedPlayers) ? data.ownedPlayers : [];
+    const dbOwnedPlayers = Array.isArray(data.ownedPlayers)
+      ? data.ownedPlayers
+      : [];
     const ownedPlayers = dbOwnedPlayers.length
       ? dbOwnedPlayers
-      : transfers.map(item => ({
+      : transfers.map((item) => ({
           player: item.player,
           playerName: item.player,
           fromClub: item.fromClub,
           overall: item.overall,
           baseValue: item.totalCost || item.marketValue || 0,
-          listed: listings.some(listing => App.utils.normalizeText(listing.player || listing.playerName) === App.utils.normalizeText(item.player))
+          listed: listings.some(
+            (listing) =>
+              App.utils.normalizeText(listing.player || listing.playerName) ===
+              App.utils.normalizeText(item.player),
+          ),
         }));
     const activeCount = listings.length;
 
@@ -605,11 +783,13 @@ App.players = {
             Jogador
             <select name="player" required data-sale-listing-player>
               <option value="">Selecione do elenco</option>
-              ${ownedPlayers.map(player => {
-                const name = player.player || player.playerName || "";
-                const baseValue = Number(player.baseValue || 0);
-                return `<option value="${App.utils.escapeHtml(name)}" data-base-value="${baseValue}">${App.utils.escapeHtml(name)}${player.listed ? " · listado" : ""}</option>`;
-              }).join("")}
+              ${ownedPlayers
+                .map((player) => {
+                  const name = player.player || player.playerName || "";
+                  const baseValue = Number(player.baseValue || 0);
+                  return `<option value="${App.utils.escapeHtml(name)}" data-base-value="${baseValue}">${App.utils.escapeHtml(name)}${player.listed ? " · listado" : ""}</option>`;
+                })
+                .join("")}
             </select>
           </label>
           <label>
@@ -623,16 +803,31 @@ App.players = {
           <button type="submit" class="secondary-button" ${ownedPlayers.length ? "" : "disabled"}>Colocar na lista</button>
         </form>
         <div class="coach-target-list">
-          ${listings.length ? listings.map(item => {
-            const name = item.player || item.playerName;
-            const fromClub = item.fromClub || item.from_club || "";
-            const askingPrice = Number(item.askingPrice || item.asking_price || 0);
-            const baseValue = Number(item.baseValue || item.base_value || 0);
-            const offerCount = Number(item.offerCount || item.offer_count || 0);
-            const lastOfferAt = item.lastOfferAt || item.last_offer_at || "";
-            const rating = App.transfers.getRatingForPlayerName(name, { club: fromClub });
-            const marketPlayer = App.transfers.findMarketPlayerByName(name, { club: fromClub }) || { name, club: fromClub };
-            return `
+          ${
+            listings.length
+              ? listings
+                  .map((item) => {
+                    const name = item.player || item.playerName;
+                    const fromClub = item.fromClub || item.from_club || "";
+                    const askingPrice = Number(
+                      item.askingPrice || item.asking_price || 0,
+                    );
+                    const baseValue = Number(
+                      item.baseValue || item.base_value || 0,
+                    );
+                    const offerCount = Number(
+                      item.offerCount || item.offer_count || 0,
+                    );
+                    const lastOfferAt =
+                      item.lastOfferAt || item.last_offer_at || "";
+                    const rating = App.transfers.getRatingForPlayerName(name, {
+                      club: fromClub,
+                    });
+                    const marketPlayer = App.transfers.findMarketPlayerByName(
+                      name,
+                      { club: fromClub },
+                    ) || { name, club: fromClub };
+                    return `
               <div class="coach-target-item">
                 ${App.transfers.renderPlayerPhoto(marketPlayer, rating, "player-avatar")}
                 <div class="coach-target-copy">
@@ -646,12 +841,15 @@ App.players = {
                 </div>
               </div>
             `;
-          }).join("") : `
+                  })
+                  .join("")
+              : `
             <div class="coach-empty-state compact">
               <strong>Ninguém listado</strong>
               <p>Liste jogadores fora do plano para aumentar a chance de receber ofertas externas por eles.</p>
             </div>
-          `}
+          `
+          }
         </div>
       </article>
     `;
@@ -665,38 +863,53 @@ App.players = {
 
     const query = String(input.value || "").trim();
     if (query.length < 2) {
-      target.innerHTML = "";
+      App.dom.clear(target);
       target.classList.remove("is-visible");
       return;
     }
 
     target.classList.add("is-visible");
-    target.innerHTML = `<div class="market-empty">Buscando jogadores no mercado...</div>`;
+    App.dom.setHtml(
+      target,
+      `<div class="market-empty">Buscando jogadores no mercado...</div>`,
+    );
 
-    const players = await App.api.loadMarketPlayers(query, true, 8).catch(error => {
-      console.warn("Busca de alvos privados indisponível:", error);
-      return [];
-    });
+    const players = await App.api
+      .loadMarketPlayers(query, true, 8)
+      .catch((error) => {
+        console.warn("Busca de alvos privados indisponível:", error);
+        return [];
+      });
 
     if (String(input.value || "").trim() !== query) return;
 
     if (!players.length) {
-      target.innerHTML = `<div class="market-empty">Nenhum jogador encontrado no mercado.</div>`;
+      App.dom.setHtml(
+        target,
+        `<div class="market-empty">Nenhum jogador encontrado no mercado.</div>`,
+      );
       return;
     }
 
-    const ratingRows = await Promise.all(players.slice(0, 8).map(player =>
-      App.api.searchEaRatings(player.name || "", 2).catch(() => [])
-    ));
+    const ratingRows = await Promise.all(
+      players
+        .slice(0, 8)
+        .map((player) =>
+          App.api.searchEaRatings(player.name || "", 2).catch(() => []),
+        ),
+    );
     App.api.mergeEaRatings?.(ratingRows.flat());
 
-    target.innerHTML = `
+    App.dom.setHtml(
+      target,
+      `
       <div class="market-player-results">
-        ${players.map(player => {
-      const eaRating = App.transfers.findEaRatingForMarketPlayer(player);
-      const marketValue = App.transfers.getMarketPlayerValue(player);
-      const overall = Number(eaRating?.overall || player.overall || 0);
-      return `
+        ${players
+          .map((player) => {
+            const eaRating = App.transfers.findEaRatingForMarketPlayer(player);
+            const marketValue = App.transfers.getMarketPlayerValue(player);
+            const overall = Number(eaRating?.overall || player.overall || 0);
+            return `
         <button class="market-player-option private-target-option" type="button" data-private-target-player="${App.utils.escapeHtml(player.id || player.name)}">
           ${App.transfers.renderPlayerPhoto(player, eaRating)}
           <span class="market-player-main">
@@ -709,36 +922,63 @@ App.players = {
           </span>
         </button>
       `;
-    }).join("")}
+          })
+          .join("")}
       </div>
-    `;
+    `,
+    );
 
-    target.querySelectorAll("[data-private-target-player]").forEach(button => {
-      button.addEventListener("click", () => {
-        const player = players.find(item => String(item.id || item.name) === String(button.dataset.privateTargetPlayer));
-        if (!player) return;
-        form.elements.player.value = player.name || "";
-        form.elements.club.value = player.club || "";
-        form.elements.value.value = Math.round(App.transfers.getMarketPlayerValue(player));
-        form.elements.player.dataset.marketPlayerId = player.id || "";
-        target.innerHTML = "";
-        target.classList.remove("is-visible");
+    target
+      .querySelectorAll("[data-private-target-player]")
+      .forEach((button) => {
+        button.addEventListener("click", () => {
+          const player = players.find(
+            (item) =>
+              String(item.id || item.name) ===
+              String(button.dataset.privateTargetPlayer),
+          );
+          if (!player) return;
+          form.elements.player.value = player.name || "";
+          form.elements.club.value = player.club || "";
+          form.elements.value.value = Math.round(
+            App.transfers.getMarketPlayerValue(player),
+          );
+          form.elements.player.dataset.marketPlayerId = player.id || "";
+          App.dom.clear(target);
+          target.classList.remove("is-visible");
+        });
       });
-    });
   },
 
-  getCoachAlerts(team, standing, budget, next, transfersToday, canViewPrivate = false) {
+  getCoachAlerts(
+    team,
+    standing,
+    budget,
+    next,
+    transfersToday,
+    canViewPrivate = false,
+  ) {
     const alerts = [];
     const activeEvents = App.events.getActiveEventsForBuyer(team.owner);
-    const injuries = activeEvents.filter(event => String(event.JogadorAfetado || "").trim());
-    const limit = Number(budget.transferLimit ?? App.config.baseDailyTransferLimit);
-    const remaining = Number(budget.remainingBudget ?? App.config.transferBudget);
+    const injuries = activeEvents.filter((event) =>
+      String(event.JogadorAfetado || "").trim(),
+    );
+    const limit = Number(
+      budget.transferLimit ?? App.config.baseDailyTransferLimit,
+    );
+    const remaining = Number(
+      budget.remainingBudget ?? App.config.transferBudget,
+    );
 
     if (next) alerts.push(`Próximo jogo pendente: ${next.home} x ${next.away}`);
-    if (canViewPrivate && injuries.length) alerts.push(`${injuries.length} jogador(es) afetado(s) por evento.`);
-    if (canViewPrivate && transfersToday >= limit) alerts.push("Limite diário de transferências atingido.");
-    else if (canViewPrivate && transfersToday >= Math.max(1, limit - 1)) alerts.push("Limite diário de transferências quase atingido.");
-    if (canViewPrivate && remaining < 10000000) alerts.push("Saldo de transferências baixo.");
+    if (canViewPrivate && injuries.length)
+      alerts.push(`${injuries.length} jogador(es) afetado(s) por evento.`);
+    if (canViewPrivate && transfersToday >= limit)
+      alerts.push("Limite diário de transferências atingido.");
+    else if (canViewPrivate && transfersToday >= Math.max(1, limit - 1))
+      alerts.push("Limite diário de transferências quase atingido.");
+    if (canViewPrivate && remaining < 10000000)
+      alerts.push("Saldo de transferências baixo.");
     if (standing?.position <= 2) alerts.push("Zona de acesso direto.");
     else if (standing?.position <= 6) alerts.push("Zona de playoffs.");
 
@@ -748,118 +988,190 @@ App.players = {
   renderLeaderboard(container, data, label) {
     if (!container) return;
     if (!data.length) {
-      container.innerHTML = `<p class="calendar-muted">Sem dados de ${label} ainda.</p>`;
+      App.dom.setHtml(
+        container,
+        `<p class="calendar-muted">Sem dados de ${label} ainda.</p>`,
+      );
       return;
     }
 
-    container.innerHTML = data.map((item, index) => `
+    App.dom.setHtml(
+      container,
+      data
+        .map(
+          (item, index) => `
       <div class="leaderboard-row">
         <div><strong>${index + 1}. ${item.name}</strong><br><span>${item.detail}</span></div>
         <strong>${item.count}</strong>
       </div>
-    `).join("");
+    `,
+        )
+        .join(""),
+    );
   },
 
   renderCoachSelector(teams, activeOwner) {
     return `
       <div class="coach-selector">
-        ${teams.map(team => `
+        ${teams
+          .map(
+            (team) => `
           <button type="button" class="coach-chip ${team.owner === activeOwner ? "active" : ""}" data-coach-owner="${team.owner}">
             ${App.clubs.getTeamBadgeHtml(team.team, "small")}
             <span>${team.owner}</span>
           </button>
-        `).join("")}
+        `,
+          )
+          .join("")}
       </div>
     `;
   },
 
   renderFormDots(form) {
-    if (!form.length) return `<span class="form-empty">Sem jogos aprovados</span>`;
-    return form.map(item => `<span class="form-dot ${item.result.toLowerCase()}" title="${item.row.Mandante} ${item.row.GolsMandante} x ${item.row.GolsVisitante} ${item.row.Visitante}">${item.result}</span>`).join("");
+    if (!form.length)
+      return `<span class="form-empty">Sem jogos aprovados</span>`;
+    return form
+      .map(
+        (item) =>
+          `<span class="form-dot ${item.result.toLowerCase()}" title="${item.row.Mandante} ${item.row.GolsMandante} x ${item.row.GolsVisitante} ${item.row.Visitante}">${item.result}</span>`,
+      )
+      .join("");
   },
 
   getCoachObjectives(activeTeam, standing, budget, transfers) {
-    const remaining = Number(budget.remainingBudget ?? App.config.transferBudget);
+    const remaining = Number(
+      budget.remainingBudget ?? App.config.transferBudget,
+    );
     const totalBudget = Number(budget.totalBudget ?? App.config.transferBudget);
     const spent = Number(budget.spentTotal || 0);
     const spendPct = totalBudget > 0 ? spent / totalBudget : 0;
     const topSix = Number(standing?.position || 99) <= 6;
-    const hasMoreWinsThanLosses = Number(standing?.wins || 0) >= Number(standing?.losses || 0);
-    const cashDiscipline = remaining >= 0 && spendPct <= .85 && !budget.marketEmbargo;
+    const hasMoreWinsThanLosses =
+      Number(standing?.wins || 0) >= Number(standing?.losses || 0);
+    const cashDiscipline =
+      remaining >= 0 && spendPct <= 0.85 && !budget.marketEmbargo;
     const squadDepth = transfers.length >= 4;
 
     return [
       {
         label: "Brigar pelo topo",
         status: topSix ? "ok" : "risk",
-        detail: topSix ? "Dentro do G6." : `Atual: ${standing?.position || "-"}º. Diretoria quer G6.`
+        detail: topSix
+          ? "Dentro do G6."
+          : `Atual: ${standing?.position || "-"}º. Diretoria quer G6.`,
       },
       {
         label: "Regularidade",
         status: hasMoreWinsThanLosses ? "ok" : "warn",
-        detail: hasMoreWinsThanLosses ? "Vitórias segurando a campanha." : "Diretoria quer reação nos próximos jogos."
+        detail: hasMoreWinsThanLosses
+          ? "Vitórias segurando a campanha."
+          : "Diretoria quer reação nos próximos jogos.",
       },
       {
         label: "Fair play financeiro",
         status: cashDiscipline ? "ok" : "risk",
-        detail: cashDiscipline ? "Gasto sob controle." : "Orçamento pressionado, negativo ou bloqueado."
+        detail: cashDiscipline
+          ? "Gasto sob controle."
+          : "Orçamento pressionado, negativo ou bloqueado.",
       },
       {
         label: "Profundidade do elenco",
         status: squadDepth ? "ok" : "warn",
-        detail: `${transfers.length} contratação(ões) válidas.`
-      }
+        detail: `${transfers.length} contratação(ões) válidas.`,
+      },
     ];
   },
 
   getCoachMorale(activeTeam, standing, budget, injuries, recentForm) {
     let score = 55;
-    recentForm.forEach(item => {
+    recentForm.forEach((item) => {
       if (item.result === "W") score += 8;
       if (item.result === "D") score += 2;
       if (item.result === "L") score -= 7;
     });
-    score += Math.min(12, Math.max(-12, Number(standing?.goalDifference || 0) * 2));
+    score += Math.min(
+      12,
+      Math.max(-12, Number(standing?.goalDifference || 0) * 2),
+    );
     score -= injuries.length * 10;
     if (Number(budget.remainingBudget || 0) < 0) score -= 12;
     score = Math.max(0, Math.min(100, score));
 
-    const label = score >= 75 ? "Vestiário em alta" : score >= 50 ? "Ambiente estável" : "Pressão no elenco";
+    const label =
+      score >= 75
+        ? "Vestiário em alta"
+        : score >= 50
+          ? "Ambiente estável"
+          : "Pressão no elenco";
     return { score, label };
   },
 
   getFairPlayFlags(owner, budget, transfers) {
-    const remaining = Number(budget.remainingBudget ?? App.config.transferBudget);
+    const remaining = Number(
+      budget.remainingBudget ?? App.config.transferBudget,
+    );
     const totalBudget = Number(budget.totalBudget ?? App.config.transferBudget);
     const spent = Number(budget.spentTotal || 0);
-    const payrollWeekly = App.players.getWeeklyPayrollForBuyer(owner, transfers);
-    const payrollPressure = totalBudget > 0 ? (payrollWeekly * 4) / totalBudget : 0;
+    const payrollWeekly = App.players.getWeeklyPayrollForBuyer(
+      owner,
+      transfers,
+    );
+    const payrollPressure =
+      totalBudget > 0 ? (payrollWeekly * 4) / totalBudget : 0;
     const debt = App.players.getSalaryDebtForBuyer(owner);
     const flags = [];
 
     if (debt || budget.salaryDebtActive) {
-      flags.push(`Dívida salarial ativa: ${App.utils.formatCurrency(Number(debt?.debtAmount || budget.salaryDebtAmount || Math.abs(remaining)))}.`);
+      flags.push(
+        `Dívida salarial ativa: ${App.utils.formatCurrency(Number(debt?.debtAmount || budget.salaryDebtAmount || Math.abs(remaining)))}.`,
+      );
     }
-    if (budget.marketEmbargo || remaining < 0) flags.push("Mercado bloqueado até o saldo voltar ao positivo.");
-    if (remaining < 0) flags.push("Saldo negativo: receitas vencidas quitam a dívida primeiro.");
-    if (totalBudget > 0 && spent / totalBudget >= .9) flags.push("Gasto acima de 90% do orçamento.");
-    if (payrollPressure >= .18) flags.push(`Folha pesada: ${App.utils.formatCurrency(payrollWeekly)} por semana.`);
-    if (transfers.some(item => Number(item.totalCost || 0) >= 30000000)) flags.push("Compra pesada no radar da liga.");
+    if (budget.marketEmbargo || remaining < 0)
+      flags.push("Mercado bloqueado até o saldo voltar ao positivo.");
+    if (remaining < 0)
+      flags.push("Saldo negativo: receitas vencidas quitam a dívida primeiro.");
+    if (totalBudget > 0 && spent / totalBudget >= 0.9)
+      flags.push("Gasto acima de 90% do orçamento.");
+    if (payrollPressure >= 0.18)
+      flags.push(
+        `Folha pesada: ${App.utils.formatCurrency(payrollWeekly)} por semana.`,
+      );
+    if (transfers.some((item) => Number(item.totalCost || 0) >= 30000000))
+      flags.push("Compra pesada no radar da liga.");
     if (!flags.length) flags.push("Sem alerta financeiro grave.");
 
     return flags;
   },
 
-  getPrivateBoardObjectives(activeTeam, standing, budget, transfers, recentForm) {
+  getPrivateBoardObjectives(
+    activeTeam,
+    standing,
+    budget,
+    transfers,
+    recentForm,
+  ) {
     const next = App.players.getNextMatchForTeam(activeTeam.team);
-    const remaining = Number(budget.remainingBudget ?? App.config.transferBudget);
+    const remaining = Number(
+      budget.remainingBudget ?? App.config.transferBudget,
+    );
     const totalBudget = Number(budget.totalBudget ?? App.config.transferBudget);
-    const payrollWeekly = App.players.getWeeklyPayrollForBuyer(activeTeam.owner, transfers);
+    const payrollWeekly = App.players.getWeeklyPayrollForBuyer(
+      activeTeam.owner,
+      transfers,
+    );
     const lastFive = recentForm.slice(0, 5);
-    const wins = lastFive.filter(item => item.result === "W").length;
-    const hasValueBuy = transfers.some(item => Number(item.overall || 0) >= 78 && Number(item.totalCost || 0) <= 14000000);
-    const hasBigBuy = transfers.some(item => Number(item.totalCost || 0) >= 25000000 || Number(item.overall || 0) >= 86);
-    const spendRatio = totalBudget > 0 ? 1 - (remaining / totalBudget) : 0;
+    const wins = lastFive.filter((item) => item.result === "W").length;
+    const hasValueBuy = transfers.some(
+      (item) =>
+        Number(item.overall || 0) >= 78 &&
+        Number(item.totalCost || 0) <= 14000000,
+    );
+    const hasBigBuy = transfers.some(
+      (item) =>
+        Number(item.totalCost || 0) >= 25000000 ||
+        Number(item.overall || 0) >= 86,
+    );
+    const spendRatio = totalBudget > 0 ? 1 - remaining / totalBudget : 0;
 
     return [
       {
@@ -869,30 +1181,48 @@ App.players = {
           ? "Contratação de impacto já entrou no elenco."
           : hasValueBuy
             ? "Boa compra custo-benefício registrada."
-            : "Mapeie um titular acessível antes do próximo deadline."
+            : "Mapeie um titular acessível antes do próximo deadline.",
       },
       {
         label: "Próximo jogo",
         status: next ? "warn" : "ok",
         detail: next
           ? `${next.competition} contra ${App.utils.sameTeamName(next.home, activeTeam.team) ? next.away : next.home}.`
-          : "Sem compromisso pendente no calendário."
+          : "Sem compromisso pendente no calendário.",
       },
       {
         label: "Controle de caixa",
-        status: remaining >= 0 && spendRatio < .82 && payrollWeekly * 4 < totalBudget * .18 ? "ok" : "risk",
-        detail: `${App.utils.formatCurrency(remaining)} livres · folha ${App.utils.formatCurrency(payrollWeekly)}/sem.`
+        status:
+          remaining >= 0 &&
+          spendRatio < 0.82 &&
+          payrollWeekly * 4 < totalBudget * 0.18
+            ? "ok"
+            : "risk",
+        detail: `${App.utils.formatCurrency(remaining)} livres · folha ${App.utils.formatCurrency(payrollWeekly)}/sem.`,
       },
       {
         label: "Momento competitivo",
-        status: wins >= 2 || Number(standing?.points || 0) >= 10 ? "ok" : "warn",
-        detail: `${wins} vitória(s) nos últimos ${lastFive.length || 0} jogos rastreados.`
-      }
+        status:
+          wins >= 2 || Number(standing?.points || 0) >= 10 ? "ok" : "warn",
+        detail: `${wins} vitória(s) nos últimos ${lastFive.length || 0} jogos rastreados.`,
+      },
     ];
   },
 
-  renderPrivateBoardObjectives(activeTeam, standing, budget, transfers, recentForm) {
-    const objectives = App.players.getPrivateBoardObjectives(activeTeam, standing, budget, transfers, recentForm);
+  renderPrivateBoardObjectives(
+    activeTeam,
+    standing,
+    budget,
+    transfers,
+    recentForm,
+  ) {
+    const objectives = App.players.getPrivateBoardObjectives(
+      activeTeam,
+      standing,
+      budget,
+      transfers,
+      recentForm,
+    );
     return `
       <div class="coach-full-row-v54">
         <article class="coach-panel-card coach-private-board-card">
@@ -901,15 +1231,19 @@ App.players = {
               <span class="modal-kicker">Só você vê</span>
               <h2>Metas secretas</h2>
             </div>
-            <span class="coach-section-kicker">${objectives.filter(item => item.status === "ok").length}/${objectives.length}</span>
+            <span class="coach-section-kicker">${objectives.filter((item) => item.status === "ok").length}/${objectives.length}</span>
           </div>
           <div class="coach-objective-grid private-board-grid">
-            ${objectives.map(item => `
+            ${objectives
+              .map(
+                (item) => `
               <div class="coach-objective-item ${item.status}">
                 <strong>${App.utils.escapeHtml(item.label)}</strong>
                 <span>${App.utils.escapeHtml(item.detail)}</span>
               </div>
-            `).join("")}
+            `,
+              )
+              .join("")}
           </div>
         </article>
       </div>
@@ -918,15 +1252,29 @@ App.players = {
 
   renderPrivateFavoritesCard(owner) {
     const session = App.auth?.getSession?.();
-    if (!session || App.utils.normalizeText(session.managerName) !== App.utils.normalizeText(owner)) return "";
+    if (
+      !session ||
+      App.utils.normalizeText(session.managerName) !==
+        App.utils.normalizeText(owner)
+    )
+      return "";
     const favorites = App.auth.myFavorites || [];
-    const favoriteNames = favorites.map(item => String(item.title || "").trim()).filter(Boolean);
+    const favoriteNames = favorites
+      .map((item) => String(item.title || "").trim())
+      .filter(Boolean);
     const hydrationKey = favoriteNames.slice().sort().join("|");
-    if (hydrationKey && App.players.favoritePortraitHydrationKey !== hydrationKey && App.api?.loadMarketPlayersForNames) {
+    if (
+      hydrationKey &&
+      App.players.favoritePortraitHydrationKey !== hydrationKey &&
+      App.api?.loadMarketPlayersForNames
+    ) {
       App.players.favoritePortraitHydrationKey = hydrationKey;
-      App.api.loadMarketPlayersForNames(favoriteNames, 2)
+      App.api
+        .loadMarketPlayersForNames(favoriteNames, 2)
         .then(() => App.main?.renderCurrentView?.())
-        .catch(error => console.warn("Fotos dos favoritos indisponíveis:", error));
+        .catch((error) =>
+          console.warn("Fotos dos favoritos indisponíveis:", error),
+        );
     }
 
     return `
@@ -936,15 +1284,33 @@ App.players = {
           <span class="coach-section-kicker">${favorites.length} item(ns)</span>
         </div>
         <div class="coach-target-list coach-favorite-list">
-          ${favorites.length ? favorites.map(item => {
-            const title = item.title || "Favorito";
-            const detail = item.detail || item.item_type || "";
-            const detailParts = String(detail).split("·").map(part => part.trim()).filter(Boolean);
-            const club = detailParts.find(part => !/^prioridade/i.test(part) && !/^monitorar/i.test(part) && !/^plano b/i.test(part) && !/^oportunidade/i.test(part)) || "";
-            const marketPlayer = App.transfers.findMarketPlayerByName(title, { club }) || { name: title, club };
-            const rating = App.transfers.getRatingForPlayerName(title, { club });
+          ${
+            favorites.length
+              ? favorites
+                  .map((item) => {
+                    const title = item.title || "Favorito";
+                    const detail = item.detail || item.item_type || "";
+                    const detailParts = String(detail)
+                      .split("·")
+                      .map((part) => part.trim())
+                      .filter(Boolean);
+                    const club =
+                      detailParts.find(
+                        (part) =>
+                          !/^prioridade/i.test(part) &&
+                          !/^monitorar/i.test(part) &&
+                          !/^plano b/i.test(part) &&
+                          !/^oportunidade/i.test(part),
+                      ) || "";
+                    const marketPlayer = App.transfers.findMarketPlayerByName(
+                      title,
+                      { club },
+                    ) || { name: title, club };
+                    const rating = App.transfers.getRatingForPlayerName(title, {
+                      club,
+                    });
 
-            return `
+                    return `
             <div class="coach-target-item coach-favorite-item">
               ${App.transfers.renderPlayerPhoto(marketPlayer, rating, "player-avatar")}
               <div class="coach-target-copy">
@@ -956,40 +1322,78 @@ App.players = {
               </div>
             </div>
           `;
-          }).join("") : `
+                  })
+                  .join("")
+              : `
             <div class="coach-empty-state compact">
               <strong>Nenhum favorito salvo</strong>
               <p>Use a estrela nos alvos privados para criar atalhos persistentes.</p>
             </div>
-          `}
+          `
+          }
         </div>
       </article>
     `;
   },
 
-  renderCoachStrategyCards(activeTeam, standing, budget, transfers, injuries, recentForm) {
-    const objectives = App.players.getCoachObjectives(activeTeam, standing, budget, transfers);
-    const morale = App.players.getCoachMorale(activeTeam, standing, budget, injuries, recentForm);
-    const fairPlay = App.players.getFairPlayFlags(activeTeam.owner, budget, transfers);
-    const payrollWeekly = App.players.getWeeklyPayrollForBuyer(activeTeam.owner, transfers);
-    const runwayWeeks = payrollWeekly > 0
-      ? Math.floor(Math.max(0, Number(budget.remainingBudget ?? App.config.transferBudget)) / payrollWeekly)
-      : null;
+  renderCoachStrategyCards(
+    activeTeam,
+    standing,
+    budget,
+    transfers,
+    injuries,
+    recentForm,
+  ) {
+    const objectives = App.players.getCoachObjectives(
+      activeTeam,
+      standing,
+      budget,
+      transfers,
+    );
+    const morale = App.players.getCoachMorale(
+      activeTeam,
+      standing,
+      budget,
+      injuries,
+      recentForm,
+    );
+    const fairPlay = App.players.getFairPlayFlags(
+      activeTeam.owner,
+      budget,
+      transfers,
+    );
+    const payrollWeekly = App.players.getWeeklyPayrollForBuyer(
+      activeTeam.owner,
+      transfers,
+    );
+    const runwayWeeks =
+      payrollWeekly > 0
+        ? Math.floor(
+            Math.max(
+              0,
+              Number(budget.remainingBudget ?? App.config.transferBudget),
+            ) / payrollWeekly,
+          )
+        : null;
 
     return `
       <div class="coach-full-row-v54">
         <article class="coach-panel-card coach-strategy-card">
           <div class="home-panel-header">
             <h2>Objetivos da diretoria</h2>
-            <span class="coach-section-kicker">${objectives.filter(item => item.status === "ok").length}/${objectives.length} em dia</span>
+            <span class="coach-section-kicker">${objectives.filter((item) => item.status === "ok").length}/${objectives.length} em dia</span>
           </div>
           <div class="coach-objective-grid">
-            ${objectives.map(item => `
+            ${objectives
+              .map(
+                (item) => `
               <div class="coach-objective-item ${item.status}">
                 <strong>${App.utils.escapeHtml(item.label)}</strong>
                 <span>${App.utils.escapeHtml(item.detail)}</span>
               </div>
-            `).join("")}
+            `,
+              )
+              .join("")}
           </div>
         </article>
       </div>
@@ -1008,7 +1412,7 @@ App.players = {
             <span class="coach-section-kicker">Folha ${App.utils.formatCurrency(payrollWeekly)}/sem</span>
           </div>
           <div class="fairplay-list">
-            ${fairPlay.map(item => `<span>${App.utils.escapeHtml(item)}</span>`).join("")}
+            ${fairPlay.map((item) => `<span>${App.utils.escapeHtml(item)}</span>`).join("")}
             ${runwayWeeks !== null ? `<span>Fôlego estimado de caixa: ${runwayWeeks} semana(s) de folha.</span>` : ""}
           </div>
         </article>
@@ -1017,18 +1421,32 @@ App.players = {
   },
 
   renderCoachDashboard(activeTeam, standings, budgetInfo) {
-    const standing = standings.find(item => App.utils.sameTeamName(item.team, activeTeam.team));
+    const standing = standings.find((item) =>
+      App.utils.sameTeamName(item.team, activeTeam.team),
+    );
     const budget = budgetInfo[activeTeam.owner] || {};
     const salaryDebt = App.players.getSalaryDebtForBuyer(activeTeam.owner);
     const spent = App.players.getSpentByBuyer(activeTeam.owner);
     const breakdown = App.players.getBudgetBreakdown(budget, spent);
-    const transfers = App.players.getApprovedTransfersForBuyer(activeTeam.owner);
-    const payrollWeekly = App.players.getWeeklyPayrollForBuyer(activeTeam.owner, transfers);
+    const transfers = App.players.getApprovedTransfersForBuyer(
+      activeTeam.owner,
+    );
+    const payrollWeekly = App.players.getWeeklyPayrollForBuyer(
+      activeTeam.owner,
+      transfers,
+    );
     const next = App.players.getNextMatchForTeam(activeTeam.team);
     const recentForm = App.players.getRecentForm(activeTeam.team);
-    const todayCount = App.transfers.getTodayTransferCountByBuyer(activeTeam.owner);
-    const transferLimit = Number(budget.transferLimit ?? App.transfers.getTransferLimitForBuyer(activeTeam.owner));
-    const canViewPrivate = App.auth?.canViewManagerPrivate ? App.auth.canViewManagerPrivate(activeTeam.owner) : false;
+    const todayCount = App.transfers.getTodayTransferCountByBuyer(
+      activeTeam.owner,
+    );
+    const transferLimit = Number(
+      budget.transferLimit ??
+        App.transfers.getTransferLimitForBuyer(activeTeam.owner),
+    );
+    const canViewPrivate = App.auth?.canViewManagerPrivate
+      ? App.auth.canViewManagerPrivate(activeTeam.owner)
+      : false;
     const events = App.players.getCoachEvents(activeTeam.owner);
     const injuries = App.players.getActiveInjuriesForCoach(activeTeam.owner);
     const color = App.data.ownerColors[activeTeam.owner] || "#2563eb";
@@ -1036,42 +1454,91 @@ App.players = {
     const nextMatchCard = `
       <article class="coach-panel-card coach-next-match">
         <div class="home-panel-header"><h2>Próximo compromisso</h2></div>
-        ${next ? `
+        ${
+          next
+            ? `
           <div class="coach-match-preview">
             ${App.clubs.getMatchupHtml(next.home, next.away, "card-match")}
             <p>${next.competition} · ${next.phase} · ${App.utils.formatDate(next.date)}</p>
             ${App.calendar.canSubmitResult(next) ? `<button class="mini-action-button" type="button" data-open-result-modal="${next.id}">Enviar resultado</button>` : `<span class="status-pill pending">${App.calendar.formatMatchResult(next)}</span>`}
           </div>
-        ` : `<p class="calendar-muted">Nenhum compromisso pendente encontrado.</p>`}
+        `
+            : `<p class="calendar-muted">Nenhum compromisso pendente encontrado.</p>`
+        }
       </article>
     `;
 
     const injuriesCard = `
       <article class="coach-panel-card coach-injuries-card">
         <div class="home-panel-header"><h2>Lesões ativas</h2></div>
-        ${injuries.length ? `
+        ${
+          injuries.length
+            ? `
           <div class="coach-injury-list">
-            ${injuries.map(event => `
+            ${injuries
+              .map(
+                (event) => `
               <div class="injury-chip">
                 ${App.transfers.renderPlayerIdentity(event.JogadorAfetado, event.Titulo || "Lesão ativa", "injury-player-identity")}
                 <b>${App.events.getEventDurationLabel(event)}</b>
               </div>
-            `).join("")}
+            `,
+              )
+              .join("")}
           </div>
-        ` : `<p class="calendar-muted">Nenhum jogador lesionado no momento.</p>`}
+        `
+            : `<p class="calendar-muted">Nenhum jogador lesionado no momento.</p>`
+        }
       </article>
     `;
 
-    const decisionCard = App.auth?.renderCoachDecisionCard ? App.auth.renderCoachDecisionCard(activeTeam.owner) : "";
-    const proposalCard = App.auth?.renderCoachTransferProposalCard ? App.auth.renderCoachTransferProposalCard(activeTeam.owner) : "";
-    const sponsorshipCard = App.auth?.renderCoachSponsorshipCard ? App.auth.renderCoachSponsorshipCard(activeTeam.owner) : "";
-    const pinCard = App.auth?.renderPinChangeCard ? App.auth.renderPinChangeCard(activeTeam.owner) : "";
-    const strategyCards = canViewPrivate ? App.players.renderCoachStrategyCards(activeTeam, standing, budget, transfers, injuries, recentForm) : "";
-    const privateBoardCard = canViewPrivate ? App.players.renderPrivateBoardObjectives(activeTeam, standing, budget, transfers, recentForm) : "";
-    const statementCard = canViewPrivate ? App.players.renderCoachFinancialStatement(activeTeam.owner, budget, breakdown) : "";
-    const targetsCard = canViewPrivate ? App.players.renderPrivateTransferTargets(activeTeam.owner) : "";
-    const favoritesCard = canViewPrivate ? App.players.renderPrivateFavoritesCard(activeTeam.owner) : "";
-    const saleListCard = canViewPrivate ? App.players.renderCoachSaleListCard(activeTeam.owner, transfers) : "";
+    const decisionCard = App.auth?.renderCoachDecisionCard
+      ? App.auth.renderCoachDecisionCard(activeTeam.owner)
+      : "";
+    const proposalCard = App.auth?.renderCoachTransferProposalCard
+      ? App.auth.renderCoachTransferProposalCard(activeTeam.owner)
+      : "";
+    const sponsorshipCard = App.auth?.renderCoachSponsorshipCard
+      ? App.auth.renderCoachSponsorshipCard(activeTeam.owner)
+      : "";
+    const pinCard = App.auth?.renderPinChangeCard
+      ? App.auth.renderPinChangeCard(activeTeam.owner)
+      : "";
+    const strategyCards = canViewPrivate
+      ? App.players.renderCoachStrategyCards(
+          activeTeam,
+          standing,
+          budget,
+          transfers,
+          injuries,
+          recentForm,
+        )
+      : "";
+    const privateBoardCard = canViewPrivate
+      ? App.players.renderPrivateBoardObjectives(
+          activeTeam,
+          standing,
+          budget,
+          transfers,
+          recentForm,
+        )
+      : "";
+    const statementCard = canViewPrivate
+      ? App.players.renderCoachFinancialStatement(
+          activeTeam.owner,
+          budget,
+          breakdown,
+        )
+      : "";
+    const targetsCard = canViewPrivate
+      ? App.players.renderPrivateTransferTargets(activeTeam.owner)
+      : "";
+    const favoritesCard = canViewPrivate
+      ? App.players.renderPrivateFavoritesCard(activeTeam.owner)
+      : "";
+    const saleListCard = canViewPrivate
+      ? App.players.renderCoachSaleListCard(activeTeam.owner, transfers)
+      : "";
 
     return `
       <section class="coach-dashboard" style="--coach-color:${color}">
@@ -1096,12 +1563,16 @@ App.players = {
 
         <section class="coach-quick-grid ${canViewPrivate ? "" : "public-only"}">
           <article><span>Campanha</span><strong>${standing?.wins || 0}/${standing?.draws || 0}/${standing?.losses || 0}</strong><small>V/E/D</small></article>
-          ${canViewPrivate ? `
+          ${
+            canViewPrivate
+              ? `
             <article><span>Saldo mercado</span><strong>${App.utils.formatCurrency(breakdown.available)}</strong><small>${budget.marketEmbargo ? "Mercado bloqueado" : `Gasto ${App.utils.formatCurrency(breakdown.spent)}`}</small></article>
             <article><span>Transfers hoje</span><strong>${todayCount}/${transferLimit}</strong><small>${transfers.length} totais válidas</small></article>
             <article><span>Folha semanal</span><strong>${App.utils.formatCurrency(payrollWeekly)}</strong><small>Estimativa por elenco contratado</small></article>
-            ${(budget.marketEmbargo || salaryDebt) ? `<article><span>Fair play</span><strong>Embargo</strong><small>${App.utils.formatCurrency(Number(salaryDebt?.debtAmount || budget.salaryDebtAmount || Math.abs(Number(budget.remainingBudget || 0))))} em aberto</small></article>` : ""}
-          ` : ""}
+            ${budget.marketEmbargo || salaryDebt ? `<article><span>Fair play</span><strong>Embargo</strong><small>${App.utils.formatCurrency(Number(salaryDebt?.debtAmount || budget.salaryDebtAmount || Math.abs(Number(budget.remainingBudget || 0))))} em aberto</small></article>` : ""}
+          `
+              : ""
+          }
         </section>
 
         <section class="coach-layout-v54">
@@ -1153,7 +1624,9 @@ App.players = {
           ${leader ? `<span class="coach-section-kicker">Líder: ${App.utils.escapeHtml(leader.team.owner)} · ${leader.standing?.points || 0} pts</span>` : ""}
         </div>
         <div class="coach-podium-grid">
-          ${ranking.map((item, index) => `
+          ${ranking
+            .map(
+              (item, index) => `
             <article class="coach-podium-card rank-${index + 1}" style="--coach-color:${App.data.ownerColors[item.team.owner] || "#2563eb"}">
               <span class="rank-number">${index + 1}</span>
               ${App.clubs.getTeamBadgeHtml(item.team.team, "small")}
@@ -1163,14 +1636,16 @@ App.players = {
               </div>
               <b>${item.standing?.points || 0} pts</b>
             </article>
-          `).join("")}
+          `,
+            )
+            .join("")}
         </div>
       </section>
     `;
   },
 
   bindCoachActions() {
-    document.querySelectorAll("[data-coach-owner]").forEach(button => {
+    document.querySelectorAll("[data-coach-owner]").forEach((button) => {
       if (button.dataset.bound === "true") return;
       button.dataset.bound = "true";
       button.addEventListener("click", () => {
@@ -1185,7 +1660,7 @@ App.players = {
 
     App.calendar.bindCalendarActions?.();
 
-    document.querySelectorAll("[data-sale-listing-form]").forEach(form => {
+    document.querySelectorAll("[data-sale-listing-form]").forEach((form) => {
       if (form.dataset.bound === "true") return;
       form.dataset.bound = "true";
       const playerSelect = form.querySelector("[data-sale-listing-player]");
@@ -1206,7 +1681,7 @@ App.players = {
         }
       });
 
-      form.addEventListener("submit", async event => {
+      form.addEventListener("submit", async (event) => {
         event.preventDefault();
         const button = form.querySelector("button[type='submit']");
         try {
@@ -1217,7 +1692,7 @@ App.players = {
           await App.auth.upsertTransferSaleListing({
             player: form.elements.player.value,
             askingPrice: form.elements.askingPrice.value,
-            note: form.elements.note.value
+            note: form.elements.note.value,
           });
           form.reset();
           App.players.render();
@@ -1232,34 +1707,43 @@ App.players = {
       });
     });
 
-    document.querySelectorAll("[data-remove-sale-listing]").forEach(button => {
-      if (button.dataset.bound === "true") return;
-      button.dataset.bound = "true";
-      button.addEventListener("click", async () => {
-        if (!confirm("Remover este jogador da lista de venda?")) return;
-        try {
-          button.disabled = true;
-          await App.auth.deleteTransferSaleListing(button.dataset.removeSaleListing);
-          App.players.render();
-        } catch (error) {
-          alert(error.message);
-        } finally {
-          button.disabled = false;
-        }
+    document
+      .querySelectorAll("[data-remove-sale-listing]")
+      .forEach((button) => {
+        if (button.dataset.bound === "true") return;
+        button.dataset.bound = "true";
+        button.addEventListener("click", async () => {
+          if (!confirm("Remover este jogador da lista de venda?")) return;
+          try {
+            button.disabled = true;
+            await App.auth.deleteTransferSaleListing(
+              button.dataset.removeSaleListing,
+            );
+            App.players.render();
+          } catch (error) {
+            alert(error.message);
+          } finally {
+            button.disabled = false;
+          }
+        });
       });
-    });
 
-    document.querySelectorAll("[data-private-target-form]").forEach(form => {
+    document.querySelectorAll("[data-private-target-form]").forEach((form) => {
       if (form.dataset.bound === "true") return;
       form.dataset.bound = "true";
       const searchInput = form.querySelector("[data-private-target-search]");
       let searchTimeout = null;
       searchInput?.addEventListener("input", () => {
         window.clearTimeout(searchTimeout);
-        searchTimeout = window.setTimeout(() => App.players.renderPrivateTargetSearchResults(form), 220);
+        searchTimeout = window.setTimeout(
+          () => App.players.renderPrivateTargetSearchResults(form),
+          220,
+        );
       });
-      searchInput?.addEventListener("focus", () => App.players.renderPrivateTargetSearchResults(form));
-      form.addEventListener("submit", async event => {
+      searchInput?.addEventListener("focus", () =>
+        App.players.renderPrivateTargetSearchResults(form),
+      );
+      form.addEventListener("submit", async (event) => {
         event.preventDefault();
         const card = form.closest("[data-private-target-owner]");
         const owner = card?.dataset.privateTargetOwner || "";
@@ -1268,7 +1752,7 @@ App.players = {
           club: form.elements.club.value,
           value: form.elements.value.value,
           priority: form.elements.priority.value,
-          note: form.elements.note.value
+          note: form.elements.note.value,
         };
         App.players.addPrivateTransferTarget(owner, payload);
         if (App.auth?.upsertMyTransferTarget) {
@@ -1276,7 +1760,10 @@ App.players = {
             const targets = await App.auth.upsertMyTransferTarget(payload);
             App.players.savePrivateTransferTargets(owner, targets);
           } catch (error) {
-            console.warn("Não consegui sincronizar alvo privado, mantive no cache local:", error);
+            console.warn(
+              "Não consegui sincronizar alvo privado, mantive no cache local:",
+              error,
+            );
           }
         }
         form.reset();
@@ -1284,26 +1771,36 @@ App.players = {
       });
     });
 
-    document.querySelectorAll("[data-remove-private-target]").forEach(button => {
-      if (button.dataset.bound === "true") return;
-      button.dataset.bound = "true";
-      button.addEventListener("click", async () => {
-        const card = button.closest("[data-private-target-owner]");
-        const owner = card?.dataset.privateTargetOwner || "";
-        App.players.removePrivateTransferTarget(owner, button.dataset.removePrivateTarget);
-        if (App.auth?.deleteMyTransferTarget) {
-          try {
-            const targets = await App.auth.deleteMyTransferTarget(button.dataset.removePrivateTarget);
-            App.players.savePrivateTransferTargets(owner, targets);
-          } catch (error) {
-            console.warn("Não consegui sincronizar remoção do alvo privado:", error);
+    document
+      .querySelectorAll("[data-remove-private-target]")
+      .forEach((button) => {
+        if (button.dataset.bound === "true") return;
+        button.dataset.bound = "true";
+        button.addEventListener("click", async () => {
+          const card = button.closest("[data-private-target-owner]");
+          const owner = card?.dataset.privateTargetOwner || "";
+          App.players.removePrivateTransferTarget(
+            owner,
+            button.dataset.removePrivateTarget,
+          );
+          if (App.auth?.deleteMyTransferTarget) {
+            try {
+              const targets = await App.auth.deleteMyTransferTarget(
+                button.dataset.removePrivateTarget,
+              );
+              App.players.savePrivateTransferTargets(owner, targets);
+            } catch (error) {
+              console.warn(
+                "Não consegui sincronizar remoção do alvo privado:",
+                error,
+              );
+            }
           }
-        }
-        App.players.render();
+          App.players.render();
+        });
       });
-    });
 
-    document.querySelectorAll("[data-favorite-target]").forEach(button => {
+    document.querySelectorAll("[data-favorite-target]").forEach((button) => {
       if (button.dataset.bound === "true") return;
       button.dataset.bound = "true";
       button.addEventListener("click", async () => {
@@ -1311,13 +1808,14 @@ App.players = {
         const isFavorite = App.auth?.isFavorite?.("transfer_target", key);
         try {
           if (isFavorite) await App.auth.deleteFavorite("transfer_target", key);
-          else await App.auth.upsertFavorite({
-            type: "transfer_target",
-            key,
-            title: button.dataset.favoriteTitle || "Alvo privado",
-            detail: button.dataset.favoriteDetail || "",
-            payload: { source: "private-target" }
-          });
+          else
+            await App.auth.upsertFavorite({
+              type: "transfer_target",
+              key,
+              title: button.dataset.favoriteTitle || "Alvo privado",
+              detail: button.dataset.favoriteDetail || "",
+              payload: { source: "private-target" },
+            });
         } catch (error) {
           console.warn("Favorito privado indisponível:", error);
         }
@@ -1326,91 +1824,27 @@ App.players = {
       });
     });
 
-    document.querySelectorAll("[data-remove-favorite-type]").forEach(button => {
-      if (button.dataset.bound === "true") return;
-      button.dataset.bound = "true";
-      button.addEventListener("click", async () => {
-        try {
-          await App.auth.deleteFavorite(button.dataset.removeFavoriteType, button.dataset.removeFavoriteKey);
-        } catch (error) {
-          console.warn("Não consegui remover favorito:", error);
-        }
-        App.players.render();
-        App.auth?.renderAll?.();
+    document
+      .querySelectorAll("[data-remove-favorite-type]")
+      .forEach((button) => {
+        if (button.dataset.bound === "true") return;
+        button.dataset.bound = "true";
+        button.addEventListener("click", async () => {
+          try {
+            await App.auth.deleteFavorite(
+              button.dataset.removeFavoriteType,
+              button.dataset.removeFavoriteKey,
+            );
+          } catch (error) {
+            console.warn("Não consegui remover favorito:", error);
+          }
+          App.players.render();
+          App.auth?.renderAll?.();
+        });
       });
-    });
   },
 
   render() {
-    const grid = document.getElementById("playersGrid");
-    if (!grid) return;
     App.react?.notify?.();
-
-    if (!App.state.apiLoaded) {
-      grid.innerHTML = `
-        <article class="coach-panel-card">
-          <div class="home-panel-header">
-            <h2>Sincronizando escritório</h2>
-          </div>
-          <p class="calendar-muted">Carregando dados oficiais da liga antes de exibir saldo, campanha e transferências.</p>
-        </article>
-      `;
-      return;
-    }
-
-    const session = App.auth?.getSession ? App.auth.getSession() : null;
-    const canSwitchCoaches = App.auth?.isCommissioner?.() === true;
-    const searchInput = document.getElementById("playersSearchInput");
-    const filterInput = document.getElementById("playersFilter");
-    const controls = document.querySelector("#playersView .controls");
-    const isPersonalOffice = !canSwitchCoaches && Boolean(session?.managerName);
-
-    if (isPersonalOffice && filterInput) filterInput.value = session.managerName;
-    if (filterInput) filterInput.hidden = isPersonalOffice;
-    if (controls) controls.classList.toggle("coach-personal-controls", isPersonalOffice);
-    if (searchInput) {
-      searchInput.placeholder = isPersonalOffice
-        ? "Buscar jogador, e-mail, patrocínio ou próximo jogo..."
-        : "Buscar técnico, jogador, time, e-mail ou próximo jogo...";
-    }
-
-    const search = App.utils.normalizeText(searchInput?.value);
-    const filter = isPersonalOffice ? session.managerName : (filterInput?.value || "all");
-    const standings = App.standings.getStandings();
-    const budgetInfo = App.transfers.getBudgetInfoByBuyer();
-    const ranking = App.players.getCoachRanking();
-    const teams = App.players.getPlayerTeams();
-
-    let filteredTeams = teams.filter(team => filter === "all" || team.owner === filter);
-    if (search) {
-      filteredTeams = filteredTeams.filter(team => {
-        const next = App.players.getNextMatchForTeam(team.team);
-        const transfersText = App.players.getApprovedTransfersForBuyer(team.owner).map(item => item.player).join(" ");
-        const eventsText = App.players.getCoachEvents(team.owner, 20).map(event => event.Titulo).join(" ");
-        return App.utils.normalizeText(`${team.owner} ${team.team} ${next?.home || ""} ${next?.away || ""} ${transfersText} ${eventsText}`).includes(search);
-      });
-    }
-
-    const sessionTeam = session?.managerName ? teams.find(team => App.utils.normalizeText(team.owner) === App.utils.normalizeText(session.managerName)) : null;
-    const activeTeam = filteredTeams[0] || (isPersonalOffice ? sessionTeam : null) || teams[0];
-
-    if (!activeTeam) {
-      grid.innerHTML = `<article class="calendar-card"><h3>Nenhum técnico encontrado</h3></article>`;
-      return;
-    }
-
-    grid.innerHTML = `
-      ${canSwitchCoaches ? App.players.renderCoachSelector(teams, activeTeam.owner) : ""}
-      ${App.players.renderCoachDashboard(activeTeam, standings, budgetInfo)}
-      ${App.players.renderComparison(ranking)}
-    `;
-
-    App.players.bindCoachActions();
-    App.auth?.bindPinChangeForm?.();
-    App.auth?.bindDecisionAnswerButtons?.(grid);
-    App.auth?.bindTransferProposalButtons?.(grid);
-    App.auth?.bindSponsorshipButtons?.(grid);
-    App.players.renderLeaderboard(document.getElementById("topScorers"), App.players.getGoalsByHumanTeams(), "gols por time");
-    App.players.renderLeaderboard(document.getElementById("topAssists"), App.players.getTopExpensiveTransfers(5), "transferências caras");
-  }
+  },
 };

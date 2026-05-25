@@ -392,7 +392,7 @@ App.transfers = {
       source_url: "https://sofifa.com/player/216447/alvaro-garcia-rivera",
       source_name: "SoFIFA FC 26 headshot",
     },
-    "neymar": {
+    neymar: {
       name: "Neymar Jr",
       club: "Santos Futebol Clube",
       position: "CAM",
@@ -414,7 +414,7 @@ App.transfers = {
       source_url: "https://sofifa.com/player/190871/neymar-da-silva-santos-jr",
       source_name: "SoFIFA headshot fallback",
     },
-    "isco": {
+    isco: {
       name: "Isco",
       club: "Real Betis",
       position: "CAM",
@@ -422,7 +422,8 @@ App.transfers = {
       overall: 84,
       gender: "Men's Football",
       avatar_url: "https://cdn.sofifa.net/players/197/781/26_240.png",
-      source_url: "https://sofifa.com/player/197781/francisco-roman-alarcon-suarez",
+      source_url:
+        "https://sofifa.com/player/197781/francisco-roman-alarcon-suarez",
       source_name: "SoFIFA FC 26 headshot",
     },
     "nicolas pepe": {
@@ -575,9 +576,13 @@ App.transfers = {
     const aliasTokens = aliasKey.split(" ").filter(Boolean);
     const candidateTokens = candidateKey.split(" ").filter(Boolean);
     const shorter =
-      aliasTokens.length <= candidateTokens.length ? aliasTokens : candidateTokens;
+      aliasTokens.length <= candidateTokens.length
+        ? aliasTokens
+        : candidateTokens;
     const longer =
-      aliasTokens.length <= candidateTokens.length ? candidateTokens : aliasTokens;
+      aliasTokens.length <= candidateTokens.length
+        ? candidateTokens
+        : aliasTokens;
     const shorterKey = shorter.join(" ");
     const longerKey = longer.join(" ");
 
@@ -640,13 +645,12 @@ App.transfers = {
     const key = App.transfers.normalizePlayerRatingKey(playerName);
     if (!key) return null;
     return (
-      App.transfers
-        .sortRatingCandidates(
-          (App.state.apiRatings || []).filter(
-            (item) => App.transfers.normalizePlayerRatingKey(item.name) === key,
-          ),
-          key,
-        )[0] || null
+      App.transfers.sortRatingCandidates(
+        (App.state.apiRatings || []).filter(
+          (item) => App.transfers.normalizePlayerRatingKey(item.name) === key,
+        ),
+        key,
+      )[0] || null
     );
   },
 
@@ -671,11 +675,16 @@ App.transfers = {
         App.transfers.isTrustedPlayerNameMatch(aliasKey, marketKey),
       );
     });
-    const byIdentity = [...exactMatches, ...fuzzyMatches].reduce((acc, item) => {
-      const key = String(item.id || item.transfermarkt_url || item.name || "");
-      if (key && !acc[key]) acc[key] = item;
-      return acc;
-    }, {});
+    const byIdentity = [...exactMatches, ...fuzzyMatches].reduce(
+      (acc, item) => {
+        const key = String(
+          item.id || item.transfermarkt_url || item.name || "",
+        );
+        if (key && !acc[key]) acc[key] = item;
+        return acc;
+      },
+      {},
+    );
     const matches = Object.values(byIdentity);
 
     return (
@@ -727,7 +736,8 @@ App.transfers = {
   getRatingSourceLabel(item = {}) {
     const source = App.utils.normalizeText(item.source_name || "");
     if (source.includes("futbin")) return "FUTBIN";
-    if (source.includes("ea sports") || source.includes("official")) return "EA FC";
+    if (source.includes("ea sports") || source.includes("official"))
+      return "EA FC";
     if (source.includes("sofifa")) return "SoFIFA";
     if (source.includes("fifa ratings")) return "FIFA Ratings";
     return item.source_name || "Rating";
@@ -740,9 +750,13 @@ App.transfers = {
       const bNameExact =
         App.transfers.normalizePlayerRatingKey(b.name) === nameKey ? 1 : 0;
       const aClubMatch =
-        !clubKey || !a.club || App.utils.normalizeText(a.club) === clubKey ? 1 : 0;
+        !clubKey || !a.club || App.utils.normalizeText(a.club) === clubKey
+          ? 1
+          : 0;
       const bClubMatch =
-        !clubKey || !b.club || App.utils.normalizeText(b.club) === clubKey ? 1 : 0;
+        !clubKey || !b.club || App.utils.normalizeText(b.club) === clubKey
+          ? 1
+          : 0;
       return (
         bNameExact - aNameExact ||
         bClubMatch - aClubMatch ||
@@ -763,7 +777,9 @@ App.transfers = {
         club: player?.club || rating?.club || "",
       },
     );
-    const manual = App.transfers.getManualPlayerRating(player?.name || rating?.name);
+    const manual = App.transfers.getManualPlayerRating(
+      player?.name || rating?.name,
+    );
     const candidates = [
       manualAvatar?.avatar_url,
       rating?.avatar_url,
@@ -783,7 +799,8 @@ App.transfers = {
       return "avatar-source-sofifa";
     }
     if (normalized.includes("fifaratings")) return "avatar-source-fifaratings";
-    if (normalized.includes("transfermarkt")) return "avatar-source-transfermarkt";
+    if (normalized.includes("transfermarkt"))
+      return "avatar-source-transfermarkt";
     if (normalized.includes("futbin")) return "avatar-source-futbin";
     return "avatar-source-generic";
   },
@@ -797,13 +814,16 @@ App.transfers = {
       "avatar-source-futbin",
       "avatar-source-generic",
     );
-    if (url) container.classList.add(App.transfers.getPlayerAvatarSourceClass(url));
+    if (url)
+      container.classList.add(App.transfers.getPlayerAvatarSourceClass(url));
   },
 
   handlePlayerPhotoError(image) {
     const candidates = (() => {
       try {
-        return JSON.parse(decodeURIComponent(image.dataset.avatarCandidates || "[]"));
+        return JSON.parse(
+          decodeURIComponent(image.dataset.avatarCandidates || "[]"),
+        );
       } catch (_) {
         return [];
       }
@@ -823,12 +843,19 @@ App.transfers = {
   },
 
   renderPlayerPhoto(player, rating = null, className = "market-player-photo") {
-    const avatarCandidates = App.transfers.getPlayerAvatarCandidates(player, rating);
+    const avatarCandidates = App.transfers.getPlayerAvatarCandidates(
+      player,
+      rating,
+    );
     const avatar = avatarCandidates[0] || "";
     const name = player?.name || rating?.name || "?";
     const fallback = App.utils.escapeHtml(String(name).charAt(0));
-    const encodedCandidates = encodeURIComponent(JSON.stringify(avatarCandidates));
-    const sourceClass = avatar ? App.transfers.getPlayerAvatarSourceClass(avatar) : "";
+    const encodedCandidates = encodeURIComponent(
+      JSON.stringify(avatarCandidates),
+    );
+    const sourceClass = avatar
+      ? App.transfers.getPlayerAvatarSourceClass(avatar)
+      : "";
 
     return `
       <span class="${className} player-photo-shell ${sourceClass} ${avatar ? "has-player-image" : ""}">
@@ -861,7 +888,8 @@ App.transfers = {
         club: item?.fromClub,
       });
       if (!marketPlayer) return false;
-      if (App.transfers.isUsablePlayerAvatar(marketPlayer.avatar_url)) return false;
+      if (App.transfers.isUsablePlayerAvatar(marketPlayer.avatar_url))
+        return false;
       return Boolean(
         App.transfers.getTransfermarktPlayerId(
           marketPlayer.transfermarkt_url || marketPlayer.transfermarktUrl,
@@ -871,7 +899,10 @@ App.transfers = {
   },
 
   getRatingForPlayerName(playerName, context = {}) {
-    const marketPlayer = App.transfers.findMarketPlayerByName(playerName, context);
+    const marketPlayer = App.transfers.findMarketPlayerByName(
+      playerName,
+      context,
+    );
     const marketAvatar = App.transfers.getMarketPlayerAvatar(marketPlayer);
     const manualAvatar = App.transfers.getManualPlayerAvatarOverride(
       playerName,
@@ -918,7 +949,10 @@ App.transfers = {
     className = "player-identity",
     context = {},
   ) {
-    const marketPlayer = App.transfers.findMarketPlayerByName(playerName, context);
+    const marketPlayer = App.transfers.findMarketPlayerByName(
+      playerName,
+      context,
+    );
     const rating = App.transfers.getRatingForPlayerName(playerName, context);
     return `
       <span class="${className}">
@@ -939,7 +973,8 @@ App.transfers = {
       .map((row, index) => {
         const transferType = row.TipoTransferencia || row.transfer_type || "";
         const isCpuSale = App.utils.normalizeText(transferType) === "cpu_sale";
-        const destinationClub = row.ClubeDestino || row.Destino || row.destination_club || "";
+        const destinationClub =
+          row.ClubeDestino || row.Destino || row.destination_club || "";
         const negotiatedValue = Number(
           row.ValorNegociado ??
             row.negotiated_value ??
@@ -948,20 +983,30 @@ App.transfers = {
             0,
         );
         const grossFinalValue = Number(row.ValorFinal ?? row.final_value ?? 0);
-        const tradeInCredit = !isCpuSale && negotiatedValue > 0
-          ? Math.max(0, grossFinalValue - negotiatedValue)
-          : 0;
+        const tradeInCredit =
+          !isCpuSale && negotiatedValue > 0
+            ? Math.max(0, grossFinalValue - negotiatedValue)
+            : 0;
 
         return {
           id: row.Id || row.id || "",
           player: row.Jogador,
-          buyer: isCpuSale ? destinationClub || row.Comprador || "Clube interessado" : row.Comprador,
-          seller: row.Vendedor || (isCpuSale ? row.CompradorRegistro || "" : ""),
+          buyer: isCpuSale
+            ? destinationClub || row.Comprador || "Clube interessado"
+            : row.Comprador,
+          seller:
+            row.Vendedor || (isCpuSale ? row.CompradorRegistro || "" : ""),
           originalBuyer: row.CompradorRegistro || row.Comprador || "",
           destinationClub,
-          fromClub: row.ClubeOrigem || (isCpuSale ? `Venda para ${destinationClub || "clube interessado"}` : row.ClubeOrigem),
+          fromClub:
+            row.ClubeOrigem ||
+            (isCpuSale
+              ? `Venda para ${destinationClub || "clube interessado"}`
+              : row.ClubeOrigem),
           overall: Number(row.Overall),
-          marketValue: Number(isCpuSale ? negotiatedValue : row.ValorTransfermarkt),
+          marketValue: Number(
+            isCpuSale ? negotiatedValue : row.ValorTransfermarkt,
+          ),
           negotiatedValue,
           grossFinalValue,
           tradeInCredit,
@@ -1000,7 +1045,9 @@ App.transfers = {
       item.transferType || item.TipoTransferencia || item.transfer_type || "",
     );
     const reason = App.utils.normalizeText(item.reason || item.Motivo || "");
-    const fromClub = App.utils.normalizeText(item.fromClub || item.ClubeOrigem || "");
+    const fromClub = App.utils.normalizeText(
+      item.fromClub || item.ClubeOrigem || "",
+    );
     return (
       item.isCpuSale === true ||
       transferType === "cpu_sale" ||
@@ -1017,7 +1064,8 @@ App.transfers = {
       item.destination_club ||
       item.buyer ||
       "";
-    return App.utils.normalizeText(destination) === "cpu" || !String(destination).trim()
+    return App.utils.normalizeText(destination) === "cpu" ||
+      !String(destination).trim()
       ? "clube interessado"
       : destination;
   },
@@ -1034,7 +1082,9 @@ App.transfers = {
           0,
       );
     }
-    return Number(item.marketValue || item.ValorTransfermarkt || item.totalCost || 0);
+    return Number(
+      item.marketValue || item.ValorTransfermarkt || item.totalCost || 0,
+    );
   },
 
   isCompletedMovementTransfer(item = {}) {
@@ -1057,13 +1107,20 @@ App.transfers = {
       .sort((a, b) => {
         const timeA = new Date(a.timestamp || 0).getTime();
         const timeB = new Date(b.timestamp || 0).getTime();
-        return (Number.isNaN(timeB) ? 0 : timeB) - (Number.isNaN(timeA) ? 0 : timeA);
+        return (
+          (Number.isNaN(timeB) ? 0 : timeB) - (Number.isNaN(timeA) ? 0 : timeA)
+        );
       })[0];
 
-    if (!latest || App.utils.normalizeText(latest.buyer) === "cpu") return false;
-    return App.utils.getHumanBuyers().some(
-      owner => App.utils.normalizeText(owner) === App.utils.normalizeText(latest.buyer),
-    );
+    if (!latest || App.utils.normalizeText(latest.buyer) === "cpu")
+      return false;
+    return App.utils
+      .getHumanBuyers()
+      .some(
+        (owner) =>
+          App.utils.normalizeText(owner) ===
+          App.utils.normalizeText(latest.buyer),
+      );
   },
 
   getEventImpactByBuyer() {
@@ -1251,33 +1308,38 @@ App.transfers = {
     const allTransfers = App.transfers.getAllTransfers();
     const ownershipTransfers = allTransfers
       .map((transfer, index) => ({ transfer, index }))
-      .filter(({ transfer }) => App.transfers.isCompletedMovementTransfer(transfer));
+      .filter(({ transfer }) =>
+        App.transfers.isCompletedMovementTransfer(transfer),
+      );
     const nameCounts = ownershipTransfers.reduce((acc, { transfer }) => {
       const key = App.utils.normalizeText(transfer.player);
       acc[key] = (acc[key] || 0) + 1;
       return acc;
     }, {});
-    const latestIndexByPlayer = ownershipTransfers.reduce((acc, { transfer, index }) => {
-      const key = App.utils.normalizeText(transfer.player);
-      const currentIndex = acc[key];
-      if (currentIndex === undefined) {
-        acc[key] = index;
-        return acc;
-      }
+    const latestIndexByPlayer = ownershipTransfers.reduce(
+      (acc, { transfer, index }) => {
+        const key = App.utils.normalizeText(transfer.player);
+        const currentIndex = acc[key];
+        if (currentIndex === undefined) {
+          acc[key] = index;
+          return acc;
+        }
 
-      const currentTime = new Date(
-        allTransfers[currentIndex].timestamp || 0,
-      ).getTime();
-      const nextTime = new Date(transfer.timestamp || 0).getTime();
-      const currentScore = Number.isNaN(currentTime) ? 0 : currentTime;
-      const nextScore = Number.isNaN(nextTime) ? 0 : nextTime;
-      if (
-        nextScore > currentScore ||
-        (nextScore === currentScore && index > currentIndex)
-      )
-        acc[key] = index;
-      return acc;
-    }, {});
+        const currentTime = new Date(
+          allTransfers[currentIndex].timestamp || 0,
+        ).getTime();
+        const nextTime = new Date(transfer.timestamp || 0).getTime();
+        const currentScore = Number.isNaN(currentTime) ? 0 : currentTime;
+        const nextScore = Number.isNaN(nextTime) ? 0 : nextTime;
+        if (
+          nextScore > currentScore ||
+          (nextScore === currentScore && index > currentIndex)
+        )
+          acc[key] = index;
+        return acc;
+      },
+      {},
+    );
     const spentByBuyer = {};
 
     return allTransfers.map((transfer, index) => {
@@ -1290,7 +1352,8 @@ App.transfers = {
         transfer.cashValue ||
         Math.max(
           0,
-          Number(baseValue || 0) + Number(baseValue || 0) * feeRate -
+          Number(baseValue || 0) +
+            Number(baseValue || 0) * feeRate -
             Number(transfer.tradeInCredit || 0),
         );
       const grossTotalCost =
@@ -1494,8 +1557,9 @@ App.transfers = {
       .filter((row) => App.utils.normalizeText(row.Status) === "aprovado")
       .filter(
         (row) =>
-          App.utils.normalizeText(row.TipoTransferencia || row.transfer_type) !==
-          "cpu_sale",
+          App.utils.normalizeText(
+            row.TipoTransferencia || row.transfer_type,
+          ) !== "cpu_sale",
       )
       .filter(
         (row) =>
@@ -1548,8 +1612,12 @@ App.transfers = {
         (sum, item) => sum + App.transfers.estimateWeeklySalary(item),
         0,
       );
-      const payrollPressure = totalBudget > 0 ? (payrollWeekly * 4) / totalBudget : 0;
-      const runwayWeeks = payrollWeekly > 0 ? Math.floor(Math.max(0, remaining) / payrollWeekly) : null;
+      const payrollPressure =
+        totalBudget > 0 ? (payrollWeekly * 4) / totalBudget : 0;
+      const runwayWeeks =
+        payrollWeekly > 0
+          ? Math.floor(Math.max(0, remaining) / payrollWeekly)
+          : null;
       const salaryDebtActive = Boolean(budget.salaryDebtActive);
       const salaryDebtAmount = Number(
         budget.salaryDebtAmount ?? (remaining < 0 ? Math.abs(remaining) : 0),
@@ -1569,7 +1637,9 @@ App.transfers = {
         activeInjuries: Number(budget.activeInjuries || 0),
         homeBonus: Number(budget.homeBonus || 0),
         winBonusValue: Number(budget.winBonusValue || 0),
-        marketEmbargo: Boolean(budget.marketEmbargo || salaryDebtActive || remaining < 0),
+        marketEmbargo: Boolean(
+          budget.marketEmbargo || salaryDebtActive || remaining < 0,
+        ),
         salaryDebtActive,
         salaryDebtAmount,
         salaryDebtWeeks: Number(budget.salaryDebtWeeks || 0),
@@ -1589,12 +1659,19 @@ App.transfers = {
     const valueBase = value * Number(rules.market_value_salary_rate || 0.006);
     const floorSalary = Number(rules.base_weekly_salary || 45000);
     const overallMultiplier =
-      overall >= 88 ? 1.85 :
-        overall >= 84 ? 1.45 :
-          overall >= 80 ? 1.18 :
-            overall >= 75 ? 1 :
-              0.82;
-    return Math.round(Math.max(floorSalary, valueBase * overallMultiplier) / 5000) * 5000;
+      overall >= 88
+        ? 1.85
+        : overall >= 84
+          ? 1.45
+          : overall >= 80
+            ? 1.18
+            : overall >= 75
+              ? 1
+              : 0.82;
+    return (
+      Math.round(Math.max(floorSalary, valueBase * overallMultiplier) / 5000) *
+      5000
+    );
   },
 
   getAuctionCandidates() {
@@ -1615,18 +1692,17 @@ App.transfers = {
       .getSpendingSummary()
       .map((item) => {
         const usage = item.totalBudget > 0 ? item.spent / item.totalBudget : 0;
-        const severity =
-          item.marketEmbargo
-            ? "Embargo"
-            : item.remaining < 0
+        const severity = item.marketEmbargo
+          ? "Embargo"
+          : item.remaining < 0
             ? "Crítico"
             : item.payrollPressure >= 0.18
               ? "Folha alta"
-            : usage >= 0.9
-              ? "Alto"
-              : usage >= 0.75
-                ? "Atenção"
-                : "OK";
+              : usage >= 0.9
+                ? "Alto"
+                : usage >= 0.75
+                  ? "Atenção"
+                  : "OK";
         return { ...item, usage, severity };
       })
       .filter((item) => item.severity !== "OK")
@@ -1674,7 +1750,7 @@ App.transfers = {
     const gross = Number(grossValue || 0);
     const value = Number(exchangeValue || 0);
     if (gross <= 0 || value <= 0) return 0;
-    const credit = Math.min(gross * .7, value * .85);
+    const credit = Math.min(gross * 0.7, value * 0.85);
     return Math.round(credit / 100000) * 100000;
   },
 
@@ -1706,13 +1782,12 @@ App.transfers = {
     const finalValue = Number.isNaN(marketValue)
       ? 0
       : marketValue + marketValue * rate;
-    const exchangePlayer =
-      !isInternal
-        ? App.transfers.getExchangePlayerByIndex(
-            buyer,
-            form.elements.exchangePlayer?.value,
-          )
-        : null;
+    const exchangePlayer = !isInternal
+      ? App.transfers.getExchangePlayerByIndex(
+          buyer,
+          form.elements.exchangePlayer?.value,
+        )
+      : null;
     const exchangeValue = Number(
       exchangePlayer?.totalCost || exchangePlayer?.marketValue || 0,
     );
@@ -1721,8 +1796,8 @@ App.transfers = {
       : 0;
     const exchangeSamePlayer = Boolean(
       exchangePlayer &&
-        App.transfers.normalizePlayerRatingKey(exchangePlayer.player) ===
-          App.transfers.normalizePlayerRatingKey(player),
+      App.transfers.normalizePlayerRatingKey(exchangePlayer.player) ===
+        App.transfers.normalizePlayerRatingKey(player),
     );
     const cashFinalValue = Math.max(0, finalValue - exchangeCredit);
     const duplicate = App.transfers.findExistingPlayer(player);
@@ -1737,20 +1812,26 @@ App.transfers = {
     const weeklySalary = App.transfers.estimateWeeklySalary({
       overall,
       marketValue,
-      totalCost: finalValue
+      totalCost: finalValue,
     });
     const payrollAfter = Number(budget?.payrollWeekly || 0) + weeklySalary;
-    const maxPayrollRatio = Number(App.state.apiFinanceRules?.max_payroll_to_budget_ratio || 0.22);
-    const payrollCeiling = Number(budget?.totalBudget || App.config.transferBudget) * maxPayrollRatio / 4;
+    const maxPayrollRatio = Number(
+      App.state.apiFinanceRules?.max_payroll_to_budget_ratio || 0.22,
+    );
+    const payrollCeiling =
+      (Number(budget?.totalBudget || App.config.transferBudget) *
+        maxPayrollRatio) /
+      4;
     const payrollBlocked = payrollAfter > payrollCeiling;
     const marketEmbargo = Boolean(
       budget?.marketEmbargo ||
       budget?.salaryDebtActive ||
-      Number(budget?.remaining || 0) < 0
+      Number(budget?.remaining || 0) < 0,
     );
-    const runwayWeeksAfter = payrollAfter > 0
-      ? Math.floor(Math.max(0, remainingAfter) / payrollAfter)
-      : null;
+    const runwayWeeksAfter =
+      payrollAfter > 0
+        ? Math.floor(Math.max(0, remainingAfter) / payrollAfter)
+        : null;
     const limitReached =
       !isInternal && budget
         ? budget.transfersToday >= budget.transferLimit
@@ -1758,7 +1839,13 @@ App.transfers = {
     const overBudget = budget ? cashFinalValue > budget.remaining : false;
     const hardBlock = Boolean(
       hasEnoughData &&
-      (duplicateBlock || sameBuyerAndSeller || exchangeSamePlayer || marketEmbargo || limitReached || overBudget || payrollBlocked),
+      (duplicateBlock ||
+        sameBuyerAndSeller ||
+        exchangeSamePlayer ||
+        marketEmbargo ||
+        limitReached ||
+        overBudget ||
+        payrollBlocked),
     );
 
     return {
@@ -1834,10 +1921,13 @@ App.transfers = {
       if (submitButton && !submitButton.dataset.submitting)
         submitButton.disabled = false;
       target.className = "transfer-live-preview";
-      target.innerHTML = `
+      App.dom.setHtml(
+        target,
+        `
         <strong>Prévia da contratação</strong>
         <span>Preencha comprador, jogador, overall e valor para calcular custo final, saldo e travas antes de enviar.</span>
-      `;
+      `,
+      );
       return;
     }
 
@@ -1856,7 +1946,9 @@ App.transfers = {
     }
 
     if (preview.exchangeSamePlayer) {
-      messages.push("O jogador oferecido na troca precisa ser diferente do alvo da compra.");
+      messages.push(
+        "O jogador oferecido na troca precisa ser diferente do alvo da compra.",
+      );
     }
 
     if (preview.marketEmbargo) {
@@ -1912,7 +2004,9 @@ App.transfers = {
     }
 
     if (preview.runwayWeeksAfter !== null && preview.runwayWeeksAfter < 3) {
-      messages.push("A folha pós-compra deixa pouco fôlego de caixa para as próximas semanas.");
+      messages.push(
+        "A folha pós-compra deixa pouco fôlego de caixa para as próximas semanas.",
+      );
     }
 
     if (preview.exchangePlayer && preview.exchangeCredit > 0) {
@@ -1990,7 +2084,9 @@ App.transfers = {
     ];
 
     target.className = `transfer-live-preview ${preview.hardBlock ? "danger" : "success"}`;
-    target.innerHTML = `
+    App.dom.setHtml(
+      target,
+      `
       <div class="preview-header">
         <strong>${App.utils.escapeHtml(preview.player)}</strong>
         <span>${preview.buyer}</span>
@@ -2002,7 +2098,8 @@ App.transfers = {
         ${messages.map((message) => `<li>${App.utils.escapeHtml(message)}</li>`).join("")}
       </ul>
       ${preview.duplicateBlock && !preview.isInternal ? `<button type="button" class="secondary-button" data-open-auto-auction>Abrir leilão automático</button>` : ""}
-    `;
+    `,
+    );
   },
 
   syncInternalTransferFields(form) {
@@ -2044,12 +2141,12 @@ App.transfers = {
     if (!select || !form) return;
 
     const buyer = form.elements.buyer?.value || "";
-    const players = buyer
-      ? App.transfers.getOwnedTransfersByBuyer(buyer)
-      : [];
+    const players = buyer ? App.transfers.getOwnedTransfersByBuyer(buyer) : [];
     const currentValue = select.value;
 
-    select.innerHTML = `
+    App.dom.setHtml(
+      select,
+      `
       <option value="">Sem jogador na troca</option>
       ${players
         .map(
@@ -2058,7 +2155,8 @@ App.transfers = {
       `,
         )
         .join("")}
-    `;
+    `,
+    );
 
     if ([...select.options].some((option) => option.value === currentValue)) {
       select.value = currentValue;
@@ -2081,7 +2179,9 @@ App.transfers = {
       : [];
     const currentValue = select.value;
 
-    select.innerHTML = `
+    App.dom.setHtml(
+      select,
+      `
       <option value="">${seller ? "Escolha o jogador" : "Escolha vendedor e jogador"}</option>
       ${players
         .map(
@@ -2090,7 +2190,8 @@ App.transfers = {
       `,
         )
         .join("")}
-    `;
+    `,
+    );
 
     if ([...select.options].some((option) => option.value === currentValue))
       select.value = currentValue;
@@ -2128,10 +2229,15 @@ App.transfers = {
 
     const data = App.transfers.getRecentTransferMovements(5);
     const impactTransfers = App.transfers.getImpactTransferSpotlights(3);
-    App.transfers.hydratePlayerPortraitsForTransfers([...data, ...impactTransfers]);
+    App.transfers.hydratePlayerPortraitsForTransfers([
+      ...data,
+      ...impactTransfers,
+    ]);
 
     if (!data.length) {
-      target.innerHTML = `
+      App.dom.setHtml(
+        target,
+        `
         <article class="transfer-movement-card transfer-movement-empty">
           <div class="movement-card-header">
             <span>Movimentações recentes</span>
@@ -2139,7 +2245,8 @@ App.transfers = {
           <strong>Nenhuma transferência aprovada ainda.</strong>
           <p class="calendar-muted">As últimas compras e vendas aprovadas aparecerão aqui.</p>
         </article>
-      `;
+      `,
+      );
       return;
     }
 
@@ -2178,7 +2285,9 @@ App.transfers = {
                 const owner = isSale
                   ? item.seller || item.originalBuyer || "Técnico"
                   : item.buyer;
-                const destination = isSale ? App.transfers.getCpuSaleDestination(item) : "";
+                const destination = isSale
+                  ? App.transfers.getCpuSaleDestination(item)
+                  : "";
                 return `
               <div>
                 <span>OVR ${item.displayOverall}</span>
@@ -2195,31 +2304,36 @@ App.transfers = {
         })()
       : "";
 
-    target.innerHTML =
+    App.dom.setHtml(
+      target,
       impactHtml +
-      data
-        .map((item) => {
-          const date = item.timestamp
-            ? App.utils.formatDateTime(item.timestamp)
-            : "Sem data";
-          const overall = App.transfers.getTransferOverall(item);
-          const isImpact = overall > 88;
-          const isCpuSale = App.transfers.isCpuSaleTransfer(item);
-          const ownerLabel = isCpuSale
-            ? item.seller || item.originalBuyer || "Técnico"
-            : item.buyer;
-          const destinationLabel = isCpuSale ? App.transfers.getCpuSaleDestination(item) : "";
-          const marketValue = Number(item.marketValue || 0);
-          const feePercent = Math.round(Number(item.feeRate || 0) * 100);
-          const tradeInCredit = Number(item.tradeInCredit || 0);
-          const valueBreakdown = marketValue
-            ? `Base ${App.utils.formatCurrency(marketValue)}${feePercent ? ` + ${feePercent}% OVR` : ""}${tradeInCredit ? ` · troca -${App.utils.formatCurrency(tradeInCredit)}` : ""}`
-            : "Base não informada";
-          const movementClass = [
-            isImpact ? "is-impact-transfer" : "",
-            isCpuSale ? "is-cpu-sale-transfer" : "",
-          ].filter(Boolean).join(" ");
-          return `
+        data
+          .map((item) => {
+            const date = item.timestamp
+              ? App.utils.formatDateTime(item.timestamp)
+              : "Sem data";
+            const overall = App.transfers.getTransferOverall(item);
+            const isImpact = overall > 88;
+            const isCpuSale = App.transfers.isCpuSaleTransfer(item);
+            const ownerLabel = isCpuSale
+              ? item.seller || item.originalBuyer || "Técnico"
+              : item.buyer;
+            const destinationLabel = isCpuSale
+              ? App.transfers.getCpuSaleDestination(item)
+              : "";
+            const marketValue = Number(item.marketValue || 0);
+            const feePercent = Math.round(Number(item.feeRate || 0) * 100);
+            const tradeInCredit = Number(item.tradeInCredit || 0);
+            const valueBreakdown = marketValue
+              ? `Base ${App.utils.formatCurrency(marketValue)}${feePercent ? ` + ${feePercent}% OVR` : ""}${tradeInCredit ? ` · troca -${App.utils.formatCurrency(tradeInCredit)}` : ""}`
+              : "Base não informada";
+            const movementClass = [
+              isImpact ? "is-impact-transfer" : "",
+              isCpuSale ? "is-cpu-sale-transfer" : "",
+            ]
+              .filter(Boolean)
+              .join(" ");
+            return `
         <article class="transfer-movement-card ${movementClass}">
           <div class="movement-card-header">
             ${App.ui.ownerBadge(ownerLabel)}
@@ -2233,7 +2347,9 @@ App.transfers = {
                 ? `${ownerLabel} vendeu para ${destinationLabel}`
                 : item.fromClub || "Clube não informado",
               "movement-player-identity",
-              { club: item.fromClub },
+              {
+                club: item.fromClub,
+              },
             )}
           </div>
           <div class="movement-meta">
@@ -2249,8 +2365,9 @@ App.transfers = {
           </div>
         </article>
       `;
-        })
-        .join("");
+          })
+          .join(""),
+    );
   },
 
   renderInsights() {
@@ -2287,7 +2404,9 @@ App.transfers = {
     const auctionCandidates = App.transfers.getAuctionCandidates();
     const fairPlayWatch = App.transfers.getFairPlayWatchlist();
 
-    target.innerHTML = `
+    App.dom.setHtml(
+      target,
+      `
       <article class="transfer-insight-card">
         <h3>Maiores compras</h3>
         ${
@@ -2310,25 +2429,21 @@ App.transfers = {
         ${
           recent.length
             ? recent
-                .map(
-                  (item) => {
-                    const isCpuSale = App.transfers.isCpuSaleTransfer(item);
-                    const owner = isCpuSale
-                      ? item.seller || item.originalBuyer || "Técnico"
-                      : item.buyer;
-                    const destination = isCpuSale ? App.transfers.getCpuSaleDestination(item) : "";
-                    return `
+                .map((item) => {
+                  const isCpuSale = App.transfers.isCpuSaleTransfer(item);
+                  const owner = isCpuSale
+                    ? item.seller || item.originalBuyer || "Técnico"
+                    : item.buyer;
+                  const destination = isCpuSale
+                    ? App.transfers.getCpuSaleDestination(item)
+                    : "";
+                  return `
           <div class="insight-row">
-            <span>${App.transfers.renderPlayerIdentity(
-              item.player,
-              isCpuSale ? `${owner} vendeu para ${destination}` : item.buyer,
-              "insight-player-identity",
-            )}</span>
+            <span>${App.transfers.renderPlayerIdentity(item.player, isCpuSale ? `${owner} vendeu para ${destination}` : item.buyer, "insight-player-identity")}</span>
             <strong>${App.utils.escapeHtml(isCpuSale ? destination : item.buyer)}</strong>
           </div>
         `;
-                  },
-                )
+                })
                 .join("")
             : `<p class="calendar-muted">Nenhuma movimentação recente.</p>`
         }
@@ -2402,7 +2517,8 @@ App.transfers = {
             : `<p class="calendar-muted">Nenhum técnico em zona crítica.</p>`
         }
       </article>
-    `;
+    `,
+    );
   },
 
   getMarketPlayers() {
@@ -2439,7 +2555,10 @@ App.transfers = {
       App.api.mergeMarketPlayers(players);
       if (players.length) return remember(players);
     } catch (error) {
-      console.warn("Busca direta de mercado indisponível, tentando RPC:", error);
+      console.warn(
+        "Busca direta de mercado indisponível, tentando RPC:",
+        error,
+      );
     }
 
     const fallback = await App.api.loadMarketPlayers(query, showContracted, 14);
@@ -2497,7 +2616,10 @@ App.transfers = {
     if (!target) return;
 
     if (!query) {
-      target.innerHTML = `<div class="market-empty">Digite o nome do jogador para conferir overall, posição, clube e foto na base importada.</div>`;
+      App.dom.setHtml(
+        target,
+        `<div class="market-empty">Digite o nome do jogador para conferir overall, posição, clube e foto na base importada.</div>`,
+      );
       return;
     }
 
@@ -2541,34 +2663,35 @@ App.transfers = {
       const marketMatches = await App.api
         .loadMarketPlayers(query, true, 3)
         .catch(() => []);
-      target.innerHTML = `
+      App.dom.setHtml(
+        target,
+        `
         <div class="market-empty">
           Nenhum overall/foto importado para "${App.utils.escapeHtml(query)}".
           ${marketMatches.length ? "O jogador existe no mercado, mas ainda precisa entrar na base de ratings." : "Tente nome completo ou confira se ele existe no mercado."}
         </div>
-      `;
+      `,
+      );
       return;
     }
 
-    target.innerHTML = ratings
-      .map(
-        (player) => `
+    App.dom.setHtml(
+      target,
+      ratings
+        .map(
+          (player) => `
       <button class="ea-rating-option" type="button" data-ea-rating="${App.utils.escapeHtml(player.id || player.ea_id || player.name)}">
         ${App.transfers.renderPlayerPhoto(player, null, "ea-rating-photo")}
         <span>
           <strong>${App.utils.escapeHtml(player.name || "-")}</strong>
-          <small>${App.utils.escapeHtml([
-            player.position,
-            player.club,
-            player.nation,
-            App.transfers.getRatingSourceLabel(player),
-          ].filter(Boolean).join(" · "))}</small>
+          <small>${App.utils.escapeHtml([player.position, player.club, player.nation, App.transfers.getRatingSourceLabel(player)].filter(Boolean).join(" · "))}</small>
         </span>
         <b>OVR ${Number(player.overall || 0)}</b>
       </button>
     `,
-      )
-      .join("");
+        )
+        .join(""),
+    );
 
     target.querySelectorAll("[data-ea-rating]").forEach((button) => {
       button.addEventListener("click", () => {
@@ -2599,17 +2722,23 @@ App.transfers = {
     const normalized = App.utils.normalizeText(query);
     if (normalized.length < 2) {
       App.transfers.marketSearchRequestId = "";
-      target.innerHTML = `
+      App.dom.setHtml(
+        target,
+        `
         <div class="market-empty">
           Digite pelo menos 2 letras para buscar jogadores no mercado.
         </div>
-      `;
+      `,
+      );
       return;
     }
 
     const requestId = `${Date.now()}-${Math.random()}`;
     App.transfers.marketSearchRequestId = requestId;
-    target.innerHTML = `<div class="market-empty">Buscando jogadores no mercado...</div>`;
+    App.dom.setHtml(
+      target,
+      `<div class="market-empty">Buscando jogadores no mercado...</div>`,
+    );
 
     const players = await App.transfers.searchMarketPlayers(query);
     if (App.transfers.marketSearchRequestId !== requestId) return;
@@ -2625,22 +2754,27 @@ App.transfers = {
     App.api.mergeEaRatings?.(ratingRows.flat());
 
     if (!players.length) {
-      target.innerHTML = `
+      App.dom.setHtml(
+        target,
+        `
         <div class="market-empty">
           Nenhum jogador disponível encontrado. Tente buscar por nome, clube, liga ou posição.
           ${document.getElementById("showContractedPlayers")?.checked ? "" : " Jogadores já contratados estão escondidos por padrão."}
         </div>
-      `;
+      `,
+      );
       return;
     }
 
-    target.innerHTML = players
-      .map((player) => {
-        const isContracted = App.transfers.isMarketPlayerContracted(player);
-        const eaRating = App.transfers.findEaRatingForMarketPlayer(player);
-        const overall = Number(eaRating?.overall || player.overall || 0);
-        const marketValue = App.transfers.getMarketPlayerValue(player);
-        return `
+    App.dom.setHtml(
+      target,
+      players
+        .map((player) => {
+          const isContracted = App.transfers.isMarketPlayerContracted(player);
+          const eaRating = App.transfers.findEaRatingForMarketPlayer(player);
+          const overall = Number(eaRating?.overall || player.overall || 0);
+          const marketValue = App.transfers.getMarketPlayerValue(player);
+          return `
         <button class="market-player-option ${isContracted ? "is-contracted" : ""}" type="button" data-market-player="${player.id}" ${isContracted ? "disabled" : ""}>
           ${App.transfers.renderPlayerPhoto(player, eaRating)}
           <span class="market-player-main">
@@ -2654,8 +2788,9 @@ App.transfers = {
           </span>
         </button>
       `;
-      })
-      .join("");
+        })
+        .join(""),
+    );
 
     target.querySelectorAll("[data-market-player]").forEach((button) => {
       button.addEventListener("click", () =>
@@ -2668,49 +2803,51 @@ App.transfers = {
     App.react?.notify?.();
   },
 
-  render() {
-    App.transfers.renderSummary();
-    App.transfers.renderBudgetBoard();
-    App.transfers.renderInsights();
-    App.transfers.renderMarketPlayerResults();
-    const transferForm = document.getElementById("transferForm");
-    if (transferForm && App.state.apiLoaded) {
-      App.transfers.populateExchangePlayers(transferForm);
-      App.transfers.renderTransferPreview(transferForm);
-    }
-
+  renderHistory() {
     const table = document.getElementById("transferTable");
     const mobile = document.getElementById("transferMobile");
     if (!table || !mobile) return;
 
     const data = App.transfers.getFilteredTransfers(5);
     if (!data.length) {
-      table.innerHTML = `<tr><td colspan="8" class="calendar-muted">Nenhuma transferência aprovada ainda.</td></tr>`;
-      mobile.innerHTML = App.ui.emptyCard(
-        "Nenhuma transferência cadastrada",
-        "Use o formulário Registrar transferência nesta aba.",
+      App.dom.setHtml(
+        table,
+        `<tr><td colspan="8" class="calendar-muted">Nenhuma transferência aprovada ainda.</td></tr>`,
+      );
+      App.dom.setHtml(
+        mobile,
+        App.ui.emptyCard(
+          "Nenhuma transferência cadastrada",
+          "Use o formulário Registrar transferência nesta aba.",
+        ),
       );
       return;
     }
 
-    table.innerHTML = data
-      .map((item) => {
-        const statusClass = App.transfers.getTransferStatusClass(item);
-        const isCpuSale = App.transfers.isCpuSaleTransfer(item);
-        const ownerLabel = isCpuSale
-          ? item.seller || item.originalBuyer || "Técnico"
-          : item.buyer;
-        const destinationLabel = isCpuSale ? App.transfers.getCpuSaleDestination(item) : item.buyer;
-        const originLabel = isCpuSale
-          ? ownerLabel
-          : item.fromClub || "-";
-        return `
+    App.dom.setHtml(
+      table,
+      data
+        .map((item) => {
+          const statusClass = App.transfers.getTransferStatusClass(item);
+          const isCpuSale = App.transfers.isCpuSaleTransfer(item);
+          const ownerLabel = isCpuSale
+            ? item.seller || item.originalBuyer || "Técnico"
+            : item.buyer;
+          const destinationLabel = isCpuSale
+            ? App.transfers.getCpuSaleDestination(item)
+            : item.buyer;
+          const originLabel = isCpuSale ? ownerLabel : item.fromClub || "-";
+          return `
         <tr class="ours-row">
           <td class="calendar-match">${App.transfers.renderPlayerIdentity(
             item.player,
-            isCpuSale ? `${ownerLabel} vendeu para ${destinationLabel}` : item.fromClub || "-",
+            isCpuSale
+              ? `${ownerLabel} vendeu para ${destinationLabel}`
+              : item.fromClub || "-",
             "table-player-identity",
-            { club: item.fromClub },
+            {
+              club: item.fromClub,
+            },
           )}</td>
           <td>${App.ui.ownerBadge(destinationLabel, App.data.ownerColors["Livre / CPU"])}</td>
           <td>${App.utils.escapeHtml(originLabel)}</td>
@@ -2721,29 +2858,41 @@ App.transfers = {
           <td><span class="transfer-status ${statusClass}">${App.transfers.getTransferStatusLabel(item)}</span></td>
         </tr>
       `;
-      })
-      .join("");
+        })
+        .join(""),
+    );
 
-    mobile.innerHTML = data
-      .map((item) => {
-        const isCpuSale = App.transfers.isCpuSaleTransfer(item);
-        const ownerLabel = isCpuSale
-          ? item.seller || item.originalBuyer || "Técnico"
-          : item.buyer;
-        const destinationLabel = isCpuSale ? App.transfers.getCpuSaleDestination(item) : item.buyer;
-        return `
+    App.dom.setHtml(
+      mobile,
+      data
+        .map((item) => {
+          const isCpuSale = App.transfers.isCpuSaleTransfer(item);
+          const ownerLabel = isCpuSale
+            ? item.seller || item.originalBuyer || "Técnico"
+            : item.buyer;
+          const destinationLabel = isCpuSale
+            ? App.transfers.getCpuSaleDestination(item)
+            : item.buyer;
+          return `
         <article class="calendar-card ours-row">
           <div class="calendar-card-header">${App.ui.ownerBadge(destinationLabel, App.data.ownerColors["Livre / CPU"])}<span class="transfer-status ${App.transfers.getTransferStatusClass(item)}">${App.transfers.getTransferStatusLabel(item)}</span></div>
           ${App.transfers.renderPlayerIdentity(
             item.player,
             `${isCpuSale ? `${ownerLabel} vendeu para ${destinationLabel}` : item.fromClub || "-"} · OVR ${item.overall}`,
             "mobile-player-identity",
-            { club: item.fromClub },
+            {
+              club: item.fromClub,
+            },
           )}
           <p>${isCpuSale ? "Valor recebido" : "Valor final"}: <strong>${App.utils.formatCurrency(item.totalCost)}</strong></p>
         </article>
       `;
-      })
-      .join("");
+        })
+        .join(""),
+    );
+  },
+
+  render() {
+    App.react?.notify?.();
   },
 };

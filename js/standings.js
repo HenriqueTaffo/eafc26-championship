@@ -2,15 +2,26 @@ import App from "./app.js";
 
 App.standings = {
   getApprovedApiResults() {
-    return App.state.apiResults.filter(row => App.utils.normalizeText(row.Status) === "aprovado");
+    return App.state.apiResults.filter(
+      (row) => App.utils.normalizeText(row.Status) === "aprovado",
+    );
   },
 
   getResultStatsForTeam(teamName) {
-    const stats = { wins: 0, draws: 0, losses: 0, goalsFor: 0, goalsAgainst: 0 };
+    const stats = {
+      wins: 0,
+      draws: 0,
+      losses: 0,
+      goalsFor: 0,
+      goalsAgainst: 0,
+    };
 
-    App.standings.getApprovedApiResults()
-      .filter(row => App.utils.normalizeText(row.Competicao) === "championship")
-      .forEach(row => {
+    App.standings
+      .getApprovedApiResults()
+      .filter(
+        (row) => App.utils.normalizeText(row.Competicao) === "championship",
+      )
+      .forEach((row) => {
         const isHome = App.utils.sameTeamName(row.Mandante, teamName);
         const isAway = App.utils.sameTeamName(row.Visitante, teamName);
         if (!isHome && !isAway) return;
@@ -33,26 +44,29 @@ App.standings = {
   },
 
   getStandings() {
-    const rows = App.data.teams.map((team, originalIndex) => {
-      const stats = App.standings.getResultStatsForTeam(team.team);
-      const played = stats.wins + stats.draws + stats.losses;
-      const goalDifference = stats.goalsFor - stats.goalsAgainst;
-      const points = stats.wins * 3 + stats.draws;
+    const rows = App.data.teams
+      .map((team, originalIndex) => {
+        const stats = App.standings.getResultStatsForTeam(team.team);
+        const played = stats.wins + stats.draws + stats.losses;
+        const goalDifference = stats.goalsFor - stats.goalsAgainst;
+        const points = stats.wins * 3 + stats.draws;
 
-      return {
-        ...team,
-        originalIndex,
-        ...stats,
-        played,
-        goalDifference,
-        points
-      };
-    }).sort((a, b) =>
-      b.points - a.points ||
-      b.goalDifference - a.goalDifference ||
-      b.goalsFor - a.goalsFor ||
-      a.team.localeCompare(b.team)
-    );
+        return {
+          ...team,
+          originalIndex,
+          ...stats,
+          played,
+          goalDifference,
+          points,
+        };
+      })
+      .sort(
+        (a, b) =>
+          b.points - a.points ||
+          b.goalDifference - a.goalDifference ||
+          b.goalsFor - a.goalsFor ||
+          a.team.localeCompare(b.team),
+      );
 
     return rows.map((row, index) => ({ ...row, position: index + 1 }));
   },
@@ -82,11 +96,14 @@ App.standings = {
   getHomeNextEvents() {
     if (!App.calendar?.getCalendarEvents) return [];
 
-    const events = App.calendar.getCalendarEvents()
-      .filter(event => App.calendar.getStatusClass(event) === "pending")
+    const events = App.calendar
+      .getCalendarEvents()
+      .filter((event) => App.calendar.getStatusClass(event) === "pending")
       .sort((a, b) => a.date - b.date);
 
-    const humanEvents = events.filter(event => App.calendar.involvesOurTeam(event));
+    const humanEvents = events.filter((event) =>
+      App.calendar.involvesOurTeam(event),
+    );
     const source = humanEvents.length >= 3 ? humanEvents : events;
 
     return source.slice(0, 3);
@@ -96,7 +113,7 @@ App.standings = {
     if (!date) return "A definir";
     return new Intl.DateTimeFormat("pt-BR", {
       day: "2-digit",
-      month: "2-digit"
+      month: "2-digit",
     }).format(date instanceof Date ? date : new Date(date));
   },
 
@@ -105,12 +122,14 @@ App.standings = {
   },
 
   bindHomeActions() {
-    document.querySelectorAll("[data-view-target]").forEach(button => {
+    document.querySelectorAll("[data-view-target]").forEach((button) => {
       if (button.dataset.bound === "true") return;
       button.dataset.bound = "true";
       button.addEventListener("click", () => {
         const target = button.dataset.viewTarget;
-        const tab = document.querySelector(`.tab-button[data-view="${target}"]`);
+        const tab = document.querySelector(
+          `.tab-button[data-view="${target}"]`,
+        );
         if (tab) {
           tab.click();
           window.scrollTo({ top: 0, behavior: "smooth" });
@@ -118,12 +137,13 @@ App.standings = {
       });
     });
 
-    document.querySelectorAll("[data-scroll-target]").forEach(button => {
+    document.querySelectorAll("[data-scroll-target]").forEach((button) => {
       if (button.dataset.bound === "true") return;
       button.dataset.bound = "true";
       button.addEventListener("click", () => {
         const target = document.getElementById(button.dataset.scrollTarget);
-        if (target) target.scrollIntoView({ behavior: "smooth", block: "start" });
+        if (target)
+          target.scrollIntoView({ behavior: "smooth", block: "start" });
       });
     });
   },
@@ -136,7 +156,12 @@ App.standings = {
     const homeTable = document.getElementById("homeStandingsTable");
     if (!homeTable) return;
 
-    homeTable.innerHTML = standings.slice(0, 5).map(row => `
+    App.dom.setHtml(
+      homeTable,
+      standings
+        .slice(0, 5)
+        .map(
+          (row) => `
       <tr class="${row.position === 1 ? "home-leader-row" : ""}">
         <td class="numeric">${row.position}</td>
         <td>${App.standings.getTeamIdentityHtml(row.team)}</td>
@@ -147,7 +172,10 @@ App.standings = {
         <td class="numeric">${row.losses}</td>
         <td class="numeric">${App.utils.formatGoalDifference(row.goalDifference)}</td>
       </tr>
-    `).join("");
+    `,
+        )
+        .join(""),
+    );
   },
 
   renderHomeNextGames() {
@@ -157,11 +185,18 @@ App.standings = {
     const events = App.standings.getHomeNextEvents();
 
     if (!events.length) {
-      target.innerHTML = `<div class="next-game-empty">Nenhum jogo pendente encontrado.</div>`;
+      App.dom.setHtml(
+        target,
+        `<div class="next-game-empty">Nenhum jogo pendente encontrado.</div>`,
+      );
       return;
     }
 
-    target.innerHTML = events.map((event, index) => `
+    App.dom.setHtml(
+      target,
+      events
+        .map(
+          (event, index) => `
       <article class="next-game-card">
         <div class="next-game-date">
           <strong>${App.standings.formatHomeDate(event.date)}</strong>
@@ -180,29 +215,55 @@ App.standings = {
         </div>
         <span class="round-pill">${event.phase}</span>
       </article>
-    `).join("");
+    `,
+        )
+        .join(""),
+    );
   },
 
   getRoundCenterData() {
     if (!App.calendar?.getCalendarEvents) return null;
 
     const allEvents = App.calendar.getCalendarEvents();
-    const pending = allEvents.filter(event => App.calendar.getStatusClass(event) === "pending");
-    const pendingWithCoach = pending.filter(event => App.calendar.involvesOurTeam(event));
+    const pending = allEvents.filter(
+      (event) => App.calendar.getStatusClass(event) === "pending",
+    );
+    const pendingWithCoach = pending.filter((event) =>
+      App.calendar.involvesOurTeam(event),
+    );
     const nextPending = pendingWithCoach[0] || pending[0];
     const currentWeek = Number(nextPending?.week || 1);
 
-    const weekEvents = allEvents.filter(event => Number(event.week) === currentWeek);
-    const weekTechEvents = weekEvents.filter(event => App.calendar.involvesOurTeam(event));
-    const weekCpuEvents = weekEvents.filter(event => App.calendar.getMatchOwners(event).length === 0);
-    const weekTechPending = weekTechEvents.filter(event => App.calendar.getStatusClass(event) === "pending");
-    const weekCpuPending = weekCpuEvents.filter(event => App.calendar.getStatusClass(event) === "pending");
+    const weekEvents = allEvents.filter(
+      (event) => Number(event.week) === currentWeek,
+    );
+    const weekTechEvents = weekEvents.filter((event) =>
+      App.calendar.involvesOurTeam(event),
+    );
+    const weekCpuEvents = weekEvents.filter(
+      (event) => App.calendar.getMatchOwners(event).length === 0,
+    );
+    const weekTechPending = weekTechEvents.filter(
+      (event) => App.calendar.getStatusClass(event) === "pending",
+    );
+    const weekCpuPending = weekCpuEvents.filter(
+      (event) => App.calendar.getStatusClass(event) === "pending",
+    );
 
     const managers = App.utils.getHumanBuyers();
-    const byManager = managers.map(manager => {
-      const total = weekTechEvents.filter(event => App.calendar.getMatchOwners(event).includes(manager)).length;
-      const pendingCount = weekTechPending.filter(event => App.calendar.getMatchOwners(event).includes(manager)).length;
-      return { manager, total, pending: pendingCount, done: Math.max(0, total - pendingCount) };
+    const byManager = managers.map((manager) => {
+      const total = weekTechEvents.filter((event) =>
+        App.calendar.getMatchOwners(event).includes(manager),
+      ).length;
+      const pendingCount = weekTechPending.filter((event) =>
+        App.calendar.getMatchOwners(event).includes(manager),
+      ).length;
+      return {
+        manager,
+        total,
+        pending: pendingCount,
+        done: Math.max(0, total - pendingCount),
+      };
     });
 
     return {
@@ -211,7 +272,7 @@ App.standings = {
       weekTechPending,
       weekCpuPending,
       cpuReady: weekTechPending.length === 0 && weekCpuPending.length > 0,
-      byManager
+      byManager,
     };
   },
 
@@ -221,13 +282,14 @@ App.standings = {
 
     const data = App.standings.getRoundCenterData();
     if (!data) {
-      target.innerHTML = "";
+      App.dom.clear(target);
       return;
     }
 
-    const pendingText = data.weekTechPending.length === 0
-      ? "Todos os jogos com técnico da semana estão enviados."
-      : `${data.weekTechPending.length} jogo(s) com técnico pendente(s).`;
+    const pendingText =
+      data.weekTechPending.length === 0
+        ? "Todos os jogos com técnico da semana estão enviados."
+        : `${data.weekTechPending.length} jogo(s) com técnico pendente(s).`;
 
     const cpuText = data.cpuReady
       ? `${data.weekCpuPending.length} jogo(s) CPU x CPU prontos para simular.`
@@ -238,7 +300,9 @@ App.standings = {
       <small>${App.auth?.isCommissioner?.() ? `${data.weekCpuPending.length} jogo(s) pendente(s)` : "Simulação liberada ao comissário"}</small>
     `;
 
-    target.innerHTML = `
+    App.dom.setHtml(
+      target,
+      `
       <article class="round-center-card">
         <div class="round-center-main">
           <span class="modal-kicker">Central da rodada</span>
@@ -246,60 +310,78 @@ App.standings = {
           <p>${pendingText} ${cpuText}</p>
         </div>
         <div class="round-center-grid">
-          ${data.byManager.map(item => `
+          ${data.byManager
+            .map(
+              (item) => `
             <div class="round-manager-card ${item.pending === 0 ? "done" : "pending"}">
               <span class="owner" style="background:${App.data.ownerColors[item.manager]}">${item.manager}</span>
               <strong>${item.pending === 0 ? "Completo" : `${item.pending} pendente(s)`}</strong>
               <small>${item.done}/${item.total || 0} enviados</small>
             </div>
-          `).join("")}
-          ${App.auth?.isCommissioner?.() ? `
+          `,
+            )
+            .join("")}
+          ${
+            App.auth?.isCommissioner?.()
+              ? `
             <button class="round-cpu-card ${data.cpuReady ? "is-ready" : ""}" type="button" data-view-target="submitView">
               ${cpuCardContent}
             </button>
-          ` : `
+          `
+              : `
             <div class="round-cpu-card ${data.cpuReady ? "is-ready" : ""}">
               ${cpuCardContent}
             </div>
-          `}
+          `
+          }
         </div>
       </article>
-    `;
+    `,
+    );
   },
 
   getAttentionItems() {
-    const pendingHumanGames = App.calendar.getCalendarEvents()
-      .filter(event => App.calendar.getStatusClass(event) === "pending" && App.calendar.involvesOurTeam(event))
+    const pendingHumanGames = App.calendar
+      .getCalendarEvents()
+      .filter(
+        (event) =>
+          App.calendar.getStatusClass(event) === "pending" &&
+          App.calendar.involvesOurTeam(event),
+      )
       .slice(0, 3)
-      .map(event => ({
+      .map((event) => ({
         type: "Jogo pendente",
         title: `${event.home} x ${event.away}`,
         detail: `${event.competition} · ${event.phase} · Semana ${event.week}`,
         action: "Calendário",
-        target: "calendarView"
+        target: "calendarView",
       }));
 
     const activeEvents = (App.state.apiEvents || [])
-      .filter(event => App.events.isActiveOrDurationEvent(event))
+      .filter((event) => App.events.isActiveOrDurationEvent(event))
       .slice(0, 3)
-      .map(event => ({
+      .map((event) => ({
         type: "Evento ativo",
         title: event.Titulo || "Evento da liga",
         detail: `${event.Jogador || "Liga"} · ${event.Tipo || "Evento"}`,
         action: "Eventos",
-        target: "eventsView"
+        target: "eventsView",
       }));
 
-    const recentTransfers = App.transfers.getRecentTransferMovements(3)
-      .map(item => ({
+    const recentTransfers = App.transfers
+      .getRecentTransferMovements(3)
+      .map((item) => ({
         type: "Mercado",
         title: `${item.buyer} contratou ${item.player}`,
         detail: `${App.utils.formatCurrency(item.totalCost)} · ${item.fromClub || "Clube não informado"}`,
         action: "Transferências",
-        target: "transfersView"
+        target: "transfersView",
       }));
 
-    return [...pendingHumanGames, ...activeEvents, ...recentTransfers].slice(0, 6);
+    return [...pendingHumanGames, ...activeEvents, ...recentTransfers].slice(
+      0,
+      6,
+    );
   },
 
   renderAttentionPanel() {
@@ -308,7 +390,9 @@ App.standings = {
 
     const items = App.standings.getAttentionItems();
 
-    target.innerHTML = `
+    App.dom.setHtml(
+      target,
+      `
       <article class="attention-card">
         <div class="home-panel-header">
           <div>
@@ -316,42 +400,66 @@ App.standings = {
             <h2>O que pede ação</h2>
           </div>
         </div>
-        ${items.length ? `
+        ${
+          items.length
+            ? `
           <div class="attention-grid">
-            ${items.map(item => `
+            ${items
+              .map(
+                (item) => `
               <button class="attention-item" type="button" data-view-target="${item.target}">
                 <span>${App.utils.escapeHtml(item.type)}</span>
                 <strong>${App.utils.escapeHtml(item.title)}</strong>
                 <small>${App.utils.escapeHtml(item.detail)}</small>
                 <b>${App.utils.escapeHtml(item.action)} ›</b>
               </button>
-            `).join("")}
+            `,
+              )
+              .join("")}
           </div>
-        ` : `<div class="next-game-empty">Nada urgente agora. A liga está respirando.</div>`}
+        `
+            : `<div class="next-game-empty">Nada urgente agora. A liga está respirando.</div>`
+        }
       </article>
-    `;
+    `,
+    );
   },
 
   getActivityItems() {
-    const resultItems = (App.state.apiResults || []).map(row => ({
+    const resultItems = (App.state.apiResults || []).map((row) => ({
       type: "Resultado",
       tone: "result",
       date: row.Timestamp || row.created_at || row.Data || "",
       title: `${App.utils.resolveTeamName(row.Mandante)} ${row.GolsMandante} x ${row.GolsVisitante} ${App.utils.resolveTeamName(row.Visitante)}`,
-      detail: `${row.Competicao || ""} · ${row.RodadaFase || ""} · enviado por ${row.EnviadoPor || "Liga"}`.replace(/\s+·\s+$/g, ""),
-      metric: App.utils.formatDateTime(row.Timestamp || row.created_at || row.Data || "")
+      detail:
+        `${row.Competicao || ""} · ${row.RodadaFase || ""} · enviado por ${row.EnviadoPor || "Liga"}`.replace(
+          /\s+·\s+$/g,
+          "",
+        ),
+      metric: App.utils.formatDateTime(
+        row.Timestamp || row.created_at || row.Data || "",
+      ),
     }));
 
-    const transferItems = (App.state.apiTransfers || []).map(row => {
+    const transferItems = (App.state.apiTransfers || []).map((row) => {
       const isCpuSale =
         App.utils.normalizeText(row.TipoTransferencia || row.transfer_type) ===
         "cpu_sale";
       const value = isCpuSale
         ? row.ValorNegociado || row.negotiated_value || row.ValorFinal
         : row.ValorFinal || row.ValorTransfermarkt;
-      const valueLabel = Number(value || 0) > 0 ? App.utils.formatCurrency(value || 0) : "valor em revisão";
-      const seller = row.Vendedor || row.CompradorRegistro || row.Comprador || "-";
-      const destination = row.ClubeDestino || row.Destino || row.destination_club || row.Comprador || "clube interessado";
+      const valueLabel =
+        Number(value || 0) > 0
+          ? App.utils.formatCurrency(value || 0)
+          : "valor em revisão";
+      const seller =
+        row.Vendedor || row.CompradorRegistro || row.Comprador || "-";
+      const destination =
+        row.ClubeDestino ||
+        row.Destino ||
+        row.destination_club ||
+        row.Comprador ||
+        "clube interessado";
       return {
         type: "Transferência",
         tone: isCpuSale ? "sale" : "transfer",
@@ -362,13 +470,18 @@ App.standings = {
         detail: isCpuSale
           ? `${valueLabel} recebido · destino: ${destination}`
           : `${valueLabel} custo final · origem: ${row.ClubeOrigem || "clube não informado"}`,
-        metric: App.utils.formatDateTime(row.Timestamp || "")
+        metric: App.utils.formatDateTime(row.Timestamp || ""),
       };
     });
 
     const eventItems = (App.state.apiEvents || [])
-      .filter(row => !App.utils.normalizeText(row.Titulo || "").startsWith("venda externa"))
-      .map(row => {
+      .filter(
+        (row) =>
+          !App.utils
+            .normalizeText(row.Titulo || "")
+            .startsWith("venda externa"),
+      )
+      .map((row) => {
         const impact = Number(row.ImpactoFinanceiro || 0);
         return {
           type: "Evento",
@@ -376,12 +489,14 @@ App.standings = {
           date: row.Timestamp || row.ExpiraEm || "",
           title: row.Titulo || "-",
           detail: `${row.Jogador || "Liga"} · ${row.Tipo || "Ocorrência"} · ${row.Status || "registrado"}`,
-          metric: App.events?.getEventImpactLabel ? App.events.getEventImpactLabel(row) : App.utils.formatDateTime(row.Timestamp || row.ExpiraEm || "")
+          metric: App.events?.getEventImpactLabel
+            ? App.events.getEventImpactLabel(row)
+            : App.utils.formatDateTime(row.Timestamp || row.ExpiraEm || ""),
         };
       });
 
     return [...resultItems, ...transferItems, ...eventItems]
-      .filter(item => item.date)
+      .filter((item) => item.date)
       .sort((a, b) => new Date(b.date) - new Date(a.date))
       .slice(0, 6);
   },
@@ -392,7 +507,9 @@ App.standings = {
 
     const items = App.standings.getActivityItems();
 
-    target.innerHTML = `
+    App.dom.setHtml(
+      target,
+      `
       <article class="activity-card">
         <div class="home-panel-header">
           <div>
@@ -400,9 +517,13 @@ App.standings = {
             <h2>Movimentos oficiais</h2>
           </div>
         </div>
-        ${items.length ? `
+        ${
+          items.length
+            ? `
           <div class="activity-list">
-            ${items.map(item => `
+            ${items
+              .map(
+                (item) => `
               <div class="activity-item activity-${App.utils.escapeHtml(item.tone || "event")}">
                 <span class="activity-type">${App.utils.escapeHtml(item.type)}</span>
                 <div>
@@ -411,84 +532,19 @@ App.standings = {
                 </div>
                 <b>${App.utils.escapeHtml(item.metric || App.utils.formatDateTime(item.date))}</b>
               </div>
-            `).join("")}
+            `,
+              )
+              .join("")}
           </div>
-        ` : `<div class="next-game-empty">Nenhuma atividade recente encontrada.</div>`}
+        `
+            : `<div class="next-game-empty">Nenhuma atividade recente encontrada.</div>`
+        }
       </article>
-    `;
+    `,
+    );
   },
 
   render() {
-    const table = document.getElementById("standingsTable");
-    const mobile = document.getElementById("standingsMobile");
-    if (!table || !mobile) return;
     App.react?.notify?.();
-
-    if (!App.state.apiLoaded) {
-      App.standings.renderHomeStandings([]);
-      const homeTable = document.getElementById("homeStandingsTable");
-      if (homeTable) {
-        homeTable.innerHTML = `
-          <tr>
-            <td colspan="8" class="calendar-muted">Sincronizando dados oficiais da liga...</td>
-          </tr>
-        `;
-      }
-      table.innerHTML = `
-        <tr>
-          <td colspan="11" class="calendar-muted">Sincronizando dados oficiais da liga...</td>
-        </tr>
-      `;
-      mobile.innerHTML = `
-        <article class="calendar-card standings-mobile-card">
-          <p class="calendar-muted">Sincronizando dados oficiais da liga...</p>
-        </article>
-      `;
-      return;
-    }
-
-    const standings = App.standings.getStandings();
-
-    App.standings.renderSummaryCards(standings);
-    App.standings.renderHomeStandings(standings);
-    App.standings.renderHomeNextGames();
-    App.standings.renderRoundCenter();
-    App.standings.renderAttentionPanel();
-    App.standings.renderActivityPanel();
-    App.standings.bindHomeActions();
-
-    table.innerHTML = standings.map(row => `
-      <tr class="${App.standings.getPositionClass(row.position)} ${row.status === "Nosso" ? "standings-human-row" : ""}">
-        <td class="numeric">${row.position}</td>
-        <td class="calendar-match">${App.standings.getTeamIdentityHtml(row.team)}</td>
-        <td><span class="owner-name">${row.owner}</span></td>
-        <td class="numeric">${row.played}</td>
-        <td class="numeric">${row.wins}</td>
-        <td class="numeric">${row.draws}</td>
-        <td class="numeric">${row.losses}</td>
-        <td class="numeric">${row.goalsFor}</td>
-        <td class="numeric">${row.goalsAgainst}</td>
-        <td class="numeric">${App.utils.formatGoalDifference(row.goalDifference)}</td>
-        <td class="numeric"><strong>${row.points}</strong></td>
-      </tr>
-    `).join("");
-
-    mobile.innerHTML = standings.map(row => {
-      const classificationClass = App.standings.getPositionClass(row.position);
-      const badgeClass = App.standings.getPositionBadgeClass(row.position);
-      return `
-        <article class="calendar-card standings-mobile-card ${classificationClass} ${row.status === "Nosso" ? "standings-human-card" : ""}">
-          <div class="calendar-card-header">
-            <span class="position-badge ${badgeClass}">${row.position}º</span>
-            <span class="calendar-muted">${row.points} pts</span>
-          </div>
-          <h3 class="standings-team-title">${App.standings.getTeamIdentityHtml(row.team)}</h3>
-          <div class="mobile-owner-line">
-            <span class="calendar-muted owner-plain">${row.owner}</span>
-          </div>
-          <p class="calendar-muted">J ${row.played} · V ${row.wins} · E ${row.draws} · D ${row.losses} · SG ${App.utils.formatGoalDifference(row.goalDifference)}</p>
-        </article>
-      `;
-    }).join("");
-  }
+  },
 };

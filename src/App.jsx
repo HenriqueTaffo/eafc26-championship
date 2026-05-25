@@ -35,7 +35,7 @@ function enhanceAccordionCards(root = document) {
     button.className = "react-accordion-toggle";
     button.setAttribute("aria-expanded", "true");
     button.setAttribute("aria-label", "Alternar painel");
-    button.innerHTML = "<span></span>";
+    button.appendChild(document.createElement("span"));
     button.addEventListener("click", (event) => {
       event.preventDefault();
       const isCollapsed = card.classList.toggle("is-collapsed");

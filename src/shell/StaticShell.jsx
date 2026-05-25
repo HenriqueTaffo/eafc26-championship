@@ -3,8 +3,22 @@ import {
   CalendarWeekBoard,
   CupsBracket,
 } from "../views/CalendarCupsViews.jsx";
+import { CommissionerRuntime } from "../views/CommissionerView.jsx";
 import { ExperienceGrid } from "../views/ExperienceView.jsx";
 import { EventsGrid, EventSlotList } from "../views/EventsView.jsx";
+import { PlayerLeaderboards, PlayersGrid } from "../views/PlayersView.jsx";
+import {
+  ActivityPanel,
+  AttentionPanel,
+  FullStandingsRows,
+  HomeNextGames,
+  HomeStandingsRows,
+  RoundCenter,
+  ScrollButton,
+  StandingsMobileList,
+  ViewButton,
+} from "../views/StandingsView.jsx";
+import { TransfersRuntime } from "../views/TransfersView.jsx";
 import {
   CalendarSummary,
   CommissionerSummary,
@@ -172,9 +186,9 @@ function StandingsView() {
           <StandingsSummary />
         </section>
 
-        <section className="round-center" id="roundCenter"></section>
+        <RoundCenter />
 
-        <section className="attention-panel" id="attentionPanel"></section>
+        <AttentionPanel />
 
         <section id="leagueNewsPanel" className="league-news-panel"></section>
 
@@ -197,30 +211,26 @@ function StandingsView() {
                     <th>SG</th>
                   </tr>
                 </thead>
-                <tbody id="homeStandingsTable"></tbody>
+                <tbody id="homeStandingsTable">
+                  <HomeStandingsRows />
+                </tbody>
               </table>
             </div>
-            <button
-              className="home-link"
-              type="button"
-              data-scroll-target="standingsFullBlock"
-            >
+            <ScrollButton className="home-link" target="standingsFullBlock">
               Ver classificação completa <span>›</span>
-            </button>
+            </ScrollButton>
           </article>
 
           <article className="home-panel home-next-panel">
             <div className="home-panel-header">
               <h2>Próximos jogos</h2>
             </div>
-            <div className="next-games-list" id="homeNextGames"></div>
-            <button
-              className="home-link"
-              type="button"
-              data-view-target="calendarView"
-            >
+            <div className="next-games-list" id="homeNextGames">
+              <HomeNextGames />
+            </div>
+            <ViewButton className="home-link" target="calendarView">
               Ver calendário completo <span>›</span>
-            </button>
+            </ViewButton>
           </article>
         </section>
 
@@ -233,16 +243,12 @@ function StandingsView() {
               classificação.
             </p>
           </div>
-          <button
-            type="button"
-            className="cup-action"
-            data-view-target="cupsView"
-          >
+          <ViewButton className="cup-action" target="cupsView">
             Ver copas <span>›</span>
-          </button>
+          </ViewButton>
         </section>
 
-        <section className="activity-panel" id="activityPanel"></section>
+        <ActivityPanel />
 
         <section className="legend-block compact-legend">
           <p className="legend-title">Legendas de classificação</p>
@@ -283,10 +289,12 @@ function StandingsView() {
                   <th>Pts</th>
                 </tr>
               </thead>
-              <tbody id="standingsTable"></tbody>
+              <tbody id="standingsTable">
+                <FullStandingsRows />
+              </tbody>
             </table>
           </section>
-          <section className="mobile-list" id="standingsMobile"></section>
+          <StandingsMobileList />
         </section>
       </section>
     </>
@@ -442,17 +450,8 @@ function PlayersView() {
             <option value="Bruno Silva">Bruno Silva</option>
           </select>
         </section>
-        <section className="player-grid" id="playersGrid"></section>
-        <section className="leaderboard-grid">
-          <article className="leaderboard-card">
-            <h2>Gols por time</h2>
-            <div id="topScorers"></div>
-          </article>
-          <article className="leaderboard-card">
-            <h2>Top 5 transferências mais caras</h2>
-            <div id="topAssists"></div>
-          </article>
-        </section>
+        <PlayersGrid />
+        <PlayerLeaderboards />
         <p className="footer-note">
           Os gols por time consideram apenas os clubes controlados por técnicos.
           A lista ao lado mostra as cinco contratações mais caras aprovadas até
@@ -571,6 +570,7 @@ function TransfersView() {
   return (
     <>
       <section id="transfersView" className="view">
+        <TransfersRuntime />
         <section className="summary" id="transferSummary">
           <TransfersSummary />
         </section>
@@ -859,6 +859,7 @@ function CommissionerView() {
   return (
     <>
       <section id="commissionerView" className="view">
+        <CommissionerRuntime />
         <section
           className="summary commissioner-summary"
           id="commissionerSummary"

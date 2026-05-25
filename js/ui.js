@@ -51,14 +51,16 @@ App.ui = {
     const previousFocus = document.activeElement;
     const actions = options.actions || [
       { id: "cancel", label: "Cancelar", variant: "secondary" },
-      { id: "confirm", label: "Confirmar", variant: "primary" }
+      { id: "confirm", label: "Confirmar", variant: "primary" },
     ];
     const fields = options.fields || [];
     const tone = options.tone || "market";
     const titleId = "appActionModalTitle";
     const descriptionId = "appActionModalDescription";
 
-    const fieldHtml = fields.map(field => `
+    const fieldHtml = fields
+      .map(
+        (field) => `
       <label class="app-action-modal-field">
         <span>${App.utils.escapeDisplay(field.label || field.name)}</span>
         ${field.prefix ? `<b>${App.utils.escapeDisplay(field.prefix)}</b>` : ""}
@@ -71,11 +73,15 @@ App.ui = {
           ${field.required === false ? "" : "required"}
         />
       </label>
-    `).join("");
+    `,
+      )
+      .join("");
 
-    const actionHtml = actions.map(action => {
-      const variant = action.variant || (action.id === "cancel" ? "secondary" : "primary");
-      return `
+    const actionHtml = actions
+      .map((action) => {
+        const variant =
+          action.variant || (action.id === "cancel" ? "secondary" : "primary");
+        return `
         <button
           type="${action.id === "cancel" ? "button" : "submit"}"
           class="app-action-modal-button app-action-modal-button-${App.utils.escapeHtml(variant)}"
@@ -85,9 +91,12 @@ App.ui = {
           ${App.utils.escapeDisplay(action.label)}
         </button>
       `;
-    }).join("");
+      })
+      .join("");
 
-    modal.innerHTML = `
+    App.dom.setHtml(
+      modal,
+      `
       <div class="app-action-modal-backdrop" data-modal-action="cancel"></div>
       <form class="app-action-modal-card app-action-modal-${App.utils.escapeHtml(tone)}" role="dialog" aria-modal="true" aria-labelledby="${titleId}" aria-describedby="${descriptionId}">
         <div class="app-action-modal-header">
@@ -100,27 +109,28 @@ App.ui = {
         <p class="app-action-modal-error" role="alert" hidden></p>
         <div class="app-action-modal-actions">${actionHtml}</div>
       </form>
-    `;
+    `,
+    );
 
     modal.classList.add("is-visible");
     modal.setAttribute("aria-hidden", "false");
     document.body.classList.add("modal-active");
 
-    return new Promise(resolve => {
+    return new Promise((resolve) => {
       const form = modal.querySelector("form");
       const error = modal.querySelector(".app-action-modal-error");
 
-      const finish = result => {
+      const finish = (result) => {
         modal.classList.remove("is-visible");
         modal.setAttribute("aria-hidden", "true");
-        modal.innerHTML = "";
+        App.dom.clear(modal);
         document.removeEventListener("keydown", handleKeydown);
         document.body.classList.remove("modal-active");
         if (previousFocus?.focus) previousFocus.focus();
         resolve(result);
       };
 
-      const showError = message => {
+      const showError = (message) => {
         if (!error) return;
         error.textContent = App.utils.polishUiText(message);
         error.hidden = false;
@@ -134,19 +144,29 @@ App.ui = {
         return values;
       };
 
-      const handleKeydown = event => {
-        if (event.key === "Escape") finish({ action: "cancel", values: getValues() });
+      const handleKeydown = (event) => {
+        if (event.key === "Escape")
+          finish({ action: "cancel", values: getValues() });
       };
 
-      modal.querySelectorAll('[data-modal-action="cancel"]').forEach(element => {
-        element.addEventListener("click", () => finish({ action: "cancel", values: getValues() }));
-      });
+      modal
+        .querySelectorAll('[data-modal-action="cancel"]')
+        .forEach((element) => {
+          element.addEventListener("click", () =>
+            finish({ action: "cancel", values: getValues() }),
+          );
+        });
 
-      form.addEventListener("submit", event => {
+      form.addEventListener("submit", (event) => {
         event.preventDefault();
-        const action = event.submitter?.dataset.modalAction || actions.find(item => item.id !== "cancel")?.id || "confirm";
+        const action =
+          event.submitter?.dataset.modalAction ||
+          actions.find((item) => item.id !== "cancel")?.id ||
+          "confirm";
         const values = getValues();
-        const validationMessage = options.validate ? options.validate(values, action) : "";
+        const validationMessage = options.validate
+          ? options.validate(values, action)
+          : "";
         if (validationMessage) {
           showError(validationMessage);
           return;
@@ -157,7 +177,11 @@ App.ui = {
       document.addEventListener("keydown", handleKeydown);
       setTimeout(() => {
         const firstInput = modal.querySelector("input, select, textarea");
-        const preferredButton = modal.querySelector("[autofocus]") || modal.querySelector('[data-modal-action]:not([data-modal-action="cancel"])');
+        const preferredButton =
+          modal.querySelector("[autofocus]") ||
+          modal.querySelector(
+            '[data-modal-action]:not([data-modal-action="cancel"])',
+          );
         (firstInput || preferredButton)?.focus();
       }, 0);
     });
@@ -167,11 +191,20 @@ App.ui = {
     const result = await App.ui.openActionModal({
       ...options,
       actions: options.actions || [
-        { id: "cancel", label: options.cancelLabel || "Cancelar", variant: "secondary" },
-        { id: "confirm", label: options.confirmLabel || "Confirmar", variant: options.confirmVariant || "primary", autofocus: true }
-      ]
+        {
+          id: "cancel",
+          label: options.cancelLabel || "Cancelar",
+          variant: "secondary",
+        },
+        {
+          id: "confirm",
+          label: options.confirmLabel || "Confirmar",
+          variant: options.confirmVariant || "primary",
+          autofocus: true,
+        },
+      ],
     });
 
     return result.action === "confirm";
-  }
+  },
 };

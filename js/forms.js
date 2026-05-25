@@ -23,14 +23,18 @@ App.forms = {
     const penaltyWinner = form.elements.penaltyWinner;
     const penaltyScore = form.elements.penaltyScore;
     const isCup = competition && competition !== "Championship";
-    const isTie = homeScore !== "" && awayScore !== "" && Number(homeScore) === Number(awayScore);
+    const isTie =
+      homeScore !== "" &&
+      awayScore !== "" &&
+      Number(homeScore) === Number(awayScore);
 
     if (!section) return;
 
     section.hidden = !isCup;
 
     if (!isCup) {
-      if (form.elements.hasPenalties) form.elements.hasPenalties.checked = false;
+      if (form.elements.hasPenalties)
+        form.elements.hasPenalties.checked = false;
       if (fields) fields.hidden = true;
       if (penaltyWinner) {
         penaltyWinner.value = "";
@@ -63,9 +67,9 @@ App.forms = {
       awayScore,
       goalDetails: payload.goalDetails || "",
       assistDetails: payload.assistDetails || "",
-      penaltyWinner: isChampionship ? "" : (payload.penaltyWinner || ""),
-      penaltyScore: isChampionship ? "" : (payload.penaltyScore || ""),
-      isCupTie
+      penaltyWinner: isChampionship ? "" : payload.penaltyWinner || "",
+      penaltyScore: isChampionship ? "" : payload.penaltyScore || "",
+      isCupTie,
     };
   },
 
@@ -83,17 +87,24 @@ App.forms = {
 
     const data = await App.api.postToApi({
       action: "addResult",
-      ...normalized
+      ...normalized,
     });
 
-    if (!data.ok) throw new Error(data.message || data.error || "Resultado rejeitado.");
+    if (!data.ok)
+      throw new Error(data.message || data.error || "Resultado rejeitado.");
 
-    App.utils.setMessage(message, data.message || "Resultado enviado com sucesso.", "success");
+    App.utils.setMessage(
+      message,
+      data.message || "Resultado enviado com sucesso.",
+      "success",
+    );
 
     await App.api.loadApiData({
       variant: "match",
       title: "Atualizando dados",
-      message: options.refreshMessage || "Resultado salvo. Atualizando classificação, calendário e painel da liga..."
+      message:
+        options.refreshMessage ||
+        "Resultado salvo. Atualizando classificação, calendário e painel da liga...",
     });
 
     return data;
@@ -112,13 +123,24 @@ App.forms = {
     App.main.showLoader({
       variant: "match",
       title: "Registrando resultado",
-      message: "Montando a rodada, validando o placar e preparando a atualização da classificação."
+      message:
+        "Montando a rodada, validando o placar e preparando a atualização da classificação.",
     });
 
     try {
-      if (!session) throw new Error("Faça login como técnico ou comissário antes de enviar resultado.");
-      if (!App.auth?.isCommissioner?.() && ![payload.home, payload.away].some(team => App.utils.sameTeamName(team, session.clubName))) {
-        throw new Error("Você só pode enviar resultado de jogos do seu próprio clube.");
+      if (!session)
+        throw new Error(
+          "Faça login como técnico ou comissário antes de enviar resultado.",
+        );
+      if (
+        !App.auth?.isCommissioner?.() &&
+        ![payload.home, payload.away].some((team) =>
+          App.utils.sameTeamName(team, session.clubName),
+        )
+      ) {
+        throw new Error(
+          "Você só pode enviar resultado de jogos do seu próprio clube.",
+        );
       }
       payload.managerId = session.managerId;
       payload.accessCode = session.accessCode;
@@ -127,7 +149,11 @@ App.forms = {
       form.reset();
       App.forms.updatePenaltyVisibility(form);
     } catch (error) {
-      App.utils.setMessage(message, App.forms.getFriendlyErrorMessage(error), "error");
+      App.utils.setMessage(
+        message,
+        App.forms.getFriendlyErrorMessage(error),
+        "error",
+      );
     } finally {
       App.main.hideLoader();
       button.disabled = false;
@@ -147,25 +173,40 @@ App.forms = {
     App.main.showLoader({
       variant: "match",
       title: "Salvando placar",
-      message: "Validando resultado pelo calendário e atualizando a liga."
+      message: "Validando resultado pelo calendário e atualizando a liga.",
     });
 
     try {
-      if (!session) throw new Error("Faça login como técnico ou comissário antes de salvar resultado.");
-      if (!App.auth?.isCommissioner?.() && ![payload.home, payload.away].some(team => App.utils.sameTeamName(team, session.clubName))) {
-        throw new Error("Você só pode enviar resultado de jogos do seu próprio clube.");
+      if (!session)
+        throw new Error(
+          "Faça login como técnico ou comissário antes de salvar resultado.",
+        );
+      if (
+        !App.auth?.isCommissioner?.() &&
+        ![payload.home, payload.away].some((team) =>
+          App.utils.sameTeamName(team, session.clubName),
+        )
+      ) {
+        throw new Error(
+          "Você só pode enviar resultado de jogos do seu próprio clube.",
+        );
       }
       payload.managerId = session.managerId;
       payload.accessCode = session.accessCode;
       payload.submittedBy = payload.submittedBy || session.managerName;
       await App.forms.submitResultPayload(payload, message, {
-        refreshMessage: "Placar salvo. Atualizando calendário, classificação e central da rodada..."
+        refreshMessage:
+          "Placar salvo. Atualizando calendário, classificação e central da rodada...",
       });
       form.reset();
       App.forms.updatePenaltyVisibility(form);
       App.calendar.closeResultModal();
     } catch (error) {
-      App.utils.setMessage(message, App.forms.getFriendlyErrorMessage(error), "error");
+      App.utils.setMessage(
+        message,
+        App.forms.getFriendlyErrorMessage(error),
+        "error",
+      );
     } finally {
       App.main.hideLoader();
       button.disabled = false;
@@ -184,7 +225,8 @@ App.forms = {
     App.main.showLoader({
       variant: "market",
       title: "Processando transferência",
-      message: "Consultando orçamento e possíveis travas de mercado. Propostas internas não consomem limite diário."
+      message:
+        "Consultando orçamento e possíveis travas de mercado. Propostas internas não consomem limite diário.",
     });
 
     try {
@@ -192,24 +234,49 @@ App.forms = {
       const isInternal = App.transfers.isInternalTransferForm(form);
       const session = App.auth?.getSession ? App.auth.getSession() : null;
 
-      if (form.elements.confirmTransferBuyer && !form.elements.confirmTransferBuyer.checked) {
-        throw new Error("Confirme que o comprador selecionado está correto antes de enviar.");
+      if (
+        form.elements.confirmTransferBuyer &&
+        !form.elements.confirmTransferBuyer.checked
+      ) {
+        throw new Error(
+          "Confirme que o comprador selecionado está correto antes de enviar.",
+        );
       }
 
       if (isInternal) {
-        if (!session) throw new Error("Faça login como comprador para enviar proposta a outro técnico.");
-        if (App.utils.normalizeText(session.managerName) !== App.utils.normalizeText(payload.buyer)) {
-          throw new Error("A proposta interna precisa ser enviada pelo comprador logado.");
+        if (!session)
+          throw new Error(
+            "Faça login como comprador para enviar proposta a outro técnico.",
+          );
+        if (
+          App.utils.normalizeText(session.managerName) !==
+          App.utils.normalizeText(payload.buyer)
+        ) {
+          throw new Error(
+            "A proposta interna precisa ser enviada pelo comprador logado.",
+          );
         }
         if (!payload.seller) throw new Error("Selecione o técnico vendedor.");
-        if (payload.buyer === payload.seller) throw new Error("Comprador e vendedor precisam ser técnicos diferentes.");
+        if (payload.buyer === payload.seller)
+          throw new Error(
+            "Comprador e vendedor precisam ser técnicos diferentes.",
+          );
         payload.fromClub = `Negociação interna: ${payload.seller}`;
         payload.managerId = session.managerId;
         payload.accessCode = session.accessCode;
       } else {
-        if (!session) throw new Error("Faça login como comprador antes de enviar transferência.");
-        if (!App.auth?.isCommissioner?.() && App.utils.normalizeText(session.managerName) !== App.utils.normalizeText(payload.buyer)) {
-          throw new Error("A transferência precisa ser enviada pelo comprador logado.");
+        if (!session)
+          throw new Error(
+            "Faça login como comprador antes de enviar transferência.",
+          );
+        if (
+          !App.auth?.isCommissioner?.() &&
+          App.utils.normalizeText(session.managerName) !==
+            App.utils.normalizeText(payload.buyer)
+        ) {
+          throw new Error(
+            "A transferência precisa ser enviada pelo comprador logado.",
+          );
         }
         payload.managerId = session.managerId;
         payload.accessCode = session.accessCode;
@@ -219,12 +286,23 @@ App.forms = {
         }
       }
 
-      if (!preview || !payload.buyer || !payload.player || !payload.fromClub || !payload.overall || !payload.marketValue) {
-        throw new Error("Preencha todos os dados da transferência antes de confirmar.");
+      if (
+        !preview ||
+        !payload.buyer ||
+        !payload.player ||
+        !payload.fromClub ||
+        !payload.overall ||
+        !payload.marketValue
+      ) {
+        throw new Error(
+          "Preencha todos os dados da transferência antes de confirmar.",
+        );
       }
 
       const confirmationText = [
-        isInternal ? "Enviar proposta de transferência?" : "Confirmar transferência?",
+        isInternal
+          ? "Enviar proposta de transferência?"
+          : "Confirmar transferência?",
         "",
         `Tipo: ${isInternal ? "Entre técnicos" : "Mercado externo"}`,
         `Comprador: ${payload.buyer}`,
@@ -234,11 +312,13 @@ App.forms = {
         `Overall: ${payload.overall}`,
         `${isInternal ? "Valor negociado" : "Valor base"}: ${App.utils.formatCurrency(Number(payload.marketValue))}`,
         `${isInternal ? "Débito estimado" : "Valor final estimado"}: ${App.utils.formatCurrency(Number(preview.finalValue || 0))}`,
-        ...(!isInternal && preview.exchangePlayer ? [
-          `Troca: ${preview.exchangePlayer.player}`,
-          `Abatimento: ${App.utils.formatCurrency(Number(preview.exchangeCredit || 0))}`,
-          `Dinheiro a pagar: ${App.utils.formatCurrency(Number(preview.cashFinalValue || 0))}`
-        ] : [])
+        ...(!isInternal && preview.exchangePlayer
+          ? [
+              `Troca: ${preview.exchangePlayer.player}`,
+              `Abatimento: ${App.utils.formatCurrency(Number(preview.exchangeCredit || 0))}`,
+              `Dinheiro a pagar: ${App.utils.formatCurrency(Number(preview.cashFinalValue || 0))}`,
+            ]
+          : []),
       ].join("\n");
 
       if (!window.confirm(confirmationText)) {
@@ -249,12 +329,12 @@ App.forms = {
         const reason = preview.sameBuyerAndSeller
           ? "Comprador e vendedor precisam ser técnicos diferentes."
           : preview.exchangeSamePlayer
-          ? "O jogador oferecido na troca precisa ser diferente do alvo."
-          : preview.duplicateBlock
-          ? `Jogador já contratado por ${preview.duplicate.buyer}.`
-          : preview.limitReached
-            ? `${preview.buyer} já atingiu o limite diário.`
-            : "Saldo insuficiente para concluir a contratação.";
+            ? "O jogador oferecido na troca precisa ser diferente do alvo."
+            : preview.duplicateBlock
+              ? `Jogador já contratado por ${preview.duplicate.buyer}.`
+              : preview.limitReached
+                ? `${preview.buyer} já atingiu o limite diário.`
+                : "Saldo insuficiente para concluir a contratação.";
         throw new Error(reason);
       }
 
@@ -262,13 +342,24 @@ App.forms = {
         action: "addTransfer",
         ...payload,
         overall: Number(payload.overall),
-        marketValue: Number(payload.marketValue)
+        marketValue: Number(payload.marketValue),
       });
 
-      if (!data.ok) throw new Error(data.message || data.error || "Transferência rejeitada.");
-      App.utils.setMessage(message, data.message || (isInternal ? "Proposta enviada com sucesso." : "Transferência enviada com sucesso."), "success");
+      if (!data.ok)
+        throw new Error(
+          data.message || data.error || "Transferência rejeitada.",
+        );
+      App.utils.setMessage(
+        message,
+        data.message ||
+          (isInternal
+            ? "Proposta enviada com sucesso."
+            : "Transferência enviada com sucesso."),
+        "success",
+      );
       form.reset();
-      if (form.elements.confirmTransferBuyer) form.elements.confirmTransferBuyer.checked = false;
+      if (form.elements.confirmTransferBuyer)
+        form.elements.confirmTransferBuyer.checked = false;
       App.transfers.syncInternalTransferFields(form);
       App.transfers.renderTransferPreview(form);
       await App.api.loadApiData({
@@ -276,10 +367,14 @@ App.forms = {
         title: "Atualizando dados",
         message: isInternal
           ? "Proposta enviada. Atualizando pendências do mercado..."
-          : "Transferência salva. Atualizando orçamento, lista de transferências e painel..."
+          : "Transferência salva. Atualizando orçamento, lista de transferências e painel...",
       });
     } catch (error) {
-      App.utils.setMessage(message, App.forms.getFriendlyErrorMessage(error), "error");
+      App.utils.setMessage(
+        message,
+        App.forms.getFriendlyErrorMessage(error),
+        "error",
+      );
     } finally {
       App.main.hideLoader();
       button.disabled = false;
@@ -294,33 +389,50 @@ App.forms = {
     const payload = Object.fromEntries(new FormData(form).entries());
 
     button.disabled = true;
-    App.utils.setMessage(message, "Simulando jogos CPU x CPU... Isso deve levar poucos segundos.", "warning");
+    App.utils.setMessage(
+      message,
+      "Simulando jogos CPU x CPU... Isso deve levar poucos segundos.",
+      "warning",
+    );
     App.main.showLoader({
       variant: "chaos",
       title: "Simulando CPU x CPU",
-      message: "Mascote trabalhando pesado para fechar os confrontos, aplicar eventos e atualizar tudo."
+      message:
+        "Mascote trabalhando pesado para fechar os confrontos, aplicar eventos e atualizar tudo.",
     });
 
     try {
       if (!App.auth?.isCommissioner?.()) {
-        throw new Error("Apenas o Comissário da Liga pode simular jogos CPU x CPU.");
+        throw new Error(
+          "Apenas o Comissário da Liga pode simular jogos CPU x CPU.",
+        );
       }
       const data = await App.api.postToApi({
         action: "simulateCpuWeek",
         week: Number(payload.week),
-        submittedBy: payload.submittedBy
+        submittedBy: payload.submittedBy,
       });
 
-      if (!data.ok) throw new Error(data.message || data.error || "Simulação rejeitada.");
-      App.utils.setMessage(message, data.message || "Semana simulada com sucesso.", "success");
+      if (!data.ok)
+        throw new Error(data.message || data.error || "Simulação rejeitada.");
+      App.utils.setMessage(
+        message,
+        data.message || "Semana simulada com sucesso.",
+        "success",
+      );
       await App.api.loadApiData({
         variant: "chaos",
         title: "Atualizando dados",
-        message: "Simulação concluída. Atualizando semana, tabela, calendário e eventos..."
+        message:
+          "Simulação concluída. Atualizando semana, tabela, calendário e eventos...",
       });
       await App.api.renderCpuSimulationPreview(payload.week);
     } catch (error) {
-      App.utils.setMessage(message, App.forms.getFriendlyErrorMessage(error), "error");
+      App.utils.setMessage(
+        message,
+        App.forms.getFriendlyErrorMessage(error),
+        "error",
+      );
     } finally {
       App.main.hideLoader();
       button.disabled = false;
@@ -339,22 +451,31 @@ App.forms = {
     const approvedResults = App.standings.getApprovedApiResults().length;
     const events = App.state.apiEvents.length;
 
-    container.innerHTML = `
+    App.dom.setHtml(
+      container,
+      `
       ${App.ui.summaryCard("Status Supabase", App.state.apiLoaded ? "Conectado" : "Carregando")}
       ${App.ui.summaryCard("Resultados", approvedResults)}
       ${App.ui.summaryCard("Eventos", events)}
-    `;
+    `,
+    );
   },
 
   setupPenaltyControls(form) {
     if (!form || form.dataset.penaltyReady === "true") return;
     form.dataset.penaltyReady = "true";
-    ["competition", "homeScore", "awayScore", "hasPenalties"].forEach(name => {
-      const field = form.elements[name];
-      if (!field) return;
-      field.addEventListener("input", () => App.forms.updatePenaltyVisibility(form));
-      field.addEventListener("change", () => App.forms.updatePenaltyVisibility(form));
-    });
+    ["competition", "homeScore", "awayScore", "hasPenalties"].forEach(
+      (name) => {
+        const field = form.elements[name];
+        if (!field) return;
+        field.addEventListener("input", () =>
+          App.forms.updatePenaltyVisibility(form),
+        );
+        field.addEventListener("change", () =>
+          App.forms.updatePenaltyVisibility(form),
+        );
+      },
+    );
     App.forms.updatePenaltyVisibility(form);
   },
 
@@ -363,11 +484,24 @@ App.forms = {
     if (!transferForm || transferForm.dataset.previewReady === "true") return;
 
     transferForm.dataset.previewReady = "true";
-    ["buyer", "seller", "internalPlayer", "exchangePlayer", "player", "fromClub", "overall", "marketValue"].forEach(name => {
+    [
+      "buyer",
+      "seller",
+      "internalPlayer",
+      "exchangePlayer",
+      "player",
+      "fromClub",
+      "overall",
+      "marketValue",
+    ].forEach((name) => {
       const field = transferForm.elements[name];
       if (!field) return;
-      field.addEventListener("input", () => App.transfers.renderTransferPreview(transferForm));
-      field.addEventListener("change", () => App.transfers.renderTransferPreview(transferForm));
+      field.addEventListener("input", () =>
+        App.transfers.renderTransferPreview(transferForm),
+      );
+      field.addEventListener("change", () =>
+        App.transfers.renderTransferPreview(transferForm),
+      );
     });
 
     transferForm.elements.buyer?.addEventListener("change", () => {
@@ -378,9 +512,13 @@ App.forms = {
       App.transfers.populateExchangePlayers(transferForm);
     });
 
-    transferForm.querySelectorAll('input[name="transferType"]').forEach(field => {
-      field.addEventListener("change", () => App.transfers.syncInternalTransferFields(transferForm));
-    });
+    transferForm
+      .querySelectorAll('input[name="transferType"]')
+      .forEach((field) => {
+        field.addEventListener("change", () =>
+          App.transfers.syncInternalTransferFields(transferForm),
+        );
+      });
 
     transferForm.elements.seller?.addEventListener("change", () => {
       App.transfers.populateInternalTransferPlayers(transferForm);
@@ -391,22 +529,28 @@ App.forms = {
       App.transfers.selectInternalTransferPlayer(transferForm);
     });
 
-    document.getElementById("transferFormPreview")?.addEventListener("click", async event => {
-      const button = event.target.closest("[data-open-auto-auction]");
-      if (!button) return;
+    document
+      .getElementById("transferFormPreview")
+      ?.addEventListener("click", async (event) => {
+        const button = event.target.closest("[data-open-auto-auction]");
+        if (!button) return;
 
-      const message = document.getElementById("transferMessage");
-      const preview = App.transfers.getTransferPreview(transferForm);
-      try {
-        button.disabled = true;
-        await App.transfers.createAutoAuctionFromPreview(preview);
-        App.utils.setMessage(message, "Leilão automático registrado na Central de Inteligência.", "success");
-      } catch (error) {
-        App.utils.setMessage(message, error.message, "error");
-      } finally {
-        button.disabled = false;
-      }
-    });
+        const message = document.getElementById("transferMessage");
+        const preview = App.transfers.getTransferPreview(transferForm);
+        try {
+          button.disabled = true;
+          await App.transfers.createAutoAuctionFromPreview(preview);
+          App.utils.setMessage(
+            message,
+            "Leilão automático registrado na Central de Inteligência.",
+            "success",
+          );
+        } catch (error) {
+          App.utils.setMessage(message, error.message, "error");
+        } finally {
+          button.disabled = false;
+        }
+      });
 
     const marketSearch = document.getElementById("marketPlayerSearch");
     const showContracted = document.getElementById("showContractedPlayers");
@@ -414,16 +558,25 @@ App.forms = {
 
     const requestMarketRender = () => {
       clearTimeout(marketSearchTimer);
-      marketSearchTimer = setTimeout(App.transfers.renderMarketPlayerResults, 220);
+      marketSearchTimer = setTimeout(
+        App.transfers.renderMarketPlayerResults,
+        220,
+      );
     };
 
     if (marketSearch) {
       marketSearch.addEventListener("input", requestMarketRender);
-      marketSearch.addEventListener("focus", App.transfers.renderMarketPlayerResults);
+      marketSearch.addEventListener(
+        "focus",
+        App.transfers.renderMarketPlayerResults,
+      );
     }
 
     if (showContracted) {
-      showContracted.addEventListener("change", App.transfers.renderMarketPlayerResults);
+      showContracted.addEventListener(
+        "change",
+        App.transfers.renderMarketPlayerResults,
+      );
     }
 
     App.transfers.renderMarketPlayerResults();
@@ -436,24 +589,34 @@ App.forms = {
     const calendarResultForm = document.getElementById("calendarResultForm");
 
     resultForm?.addEventListener("submit", App.forms.handleResultSubmit);
-    calendarResultForm?.addEventListener("submit", App.forms.handleCalendarResultSubmit);
+    calendarResultForm?.addEventListener(
+      "submit",
+      App.forms.handleCalendarResultSubmit,
+    );
 
     App.forms.setupPenaltyControls(resultForm);
     App.forms.setupPenaltyControls(calendarResultForm);
     App.forms.setupTransferPreview();
 
-    document.querySelectorAll("[data-close-result-modal]").forEach(element => {
-      element.addEventListener("click", App.calendar.closeResultModal);
-    });
+    document
+      .querySelectorAll("[data-close-result-modal]")
+      .forEach((element) => {
+        element.addEventListener("click", App.calendar.closeResultModal);
+      });
 
-    document.addEventListener("keydown", event => {
+    document.addEventListener("keydown", (event) => {
       if (event.key === "Escape") App.calendar.closeResultModal();
     });
 
-    document.getElementById("transferForm")?.addEventListener("submit", App.forms.handleTransferSubmit);
+    document
+      .getElementById("transferForm")
+      ?.addEventListener("submit", App.forms.handleTransferSubmit);
     const cpuSimulationForm = document.getElementById("cpuSimulationForm");
     if (cpuSimulationForm) {
-      cpuSimulationForm.addEventListener("submit", App.forms.handleCpuSimulationSubmit);
+      cpuSimulationForm.addEventListener(
+        "submit",
+        App.forms.handleCpuSimulationSubmit,
+      );
       const weekField = cpuSimulationForm.elements.week;
       if (weekField) {
         let previewTimer = null;
@@ -461,7 +624,10 @@ App.forms = {
         const updatePreview = () => {
           previewLoaded = true;
           clearTimeout(previewTimer);
-          previewTimer = setTimeout(() => App.api.renderCpuSimulationPreview(weekField.value), 250);
+          previewTimer = setTimeout(
+            () => App.api.renderCpuSimulationPreview(weekField.value),
+            250,
+          );
         };
         weekField.addEventListener("input", updatePreview);
         weekField.addEventListener("change", updatePreview);
@@ -475,11 +641,16 @@ App.forms = {
   populateTeamOptions() {
     const teamOptions = document.getElementById("teamOptions");
     if (!teamOptions) return;
-    const teams = [...new Set([
-      ...App.data.teams.map(team => team.team),
-      ...App.data.premierLeagueTeams,
-      ...App.data.faCupLowerLeagueQualifiers
-    ])].sort((a, b) => a.localeCompare(b));
-    teamOptions.innerHTML = teams.map(team => `<option value="${team}"></option>`).join("");
-  }
+    const teams = [
+      ...new Set([
+        ...App.data.teams.map((team) => team.team),
+        ...App.data.premierLeagueTeams,
+        ...App.data.faCupLowerLeagueQualifiers,
+      ]),
+    ].sort((a, b) => a.localeCompare(b));
+    App.dom.setHtml(
+      teamOptions,
+      teams.map((team) => `<option value="${team}"></option>`).join(""),
+    );
+  },
 };

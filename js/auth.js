@@ -11,7 +11,7 @@ App.auth = {
   myTransferTargetsLoaded: false,
   myTransferSaleListings: {
     listings: [],
-    ownedPlayers: []
+    ownedPlayers: [],
   },
   mySponsorships: null,
   myQoL: null,
@@ -62,9 +62,11 @@ App.auth = {
   },
 
   isCpuProposal(item = {}) {
-    return item.is_cpu_offer === true
-      || App.utils.normalizeText(item.offer_source || "") === "cpu"
-      || App.utils.normalizeText(item.buyer || "") === "cpu";
+    return (
+      item.is_cpu_offer === true ||
+      App.utils.normalizeText(item.offer_source || "") === "cpu" ||
+      App.utils.normalizeText(item.buyer || "") === "cpu"
+    );
   },
 
   getTransferProposalSourceLabel(item = {}) {
@@ -77,12 +79,11 @@ App.auth = {
   getDecisionEmailMeta(item = {}) {
     const category = item.category || "Diretoria";
     const normalized = App.utils.normalizeText(category);
-    const text = App.utils.normalizeText([
-      item.title,
-      item.description,
-      item.yes_preview,
-      item.no_preview
-    ].join(" "));
+    const text = App.utils.normalizeText(
+      [item.title, item.description, item.yes_preview, item.no_preview].join(
+        " ",
+      ),
+    );
     const senders = [
       { key: "mercado", sender: "Diretoria de futebol", folder: "Mercado" },
       { key: "finance", sender: "Financeiro", folder: "Finanças" },
@@ -91,21 +92,33 @@ App.auth = {
       { key: "medic", sender: "Departamento médico", folder: "Elenco" },
       { key: "imprensa", sender: "Comunicação", folder: "Imprensa" },
       { key: "patro", sender: "Comercial", folder: "Comercial" },
-      { key: "torcida", sender: "Relações com torcedores", folder: "Clube" }
+      { key: "torcida", sender: "Relações com torcedores", folder: "Clube" },
     ];
-    const matched = senders.find(item => normalized.includes(item.key) || text.includes(item.key));
-    const isHighPriority = ["urgente", "risco", "multa", "lesao", "negativo", "perde", "bloque"].some(key => text.includes(key));
+    const matched = senders.find(
+      (item) => normalized.includes(item.key) || text.includes(item.key),
+    );
+    const isHighPriority = [
+      "urgente",
+      "risco",
+      "multa",
+      "lesao",
+      "negativo",
+      "perde",
+      "bloque",
+    ].some((key) => text.includes(key));
 
     return {
       sender: matched?.sender || "Diretoria executiva",
       folder: matched?.folder || category,
       priority: isHighPriority ? "Alta" : "Normal",
-      tone: isHighPriority ? "high" : "normal"
+      tone: isHighPriority ? "high" : "normal",
     };
   },
 
   renderDecisionEmailStats(pending = [], resolved = []) {
-    const highPriority = pending.filter(item => App.auth.getDecisionEmailMeta(item).priority === "Alta").length;
+    const highPriority = pending.filter(
+      (item) => App.auth.getDecisionEmailMeta(item).priority === "Alta",
+    ).length;
     return `
       <div class="email-office-stats">
         <article><span>Entrada</span><strong>${pending.length}</strong><small>aguardando resposta</small></article>
@@ -149,7 +162,7 @@ App.auth = {
       isCommissioner: Boolean(result.manager.isCommissioner),
       accessCode: result.sessionToken || fallbackAccessCode,
       sessionToken: result.sessionToken || "",
-      sessionExpiresAt: result.expiresAt || ""
+      sessionExpiresAt: result.expiresAt || "",
     };
   },
 
@@ -159,7 +172,7 @@ App.auth = {
     if (App.auth.isCommissioner()) {
       await Promise.all([
         App.governance?.loadData?.(),
-        App.auth.loadPublicNews()
+        App.auth.loadPublicNews(),
       ]);
     } else {
       await Promise.all([
@@ -169,7 +182,7 @@ App.auth = {
         App.auth.loadMyTransferSaleListings(),
         App.auth.loadMySponsorships(),
         App.auth.loadMyQoL(),
-        App.auth.loadPublicNews()
+        App.auth.loadPublicNews(),
       ]);
     }
 
@@ -180,12 +193,17 @@ App.auth = {
   canViewManagerPrivate(managerName) {
     const session = App.auth.getSession();
     if (!session?.managerName || !managerName) return false;
-    return App.utils.normalizeText(session.managerName) === App.utils.normalizeText(managerName);
+    return (
+      App.utils.normalizeText(session.managerName) ===
+      App.utils.normalizeText(managerName)
+    );
   },
 
   isCommissioner() {
     const session = App.auth.getSession();
-    return Boolean(session?.isCommissioner || session?.managerId === "comissario");
+    return Boolean(
+      session?.isCommissioner || session?.managerId === "comissario",
+    );
   },
 
   async ensureLeagueDataReady() {
@@ -199,7 +217,7 @@ App.auth = {
     if (App.api?.loadApiData) {
       await App.api.loadApiData({
         showLoader: false,
-        skipBackgroundRefresh: true
+        skipBackgroundRefresh: true,
       });
     }
   },
@@ -208,22 +226,37 @@ App.auth = {
     let result;
 
     try {
-      result = await App.api.rpc("app_create_manager_session", {
-        p_manager_name: managerName,
-        p_access_code: accessCode
-      }, 30000);
+      result = await App.api.rpc(
+        "app_create_manager_session",
+        {
+          p_manager_name: managerName,
+          p_access_code: accessCode,
+        },
+        30000,
+      );
     } catch (sessionError) {
-      console.warn("Sessão temporária indisponível, usando login legado nesta aba:", sessionError);
+      console.warn(
+        "Sessão temporária indisponível, usando login legado nesta aba:",
+        sessionError,
+      );
       if (App.utils.normalizeText(managerName).includes("comiss")) {
-        result = await App.api.rpc("app_login_commissioner", {
-          p_manager_name: managerName,
-          p_access_code: accessCode
-        }, 30000);
+        result = await App.api.rpc(
+          "app_login_commissioner",
+          {
+            p_manager_name: managerName,
+            p_access_code: accessCode,
+          },
+          30000,
+        );
       } else {
-        result = await App.api.rpc("app_login_manager", {
-          p_manager_name: managerName,
-          p_access_code: accessCode
-        }, 30000);
+        result = await App.api.rpc(
+          "app_login_manager",
+          {
+            p_manager_name: managerName,
+            p_access_code: accessCode,
+          },
+          30000,
+        );
       }
     }
 
@@ -276,10 +309,18 @@ App.auth = {
   logout() {
     const session = App.auth.currentSession;
     if (session?.sessionToken) {
-      App.api.rpc("app_revoke_manager_session", {
-        p_manager_id: session.managerId,
-        p_session_token: session.sessionToken
-      }, 15000).catch(error => console.warn("Revogação de sessão indisponível:", error));
+      App.api
+        .rpc(
+          "app_revoke_manager_session",
+          {
+            p_manager_id: session.managerId,
+            p_session_token: session.sessionToken,
+          },
+          15000,
+        )
+        .catch((error) =>
+          console.warn("Revogação de sessão indisponível:", error),
+        );
     }
 
     App.auth.currentSession = null;
@@ -299,7 +340,11 @@ App.auth = {
 
   async loadPublicNews() {
     try {
-      const result = await App.api.rpc("app_get_league_news", { p_limit: 8 }, 30000);
+      const result = await App.api.rpc(
+        "app_get_league_news",
+        { p_limit: 8 },
+        30000,
+      );
       App.auth.publicNews = Array.isArray(result) ? result : [];
       return App.auth.publicNews;
     } catch (error) {
@@ -317,13 +362,20 @@ App.auth = {
     }
 
     try {
-      const result = await App.api.rpc("app_get_private_transfer_targets", {
-        p_manager_id: session.managerId,
-        p_access_code: session.accessCode
-      }, 30000);
+      const result = await App.api.rpc(
+        "app_get_private_transfer_targets",
+        {
+          p_manager_id: session.managerId,
+          p_access_code: session.accessCode,
+        },
+        30000,
+      );
 
-      if (result?.ok === false) throw new Error(result.message || "Alvos privados indisponíveis.");
-      App.auth.myTransferTargets = Array.isArray(result?.targets) ? result.targets : [];
+      if (result?.ok === false)
+        throw new Error(result.message || "Alvos privados indisponíveis.");
+      App.auth.myTransferTargets = Array.isArray(result?.targets)
+        ? result.targets
+        : [];
       App.auth.myTransferTargetsLoaded = true;
       return App.auth.myTransferTargets;
     } catch (error) {
@@ -334,37 +386,53 @@ App.auth = {
 
   async upsertMyTransferTarget(payload = {}) {
     const session = App.auth.getSession();
-    if (!session || session.isCommissioner) throw new Error("Faça login como técnico para pinar alvos.");
+    if (!session || session.isCommissioner)
+      throw new Error("Faça login como técnico para pinar alvos.");
 
-    const result = await App.api.rpc("app_upsert_private_transfer_target", {
-      p_manager_id: session.managerId,
-      p_access_code: session.accessCode,
-      p_target_id: payload.id || "",
-      p_player: payload.player || "",
-      p_club: payload.club || "",
-      p_value: Number(payload.value || 0),
-      p_priority: payload.priority || "Monitorar",
-      p_note: payload.note || ""
-    }, 30000);
+    const result = await App.api.rpc(
+      "app_upsert_private_transfer_target",
+      {
+        p_manager_id: session.managerId,
+        p_access_code: session.accessCode,
+        p_target_id: payload.id || "",
+        p_player: payload.player || "",
+        p_club: payload.club || "",
+        p_value: Number(payload.value || 0),
+        p_priority: payload.priority || "Monitorar",
+        p_note: payload.note || "",
+      },
+      30000,
+    );
 
-    if (result?.ok === false) throw new Error(result.message || "Não consegui salvar o alvo.");
-    App.auth.myTransferTargets = Array.isArray(result?.targets) ? result.targets : [];
+    if (result?.ok === false)
+      throw new Error(result.message || "Não consegui salvar o alvo.");
+    App.auth.myTransferTargets = Array.isArray(result?.targets)
+      ? result.targets
+      : [];
     App.auth.myTransferTargetsLoaded = true;
     return App.auth.myTransferTargets;
   },
 
   async deleteMyTransferTarget(targetId) {
     const session = App.auth.getSession();
-    if (!session || session.isCommissioner) throw new Error("Faça login como técnico para remover alvos.");
+    if (!session || session.isCommissioner)
+      throw new Error("Faça login como técnico para remover alvos.");
 
-    const result = await App.api.rpc("app_delete_private_transfer_target", {
-      p_manager_id: session.managerId,
-      p_access_code: session.accessCode,
-      p_target_id: targetId
-    }, 30000);
+    const result = await App.api.rpc(
+      "app_delete_private_transfer_target",
+      {
+        p_manager_id: session.managerId,
+        p_access_code: session.accessCode,
+        p_target_id: targetId,
+      },
+      30000,
+    );
 
-    if (result?.ok === false) throw new Error(result.message || "Não consegui remover o alvo.");
-    App.auth.myTransferTargets = Array.isArray(result?.targets) ? result.targets : [];
+    if (result?.ok === false)
+      throw new Error(result.message || "Não consegui remover o alvo.");
+    App.auth.myTransferTargets = Array.isArray(result?.targets)
+      ? result.targets
+      : [];
     App.auth.myTransferTargetsLoaded = true;
     return App.auth.myTransferTargets;
   },
@@ -377,63 +445,95 @@ App.auth = {
     }
 
     try {
-      const result = await App.api.rpc("app_get_my_transfer_sale_listings", {
-        p_manager_id: session.managerId,
-        p_access_code: session.accessCode
-      }, 30000);
+      const result = await App.api.rpc(
+        "app_get_my_transfer_sale_listings",
+        {
+          p_manager_id: session.managerId,
+          p_access_code: session.accessCode,
+        },
+        30000,
+      );
 
-      if (result?.ok === false) throw new Error(result.message || "Lista de venda indisponível.");
+      if (result?.ok === false)
+        throw new Error(result.message || "Lista de venda indisponível.");
       App.auth.myTransferSaleListings = {
         listings: Array.isArray(result?.listings) ? result.listings : [],
-        ownedPlayers: Array.isArray(result?.ownedPlayers) ? result.ownedPlayers : []
+        ownedPlayers: Array.isArray(result?.ownedPlayers)
+          ? result.ownedPlayers
+          : [],
       };
       return App.auth.myTransferSaleListings;
     } catch (error) {
       console.warn("Lista de venda indisponível:", error);
-      App.auth.myTransferSaleListings = App.auth.myTransferSaleListings || { listings: [], ownedPlayers: [] };
+      App.auth.myTransferSaleListings = App.auth.myTransferSaleListings || {
+        listings: [],
+        ownedPlayers: [],
+      };
       return App.auth.myTransferSaleListings;
     }
   },
 
   async upsertTransferSaleListing(payload = {}) {
     const session = App.auth.getSession();
-    if (!session || session.isCommissioner) throw new Error("Faça login como técnico para listar jogadores.");
+    if (!session || session.isCommissioner)
+      throw new Error("Faça login como técnico para listar jogadores.");
     const rawAskingPrice = Number(payload.askingPrice || 0);
     const askingPrice =
       rawAskingPrice > 0 && rawAskingPrice < 1000
         ? rawAskingPrice * 1000000
         : rawAskingPrice;
 
-    const result = await App.api.rpc("app_upsert_transfer_sale_listing", {
-      p_manager_id: session.managerId,
-      p_access_code: session.accessCode,
-      p_player: payload.player || "",
-      p_asking_price: askingPrice,
-      p_note: payload.note || ""
-    }, 30000);
+    const result = await App.api.rpc(
+      "app_upsert_transfer_sale_listing",
+      {
+        p_manager_id: session.managerId,
+        p_access_code: session.accessCode,
+        p_player: payload.player || "",
+        p_asking_price: askingPrice,
+        p_note: payload.note || "",
+      },
+      30000,
+    );
 
-    if (result?.ok === false) throw new Error(result.message || "Não consegui salvar a lista de venda.");
+    if (result?.ok === false)
+      throw new Error(
+        result.message || "Não consegui salvar a lista de venda.",
+      );
     App.auth.myTransferSaleListings = {
       listings: Array.isArray(result?.listings) ? result.listings : [],
-      ownedPlayers: Array.isArray(result?.ownedPlayers) ? result.ownedPlayers : []
+      ownedPlayers: Array.isArray(result?.ownedPlayers)
+        ? result.ownedPlayers
+        : [],
     };
     return App.auth.myTransferSaleListings;
   },
 
   async deleteTransferSaleListing(listingId) {
     const session = App.auth.getSession();
-    if (!session || session.isCommissioner) throw new Error("Faça login como técnico para remover jogadores da lista.");
+    if (!session || session.isCommissioner)
+      throw new Error(
+        "Faça login como técnico para remover jogadores da lista.",
+      );
 
-    const result = await App.api.rpc("app_delete_transfer_sale_listing", {
-      p_manager_id: session.managerId,
-      p_access_code: session.accessCode,
-      p_listing_id: listingId
-    }, 30000);
+    const result = await App.api.rpc(
+      "app_delete_transfer_sale_listing",
+      {
+        p_manager_id: session.managerId,
+        p_access_code: session.accessCode,
+        p_listing_id: listingId,
+      },
+      30000,
+    );
 
-    if (result?.ok === false) throw new Error(result.message || "Não consegui remover da lista de venda.");
+    if (result?.ok === false)
+      throw new Error(
+        result.message || "Não consegui remover da lista de venda.",
+      );
     App.auth.myTransferSaleListings = {
       listings: Array.isArray(result?.listings) ? result.listings : [],
-      ownedPlayers: Array.isArray(result?.ownedPlayers) ? result.ownedPlayers : []
+      ownedPlayers: Array.isArray(result?.ownedPlayers)
+        ? result.ownedPlayers
+        : [],
     };
     return App.auth.myTransferSaleListings;
   },
@@ -446,10 +546,14 @@ App.auth = {
     }
 
     try {
-      const result = await App.api.rpc("app_get_my_decisions", {
-        p_manager_id: session.managerId,
-        p_access_code: session.accessCode
-      }, 30000);
+      const result = await App.api.rpc(
+        "app_get_my_decisions",
+        {
+          p_manager_id: session.managerId,
+          p_access_code: session.accessCode,
+        },
+        30000,
+      );
 
       App.auth.myDecisions = Array.isArray(result) ? result : [];
       return App.auth.myDecisions;
@@ -468,10 +572,14 @@ App.auth = {
     }
 
     try {
-      const result = await App.api.rpc("app_get_my_internal_transfer_proposals", {
-        p_manager_id: session.managerId,
-        p_access_code: session.accessCode
-      }, 30000);
+      const result = await App.api.rpc(
+        "app_get_my_internal_transfer_proposals",
+        {
+          p_manager_id: session.managerId,
+          p_access_code: session.accessCode,
+        },
+        30000,
+      );
 
       App.auth.myTransferProposals = Array.isArray(result) ? result : [];
       return App.auth.myTransferProposals;
@@ -490,10 +598,14 @@ App.auth = {
     }
 
     try {
-      const result = await App.api.rpc("app_get_my_sponsorships", {
-        p_manager_id: session.managerId,
-        p_access_code: session.accessCode
-      }, 30000);
+      const result = await App.api.rpc(
+        "app_get_my_sponsorships",
+        {
+          p_manager_id: session.managerId,
+          p_access_code: session.accessCode,
+        },
+        30000,
+      );
 
       App.auth.mySponsorships = result || null;
       return App.auth.mySponsorships;
@@ -514,16 +626,26 @@ App.auth = {
     }
 
     try {
-      const result = await App.api.rpc("app_get_manager_qol", {
-        p_manager_id: session.managerId,
-        p_access_code: session.accessCode
-      }, 30000);
+      const result = await App.api.rpc(
+        "app_get_manager_qol",
+        {
+          p_manager_id: session.managerId,
+          p_access_code: session.accessCode,
+        },
+        30000,
+      );
 
-      if (result?.ok === false) throw new Error(result.message || "Central privada indisponível.");
+      if (result?.ok === false)
+        throw new Error(result.message || "Central privada indisponível.");
       App.auth.myQoL = result || null;
-      App.auth.myFavorites = Array.isArray(result?.favorites) ? result.favorites : [];
-      App.auth.myNotifications = Array.isArray(result?.notifications) ? result.notifications : [];
-      if (Array.isArray(result?.financeForecast)) App.state.apiFinanceForecast = result.financeForecast;
+      App.auth.myFavorites = Array.isArray(result?.favorites)
+        ? result.favorites
+        : [];
+      App.auth.myNotifications = Array.isArray(result?.notifications)
+        ? result.notifications
+        : [];
+      if (Array.isArray(result?.financeForecast))
+        App.state.apiFinanceForecast = result.financeForecast;
       if (result?.financeRules) App.state.apiFinanceRules = result.financeRules;
       App.auth.saveLocalFavorites(App.auth.myFavorites);
       return App.auth.myQoL;
@@ -568,7 +690,10 @@ App.auth = {
 
   isFavorite(type, key) {
     const favoriteKey = App.auth.getFavoriteKey(type, key);
-    return (App.auth.myFavorites || []).some(item => App.auth.getFavoriteKey(item.item_type, item.item_key) === favoriteKey);
+    return (App.auth.myFavorites || []).some(
+      (item) =>
+        App.auth.getFavoriteKey(item.item_type, item.item_key) === favoriteKey,
+    );
   },
 
   upsertLocalFavorite(payload = {}) {
@@ -582,12 +707,19 @@ App.auth = {
       title: payload.title || "Favorito",
       detail: payload.detail || "",
       payload: payload.payload || {},
-      created_at: new Date().toISOString()
+      created_at: new Date().toISOString(),
     };
-    const favoriteKey = App.auth.getFavoriteKey(favorite.item_type, favorite.item_key);
+    const favoriteKey = App.auth.getFavoriteKey(
+      favorite.item_type,
+      favorite.item_key,
+    );
     const next = [
       favorite,
-      ...(App.auth.myFavorites || []).filter(item => App.auth.getFavoriteKey(item.item_type, item.item_key) !== favoriteKey)
+      ...(App.auth.myFavorites || []).filter(
+        (item) =>
+          App.auth.getFavoriteKey(item.item_type, item.item_key) !==
+          favoriteKey,
+      ),
     ];
     App.auth.myFavorites = next;
     App.auth.saveLocalFavorites(next);
@@ -596,7 +728,10 @@ App.auth = {
 
   deleteLocalFavorite(type, key) {
     const favoriteKey = App.auth.getFavoriteKey(type, key);
-    const next = (App.auth.myFavorites || []).filter(item => App.auth.getFavoriteKey(item.item_type, item.item_key) !== favoriteKey);
+    const next = (App.auth.myFavorites || []).filter(
+      (item) =>
+        App.auth.getFavoriteKey(item.item_type, item.item_key) !== favoriteKey,
+    );
     App.auth.myFavorites = next;
     App.auth.saveLocalFavorites(next);
     return { ok: true, favorites: next, localOnly: true };
@@ -604,51 +739,77 @@ App.auth = {
 
   async upsertFavorite(payload = {}) {
     const session = App.auth.getSession();
-    if (!session || session.isCommissioner) throw new Error("Faça login como técnico para favoritar.");
+    if (!session || session.isCommissioner)
+      throw new Error("Faça login como técnico para favoritar.");
 
     try {
-      const result = await App.api.rpc("app_upsert_manager_favorite", {
-        p_manager_id: session.managerId,
-        p_access_code: session.accessCode,
-        p_item_type: payload.type || "item",
-        p_item_key: payload.key || payload.title || "",
-        p_title: payload.title || "Favorito",
-        p_detail: payload.detail || "",
-        p_payload: payload.payload || {}
-      }, 30000);
+      const result = await App.api.rpc(
+        "app_upsert_manager_favorite",
+        {
+          p_manager_id: session.managerId,
+          p_access_code: session.accessCode,
+          p_item_type: payload.type || "item",
+          p_item_key: payload.key || payload.title || "",
+          p_title: payload.title || "Favorito",
+          p_detail: payload.detail || "",
+          p_payload: payload.payload || {},
+        },
+        30000,
+      );
 
-      if (result?.ok === false) throw new Error(result.message || "Não consegui favoritar.");
+      if (result?.ok === false)
+        throw new Error(result.message || "Não consegui favoritar.");
       App.auth.myQoL = result;
-      App.auth.myFavorites = Array.isArray(result?.favorites) ? result.favorites : [];
-      App.auth.myNotifications = Array.isArray(result?.notifications) ? result.notifications : [];
+      App.auth.myFavorites = Array.isArray(result?.favorites)
+        ? result.favorites
+        : [];
+      App.auth.myNotifications = Array.isArray(result?.notifications)
+        ? result.notifications
+        : [];
       App.auth.saveLocalFavorites(App.auth.myFavorites);
       return result;
     } catch (error) {
-      console.warn("Favorito via Supabase indisponível, usando fallback local:", error);
+      console.warn(
+        "Favorito via Supabase indisponível, usando fallback local:",
+        error,
+      );
       return App.auth.upsertLocalFavorite(payload);
     }
   },
 
   async deleteFavorite(type, key) {
     const session = App.auth.getSession();
-    if (!session || session.isCommissioner) throw new Error("Faça login como técnico para remover favorito.");
+    if (!session || session.isCommissioner)
+      throw new Error("Faça login como técnico para remover favorito.");
 
     try {
-      const result = await App.api.rpc("app_delete_manager_favorite", {
-        p_manager_id: session.managerId,
-        p_access_code: session.accessCode,
-        p_item_type: type,
-        p_item_key: key
-      }, 30000);
+      const result = await App.api.rpc(
+        "app_delete_manager_favorite",
+        {
+          p_manager_id: session.managerId,
+          p_access_code: session.accessCode,
+          p_item_type: type,
+          p_item_key: key,
+        },
+        30000,
+      );
 
-      if (result?.ok === false) throw new Error(result.message || "Não consegui remover favorito.");
+      if (result?.ok === false)
+        throw new Error(result.message || "Não consegui remover favorito.");
       App.auth.myQoL = result;
-      App.auth.myFavorites = Array.isArray(result?.favorites) ? result.favorites : [];
-      App.auth.myNotifications = Array.isArray(result?.notifications) ? result.notifications : [];
+      App.auth.myFavorites = Array.isArray(result?.favorites)
+        ? result.favorites
+        : [];
+      App.auth.myNotifications = Array.isArray(result?.notifications)
+        ? result.notifications
+        : [];
       App.auth.saveLocalFavorites(App.auth.myFavorites);
       return result;
     } catch (error) {
-      console.warn("Remoção de favorito via Supabase indisponível, usando fallback local:", error);
+      console.warn(
+        "Remoção de favorito via Supabase indisponível, usando fallback local:",
+        error,
+      );
       return App.auth.deleteLocalFavorite(type, key);
     }
   },
@@ -657,15 +818,23 @@ App.auth = {
     const session = App.auth.getSession();
     if (!session || session.isCommissioner) return null;
 
-    const result = await App.api.rpc("app_mark_manager_notifications_read", {
-      p_manager_id: session.managerId,
-      p_access_code: session.accessCode
-    }, 30000);
+    const result = await App.api.rpc(
+      "app_mark_manager_notifications_read",
+      {
+        p_manager_id: session.managerId,
+        p_access_code: session.accessCode,
+      },
+      30000,
+    );
 
     if (result?.ok !== false) {
       App.auth.myQoL = result;
-      App.auth.myFavorites = Array.isArray(result?.favorites) ? result.favorites : [];
-      App.auth.myNotifications = Array.isArray(result?.notifications) ? result.notifications : [];
+      App.auth.myFavorites = Array.isArray(result?.favorites)
+        ? result.favorites
+        : [];
+      App.auth.myNotifications = Array.isArray(result?.notifications)
+        ? result.notifications
+        : [];
     }
     App.auth.renderAll();
     return result;
@@ -673,20 +842,28 @@ App.auth = {
 
   async acceptSponsorship(offerId) {
     const session = App.auth.getSession();
-    if (!session) throw new Error("Faça login como técnico antes de assinar patrocínio.");
+    if (!session)
+      throw new Error("Faça login como técnico antes de assinar patrocínio.");
 
-    const result = await App.api.rpc("app_accept_sponsorship", {
-      p_manager_id: session.managerId,
-      p_access_code: session.accessCode,
-      p_offer_id: offerId
-    }, 45000);
+    const result = await App.api.rpc(
+      "app_accept_sponsorship",
+      {
+        p_manager_id: session.managerId,
+        p_access_code: session.accessCode,
+        p_offer_id: offerId,
+      },
+      45000,
+    );
 
-    if (!result.ok) throw new Error(result.message || "Não foi possível assinar este patrocínio.");
+    if (!result.ok)
+      throw new Error(
+        result.message || "Não foi possível assinar este patrocínio.",
+      );
 
     await App.api.loadApiData({
       variant: "market",
       title: "Patrocínio assinado",
-      message: "Registrando bônus, contrato e novas metas comerciais..."
+      message: "Registrando bônus, contrato e novas metas comerciais...",
     });
 
     await App.auth.syncManagerState();
@@ -698,7 +875,11 @@ App.auth = {
 
     try {
       App.auth.autoDecisionRunning = true;
-      const result = await App.api.rpc("app_generate_due_decision_events", {}, 30000);
+      const result = await App.api.rpc(
+        "app_generate_due_decision_events",
+        {},
+        30000,
+      );
       await App.auth.loadPublicNews();
 
       if (App.auth.isLoggedIn()) {
@@ -722,9 +903,13 @@ App.auth = {
 
     try {
       App.auth.autoCpuOfferRunning = true;
-      const result = await App.api.rpc("app_generate_due_cpu_transfer_proposals", {
-        p_count: 4
-      }, 30000);
+      const result = await App.api.rpc(
+        "app_generate_due_cpu_transfer_proposals",
+        {
+          p_count: 4,
+        },
+        30000,
+      );
 
       if (App.auth.isLoggedIn() && !App.auth.isCommissioner()) {
         await App.auth.loadMyTransferProposals();
@@ -734,7 +919,10 @@ App.auth = {
 
       return result;
     } catch (error) {
-      console.warn("Geração automática de propostas externas indisponível:", error);
+      console.warn(
+        "Geração automática de propostas externas indisponível:",
+        error,
+      );
       return null;
     } finally {
       App.auth.autoCpuOfferRunning = false;
@@ -743,14 +931,20 @@ App.auth = {
 
   async generateDecision() {
     const session = App.auth.getSession();
-    if (!session) throw new Error("Faça login como técnico antes de sortear e-mails.");
+    if (!session)
+      throw new Error("Faça login como técnico antes de sortear e-mails.");
 
-    const result = await App.api.rpc("app_generate_my_decision_event", {
-      p_manager_id: session.managerId,
-      p_access_code: session.accessCode
-    }, 30000);
+    const result = await App.api.rpc(
+      "app_generate_my_decision_event",
+      {
+        p_manager_id: session.managerId,
+        p_access_code: session.accessCode,
+      },
+      30000,
+    );
 
-    if (!result.ok) throw new Error(result.message || "Não foi possível gerar decisão.");
+    if (!result.ok)
+      throw new Error(result.message || "Não foi possível gerar decisão.");
 
     await App.auth.loadMyDecisions();
     await App.auth.loadPublicNews();
@@ -761,21 +955,28 @@ App.auth = {
 
   async answerDecision(decisionId, choice) {
     const session = App.auth.getSession();
-    if (!session) throw new Error("Faça login como técnico antes de responder e-mails.");
+    if (!session)
+      throw new Error("Faça login como técnico antes de responder e-mails.");
 
-    const result = await App.api.rpc("app_answer_decision_event", {
-      p_manager_id: session.managerId,
-      p_access_code: session.accessCode,
-      p_decision_id: Number(decisionId),
-      p_choice: choice
-    }, 45000);
+    const result = await App.api.rpc(
+      "app_answer_decision_event",
+      {
+        p_manager_id: session.managerId,
+        p_access_code: session.accessCode,
+        p_decision_id: Number(decisionId),
+        p_choice: choice,
+      },
+      45000,
+    );
 
-    if (!result.ok) throw new Error(result.message || "Não foi possível aplicar a decisão.");
+    if (!result.ok)
+      throw new Error(result.message || "Não foi possível aplicar a decisão.");
 
     await App.api.loadApiData({
       variant: "chaos",
       title: "Publicando no Jornal da Liga",
-      message: "Aplicando consequência, atualizando orçamento, eventos e manchetes..."
+      message:
+        "Aplicando consequência, atualizando orçamento, eventos e manchetes...",
     });
 
     await App.auth.syncManagerState();
@@ -785,34 +986,47 @@ App.auth = {
 
   async answerTransferProposal(proposalId, decision, counterValue = null) {
     const session = App.auth.getSession();
-    if (!session) throw new Error("Faça login como técnico vendedor antes de responder propostas.");
+    if (!session)
+      throw new Error(
+        "Faça login como técnico vendedor antes de responder propostas.",
+      );
 
     const payload = {
       p_manager_id: session.managerId,
       p_access_code: session.accessCode,
       p_proposal_id: Number(proposalId),
       p_decision: decision,
-      p_counter_value: null
+      p_counter_value: null,
     };
-    const normalizedCounter = counterValue === null || counterValue === undefined || counterValue === ""
-      ? null
-      : Number(counterValue);
+    const normalizedCounter =
+      counterValue === null || counterValue === undefined || counterValue === ""
+        ? null
+        : Number(counterValue);
     if (Number.isFinite(normalizedCounter)) {
       payload.p_counter_value = normalizedCounter;
     }
 
-    const result = await App.api.rpc("app_answer_internal_transfer_proposal", payload, 45000);
+    const result = await App.api.rpc(
+      "app_answer_internal_transfer_proposal",
+      payload,
+      45000,
+    );
 
-    if (!result.ok) throw new Error(result.message || "Não foi possível responder a proposta.");
+    if (!result.ok)
+      throw new Error(
+        result.message || "Não foi possível responder a proposta.",
+      );
 
     await App.api.loadApiData({
       variant: "market",
-      title: decision === "counter"
-        ? "Contraoferta enviada"
-        : decision === "accepted"
-          ? "Transferência aprovada"
-          : "Proposta recusada",
-      message: "Atualizando propostas, mercado, orçamentos e painel dos técnicos..."
+      title:
+        decision === "counter"
+          ? "Contraoferta enviada"
+          : decision === "accepted"
+            ? "Transferência aprovada"
+            : "Proposta recusada",
+      message:
+        "Atualizando propostas, mercado, orçamentos e painel dos técnicos...",
     });
 
     await App.auth.syncManagerState();
@@ -833,7 +1047,7 @@ App.auth = {
       App.auth.loadMyTransferSaleListings(),
       App.auth.loadMySponsorships(),
       App.auth.loadMyQoL(),
-      App.auth.loadPublicNews()
+      App.auth.loadPublicNews(),
     ]);
 
     if (App.state.apiLoaded) App.main?.renderCurrentView?.();
@@ -855,11 +1069,15 @@ App.auth = {
     const session = App.auth.getSession();
     App.auth.syncAuthGate();
 
-    const managers = App.utils?.getHumanBuyers ? App.utils.getHumanBuyers() : ["Henrique", "Willian", "Rafael", "Renato"];
+    const managers = App.utils?.getHumanBuyers
+      ? App.utils.getHumanBuyers()
+      : ["Henrique", "Willian", "Rafael", "Renato"];
     const loginOptions = [...managers, "Comissário da Liga"];
 
     if (session) {
-      panel.innerHTML = `
+      App.dom.setHtml(
+        panel,
+        `
         <div class="manager-session-card is-logged manager-login-shell">
           <div class="manager-login-identity">
             <span class="manager-login-avatar">
@@ -876,14 +1094,19 @@ App.auth = {
           </div>
         </div>
         <div id="managerNotificationCenter"></div>
-      `;
+      `,
+      );
 
-      panel.querySelector('[data-auth-action="logout"]')?.addEventListener("click", () => App.auth.logout());
+      panel
+        .querySelector('[data-auth-action="logout"]')
+        ?.addEventListener("click", () => App.auth.logout());
 
       return;
     }
 
-    panel.innerHTML = `
+    App.dom.setHtml(
+      panel,
+      `
       <form class="manager-login-card manager-login-shell" id="managerLoginForm">
         <div class="manager-login-brand">
           <span class="manager-login-mascot-stage manager-login-avatar-large" aria-hidden="true">
@@ -908,7 +1131,7 @@ App.auth = {
             <label>
               Perfil
               <select name="managerName" required>
-                ${loginOptions.map(name => `<option value="${App.utils.escapeHtml(name)}">${App.utils.escapeHtml(name)}</option>`).join("")}
+                ${loginOptions.map((name) => `<option value="${App.utils.escapeHtml(name)}">${App.utils.escapeHtml(name)}</option>`).join("")}
               </select>
             </label>
             <label>
@@ -919,23 +1142,29 @@ App.auth = {
           <button type="submit" class="primary-button manager-login-submit">Entrar no escritório</button>
         </div>
       </form>
-    `;
+    `,
+    );
 
-    panel.querySelector("#managerLoginForm")?.addEventListener("submit", async event => {
-      event.preventDefault();
-      const form = event.currentTarget;
-      const button = form.querySelector("button[type='submit']");
-      try {
-        button.disabled = true;
-        button.textContent = "Entrando...";
-        await App.auth.login(form.elements.managerName.value, form.elements.accessCode.value);
-      } catch (error) {
-        alert(error.message);
-      } finally {
-        button.disabled = false;
-        button.textContent = "Entrar no escritório";
-      }
-    });
+    panel
+      .querySelector("#managerLoginForm")
+      ?.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const form = event.currentTarget;
+        const button = form.querySelector("button[type='submit']");
+        try {
+          button.disabled = true;
+          button.textContent = "Entrando...";
+          await App.auth.login(
+            form.elements.managerName.value,
+            form.elements.accessCode.value,
+          );
+        } catch (error) {
+          alert(error.message);
+        } finally {
+          button.disabled = false;
+          button.textContent = "Entrar no escritório";
+        }
+      });
   },
 
   renderDecisionCenter() {
@@ -945,7 +1174,9 @@ App.auth = {
     const session = App.auth.getSession();
 
     if (!session) {
-      panel.innerHTML = `
+      App.dom.setHtml(
+        panel,
+        `
         <section class="decision-private-card decision-locked email-office-card">
           <div>
             <span>E-mail do técnico</span>
@@ -954,14 +1185,21 @@ App.auth = {
           </div>
           <b>@</b>
         </section>
-      `;
+      `,
+      );
       return;
     }
 
-    const pending = App.auth.myDecisions.filter(item => item.status === "pending");
-    const resolved = App.auth.myDecisions.filter(item => item.status !== "pending").slice(0, 4);
+    const pending = App.auth.myDecisions.filter(
+      (item) => item.status === "pending",
+    );
+    const resolved = App.auth.myDecisions
+      .filter((item) => item.status !== "pending")
+      .slice(0, 4);
 
-    panel.innerHTML = `
+    App.dom.setHtml(
+      panel,
+      `
       <section class="decision-private-card email-office-card">
         <div class="decision-header email-office-header">
           <div>
@@ -973,31 +1211,44 @@ App.auth = {
         </div>
         ${App.auth.renderDecisionEmailStats(pending, resolved)}
 
-        ${pending.length ? `
+        ${
+          pending.length
+            ? `
           <div class="decision-grid email-thread-grid">
-            ${pending.map(item => App.auth.renderDecisionCard(item)).join("")}
+            ${pending.map((item) => App.auth.renderDecisionCard(item)).join("")}
           </div>
-        ` : `
+        `
+            : `
           <div class="decision-empty email-empty-state">
             <span>0</span>
             <strong>Nenhum e-mail pendente</strong>
             <p>Novas mensagens entram automaticamente ao longo do dia e vencem às 23:59.</p>
           </div>
-        `}
+        `
+        }
 
-        ${resolved.length ? `
+        ${
+          resolved.length
+            ? `
           <div class="decision-history email-archive-list">
             <strong>Arquivados recentes</strong>
-            ${resolved.map(item => `
+            ${resolved
+              .map(
+                (item) => `
               <div>
                 <span>${App.utils.escapeDisplay(item.title)}</span>
                 <b>${item.selected_option === "yes" ? "Sim" : "Não"}</b>
               </div>
-            `).join("")}
+            `,
+              )
+              .join("")}
           </div>
-        ` : ""}
+        `
+            : ""
+        }
       </section>
-    `;
+    `,
+    );
 
     App.auth.bindDecisionAnswerButtons(panel);
   },
@@ -1008,22 +1259,32 @@ App.auth = {
 
     const session = App.auth.getSession();
     if (!session) {
-      panel.innerHTML = "";
+      App.dom.clear(panel);
       return;
     }
 
-    const received = App.auth.myTransferProposals.filter(item => item.proposal_role !== "sent" && item.status === "pending");
-    const sentAll = App.auth.myTransferProposals.filter(item => item.proposal_role === "sent");
+    const received = App.auth.myTransferProposals.filter(
+      (item) => item.proposal_role !== "sent" && item.status === "pending",
+    );
+    const sentAll = App.auth.myTransferProposals.filter(
+      (item) => item.proposal_role === "sent",
+    );
     const sent = sentAll.slice(0, 4);
-    const accepted = App.auth.myTransferProposals.filter(item => item.status === "accepted").length;
-    const rejected = App.auth.myTransferProposals.filter(item => item.status === "rejected").length;
+    const accepted = App.auth.myTransferProposals.filter(
+      (item) => item.status === "accepted",
+    ).length;
+    const rejected = App.auth.myTransferProposals.filter(
+      (item) => item.status === "rejected",
+    ).length;
 
     if (!received.length && !sent.length) {
-      panel.innerHTML = "";
+      App.dom.clear(panel);
       return;
     }
 
-    panel.innerHTML = `
+    App.dom.setHtml(
+      panel,
+      `
       <section class="decision-private-card transfer-proposal-card">
         <div class="decision-header">
           <div>
@@ -1037,22 +1298,22 @@ App.auth = {
           <div>
             <h3>Recebidas</h3>
             <div class="decision-grid">
-              ${received.length ? received.map(item => App.auth.renderTransferProposalCard(item)).join("") : `<p class="calendar-muted">Nenhuma oferta para responder.</p>`}
+              ${received.length ? received.map((item) => App.auth.renderTransferProposalCard(item)).join("") : `<p class="calendar-muted">Nenhuma oferta para responder.</p>`}
             </div>
           </div>
           <div>
             <h3>Enviadas</h3>
             <div class="proposal-sent-list">
-              ${sent.length ? sent.map(item => App.auth.renderTransferProposalSummary(item)).join("") : `<p class="calendar-muted">Nenhuma proposta enviada recentemente.</p>`}
+              ${sent.length ? sent.map((item) => App.auth.renderTransferProposalSummary(item)).join("") : `<p class="calendar-muted">Nenhuma proposta enviada recentemente.</p>`}
             </div>
           </div>
         </div>
       </section>
-    `;
+    `,
+    );
 
     App.auth.bindTransferProposalButtons(panel);
   },
-
 
   renderCoachDecisionCard(ownerName) {
     const session = App.auth.getSession();
@@ -1076,7 +1337,10 @@ App.auth = {
       `;
     }
 
-    if (App.utils.normalizeText(session.managerName) !== App.utils.normalizeText(owner)) {
+    if (
+      App.utils.normalizeText(session.managerName) !==
+      App.utils.normalizeText(owner)
+    ) {
       return `
         <article class="coach-panel-card coach-decision-card coach-decision-locked-card email-office-card">
           <div class="home-panel-header">
@@ -1094,9 +1358,15 @@ App.auth = {
       `;
     }
 
-    const pending = App.auth.myDecisions.filter(item => item.status === "pending");
-    const resolved = App.auth.myDecisions.filter(item => item.status !== "pending").slice(0, 3);
-    const highPriority = pending.filter(item => App.auth.getDecisionEmailMeta(item).priority === "Alta").length;
+    const pending = App.auth.myDecisions.filter(
+      (item) => item.status === "pending",
+    );
+    const resolved = App.auth.myDecisions
+      .filter((item) => item.status !== "pending")
+      .slice(0, 3);
+    const highPriority = pending.filter(
+      (item) => App.auth.getDecisionEmailMeta(item).priority === "Alta",
+    ).length;
 
     return `
       <article class="coach-panel-card coach-decision-card email-office-card">
@@ -1114,11 +1384,14 @@ App.auth = {
           <span>Prazo 23:59</span>
         </div>
 
-        ${pending.length ? `
+        ${
+          pending.length
+            ? `
           <div class="coach-decision-grid email-thread-grid">
-            ${pending.map(item => App.auth.renderDecisionCard(item)).join("")}
+            ${pending.map((item) => App.auth.renderDecisionCard(item)).join("")}
           </div>
-        ` : `
+        `
+            : `
           <div class="coach-empty-state decision-empty-visible email-empty-state">
             <span>0</span>
             <div>
@@ -1126,28 +1399,44 @@ App.auth = {
               <p>Quando uma nova mensagem chegar para ${App.utils.escapeHtml(session.managerName)}, ela aparece aqui com ações de resposta.</p>
             </div>
           </div>
-        `}
+        `
+        }
 
-        ${resolved.length ? `
+        ${
+          resolved.length
+            ? `
           <div class="coach-decision-history email-archive-list">
             <strong>Arquivados recentes</strong>
-            ${resolved.map(item => `
+            ${resolved
+              .map(
+                (item) => `
               <div>
                 <span>${App.utils.escapeDisplay(item.title)}</span>
                 <b>${item.status === "expired" ? "Expirou" : item.selected_option === "yes" ? "Sim" : "Não"}</b>
               </div>
-            `).join("")}
+            `,
+              )
+              .join("")}
           </div>
-        ` : ""}
+        `
+            : ""
+        }
       </article>
     `;
   },
 
   renderCoachTransferProposalCard(ownerName) {
     const session = App.auth.getSession();
-    if (!session || App.utils.normalizeText(session.managerName) !== App.utils.normalizeText(ownerName)) return "";
+    if (
+      !session ||
+      App.utils.normalizeText(session.managerName) !==
+        App.utils.normalizeText(ownerName)
+    )
+      return "";
 
-    const pending = App.auth.myTransferProposals.filter(item => item.proposal_role !== "sent" && item.status === "pending");
+    const pending = App.auth.myTransferProposals.filter(
+      (item) => item.proposal_role !== "sent" && item.status === "pending",
+    );
     if (!pending.length) return "";
 
     return `
@@ -1160,7 +1449,7 @@ App.auth = {
           <span class="coach-section-kicker">${pending.length} pendente(s)</span>
         </div>
         <div class="coach-decision-grid">
-          ${pending.map(item => App.auth.renderTransferProposalCard(item)).join("")}
+          ${pending.map((item) => App.auth.renderTransferProposalCard(item)).join("")}
         </div>
       </article>
     `;
@@ -1168,7 +1457,12 @@ App.auth = {
 
   renderCoachSponsorshipCard(ownerName) {
     const session = App.auth.getSession();
-    if (!session || App.utils.normalizeText(session.managerName) !== App.utils.normalizeText(ownerName)) return "";
+    if (
+      !session ||
+      App.utils.normalizeText(session.managerName) !==
+        App.utils.normalizeText(ownerName)
+    )
+      return "";
 
     const data = App.auth.mySponsorships || {};
     const active = Array.isArray(data.active) ? data.active : [];
@@ -1177,7 +1471,10 @@ App.auth = {
     const visibleRewards = rewards.slice(0, 5);
     const hiddenRewards = Math.max(0, rewards.length - visibleRewards.length);
     const maxActive = Number(data.maxActiveContracts || 2);
-    const slotsLeft = Math.max(0, Number(data.activeSlotsLeft ?? (maxActive - active.length)));
+    const slotsLeft = Math.max(
+      0,
+      Number(data.activeSlotsLeft ?? maxActive - active.length),
+    );
     const offersByCategory = offers.reduce((groups, offer) => {
       const category = offer.category || "Patrocínio";
       groups[category] = groups[category] || [];
@@ -1196,32 +1493,67 @@ App.auth = {
           <span class="coach-section-kicker">${active.length}/${maxActive} ativo(s)</span>
         </div>
 
-        ${active.length ? `
+        ${
+          active.length
+            ? `
           <div class="sponsor-active-list sponsor-portfolio-list">
-            ${active.map(item => {
-              const cadence = App.auth.getSponsorshipCadence(item);
-              const claimLabel = cadence ? "parcelas" : "bônus";
-              const paidTotal = Number(item.paid_total || item.paidTotal || 0);
-              const signingPaidAt = App.auth.parseSponsorshipDate(item.signing_paid_at || item.signingPaidAt);
-              const toneClass = cadence === "monthly" ? "monthly" : cadence === "weekly" ? "weekly" : "goal";
-              const sponsorName = item.sponsor_name || item.sponsorName || "Marca";
-              const rewardValue = Number(item.reward_value || item.rewardValue || 0);
-              const signingBonus = Number(item.signing_bonus || item.signingBonus || 0);
-              const claimsUsed = Number(item.claims_used || item.claimsUsed || 0);
-              const maxClaims = Number(item.max_claims || item.maxClaims || 0);
-              const progress = maxClaims > 0 ? Math.min(100, Math.round((claimsUsed / maxClaims) * 100)) : 0;
-              const schedule = App.auth.getRecurringSponsorshipSchedule(item);
-              const nextPaymentLabel = schedule?.nextPaymentAt
-                ? App.utils.formatDate(schedule.nextPaymentAt)
-                : schedule ? "contrato completo" : App.auth.getSponsorshipConditionLabel(item);
-              const primaryLabel = cadence === "monthly"
-                ? "Parcela mensal"
-                : cadence === "weekly" ? "Parcela semanal" : "Bônus por meta";
-              const frequencyLabel = App.auth.getSponsorshipFrequencyLabel(item);
-              const dealStyle = item.deal_style || item.dealStyle || item.risk_level || item.riskLevel || "Contrato ativo";
-              const contractTotal = App.auth.getSponsorshipTotalValue(item);
+            ${active
+              .map((item) => {
+                const cadence = App.auth.getSponsorshipCadence(item);
+                const claimLabel = cadence ? "parcelas" : "bônus";
+                const paidTotal = Number(
+                  item.paid_total || item.paidTotal || 0,
+                );
+                const signingPaidAt = App.auth.parseSponsorshipDate(
+                  item.signing_paid_at || item.signingPaidAt,
+                );
+                const toneClass =
+                  cadence === "monthly"
+                    ? "monthly"
+                    : cadence === "weekly"
+                      ? "weekly"
+                      : "goal";
+                const sponsorName =
+                  item.sponsor_name || item.sponsorName || "Marca";
+                const rewardValue = Number(
+                  item.reward_value || item.rewardValue || 0,
+                );
+                const signingBonus = Number(
+                  item.signing_bonus || item.signingBonus || 0,
+                );
+                const claimsUsed = Number(
+                  item.claims_used || item.claimsUsed || 0,
+                );
+                const maxClaims = Number(
+                  item.max_claims || item.maxClaims || 0,
+                );
+                const progress =
+                  maxClaims > 0
+                    ? Math.min(100, Math.round((claimsUsed / maxClaims) * 100))
+                    : 0;
+                const schedule = App.auth.getRecurringSponsorshipSchedule(item);
+                const nextPaymentLabel = schedule?.nextPaymentAt
+                  ? App.utils.formatDate(schedule.nextPaymentAt)
+                  : schedule
+                    ? "contrato completo"
+                    : App.auth.getSponsorshipConditionLabel(item);
+                const primaryLabel =
+                  cadence === "monthly"
+                    ? "Parcela mensal"
+                    : cadence === "weekly"
+                      ? "Parcela semanal"
+                      : "Bônus por meta";
+                const frequencyLabel =
+                  App.auth.getSponsorshipFrequencyLabel(item);
+                const dealStyle =
+                  item.deal_style ||
+                  item.dealStyle ||
+                  item.risk_level ||
+                  item.riskLevel ||
+                  "Contrato ativo";
+                const contractTotal = App.auth.getSponsorshipTotalValue(item);
 
-              return `
+                return `
               <div class="sponsor-active-item sponsor-active-item-${toneClass}">
                 <div class="sponsor-brand-shell">
                   ${App.auth.renderSponsorBrandMark(sponsorName)}
@@ -1274,17 +1606,24 @@ App.auth = {
                 </p>
                 </div>
               `;
-            }).join("")}
+              })
+              .join("")}
           </div>
-        ` : `<p class="calendar-muted">Nenhum patrocinador ativo. Escolha com cuidado: as luvas agora entram como pagamento oficial e as marcas competem por categoria.</p>`}
+        `
+            : `<p class="calendar-muted">Nenhum patrocinador ativo. Escolha com cuidado: as luvas agora entram como pagamento oficial e as marcas competem por categoria.</p>`
+        }
 
-        ${offers.length ? `
+        ${
+          offers.length
+            ? `
           <div class="sponsor-market-note">
             <strong>${active.length}/${maxActive} contratos ativos · ${slotsLeft} vaga(s) livre(s)</strong>
             <span>${offers.length} proposta(s) em ${offerCategories.length} categoria(s). Propostas da mesma categoria substituem o contrato atual e aplicam multa de rescisão.</span>
           </div>
           <div class="sponsor-category-list">
-            ${offerCategories.map(category => `
+            ${offerCategories
+              .map(
+                (category) => `
               <section class="sponsor-category-group">
                 <div class="sponsor-category-header">
                   <strong>${App.utils.escapeDisplay(category)}</strong>
@@ -1294,7 +1633,7 @@ App.auth = {
                   ${offersByCategory[category]
                     .slice()
                     .sort((a, b) => {
-                      const priority = item => {
+                      const priority = (item) => {
                         const cadence = App.auth.getSponsorshipCadence(item);
                         if (cadence === "monthly") return 0;
                         if (cadence === "weekly") return 1;
@@ -1302,19 +1641,32 @@ App.auth = {
                       };
                       const cadenceDiff = priority(a) - priority(b);
                       if (cadenceDiff !== 0) return cadenceDiff;
-                      return (Number(b.rewardValue || b.reward_value || 0) + Number(b.signingBonus || b.signing_bonus || 0))
-                        - (Number(a.rewardValue || a.reward_value || 0) + Number(a.signingBonus || a.signing_bonus || 0));
+                      return (
+                        Number(b.rewardValue || b.reward_value || 0) +
+                        Number(b.signingBonus || b.signing_bonus || 0) -
+                        (Number(a.rewardValue || a.reward_value || 0) +
+                          Number(a.signingBonus || a.signing_bonus || 0))
+                      );
                     })
-                    .map(offer => {
-                    const cadence = App.auth.getSponsorshipCadence(offer);
-                    const totalValue = App.auth.getSponsorshipTotalValue(offer);
-                    const toneClass = cadence === "monthly" ? "monthly" : cadence === "weekly" ? "weekly" : "goal";
-                    const cadenceLabel = App.auth.getSponsorshipCadenceLabel(offer);
-                    const cadenceClass = App.auth.getSponsorshipCadenceClass(offer);
-                    const frequencyLabel = App.auth.getSponsorshipFrequencyLabel(offer);
-                    const offerStyle = offer.dealStyle || frequencyLabel;
+                    .map((offer) => {
+                      const cadence = App.auth.getSponsorshipCadence(offer);
+                      const totalValue =
+                        App.auth.getSponsorshipTotalValue(offer);
+                      const toneClass =
+                        cadence === "monthly"
+                          ? "monthly"
+                          : cadence === "weekly"
+                            ? "weekly"
+                            : "goal";
+                      const cadenceLabel =
+                        App.auth.getSponsorshipCadenceLabel(offer);
+                      const cadenceClass =
+                        App.auth.getSponsorshipCadenceClass(offer);
+                      const frequencyLabel =
+                        App.auth.getSponsorshipFrequencyLabel(offer);
+                      const offerStyle = offer.dealStyle || frequencyLabel;
 
-                    return `
+                      return `
                       <article class="sponsor-offer-card sponsor-offer-card-${toneClass}">
                         <div class="sponsor-brand-shell sponsor-offer-shell">
                           ${App.auth.renderSponsorBrandMark(offer.sponsorName)}
@@ -1359,28 +1711,43 @@ App.auth = {
                         </button>
                       </article>
                     `;
-                    }).join("")}
+                    })
+                    .join("")}
                 </div>
               </section>
-            `).join("")}
+            `,
+              )
+              .join("")}
           </div>
-        ` : slotsLeft <= 0 ? `<p class="calendar-muted">Limite comercial preenchido. Novas propostas aparecem quando houver categoria substituível ou vaga livre.</p>` : ""}
+        `
+            : slotsLeft <= 0
+              ? `<p class="calendar-muted">Limite comercial preenchido. Novas propostas aparecem quando houver categoria substituível ou vaga livre.</p>`
+              : ""
+        }
 
-        ${visibleRewards.length ? `
+        ${
+          visibleRewards.length
+            ? `
           <div class="sponsor-reward-list">
             <div class="sponsor-reward-header">
               <strong>Últimos pagamentos</strong>
               <span>${visibleRewards.length}/${rewards.length}</span>
             </div>
-            ${visibleRewards.map(item => `
+            ${visibleRewards
+              .map(
+                (item) => `
               <div class="sponsor-reward-item">
                 <span>${App.utils.escapeDisplay(App.auth.getSponsorshipRewardKind(item))} · ${App.utils.escapeDisplay(item.sponsor_name)}</span>
                 <b>${App.utils.formatCurrency(item.reward_value)}</b>
               </div>
-            `).join("")}
+            `,
+              )
+              .join("")}
             ${hiddenRewards > 0 ? `<p class="sponsor-reward-more">+${hiddenRewards} pagamento(s) já consolidados no extrato.</p>` : ""}
           </div>
-        ` : ""}
+        `
+            : ""
+        }
       </article>
     `;
   },
@@ -1389,16 +1756,18 @@ App.auth = {
     const fromContract = item.condition_label || item.conditionLabel;
     if (fromContract) return fromContract;
 
-    const condition = App.utils.normalizeText(item.condition_type || item.conditionType || "");
+    const condition = App.utils.normalizeText(
+      item.condition_type || item.conditionType || "",
+    );
     const labels = {
-      "win_by_2": "Vencer por 2+ gols",
-      "any_win": "Vencer qualquer partida",
-      "home_win": "Vencer como mandante",
-      "clean_sheet": "Não sofrer gols",
-      "three_goals": "Marcar 3+ gols",
-      "away_win": "Vencer como visitante",
-      "weekly_payment": "Pagamento semanal fixo",
-      "monthly_payment": "Pagamento mensal fixo"
+      win_by_2: "Vencer por 2+ gols",
+      any_win: "Vencer qualquer partida",
+      home_win: "Vencer como mandante",
+      clean_sheet: "Não sofrer gols",
+      three_goals: "Marcar 3+ gols",
+      away_win: "Vencer como visitante",
+      weekly_payment: "Pagamento semanal fixo",
+      monthly_payment: "Pagamento mensal fixo",
     };
 
     return labels[condition] || "Meta comercial cumprida";
@@ -1423,7 +1792,7 @@ App.auth = {
         <svg class="sponsor-brand-icon" viewBox="0 0 32 32" aria-hidden="true" focusable="false">
           ${shape}
         </svg>
-      `
+      `,
     };
   },
 
@@ -1432,104 +1801,152 @@ App.auth = {
     const iconMap = [
       {
         keys: ["adidas"],
-        icon: App.auth.makeSponsorIcon("adidas", `
+        icon: App.auth.makeSponsorIcon(
+          "adidas",
+          `
           <path d="M7 23h4V10H7v13Zm7 0h4V7h-4v16Zm7 0h4V13h-4v10Z" />
           <path d="M5 25h22" />
-        `)
+        `,
+        ),
       },
       {
         keys: ["aurora"],
-        icon: App.auth.makeSponsorIcon("aurora", `
+        icon: App.auth.makeSponsorIcon(
+          "aurora",
+          `
           <path d="M7 21a9 9 0 0 1 18 0" />
           <path d="M16 5v5M6 12l4 3M26 12l-4 3M5 24h22" />
-        `)
+        `,
+        ),
       },
       {
         keys: ["nova"],
-        icon: App.auth.makeSponsorIcon("nova", `
+        icon: App.auth.makeSponsorIcon(
+          "nova",
+          `
           <path d="M8 23V9l8 14 8-14v14" />
           <path d="M10 9h5M17 23h5" />
-        `)
+        `,
+        ),
       },
       {
         keys: ["sony", "xperia"],
-        icon: App.auth.makeSponsorIcon("xperia", `
+        icon: App.auth.makeSponsorIcon(
+          "xperia",
+          `
           <rect x="9" y="5" width="14" height="22" rx="4" />
           <path d="M13 22h6M14 10h4" />
-        `)
+        `,
+        ),
       },
       {
         keys: ["emirates", "etihad", "voasul"],
-        icon: App.auth.makeSponsorIcon("airline", `
+        icon: App.auth.makeSponsorIcon(
+          "airline",
+          `
           <path d="M5 18 27 6l-7 20-5-8-8 4 4-7-6 3Z" />
-        `)
+        `,
+        ),
       },
       {
         keys: ["redwood", "atlas", "banco", "capital"],
-        icon: App.auth.makeSponsorIcon("finance", `
+        icon: App.auth.makeSponsorIcon(
+          "finance",
+          `
           <path d="M5 13 16 6l11 7H5Z" />
           <path d="M8 14v10M14 14v10M20 14v10M26 14v10M6 25h22" />
-        `)
+        `,
+        ),
       },
       {
         keys: ["fortress"],
-        icon: App.auth.makeSponsorIcon("fortress", `
+        icon: App.auth.makeSponsorIcon(
+          "fortress",
+          `
           <path d="M8 25V10h4V7h4v3h4V7h4v18" />
           <path d="M8 14h16M14 25v-6a2 2 0 0 1 4 0v6" />
-        `)
+        `,
+        ),
       },
       {
-        keys: ["spotify", "streamplay", "prime video", "netflix", "twitch", "primecam"],
-        icon: App.auth.makeSponsorIcon("media", `
+        keys: [
+          "spotify",
+          "streamplay",
+          "prime video",
+          "netflix",
+          "twitch",
+          "primecam",
+        ],
+        icon: App.auth.makeSponsorIcon(
+          "media",
+          `
           <rect x="5" y="8" width="22" height="16" rx="4" />
           <path d="m14 13 7 3-7 3v-6Z" />
-        `)
+        `,
+        ),
       },
       {
         keys: ["betfair"],
-        icon: App.auth.makeSponsorIcon("odds", `
+        icon: App.auth.makeSponsorIcon(
+          "odds",
+          `
           <path d="M10 23V9M10 9l-4 4M10 9l4 4" />
           <path d="M22 9v14M22 23l-4-4M22 23l4-4" />
-        `)
+        `,
+        ),
       },
       {
         keys: ["pioneer", "motors"],
-        icon: App.auth.makeSponsorIcon("motors", `
+        icon: App.auth.makeSponsorIcon(
+          "motors",
+          `
           <circle cx="16" cy="16" r="9" />
           <circle cx="16" cy="16" r="3" />
           <path d="M16 7v6M16 19v6M7 16h6M19 16h6" />
-        `)
+        `,
+        ),
       },
       {
         keys: ["dhl", "maersk", "cargo"],
-        icon: App.auth.makeSponsorIcon("logistics", `
+        icon: App.auth.makeSponsorIcon(
+          "logistics",
+          `
           <path d="M5 20h16V10H5v10Zm16-6h4l3 3v3h-7v-6Z" />
           <circle cx="10" cy="23" r="2" />
           <circle cx="24" cy="23" r="2" />
           <path d="M7 14h8M7 17h6" />
-        `)
+        `,
+        ),
       },
       {
         keys: ["castore", "hummel", "umbra"],
-        icon: App.auth.makeSponsorIcon("kit", `
+        icon: App.auth.makeSponsorIcon(
+          "kit",
+          `
           <path d="M11 7h10l5 5-4 4-2-2v11H12V14l-2 2-4-4 5-5Z" />
           <path d="M13 7a3 3 0 0 0 6 0" />
-        `)
+        `,
+        ),
       },
       {
         keys: ["red bull", "volt", "neurofit", "ironlab", "apex", "medcore"],
-        icon: App.auth.makeSponsorIcon("performance", `
+        icon: App.auth.makeSponsorIcon(
+          "performance",
+          `
           <path d="M16 5v8h7L13 27v-9H6L16 5Z" />
-        `)
-      }
+        `,
+        ),
+      },
     ];
 
-    const found = iconMap.find(item => item.keys.some(key => normalized.includes(key)));
+    const found = iconMap.find((item) =>
+      item.keys.some((key) => normalized.includes(key)),
+    );
     if (found) return found.icon;
 
     return {
       key: "generic",
-      mark: `<span class="sponsor-brand-initial" aria-hidden="true">${App.utils.escapeHtml(App.auth.getSponsorInitials(name))}</span>`
+      mark: `<span class="sponsor-brand-initial" aria-hidden="true">${App.utils.escapeHtml(App.auth.getSponsorInitials(name))}</span>`,
     };
   },
 
@@ -1542,16 +1959,20 @@ App.auth = {
     if (!words.length) return "M";
     return words
       .slice(0, 2)
-      .map(word => word.charAt(0))
+      .map((word) => word.charAt(0))
       .join("")
       .toUpperCase();
   },
 
   getSponsorshipCadence(item = {}) {
-    const explicit = App.utils.normalizeText(item.paymentCadence || item.payment_cadence || "");
+    const explicit = App.utils.normalizeText(
+      item.paymentCadence || item.payment_cadence || "",
+    );
     if (explicit === "weekly" || explicit === "monthly") return explicit;
 
-    const condition = App.utils.normalizeText(item.condition_type || item.conditionType || "");
+    const condition = App.utils.normalizeText(
+      item.condition_type || item.conditionType || "",
+    );
     if (condition === "weekly_payment") return "weekly";
     if (condition === "monthly_payment") return "monthly";
     return "";
@@ -1578,18 +1999,23 @@ App.auth = {
   },
 
   getSponsorshipTotalValue(item = {}) {
-    const fromApi = Number(item.totalContractValue || item.total_contract_value || 0);
+    const fromApi = Number(
+      item.totalContractValue || item.total_contract_value || 0,
+    );
     if (fromApi > 0) return fromApi;
 
     const signing = Number(item.signingBonus || item.signing_bonus || 0);
     const reward = Number(item.rewardValue || item.reward_value || 0);
     const maxClaims = Number(item.maxClaims || item.max_claims || 0);
-    return signing + (reward * maxClaims);
+    return signing + reward * maxClaims;
   },
 
   getSponsorshipRewardKind(item = {}) {
-    if (item.reward_kind || item.rewardKind) return item.reward_kind || item.rewardKind;
-    const key = App.utils.normalizeText(item.result_key || item.resultKey || "");
+    if (item.reward_kind || item.rewardKind)
+      return item.reward_kind || item.rewardKind;
+    const key = App.utils.normalizeText(
+      item.result_key || item.resultKey || "",
+    );
     if (key.startsWith("signing_bonus")) return "Luva";
     if (key.startsWith("periodic")) return "Parcela";
     return "Meta";
@@ -1603,24 +2029,37 @@ App.auth = {
 
   getRecurringSponsorshipSchedule(item = {}) {
     const cadence = App.auth.getSponsorshipCadence(item);
-    const intervalDays = cadence === "weekly" ? 7 : cadence === "monthly" ? 30 : 0;
+    const intervalDays =
+      cadence === "weekly" ? 7 : cadence === "monthly" ? 30 : 0;
     if (!intervalDays) return null;
 
-    const signedAt = App.auth.parseSponsorshipDate(item.created_at || item.createdAt || item.createdAtUtc || "");
+    const signedAt = App.auth.parseSponsorshipDate(
+      item.created_at || item.createdAt || item.createdAtUtc || "",
+    );
     if (!signedAt) return null;
 
     const claimsUsed = Number(item.claims_used || item.claimsUsed || 0);
     const maxClaims = Number(item.max_claims || item.maxClaims || 0);
     const intervalMs = intervalDays * 24 * 60 * 60 * 1000;
-    const lastPaymentAt = App.auth.parseSponsorshipDate(item.last_installment_at || item.lastInstallmentAt)
-      || (claimsUsed > 0 ? new Date(signedAt.getTime() + claimsUsed * intervalMs) : null);
-    const nextPaymentAt = App.auth.parseSponsorshipDate(item.next_payment_at || item.nextPaymentAt)
-      || (maxClaims && claimsUsed >= maxClaims ? null : new Date(signedAt.getTime() + (claimsUsed + 1) * intervalMs));
+    const lastPaymentAt =
+      App.auth.parseSponsorshipDate(
+        item.last_installment_at || item.lastInstallmentAt,
+      ) ||
+      (claimsUsed > 0
+        ? new Date(signedAt.getTime() + claimsUsed * intervalMs)
+        : null);
+    const nextPaymentAt =
+      App.auth.parseSponsorshipDate(
+        item.next_payment_at || item.nextPaymentAt,
+      ) ||
+      (maxClaims && claimsUsed >= maxClaims
+        ? null
+        : new Date(signedAt.getTime() + (claimsUsed + 1) * intervalMs));
 
     return {
       cadence: intervalDays === 7 ? "semanal" : "mensal",
       lastPaymentAt,
-      nextPaymentAt
+      nextPaymentAt,
     };
   },
 
@@ -1645,17 +2084,22 @@ App.auth = {
   },
 
   bindDecisionAnswerButtons(root = document) {
-    root.querySelectorAll("[data-decision-answer]").forEach(button => {
+    root.querySelectorAll("[data-decision-answer]").forEach((button) => {
       if (button.dataset.bound === "true") return;
       button.dataset.bound = "true";
 
-      button.addEventListener("click", async event => {
+      button.addEventListener("click", async (event) => {
         const target = event.currentTarget;
         const decisionId = target.dataset.decisionId;
         const choice = target.dataset.choice;
         const label = choice === "yes" ? "Sim" : "Não";
 
-        if (!confirm(`Enviar resposta "${label}" para este e-mail? A consequência será aplicada e publicada no Jornal da Liga.`)) return;
+        if (
+          !confirm(
+            `Enviar resposta "${label}" para este e-mail? A consequência será aplicada e publicada no Jornal da Liga.`,
+          )
+        )
+          return;
 
         try {
           target.disabled = true;
@@ -1670,118 +2114,151 @@ App.auth = {
   },
 
   bindTransferProposalButtons(root = document) {
-    root.querySelectorAll("[data-transfer-proposal-answer]").forEach(button => {
-      if (button.dataset.bound === "true") return;
-      button.dataset.bound = "true";
+    root
+      .querySelectorAll("[data-transfer-proposal-answer]")
+      .forEach((button) => {
+        if (button.dataset.bound === "true") return;
+        button.dataset.bound = "true";
 
-      button.addEventListener("click", async event => {
-        const target = event.currentTarget;
-        const proposalId = target.dataset.proposalId;
-        const decision = target.dataset.decision;
-        const currentOffer = Number(target.dataset.proposalCounterValue || 0);
-        let counterValue = null;
-        const sourceLabel = target.dataset.proposalSourceLabel || "esta oferta";
-        const playerLabel = target.dataset.proposalPlayer || target.closest(".transfer-proposal-item")?.querySelector("h3")?.textContent || "este jogador";
-        const offerLabel = App.utils.formatCurrency(currentOffer);
+        button.addEventListener("click", async (event) => {
+          const target = event.currentTarget;
+          const proposalId = target.dataset.proposalId;
+          const decision = target.dataset.decision;
+          const currentOffer = Number(target.dataset.proposalCounterValue || 0);
+          let counterValue = null;
+          const sourceLabel =
+            target.dataset.proposalSourceLabel || "esta oferta";
+          const playerLabel =
+            target.dataset.proposalPlayer ||
+            target.closest(".transfer-proposal-item")?.querySelector("h3")
+              ?.textContent ||
+            "este jogador";
+          const offerLabel = App.utils.formatCurrency(currentOffer);
 
-        if (decision === "counter") {
-          const suggestion = Math.max(currentOffer, 1000000);
-          const modalResult = await App.ui.openActionModal({
-            kicker: "Negociacao externa",
-            title: "Enviar contraoferta",
-            message: `${sourceLabel} ofereceu ${offerLabel} por ${playerLabel}. Informe o novo valor para a CPU avaliar.`,
-            detail: "A CPU pode aceitar, recusar ou responder com uma nova contraoferta.",
-            tone: "market",
-            fields: [{
-              name: "counterValue",
-              label: "Valor da contraoferta",
-              value: String(suggestion),
-              inputMode: "decimal",
-              placeholder: "Ex.: 2500000",
-              prefix: "EUR"
-            }],
-            actions: [
-              { id: "cancel", label: "Cancelar", variant: "secondary" },
-              { id: "confirm", label: "Enviar contraoferta", variant: "primary" }
-            ],
-            validate(values) {
-              const normalized = String(values.counterValue || "")
-                .trim()
-                .replace(/\./g, "")
-                .replace(/,/g, ".");
-              const parsed = Number(normalized);
-              if (!Number.isFinite(parsed) || parsed <= 0) {
-                return "Informe um valor numerico maior que zero para a contraoferta.";
-              }
-              return "";
-            }
-          });
+          if (decision === "counter") {
+            const suggestion = Math.max(currentOffer, 1000000);
+            const modalResult = await App.ui.openActionModal({
+              kicker: "Negociacao externa",
+              title: "Enviar contraoferta",
+              message: `${sourceLabel} ofereceu ${offerLabel} por ${playerLabel}. Informe o novo valor para a CPU avaliar.`,
+              detail:
+                "A CPU pode aceitar, recusar ou responder com uma nova contraoferta.",
+              tone: "market",
+              fields: [
+                {
+                  name: "counterValue",
+                  label: "Valor da contraoferta",
+                  value: String(suggestion),
+                  inputMode: "decimal",
+                  placeholder: "Ex.: 2500000",
+                  prefix: "EUR",
+                },
+              ],
+              actions: [
+                { id: "cancel", label: "Cancelar", variant: "secondary" },
+                {
+                  id: "confirm",
+                  label: "Enviar contraoferta",
+                  variant: "primary",
+                },
+              ],
+              validate(values) {
+                const normalized = String(values.counterValue || "")
+                  .trim()
+                  .replace(/\./g, "")
+                  .replace(/,/g, ".");
+                const parsed = Number(normalized);
+                if (!Number.isFinite(parsed) || parsed <= 0) {
+                  return "Informe um valor numerico maior que zero para a contraoferta.";
+                }
+                return "";
+              },
+            });
 
-          if (modalResult.action !== "confirm") return;
+            if (modalResult.action !== "confirm") return;
 
-          const normalized = String(modalResult.values.counterValue || "")
-            .trim()
-            .replace(/\./g, "")
-            .replace(/,/g, ".");
-          counterValue = Number(normalized);
-        } else {
-          const isAccepted = decision === "accepted";
-          const confirmed = await App.ui.confirmAction({
-            kicker: "Oferta externa",
-            title: isAccepted ? "Aceitar proposta" : "Recusar proposta",
-            message: isAccepted
-              ? `Vender ${playerLabel} para ${sourceLabel} por ${offerLabel}?`
-              : `Recusar a proposta de ${sourceLabel} por ${playerLabel}?`,
-            detail: isAccepted
-              ? "A transferencia sera aplicada e o orcamento sera atualizado."
-              : "A proposta sera encerrada sem movimentacao.",
-            tone: isAccepted ? "success" : "danger",
-            confirmLabel: isAccepted ? "Aceitar proposta" : "Recusar proposta",
-            confirmVariant: isAccepted ? "primary" : "danger"
-          });
+            const normalized = String(modalResult.values.counterValue || "")
+              .trim()
+              .replace(/\./g, "")
+              .replace(/,/g, ".");
+            counterValue = Number(normalized);
+          } else {
+            const isAccepted = decision === "accepted";
+            const confirmed = await App.ui.confirmAction({
+              kicker: "Oferta externa",
+              title: isAccepted ? "Aceitar proposta" : "Recusar proposta",
+              message: isAccepted
+                ? `Vender ${playerLabel} para ${sourceLabel} por ${offerLabel}?`
+                : `Recusar a proposta de ${sourceLabel} por ${playerLabel}?`,
+              detail: isAccepted
+                ? "A transferencia sera aplicada e o orcamento sera atualizado."
+                : "A proposta sera encerrada sem movimentacao.",
+              tone: isAccepted ? "success" : "danger",
+              confirmLabel: isAccepted
+                ? "Aceitar proposta"
+                : "Recusar proposta",
+              confirmVariant: isAccepted ? "primary" : "danger",
+            });
 
-          if (!confirmed) return;
-        }
+            if (!confirmed) return;
+          }
 
-        try {
-          target.disabled = true;
-          await App.auth.answerTransferProposal(proposalId, decision, counterValue);
-        } catch (error) {
-          await App.ui.openActionModal({
-            kicker: "Proposta nao aplicada",
-            title: "Nao consegui responder",
-            message: error.message || "O Supabase recusou a operacao. Tente novamente apos sincronizar.",
-            tone: "danger",
-            actions: [
-              { id: "confirm", label: "Entendi", variant: "primary", autofocus: true }
-            ]
-          });
-        } finally {
-          target.disabled = false;
-        }
+          try {
+            target.disabled = true;
+            await App.auth.answerTransferProposal(
+              proposalId,
+              decision,
+              counterValue,
+            );
+          } catch (error) {
+            await App.ui.openActionModal({
+              kicker: "Proposta nao aplicada",
+              title: "Nao consegui responder",
+              message:
+                error.message ||
+                "O Supabase recusou a operacao. Tente novamente apos sincronizar.",
+              tone: "danger",
+              actions: [
+                {
+                  id: "confirm",
+                  label: "Entendi",
+                  variant: "primary",
+                  autofocus: true,
+                },
+              ],
+            });
+          } finally {
+            target.disabled = false;
+          }
+        });
       });
-    });
 
     App.auth.bindSponsorshipButtons(root);
   },
 
   bindSponsorshipButtons(root = document) {
-    root.querySelectorAll("[data-sponsor-offer]").forEach(button => {
+    root.querySelectorAll("[data-sponsor-offer]").forEach((button) => {
       if (button.dataset.bound === "true") return;
       button.dataset.bound = "true";
 
-      button.addEventListener("click", async event => {
+      button.addEventListener("click", async (event) => {
         const offerId = event.currentTarget.dataset.sponsorOffer;
-        const isReplacement = event.currentTarget.dataset.sponsorReplacement === "true";
+        const isReplacement =
+          event.currentTarget.dataset.sponsorReplacement === "true";
         const fee = Number(event.currentTarget.dataset.sponsorFee || 0);
-        const signingBonus = Number(event.currentTarget.dataset.sponsorSigning || 0);
-        const rewardValue = Number(event.currentTarget.dataset.sponsorReward || 0);
+        const signingBonus = Number(
+          event.currentTarget.dataset.sponsorSigning || 0,
+        );
+        const rewardValue = Number(
+          event.currentTarget.dataset.sponsorReward || 0,
+        );
         const cadence = event.currentTarget.dataset.sponsorCadence;
-        const paymentLabel = cadence === "weekly"
-          ? `parcela semanal de ${App.utils.formatCurrency(rewardValue)}`
-          : cadence === "monthly"
-            ? `parcela mensal de ${App.utils.formatCurrency(rewardValue)}`
-            : `bônus por meta de ${App.utils.formatCurrency(rewardValue)}`;
+        const paymentLabel =
+          cadence === "weekly"
+            ? `parcela semanal de ${App.utils.formatCurrency(rewardValue)}`
+            : cadence === "monthly"
+              ? `parcela mensal de ${App.utils.formatCurrency(rewardValue)}`
+              : `bônus por meta de ${App.utils.formatCurrency(rewardValue)}`;
         const message = isReplacement
           ? `Trocar para este patrocínio? A multa estimada é ${App.utils.formatCurrency(fee)}. A luva de ${App.utils.formatCurrency(signingBonus)} entra agora e o contrato paga ${paymentLabel}.`
           : `Assinar este patrocínio? A luva de ${App.utils.formatCurrency(signingBonus)} entra agora e o contrato paga ${paymentLabel}.`;
@@ -1849,7 +2326,9 @@ App.auth = {
             <strong>Recusar</strong>
             <small>A proposta é encerrada sem movimentação.</small>
           </button>
-          ${isCpuOffer ? `
+          ${
+            isCpuOffer
+              ? `
           <button
             type="button"
             data-transfer-proposal-answer
@@ -1862,7 +2341,9 @@ App.auth = {
             <strong>Contraoferta</strong>
             <small>Propor outro valor e deixar a CPU decidir.</small>
           </button>
-          ` : ""}
+          `
+              : ""
+          }
         </div>
       </article>
     `;
@@ -1887,7 +2368,8 @@ App.auth = {
 
   renderDecisionCard(item) {
     const meta = App.auth.getDecisionEmailMeta(item);
-    const statusLabel = item.status === "pending" ? "Não respondido" : item.status || "arquivado";
+    const statusLabel =
+      item.status === "pending" ? "Não respondido" : item.status || "arquivado";
 
     return `
       <article class="decision-card decision-email-message priority-${meta.tone}">
@@ -1923,7 +2405,11 @@ App.auth = {
 
     if (!session) return "";
 
-    if (ownerName && App.utils.normalizeText(session.managerName) !== App.utils.normalizeText(ownerName)) {
+    if (
+      ownerName &&
+      App.utils.normalizeText(session.managerName) !==
+        App.utils.normalizeText(ownerName)
+    ) {
       return "";
     }
 
@@ -1955,7 +2441,7 @@ App.auth = {
     if (!form || form.dataset.bound === "true") return;
 
     form.dataset.bound = "true";
-    form.addEventListener("submit", async event => {
+    form.addEventListener("submit", async (event) => {
       event.preventDefault();
 
       const session = App.auth.getSession();
@@ -1965,40 +2451,68 @@ App.auth = {
       const newPin = form.elements.newPin.value.trim();
 
       if (!session) {
-        App.utils.setMessage(message, "Faça login antes de alterar o PIN.", "error");
+        App.utils.setMessage(
+          message,
+          "Faça login antes de alterar o PIN.",
+          "error",
+        );
         return;
       }
 
       if (currentPin !== confirmCurrentPin) {
-        App.utils.setMessage(message, "Os dois campos de PIN atual precisam ser iguais.", "error");
+        App.utils.setMessage(
+          message,
+          "Os dois campos de PIN atual precisam ser iguais.",
+          "error",
+        );
         return;
       }
 
       if (newPin.length < 4) {
-        App.utils.setMessage(message, "O novo PIN precisa ter pelo menos 4 caracteres.", "error");
+        App.utils.setMessage(
+          message,
+          "O novo PIN precisa ter pelo menos 4 caracteres.",
+          "error",
+        );
         return;
       }
 
       try {
-        const result = await App.api.rpc("app_change_manager_pin", {
-          p_manager_id: session.managerId,
-          p_current_code: currentPin,
-          p_confirm_current_code: confirmCurrentPin,
-          p_new_code: newPin
-        }, 30000);
+        const result = await App.api.rpc(
+          "app_change_manager_pin",
+          {
+            p_manager_id: session.managerId,
+            p_current_code: currentPin,
+            p_confirm_current_code: confirmCurrentPin,
+            p_new_code: newPin,
+          },
+          30000,
+        );
 
-        if (!result.ok) throw new Error(result.message || "Não foi possível atualizar o PIN.");
+        if (!result.ok)
+          throw new Error(
+            result.message || "Não foi possível atualizar o PIN.",
+          );
 
         try {
-          const nextSession = await App.api.rpc("app_create_manager_session", {
-            p_manager_name: session.managerName,
-            p_access_code: newPin
-          }, 30000);
+          const nextSession = await App.api.rpc(
+            "app_create_manager_session",
+            {
+              p_manager_name: session.managerName,
+              p_access_code: newPin,
+            },
+            30000,
+          );
           if (nextSession?.ok) {
-            App.auth.persistSession(App.auth.buildSessionFromLogin(nextSession, session.accessCode));
+            App.auth.persistSession(
+              App.auth.buildSessionFromLogin(nextSession, session.accessCode),
+            );
           }
         } catch (sessionError) {
-          console.warn("PIN alterado, mas não consegui renovar a sessão temporária:", sessionError);
+          console.warn(
+            "PIN alterado, mas não consegui renovar a sessão temporária:",
+            sessionError,
+          );
         }
 
         form.reset();
@@ -2014,10 +2528,12 @@ App.auth = {
     if (!target) return;
 
     const notifications = App.auth.myNotifications || [];
-    const unread = notifications.filter(item => !item.is_read);
+    const unread = notifications.filter((item) => !item.is_read);
     const favorites = App.auth.myFavorites || [];
 
-    target.innerHTML = `
+    App.dom.setHtml(
+      target,
+      `
       <section class="manager-qol-card">
         <div class="manager-qol-header">
           <div>
@@ -2029,79 +2545,127 @@ App.auth = {
         <div class="manager-qol-grid">
           <div>
             <strong>Notificações</strong>
-            ${notifications.length ? notifications.slice(0, 4).map(item => `
+            ${
+              notifications.length
+                ? notifications
+                    .slice(0, 4)
+                    .map(
+                      (item) => `
               <span class="manager-qol-pill ${App.utils.escapeHtml(item.tone || "info")} ${item.is_read ? "is-read" : ""}">
                 ${App.utils.escapeDisplay(item.title)} · ${App.utils.escapeDisplay(item.body || "")}
               </span>
-            `).join("") : `<span class="calendar-muted">Nenhum aviso privado agora.</span>`}
+            `,
+                    )
+                    .join("")
+                : `<span class="calendar-muted">Nenhum aviso privado agora.</span>`
+            }
           </div>
           <div>
             <strong>Favoritos</strong>
-            ${favorites.length ? favorites.slice(0, 5).map(item => `
+            ${
+              favorites.length
+                ? favorites
+                    .slice(0, 5)
+                    .map(
+                      (item) => `
               <span class="manager-qol-pill info">${App.utils.escapeDisplay(item.title)} · ${App.utils.escapeDisplay(item.detail || item.item_type || "")}</span>
-            `).join("") : `<span class="calendar-muted">Favorite alvos e atalhos no escritório do técnico.</span>`}
+            `,
+                    )
+                    .join("")
+                : `<span class="calendar-muted">Favorite alvos e atalhos no escritório do técnico.</span>`
+            }
           </div>
         </div>
       </section>
-    `;
+    `,
+    );
 
-    target.querySelector("[data-mark-notifications-read]")?.addEventListener("click", async () => {
-      await App.auth.markNotificationsRead().catch(error => console.warn("Não consegui marcar notificações:", error));
-    });
+    target
+      .querySelector("[data-mark-notifications-read]")
+      ?.addEventListener("click", async () => {
+        await App.auth
+          .markNotificationsRead()
+          .catch((error) =>
+            console.warn("Não consegui marcar notificações:", error),
+          );
+      });
   },
 
   getLeagueNewsTone(item = {}) {
-    const text = App.utils.normalizeText(`${item.headline || ""} ${item.summary || ""} ${item.impact_text || ""}`);
-    if (text.includes("-") || text.includes("fora") || text.includes("veta") || text.includes("recusa") || text.includes("ignora")) return "negative";
-    if (text.includes("+") || text.includes("aceita") || text.includes("fechou") || text.includes("reforcou")) return "positive";
+    const text = App.utils.normalizeText(
+      `${item.headline || ""} ${item.summary || ""} ${item.impact_text || ""}`,
+    );
+    if (
+      text.includes("-") ||
+      text.includes("fora") ||
+      text.includes("veta") ||
+      text.includes("recusa") ||
+      text.includes("ignora")
+    )
+      return "negative";
+    if (
+      text.includes("+") ||
+      text.includes("aceita") ||
+      text.includes("fechou") ||
+      text.includes("reforcou")
+    )
+      return "positive";
     return "neutral";
   },
 
   getLeagueNewsRows(news = []) {
     const groups = (news || []).reduce((acc, item) => {
       const manager = item.manager_name || "Liga";
-      const headlineKey = App.utils.normalizeText(item.headline || "")
+      const headlineKey = App.utils
+        .normalizeText(item.headline || "")
         .replace(App.utils.normalizeText(manager), "")
         .replace(/\s+/g, " ")
         .trim();
       const key = [
         headlineKey,
         App.utils.normalizeText(item.summary || ""),
-        App.utils.normalizeText(item.impact_text || "")
+        App.utils.normalizeText(item.impact_text || ""),
       ].join("|");
       acc[key] = acc[key] || [];
       acc[key].push(item);
       return acc;
     }, {});
 
-    return Object.values(groups).map(group => {
-      const first = group[0] || {};
-      const managers = [...new Set(group.map(item => item.manager_name).filter(Boolean))];
-      const isGrouped = group.length > 1;
-      const rawHeadline = first.headline || "movimento de bastidor";
-      const firstManager = String(first.manager_name || "").trim();
-      const groupedHeadline = firstManager && rawHeadline.toLowerCase().startsWith(firstManager.toLowerCase())
-        ? rawHeadline.slice(firstManager.length).trim()
-        : rawHeadline;
-      const managerLabel = isGrouped
-        ? `${managers.slice(0, 3).join(", ")}${managers.length > 3 ? ` +${managers.length - 3}` : ""}`
-        : first.manager_name || "Liga";
-      const impactText = first.impact_text || "";
-      return {
-        managerLabel,
-        count: group.length,
-        tone: App.auth.getLeagueNewsTone(first),
-        headline: isGrouped
-          ? `Tema recorrente: ${groupedHeadline || "movimento de bastidor"}`
-          : rawHeadline || "Movimento de bastidor",
-        summary: isGrouped
-          ? `${group.length} publicações seguiram a mesma linha: ${first.summary || "decisão registrada pela liga."}`
-          : first.summary || "Decisão registrada pela liga.",
-        impact: isGrouped && impactText
-          ? `${group.length} caso(s) · ${impactText}`
-          : impactText || "Sem impacto financeiro direto."
-      };
-    }).slice(0, 6);
+    return Object.values(groups)
+      .map((group) => {
+        const first = group[0] || {};
+        const managers = [
+          ...new Set(group.map((item) => item.manager_name).filter(Boolean)),
+        ];
+        const isGrouped = group.length > 1;
+        const rawHeadline = first.headline || "movimento de bastidor";
+        const firstManager = String(first.manager_name || "").trim();
+        const groupedHeadline =
+          firstManager &&
+          rawHeadline.toLowerCase().startsWith(firstManager.toLowerCase())
+            ? rawHeadline.slice(firstManager.length).trim()
+            : rawHeadline;
+        const managerLabel = isGrouped
+          ? `${managers.slice(0, 3).join(", ")}${managers.length > 3 ? ` +${managers.length - 3}` : ""}`
+          : first.manager_name || "Liga";
+        const impactText = first.impact_text || "";
+        return {
+          managerLabel,
+          count: group.length,
+          tone: App.auth.getLeagueNewsTone(first),
+          headline: isGrouped
+            ? `Tema recorrente: ${groupedHeadline || "movimento de bastidor"}`
+            : rawHeadline || "Movimento de bastidor",
+          summary: isGrouped
+            ? `${group.length} publicações seguiram a mesma linha: ${first.summary || "decisão registrada pela liga."}`
+            : first.summary || "Decisão registrada pela liga.",
+          impact:
+            isGrouped && impactText
+              ? `${group.length} caso(s) · ${impactText}`
+              : impactText || "Sem impacto financeiro direto.",
+        };
+      })
+      .slice(0, 6);
   },
 
   renderLeagueNews() {
@@ -2112,7 +2676,9 @@ App.auth = {
     const lead = news[0];
     const briefs = news.slice(1, 5);
 
-    panel.innerHTML = `
+    App.dom.setHtml(
+      panel,
+      `
       <section class="league-news-card">
         <div class="league-news-header">
           <div>
@@ -2122,7 +2688,9 @@ App.auth = {
           <small>Somente movimentos com consequência ou leitura pública entram aqui.</small>
         </div>
 
-        ${lead ? `
+        ${
+          lead
+            ? `
           <div class="league-news-layout">
             <article class="league-news-feature tone-${App.utils.escapeHtml(lead.tone)}">
               <span>${App.utils.escapeDisplay(lead.managerLabel)}</span>
@@ -2130,28 +2698,39 @@ App.auth = {
               <p>${App.utils.escapeDisplay(lead.summary)}</p>
               <small>${App.utils.escapeDisplay(lead.impact)}</small>
             </article>
-            ${briefs.length ? `
+            ${
+              briefs.length
+                ? `
               <div class="league-news-list">
-                ${briefs.map(item => `
+                ${briefs
+                  .map(
+                    (item) => `
                   <article class="tone-${App.utils.escapeHtml(item.tone)}">
                     <span>${App.utils.escapeDisplay(item.managerLabel)}</span>
                     <strong>${App.utils.escapeDisplay(item.headline)}</strong>
                     <p>${App.utils.escapeDisplay(item.summary)}</p>
                     <small>${App.utils.escapeDisplay(item.impact)}</small>
                   </article>
-                `).join("")}
+                `,
+                  )
+                  .join("")}
               </div>
-            ` : ""}
+            `
+                : ""
+            }
           </div>
-        ` : `
+        `
+            : `
           <div class="league-news-empty">
             <strong>Nenhuma manchete relevante publicada</strong>
             <p>Quando uma decisão privada mexer com caixa, elenco ou bastidor, ela aparece aqui como nota pública.</p>
           </div>
-        `}
+        `
+        }
       </section>
-    `;
-  }
+    `,
+    );
+  },
 };
 
 document.addEventListener("DOMContentLoaded", () => App.auth.init());

@@ -258,7 +258,10 @@ App.api = {
         }
 
         const cachedAvatar = App.transfers?.getMarketPlayerAvatar?.(next) || "";
-        if (!App.transfers?.isUsablePlayerAvatar?.(next.avatar_url) && cachedAvatar) {
+        if (
+          !App.transfers?.isUsablePlayerAvatar?.(next.avatar_url) &&
+          cachedAvatar
+        ) {
           next = { ...next, avatar_url: cachedAvatar };
         }
 
@@ -271,7 +274,9 @@ App.api = {
   },
 
   getRatingSourcePriority(item = {}) {
-    const source = App.utils.normalizeText(item.source_name || item.source || "");
+    const source = App.utils.normalizeText(
+      item.source_name || item.source || "",
+    );
     if (source.includes("futbin")) return 50;
     if (source.includes("ea sports") || source.includes("official")) return 40;
     if (source.includes("sofifa")) return 30;
@@ -296,7 +301,9 @@ App.api = {
       App.api.getRatingSourcePriority(current);
     if (sourceDelta !== 0) return sourceDelta > 0 ? next : current;
 
-    const nextSynced = new Date(next.synced_at || next.updated_at || 0).getTime();
+    const nextSynced = new Date(
+      next.synced_at || next.updated_at || 0,
+    ).getTime();
     const currentSynced = new Date(
       current.synced_at || current.updated_at || 0,
     ).getTime();
@@ -370,26 +377,22 @@ App.api = {
     ].slice(0, 40);
     if (!uniqueNames.length) return App.state.apiRatings || [];
 
-    const groups = await App.api.mapWithConcurrency(
-      uniqueNames,
-      6,
-      (name) => {
-        const aliases = App.transfers?.getPlayerSearchAliases
-          ? App.transfers.getPlayerSearchAliases(name)
-          : [name];
-        const normalizedAlias = App.transfers?.normalizePlayerRatingKey
-          ? App.transfers.normalizePlayerRatingKey(name)
-          : App.utils.normalizeText(name);
-        const searchAliases = [
-          ...new Set([...aliases, normalizedAlias].filter(Boolean)),
-        ];
-        return Promise.all(
-          searchAliases.map((alias) =>
-            App.api.searchEaRatings(alias, limitPerName).catch(() => []),
-          ),
-        );
-      },
-    );
+    const groups = await App.api.mapWithConcurrency(uniqueNames, 6, (name) => {
+      const aliases = App.transfers?.getPlayerSearchAliases
+        ? App.transfers.getPlayerSearchAliases(name)
+        : [name];
+      const normalizedAlias = App.transfers?.normalizePlayerRatingKey
+        ? App.transfers.normalizePlayerRatingKey(name)
+        : App.utils.normalizeText(name);
+      const searchAliases = [
+        ...new Set([...aliases, normalizedAlias].filter(Boolean)),
+      ];
+      return Promise.all(
+        searchAliases.map((alias) =>
+          App.api.searchEaRatings(alias, limitPerName).catch(() => []),
+        ),
+      );
+    });
 
     App.api.mergeEaRatings(groups.flat(2));
     return App.state.apiRatings;
@@ -403,21 +406,17 @@ App.api = {
     ].slice(0, 40);
     if (!uniqueNames.length) return App.state.apiMarketPlayers || [];
 
-    const groups = await App.api.mapWithConcurrency(
-      uniqueNames,
-      6,
-      (name) =>
-        App.api
-          .fetchMarketPlayersDirect(name, limitPerName)
-          .then((rows) =>
-            App.api.applyMarketPlayerOverrides(
-              Array.isArray(rows) ? rows : [],
-              { showContracted: true },
-            ),
-          )
-          .catch(() =>
-            App.api.loadMarketPlayers(name, true, limitPerName).catch(() => []),
-          ),
+    const groups = await App.api.mapWithConcurrency(uniqueNames, 6, (name) =>
+      App.api
+        .fetchMarketPlayersDirect(name, limitPerName)
+        .then((rows) =>
+          App.api.applyMarketPlayerOverrides(Array.isArray(rows) ? rows : [], {
+            showContracted: true,
+          }),
+        )
+        .catch(() =>
+          App.api.loadMarketPlayers(name, true, limitPerName).catch(() => []),
+        ),
     );
 
     App.api.mergeMarketPlayers(groups.flat());
@@ -826,25 +825,34 @@ App.api = {
 
     const week = Number(weekValue || 0);
 
-    container.innerHTML = `
+    App.dom.setHtml(
+      container,
+      `
       <div class="sim-preview-shell is-loading">
         <div class="sim-preview-title">
           <strong>${week ? `Analisando semana ${week}` : "Mapa de pendências"}</strong>
           <span>Consultando o banco oficial...</span>
         </div>
       </div>
-    `;
+    `,
+    );
 
     const audit = await App.api.loadMatchAudit(week || null);
     const matches = Array.isArray(audit.matches) ? audit.matches : [];
 
     if (!audit.ok) {
-      container.innerHTML = `<div class="sim-preview-empty">${App.utils.escapeHtml(audit.message || "Não consegui carregar a auditoria de partidas.")}</div>`;
+      App.dom.setHtml(
+        container,
+        `<div class="sim-preview-empty">${App.utils.escapeHtml(audit.message || "Não consegui carregar a auditoria de partidas.")}</div>`,
+      );
       return;
     }
 
     if (!matches.length) {
-      container.innerHTML = `<div class="sim-preview-empty">${week ? `Nenhum jogo encontrado na semana ${week}.` : "Nenhum jogo pendente encontrado no banco."}</div>`;
+      App.dom.setHtml(
+        container,
+        `<div class="sim-preview-empty">${week ? `Nenhum jogo encontrado na semana ${week}.` : "Nenhum jogo pendente encontrado no banco."}</div>`,
+      );
       return;
     }
 
@@ -887,7 +895,9 @@ App.api = {
       .map((row) => ({
         ...row,
         pending: row.cpuPending + row.humanPending,
-        donePercent: row.total ? Math.round((row.approved / row.total) * 100) : 0,
+        donePercent: row.total
+          ? Math.round((row.approved / row.total) * 100)
+          : 0,
         competitionsLabel: [...row.competitions].slice(0, 2).join(" · "),
       }))
       .sort((a, b) => Number(a.week) - Number(b.week));
@@ -898,15 +908,15 @@ App.api = {
 
     const blocks = week
       ? Object.entries(
-        matches.reduce((acc, match) => {
-          const key = match.competition || "Liga";
-          if (!acc[key]) acc[key] = [];
-          acc[key].push(match);
-          return acc;
-        }, {}),
-      )
-        .map(
-          ([title, items]) => `
+          matches.reduce((acc, match) => {
+            const key = match.competition || "Liga";
+            if (!acc[key]) acc[key] = [];
+            acc[key].push(match);
+            return acc;
+          }, {}),
+        )
+          .map(
+            ([title, items]) => `
         <article class="sim-competition-block">
           <div class="sim-competition-header">
             <strong>${App.utils.escapeHtml(title)}</strong>
@@ -935,17 +945,21 @@ App.api = {
           </div>
         </article>
       `,
-        )
-        .join("")
+          )
+          .join("")
       : "";
 
     const canSimulate =
       Number(summary.human_pending || 0) === 0 &&
       Number(summary.cpu_pending || 0) > 0;
 
-    const weekOverview = weekRows.filter((row) => row.pending > 0 || row.approved > 0);
+    const weekOverview = weekRows.filter(
+      (row) => row.pending > 0 || row.approved > 0,
+    );
 
-    container.innerHTML = `
+    App.dom.setHtml(
+      container,
+      `
       <div class="sim-preview-shell ${week ? "is-week-detail" : "is-week-map"}">
         <div class="sim-preview-title">
           <div>
@@ -1017,7 +1031,8 @@ App.api = {
 
         ${week ? `<div class="sim-preview-grid">${blocks}</div>` : ""}
       </div>
-    `;
+    `,
+    );
 
     container.querySelectorAll("[data-fill-sim-week]").forEach((button) => {
       button.addEventListener("click", () => {
@@ -1028,11 +1043,13 @@ App.api = {
       });
     });
 
-    container.querySelector("[data-clear-sim-week]")?.addEventListener("click", () => {
-      const form = document.getElementById("cpuSimulationForm");
-      if (form?.elements.week) form.elements.week.value = "";
-      App.api.renderCpuSimulationPreview("");
-    });
+    container
+      .querySelector("[data-clear-sim-week]")
+      ?.addEventListener("click", () => {
+        const form = document.getElementById("cpuSimulationForm");
+        if (form?.elements.week) form.elements.week.value = "";
+        App.api.renderCpuSimulationPreview("");
+      });
   },
 
   async loadManagerOnboarding() {
@@ -1055,9 +1072,13 @@ App.api = {
     try {
       const [rules, salaryDebts] = await Promise.all([
         App.api.rpc("app_get_finance_rules", {}, 30000),
-        App.api.rpc("app_get_salary_debt_status", {}, 30000)
+        App.api.rpc("app_get_salary_debt_status", {}, 30000),
       ]);
-      const forecast = await App.api.rpc("app_get_manager_finance_forecast", {}, 30000);
+      const forecast = await App.api.rpc(
+        "app_get_manager_finance_forecast",
+        {},
+        30000,
+      );
       App.state.apiFinanceRules = rules || null;
       App.state.apiFinanceForecast = Array.isArray(forecast) ? forecast : [];
       App.state.apiSalaryDebts = Array.isArray(salaryDebts) ? salaryDebts : [];
@@ -1115,13 +1136,12 @@ App.api = {
       if (data.dailyTransferLimit !== undefined)
         App.config.baseDailyTransferLimit = Number(data.dailyTransferLimit);
 
-      const [
-        budgetReconciliation,
-        sponsorshipRewardTotals,
-      ] = await Promise.all([
-        App.api.loadBudgetReconciliation(),
-        App.api.loadSponsorshipRewardTotals(),
-      ]);
+      const [budgetReconciliation, sponsorshipRewardTotals] = await Promise.all(
+        [
+          App.api.loadBudgetReconciliation(),
+          App.api.loadSponsorshipRewardTotals(),
+        ],
+      );
 
       App.state.apiResults = data.results || [];
       App.state.apiTransfers = (data.transfers || []).filter(

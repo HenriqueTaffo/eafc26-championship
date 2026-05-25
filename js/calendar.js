@@ -2,7 +2,7 @@ import App from "./app.js";
 
 App.calendar = {
   generateChampionshipRounds() {
-    const teamNames = App.data.teams.map(team => team.team);
+    const teamNames = App.data.teams.map((team) => team.team);
     const fixedTeam = teamNames[0];
     let rotation = teamNames.slice(1);
     const firstLegRounds = [];
@@ -22,18 +22,24 @@ App.calendar = {
       rotation = [rotation[rotation.length - 1], ...rotation.slice(0, -1)];
     }
 
-    const secondLegRounds = firstLegRounds.map(round => round.map(match => ({ home: match.away, away: match.home })));
+    const secondLegRounds = firstLegRounds.map((round) =>
+      round.map((match) => ({ home: match.away, away: match.home })),
+    );
     return [...firstLegRounds, ...secondLegRounds];
   },
 
   getChampionshipResult(roundNumber, home, away) {
     const phase = `Rodada ${roundNumber}`;
-    const row = App.standings.getApprovedApiResults().find(result =>
-      App.utils.normalizeText(result.Competicao) === "championship" &&
-      App.utils.normalizeText(result.RodadaFase) === App.utils.normalizeText(phase) &&
-      App.utils.sameTeamName(result.Mandante, home) &&
-      App.utils.sameTeamName(result.Visitante, away)
-    );
+    const row = App.standings
+      .getApprovedApiResults()
+      .find(
+        (result) =>
+          App.utils.normalizeText(result.Competicao) === "championship" &&
+          App.utils.normalizeText(result.RodadaFase) ===
+            App.utils.normalizeText(phase) &&
+          App.utils.sameTeamName(result.Mandante, home) &&
+          App.utils.sameTeamName(result.Visitante, away),
+      );
 
     if (!row) return null;
     return [Number(row.GolsMandante), Number(row.GolsVisitante)];
@@ -45,10 +51,16 @@ App.calendar = {
 
     rounds.forEach((round, roundIndex) => {
       const roundNumber = roundIndex + 1;
-      const week = Math.ceil(roundNumber / App.config.calendarConfig.championshipRoundsPerWeek);
+      const week = Math.ceil(
+        roundNumber / App.config.calendarConfig.championshipRoundsPerWeek,
+      );
 
       round.forEach((match, index) => {
-        const result = App.calendar.getChampionshipResult(roundNumber, match.home, match.away);
+        const result = App.calendar.getChampionshipResult(
+          roundNumber,
+          match.home,
+          match.away,
+        );
         events.push({
           id: `Championship-${roundNumber}-${index + 1}`,
           date: App.utils.getChampionshipDate(roundNumber),
@@ -60,7 +72,7 @@ App.calendar = {
           away: match.away,
           homeScore: result ? result[0] : null,
           awayScore: result ? result[1] : null,
-          status: result ? "Finalizado" : "Pendente"
+          status: result ? "Finalizado" : "Pendente",
         });
       });
     });
@@ -69,24 +81,36 @@ App.calendar = {
   },
 
   getCalendarEvents() {
-    const events = [...App.calendar.getChampionshipEvents(), ...App.cups.getCupEvents()];
-    const order = { "Championship": 1, "Copa da Liga": 2, "FA Cup": 3 };
-    return events.sort((a, b) => a.date - b.date || (order[a.competition] || 99) - (order[b.competition] || 99) || a.phase.localeCompare(b.phase));
+    const events = [
+      ...App.calendar.getChampionshipEvents(),
+      ...App.cups.getCupEvents(),
+    ];
+    const order = { Championship: 1, "Copa da Liga": 2, "FA Cup": 3 };
+    return events.sort(
+      (a, b) =>
+        a.date - b.date ||
+        (order[a.competition] || 99) - (order[b.competition] || 99) ||
+        a.phase.localeCompare(b.phase),
+    );
   },
 
   getEventById(eventId) {
-    return App.calendar.getCalendarEvents().find(event => String(event.id) === String(eventId));
+    return App.calendar
+      .getCalendarEvents()
+      .find((event) => String(event.id) === String(eventId));
   },
 
   involvesOurTeam(event) {
-    return [event.home, event.away].some(teamName => App.utils.getTeamByName(teamName)?.status === "Nosso");
+    return [event.home, event.away].some(
+      (teamName) => App.utils.getTeamByName(teamName)?.status === "Nosso",
+    );
   },
 
   getMatchOwners(event) {
     return [event.home, event.away]
-      .map(teamName => App.utils.getTeamByName(teamName))
-      .filter(team => team?.status === "Nosso")
-      .map(team => team.owner);
+      .map((teamName) => App.utils.getTeamByName(teamName))
+      .filter((team) => team?.status === "Nosso")
+      .map((team) => team.owner);
   },
 
   getMatchType(event) {
@@ -97,18 +121,28 @@ App.calendar = {
   },
 
   getStatusClass(event) {
-    return typeof event.homeScore === "number" && typeof event.awayScore === "number" ? "done" : "pending";
+    return typeof event.homeScore === "number" &&
+      typeof event.awayScore === "number"
+      ? "done"
+      : "pending";
   },
 
   getCompetitionLabel(competition) {
     if (competition === "Championship") return "Championship";
-    return App.cups?.getCompetitionDisplayName ? App.cups.getCompetitionDisplayName(competition) : competition;
+    return App.cups?.getCompetitionDisplayName
+      ? App.cups.getCompetitionDisplayName(competition)
+      : competition;
   },
 
   canSubmitResult(event) {
     if (!event) return false;
     if (App.calendar.getStatusClass(event) === "done") return false;
-    if (String(event.status || "").toLowerCase().includes("aguardando")) return false;
+    if (
+      String(event.status || "")
+        .toLowerCase()
+        .includes("aguardando")
+    )
+      return false;
     return App.calendar.involvesOurTeam(event);
   },
 
@@ -116,33 +150,56 @@ App.calendar = {
     return Boolean(
       event &&
       App.auth?.isCommissioner?.() &&
-      App.calendar.getStatusClass(event) === "done"
+      App.calendar.getStatusClass(event) === "done",
     );
   },
 
   formatMatchResult(event) {
-    if (typeof event.homeScore === "number" && typeof event.awayScore === "number") {
-      const winner = event.competition !== "Championship" ? App.cups.getCupWinner(event) : null;
-      const penaltyText = event.penaltyWinner ? `, ${App.utils.resolveTeamName(event.penaltyWinner)} nos pênaltis${event.penaltyScore ? ` (${event.penaltyScore})` : ""}` : "";
-      const winnerText = event.competition !== "Championship" && winner ? ` - ${winner} classificado${penaltyText}` : "";
+    if (
+      typeof event.homeScore === "number" &&
+      typeof event.awayScore === "number"
+    ) {
+      const winner =
+        event.competition !== "Championship"
+          ? App.cups.getCupWinner(event)
+          : null;
+      const penaltyText = event.penaltyWinner
+        ? `, ${App.utils.resolveTeamName(event.penaltyWinner)} nos pênaltis${event.penaltyScore ? ` (${event.penaltyScore})` : ""}`
+        : "";
+      const winnerText =
+        event.competition !== "Championship" && winner
+          ? ` - ${winner} classificado${penaltyText}`
+          : "";
       return `${event.homeScore} x ${event.awayScore}${winnerText}`;
     }
     return event.status || "Pendente";
   },
 
   getFilteredEvents() {
-    const search = App.utils.normalizeText(document.getElementById("calendarSearchInput")?.value);
-    const competition = document.getElementById("calendarCompetitionFilter")?.value || "all";
-    const ownerFilter = document.getElementById("calendarOwnerFilter")?.value || "all";
+    const search = App.utils.normalizeText(
+      document.getElementById("calendarSearchInput")?.value,
+    );
+    const competition =
+      document.getElementById("calendarCompetitionFilter")?.value || "all";
+    const ownerFilter =
+      document.getElementById("calendarOwnerFilter")?.value || "all";
     const week = document.getElementById("calendarWeekFilter")?.value || "all";
-    const statusFilter = document.getElementById("calendarStatusFilter")?.value || "pending";
+    const statusFilter =
+      document.getElementById("calendarStatusFilter")?.value || "pending";
 
-    let filteredEvents = App.calendar.getCalendarEvents().filter(event => {
+    let filteredEvents = App.calendar.getCalendarEvents().filter((event) => {
       const owners = App.calendar.getMatchOwners(event);
       const matchType = App.calendar.getMatchType(event);
 
-      const matchesSearch = !search || App.utils.normalizeText(`${event.home} ${event.away} ${event.competition} ${event.phase} ${owners.join(" ")} ${matchType}`).includes(search);
-      const matchesCompetition = competition === "all" || event.competition === competition;
+      const matchesSearch =
+        !search ||
+        App.utils
+          .normalizeText(
+            `${event.home} ${event.away} ${event.competition} ${event.phase} ${owners.join(" ")} ${matchType}`,
+          )
+          .includes(search);
+      const matchesCompetition =
+        competition === "all" || event.competition === competition;
       const matchesWeek = week === "all" || String(event.week) === String(week);
 
       let matchesOwner = true;
@@ -165,12 +222,18 @@ App.calendar = {
         matchesStatus = status === "done";
       }
 
-      return matchesSearch && matchesCompetition && matchesWeek && matchesOwner && matchesStatus;
+      return (
+        matchesSearch &&
+        matchesCompetition &&
+        matchesWeek &&
+        matchesOwner &&
+        matchesStatus
+      );
     });
 
     if (statusFilter === "next") {
       filteredEvents = filteredEvents
-        .filter(event => App.calendar.getStatusClass(event) === "pending")
+        .filter((event) => App.calendar.getStatusClass(event) === "pending")
         .slice(0, 30);
     }
 
@@ -200,7 +263,12 @@ App.calendar = {
   normalizeCalendarDate(value) {
     if (!value) return null;
     if (value instanceof Date) {
-      return new Date(value.getFullYear(), value.getMonth(), value.getDate(), 12);
+      return new Date(
+        value.getFullYear(),
+        value.getMonth(),
+        value.getDate(),
+        12,
+      );
     }
 
     const raw = String(value);
@@ -229,7 +297,7 @@ App.calendar = {
     const date = new Date(year, month - 1, 1, 12);
     return new Intl.DateTimeFormat("pt-BR", {
       month: "long",
-      year: "numeric"
+      year: "numeric",
     }).format(date);
   },
 
@@ -241,8 +309,10 @@ App.calendar = {
 
     return {
       day: String(date.getDate()).padStart(2, "0"),
-      weekday: new Intl.DateTimeFormat("pt-BR", { weekday: "short" }).format(date),
-      month: new Intl.DateTimeFormat("pt-BR", { month: "short" }).format(date)
+      weekday: new Intl.DateTimeFormat("pt-BR", { weekday: "short" }).format(
+        date,
+      ),
+      month: new Intl.DateTimeFormat("pt-BR", { month: "short" }).format(date),
     };
   },
 
@@ -297,21 +367,27 @@ App.calendar = {
     }
 
     if (title) title.textContent = `${event.home} x ${event.away}`;
-    if (subtitle) subtitle.textContent = `${App.calendar.getCompetitionLabel(event.competition)} · ${event.phase} · Semana ${event.week}`;
+    if (subtitle)
+      subtitle.textContent = `${App.calendar.getCompetitionLabel(event.competition)} · ${event.phase} · Semana ${event.week}`;
 
     if (preview) {
-      preview.innerHTML = `
+      App.dom.setHtml(
+        preview,
+        `
         <div>${App.clubs.getTeamIdentityHtml(event.home)}</div>
         <strong>x</strong>
         <div>${App.clubs.getTeamIdentityHtml(event.away)}</div>
-      `;
+      `,
+      );
     }
 
     App.forms.updatePenaltyVisibility(form);
     modal.classList.add("is-visible");
     modal.setAttribute("aria-hidden", "false");
 
-    const opened = modal.classList.contains("is-visible") && modal.getAttribute("aria-hidden") === "false";
+    const opened =
+      modal.classList.contains("is-visible") &&
+      modal.getAttribute("aria-hidden") === "false";
     if (opened) {
       document.body.classList.add("modal-active");
       setTimeout(() => form.elements.homeScore?.focus(), 50);
@@ -329,19 +405,19 @@ App.calendar = {
   },
 
   bindCalendarActions() {
-    document.querySelectorAll("[data-open-result-modal]").forEach(button => {
+    document.querySelectorAll("[data-open-result-modal]").forEach((button) => {
       if (button.dataset.bound === "true") return;
       button.dataset.bound = "true";
-      button.addEventListener("click", event => {
+      button.addEventListener("click", (event) => {
         event.stopPropagation();
         App.calendar.openResultModal(button.dataset.openResultModal);
       });
     });
 
-    document.querySelectorAll("[data-reverse-result]").forEach(button => {
+    document.querySelectorAll("[data-reverse-result]").forEach((button) => {
       if (button.dataset.bound === "true") return;
       button.dataset.bound = "true";
-      button.addEventListener("click", event => {
+      button.addEventListener("click", (event) => {
         event.stopPropagation();
         App.calendar.handleReverseResult(button.dataset.reverseResult, button);
       });
@@ -350,7 +426,9 @@ App.calendar = {
 
   async handleReverseResult(eventId, button) {
     const event = App.calendar.getEventById(eventId);
-    const message = document.getElementById("resultMessage") || document.getElementById("calendarResultMessage");
+    const message =
+      document.getElementById("resultMessage") ||
+      document.getElementById("calendarResultMessage");
     if (!event) return;
 
     const confirmation = [
@@ -359,7 +437,7 @@ App.calendar = {
       `${App.calendar.getCompetitionLabel(event.competition)} · ${event.phase}`,
       `${event.home} ${event.homeScore} x ${event.awayScore} ${event.away}`,
       "",
-      "A partida voltará a ficar pendente e as premiações vinculadas a este placar serão removidas."
+      "A partida voltará a ficar pendente e as premiações vinculadas a este placar serão removidas.",
     ].join("\n");
 
     if (!window.confirm(confirmation)) return;
@@ -368,7 +446,7 @@ App.calendar = {
     App.main.showLoader({
       variant: "match",
       title: "Desfazendo resultado",
-      message: "Removendo placar, avanço indevido e premiações associadas."
+      message: "Removendo placar, avanço indevido e premiações associadas.",
     });
 
     try {
@@ -377,15 +455,25 @@ App.calendar = {
         competition: event.competition,
         phase: event.phase,
         home: event.home,
-        away: event.away
+        away: event.away,
       });
 
-      if (!data.ok) throw new Error(data.message || data.error || "Não foi possível desfazer o resultado.");
-      App.utils.setMessage(message, data.message || "Resultado desfeito.", "success");
+      if (!data.ok)
+        throw new Error(
+          data.message ||
+            data.error ||
+            "Não foi possível desfazer o resultado.",
+        );
+      App.utils.setMessage(
+        message,
+        data.message || "Resultado desfeito.",
+        "success",
+      );
       await App.api.loadApiData({
         variant: "match",
         title: "Atualizando dados",
-        message: "Resultado desfeito. Atualizando calendário, copas e orçamento..."
+        message:
+          "Resultado desfeito. Atualizando calendário, copas e orçamento...",
       });
     } catch (error) {
       App.utils.setMessage(message, error.message, "error");
@@ -398,5 +486,5 @@ App.calendar = {
   render() {
     App.calendar.populateWeeks();
     App.react?.notify?.();
-  }
+  },
 };
