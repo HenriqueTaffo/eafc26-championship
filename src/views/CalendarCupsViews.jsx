@@ -182,6 +182,62 @@ function CalendarEventCard({ event }) {
   );
 }
 
+function CalendarAgendaCard({ event }) {
+  const parts = App.calendar.formatCalendarDayParts(event.date);
+  const dateKey = App.calendar.getCalendarDateKey(event.date);
+  const statusClass = App.calendar.getStatusClass(event);
+
+  return (
+    <article className={`calendar-agenda-card ${statusClass}`}>
+      <time className="calendar-agenda-date" dateTime={dateKey}>
+        <strong>{parts.day}</strong>
+        <span>{parts.weekday}</span>
+      </time>
+      <div className="calendar-agenda-main">
+        <div className="calendar-agenda-head">
+          <span className={`competition-badge ${event.className || ""}`}>
+            {App.calendar.getCompetitionLabel(event.competition)}
+          </span>
+          <span>{event.phase}</span>
+        </div>
+        <Matchup
+          home={event.home}
+          away={event.away}
+          className="calendar-agenda-match"
+        />
+      </div>
+      <div className="calendar-agenda-action">
+        <ResultAction event={event} />
+      </div>
+    </article>
+  );
+}
+
+function CalendarMonthAgenda({ events }) {
+  if (!events.length) return null;
+
+  const orderedEvents = [...events].sort(
+    (a, b) =>
+      App.calendar.normalizeCalendarDate(a.date) -
+        App.calendar.normalizeCalendarDate(b.date) ||
+      Number(a.week || 0) - Number(b.week || 0),
+  );
+
+  return (
+    <section className="calendar-desktop-agenda" aria-label="Agenda do mês">
+      <div className="calendar-desktop-agenda-header">
+        <span className="modal-kicker">Jogos do mês</span>
+        <strong>{orderedEvents.length} compromisso(s)</strong>
+      </div>
+      <div className="calendar-desktop-agenda-list">
+        {orderedEvents.map((event) => (
+          <CalendarAgendaCard event={event} key={`agenda-${event.id}`} />
+        ))}
+      </div>
+    </section>
+  );
+}
+
 function CalendarWeekBoardContent({ events }) {
   const weeks = [
     ...events
@@ -313,6 +369,7 @@ function CalendarMonth({ monthKey, eventsByDate, events }) {
           <span>{humanCount} com técnico</span>
         </div>
       </header>
+      <CalendarMonthAgenda events={monthEvents} />
       <div className="calendar-weekday-row" aria-hidden="true">
         {WEEKDAYS.map((day) => (
           <span key={day}>{day}</span>

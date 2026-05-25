@@ -134,6 +134,230 @@ body *:not(svg):not(path) {
   object-position: left center;
 }
 
+@media (min-width: 1181px) {
+  .calendar-month-card {
+    padding: 18px;
+  }
+
+  .calendar-month-header {
+    margin-bottom: 14px;
+  }
+
+  .calendar-desktop-agenda {
+    display: grid;
+    gap: 10px;
+    margin: 0 0 14px;
+    border: 1px solid rgba(45, 212, 191, 0.16);
+    border-radius: 8px;
+    padding: 12px;
+    background:
+      linear-gradient(90deg, rgba(45, 212, 191, 0.08), transparent 38%),
+      rgba(2, 6, 23, 0.28);
+  }
+
+  .calendar-desktop-agenda-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    min-width: 0;
+  }
+
+  .calendar-desktop-agenda-header strong {
+    color: #f8fafc;
+    font-size: 0.78rem;
+  }
+
+  .calendar-desktop-agenda-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 440px), 1fr));
+    gap: 10px;
+  }
+
+  .calendar-agenda-card {
+    display: grid;
+    grid-template-columns: 58px minmax(0, 1fr) minmax(108px, 0.34fr);
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+    border: 1px solid rgba(148, 163, 184, 0.14);
+    border-radius: 8px;
+    padding: 10px;
+    background: rgba(15, 23, 42, 0.64);
+  }
+
+  .calendar-agenda-card.pending {
+    border-color: rgba(96, 165, 250, 0.28);
+  }
+
+  .calendar-agenda-date {
+    display: grid;
+    min-height: 58px;
+    place-items: center;
+    border-radius: 8px;
+    background:
+      linear-gradient(135deg, rgba(251, 191, 36, 0.18), transparent 52%),
+      rgba(2, 6, 23, 0.62);
+    color: #f8fafc;
+  }
+
+  .calendar-agenda-date strong {
+    font-size: 1.45rem;
+    line-height: 1;
+  }
+
+  .calendar-agenda-date span,
+  .calendar-agenda-head span {
+    color: #9ae6dd;
+    font-size: 0.6rem;
+    font-weight: 900;
+    text-transform: uppercase;
+  }
+
+  .calendar-agenda-main,
+  .calendar-agenda-action {
+    min-width: 0;
+  }
+
+  .calendar-agenda-head {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 8px;
+    min-width: 0;
+  }
+
+  .calendar-agenda-head .competition-badge {
+    min-height: 22px;
+    padding: 5px 8px;
+    font-size: 0.58rem;
+  }
+
+  .calendar-agenda-match {
+    grid-template-columns: minmax(0, 1fr) 18px minmax(0, 1fr);
+  }
+
+  .calendar-agenda-match .matchup-name {
+    overflow: visible;
+    font-size: 0.68rem;
+    line-height: 1.2;
+    text-overflow: clip;
+    white-space: normal;
+  }
+
+  .calendar-agenda-action .calendar-action-cell {
+    width: 100%;
+    align-items: stretch;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .calendar-agenda-action .status-pill,
+  .calendar-agenda-action .mini-action-button {
+    width: 100%;
+    min-height: 30px;
+    justify-content: center;
+    font-size: 0.6rem;
+  }
+
+  .calendar-month-grid {
+    gap: 6px;
+  }
+
+  .calendar-day-cell {
+    min-height: 92px;
+    padding: 9px;
+    border-color: rgba(148, 163, 184, 0.08);
+    background: rgba(2, 6, 23, 0.16);
+  }
+
+  .calendar-day-cell:not(.has-events) {
+    opacity: 0.58;
+  }
+
+  .calendar-day-cell:not(.has-events):hover {
+    opacity: 0.82;
+    border-color: rgba(148, 163, 184, 0.18);
+  }
+
+  .calendar-day-cell:not(.has-events) .calendar-day-empty {
+    display: none;
+  }
+
+  .calendar-day-cell.has-events {
+    min-height: 248px;
+    border-color: rgba(45, 212, 191, 0.2);
+    background:
+      linear-gradient(180deg, rgba(45, 212, 191, 0.08), transparent 42%),
+      rgba(8, 13, 18, 0.9);
+  }
+
+  .calendar-day-cell.has-human-match {
+    box-shadow:
+      inset 4px 0 0 rgba(167, 139, 250, 0.85),
+      0 14px 32px rgba(0, 0, 0, 0.2);
+  }
+
+  .calendar-day-top {
+    margin-bottom: 8px;
+  }
+
+  .calendar-day-top time span {
+    font-size: 1.18rem;
+  }
+
+  .calendar-day-top time small,
+  .calendar-day-count {
+    font-size: 0.52rem;
+  }
+
+  .calendar-day-count {
+    min-height: 20px;
+    padding: 4px 6px;
+  }
+
+  .calendar-day-events {
+    max-height: none;
+    overflow: visible;
+    padding-right: 0;
+  }
+
+  .calendar-event-card {
+    padding: 8px;
+  }
+
+  .calendar-event-card .competition-badge,
+  .calendar-event-status-dot {
+    min-height: 20px;
+    padding: 4px 7px;
+    font-size: 0.52rem;
+  }
+
+  .calendar-event-card .calendar-grid-match .matchup-side.home,
+  .calendar-event-card .calendar-grid-match .matchup-side.away {
+    display: grid;
+  }
+
+  .calendar-event-card .calendar-grid-match .matchup-name {
+    overflow: visible;
+    font-size: 0.62rem;
+    line-height: 1.25;
+    text-overflow: clip;
+    white-space: normal;
+  }
+
+  .calendar-event-phase,
+  .calendar-event-meta > span {
+    font-size: 0.58rem;
+  }
+
+  .calendar-event-action .status-pill,
+  .calendar-event-action .mini-action-button {
+    min-height: 30px;
+    font-size: 0.58rem;
+  }
+}
+
 @media (max-width: 720px) {
   .league-hero-brand {
     grid-template-columns: 1fr;
@@ -150,6 +374,12 @@ body *:not(svg):not(path) {
 
   .league-brand-wordmark {
     width: min(100%, 320px);
+  }
+}
+
+@media (max-width: 1180px) {
+  .calendar-desktop-agenda {
+    display: none;
   }
 }
 
