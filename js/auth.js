@@ -1320,6 +1320,149 @@ App.auth = {
     App.auth.bindTransferProposalButtons(panel);
   },
 
+  getSponsorshipInboxOffers(ownerName = "") {
+    const session = App.auth.getSession();
+    if (
+      !session ||
+      App.utils.normalizeText(session.managerName) !==
+        App.utils.normalizeText(ownerName)
+    ) {
+      return [];
+    }
+
+    const data = App.auth.mySponsorships || {};
+    return Array.isArray(data.offers) ? data.offers : [];
+  },
+
+  getSponsorshipCompetitionMeta(offer = {}, offers = []) {
+    const category = offer.category || "Patrocinio";
+    const categoryOffers = offers
+      .filter(
+        (item) =>
+          App.utils.normalizeText(item.category || "Patrocinio") ===
+          App.utils.normalizeText(category),
+      )
+      .slice()
+      .sort(
+        (a, b) =>
+          App.auth.getSponsorshipTotalValue(b) -
+            App.auth.getSponsorshipTotalValue(a) ||
+          Number(b.signingBonus || b.signing_bonus || 0) -
+            Number(a.signingBonus || a.signing_bonus || 0),
+      );
+    const rank =
+      categoryOffers.findIndex(
+        (item) => String(item.id) === String(offer.id),
+      ) + 1;
+    const leader = categoryOffers[0] || offer;
+    const leaderDelta = Math.max(
+      0,
+      App.auth.getSponsorshipTotalValue(leader) -
+        App.auth.getSponsorshipTotalValue(offer),
+    );
+
+    return {
+      category,
+      count: categoryOffers.length,
+      rank: rank || 1,
+      leaderDelta,
+      label:
+        categoryOffers.length <= 1
+          ? "Oferta unica"
+          : rank === 1
+            ? `Lidera ${categoryOffers.length} marca(s)`
+            : `${rank}/${categoryOffers.length} na disputa`,
+    };
+  },
+
+  renderSponsorshipEmailCard(offer = {}, offers = []) {
+    const cadence = App.auth.getSponsorshipCadence(offer);
+    const totalValue = App.auth.getSponsorshipTotalValue(offer);
+    const signingBonus = Number(
+      offer.signingBonus || offer.signing_bonus || 0,
+    );
+    const rewardValue = Number(offer.rewardValue || offer.reward_value || 0);
+    const maxClaims = Number(offer.maxClaims || offer.max_claims || 0);
+    const terminationFee = Number(
+      offer.terminationFee || offer.termination_fee || 0,
+    );
+    const competition = App.auth.getSponsorshipCompetitionMeta(offer, offers);
+    const cadenceLabel = App.auth.getSponsorshipCadenceLabel(offer);
+    const cadenceClass = App.auth.getSponsorshipCadenceClass(offer);
+    const frequencyLabel = App.auth.getSponsorshipFrequencyLabel(offer);
+    const firstPaymentAt = App.auth.parseSponsorshipDate(
+      offer.firstPaymentAt || offer.first_payment_at,
+    );
+    const firstPaymentLabel =
+      firstPaymentAt && cadence
+        ? App.utils.formatDate(firstPaymentAt)
+        : "apos assinatura";
+    const rankDetail =
+      competition.leaderDelta > 0
+        ? `Fica ${App.utils.formatCurrency(competition.leaderDelta)} abaixo da lider.`
+        : competition.count > 1
+          ? "Esta e a melhor proposta financeira da categoria."
+          : "Sem concorrente direto nesta categoria.";
+
+    return `
+      <article class="decision-card decision-email-message sponsor-email-message priority-normal">
+        <div class="decision-card-top email-message-top sponsor-email-status-row">
+          <span>Comercial | ${App.utils.escapeDisplay(offer.sponsorName || "Marca")}</span>
+          <b>${App.utils.escapeDisplay(competition.label)}</b>
+        </div>
+        <div class="email-message-subject sponsor-email-subject">
+          ${App.auth.renderSponsorBrandMark(offer.sponsorName)}
+          <div>
+            <strong>${App.utils.escapeDisplay(offer.title || "Proposta comercial")}</strong>
+            <small>${App.utils.escapeDisplay(competition.category)} | ${App.utils.escapeDisplay(cadenceLabel)} | ${App.utils.escapeDisplay(offer.riskLevel || "Negociacao aberta")}</small>
+          </div>
+          <span class="sponsor-cadence-badge ${cadenceClass}">${App.utils.escapeHtml(cadenceLabel)}</span>
+        </div>
+        <p>${App.utils.escapeDisplay(offer.description || "Marca interessada em fechar contrato com o clube.")}</p>
+        <div class="sponsor-email-value-row">
+          <span>
+            <b>Total potencial</b>
+            <strong>${App.utils.formatCurrency(totalValue)}</strong>
+            <small>${maxClaims} pagamento(s)</small>
+          </span>
+          <span>
+            <b>Luva</b>
+            <strong>${App.utils.formatCurrency(signingBonus)}</strong>
+            <small>entrada imediata</small>
+          </span>
+          <span>
+            <b>${cadence ? "Parcela" : "Bonus"}</b>
+            <strong>${App.utils.formatCurrency(rewardValue)}</strong>
+            <small>${App.utils.escapeDisplay(frequencyLabel)}</small>
+          </span>
+        </div>
+        <div class="email-message-preview sponsor-competition-preview">
+          <span>Concorrencia: ${App.utils.escapeDisplay(rankDetail)}</span>
+          <span>Primeiro pagamento: ${App.utils.escapeDisplay(firstPaymentLabel)}</span>
+          ${
+            offer.isReplacement
+              ? `<span>Troca de marca: substitui ${App.utils.escapeDisplay(offer.currentSponsorName || "contrato atual")} com multa de ${App.utils.formatCurrency(terminationFee)}.</span>`
+              : `<span>Vaga: livre para nova marca nesta categoria.</span>`
+          }
+        </div>
+        <div class="decision-options email-response-actions">
+          <button
+            type="button"
+            data-sponsor-offer="${App.utils.escapeHtml(offer.id)}"
+            data-sponsor-fee="${terminationFee}"
+            data-sponsor-replacement="${offer.isReplacement ? "true" : "false"}"
+            data-sponsor-signing="${signingBonus}"
+            data-sponsor-reward="${rewardValue}"
+            data-sponsor-cadence="${App.utils.escapeHtml(cadence || "goal")}"
+          >
+            <strong>${offer.isReplacement ? "Aceitar troca de marca" : "Aceitar proposta"}</strong>
+            <small>${offer.isReplacement ? "Encerra o contrato atual da categoria e assume a multa." : "Fecha o acordo e arquiva as concorrentes da mesma disputa."}</small>
+          </button>
+        </div>
+      </article>
+    `;
+  },
+
   renderCoachDecisionCard(ownerName) {
     const session = App.auth.getSession();
     const owner = ownerName || "";
@@ -1366,33 +1509,40 @@ App.auth = {
     const pending = App.auth.myDecisions.filter(
       (item) => item.status === "pending",
     );
+    const sponsorshipOffers = App.auth.getSponsorshipInboxOffers(owner);
     const resolved = App.auth.myDecisions
       .filter((item) => item.status !== "pending")
       .slice(0, 3);
     const highPriority = pending.filter(
       (item) => App.auth.getDecisionEmailMeta(item).priority === "Alta",
-    ).length;
+    ).length + sponsorshipOffers.filter((item) => item.isReplacement).length;
+    const pendingTotal = pending.length + sponsorshipOffers.length;
 
     return `
       <article class="coach-panel-card coach-decision-card email-office-card">
         <div class="home-panel-header email-office-header">
           <div>
             <h2>E-mail</h2>
-            <p class="coach-card-subtitle">Inbox privada do escritório: diretoria, mercado, elenco e bastidores.</p>
+            <p class="coach-card-subtitle">Inbox privada do escritório: diretoria, mercado, elenco, comercial e bastidores.</p>
           </div>
-          <span class="coach-section-kicker">${pending.length} não respondida(s)</span>
+          <span class="coach-section-kicker">${pendingTotal} não respondida(s)</span>
         </div>
         <div class="email-office-command-row">
-          <span>Entrada ${pending.length}</span>
+          <span>Entrada ${pendingTotal}</span>
           <span>Prioridade ${highPriority}</span>
+          <span>Comercial ${sponsorshipOffers.length}</span>
           <span>Arquivados ${resolved.length}</span>
-          <span>Prazo 23:59</span>
         </div>
 
         ${
-          pending.length
+          pendingTotal
             ? `
           <div class="coach-decision-grid email-thread-grid">
+            ${sponsorshipOffers
+              .map((item) =>
+                App.auth.renderSponsorshipEmailCard(item, sponsorshipOffers),
+              )
+              .join("")}
             ${pending.map((item) => App.auth.renderDecisionCard(item)).join("")}
           </div>
         `
@@ -1487,15 +1637,15 @@ App.auth = {
       return groups;
     }, {});
     const offerCategories = Object.keys(offersByCategory);
-
+    const renderOfferInboxInsideSponsorshipCard = false;
     return `
-      <article class="coach-panel-card sponsorship-card sponsorship-inbox-card">
+      <article class="coach-panel-card sponsorship-card sponsorship-contracts-card">
         <div class="home-panel-header">
           <div>
-            <h2>Inbox comercial</h2>
-            <p class="coach-card-subtitle">Propostas de marcas chegam como e-mails. Leia condições, luvas e parcelas antes de responder.</p>
+            <h2>Patrocínios assinados</h2>
+            <p class="coach-card-subtitle">Carteira comercial do clube: contratos ativos, parcelas, luvas e pagamentos recebidos.</p>
           </div>
-          <span class="coach-section-kicker">${offers.length} e-mail(s)</span>
+          <span class="coach-section-kicker">${active.length}/${maxActive} ativo(s)</span>
         </div>
 
         ${
@@ -1615,11 +1765,11 @@ App.auth = {
               .join("")}
           </div>
         `
-            : `<p class="calendar-muted">Nenhum patrocinador ativo. As propostas agora usam luvas realistas, parcelas programadas e bônus por metas aprovadas.</p>`
+            : `<p class="calendar-muted">Nenhum patrocinador ativo. As novas propostas aparecem no E-mail do técnico como disputas comerciais entre marcas.</p>`
         }
 
         ${
-          offers.length
+          renderOfferInboxInsideSponsorshipCard && offers.length
             ? `
           <div class="sponsor-market-note">
             <strong>${active.length}/${maxActive} contratos ativos · ${slotsLeft} vaga(s) livre(s)</strong>
@@ -1743,9 +1893,10 @@ App.auth = {
               .join("")}
           </div>
         `
-            : slotsLeft <= 0
-              ? `<p class="calendar-muted">Limite comercial preenchido. Novas propostas aparecem quando houver categoria substituível ou vaga livre.</p>`
-              : ""
+            : `<div class="sponsor-market-note sponsor-contracts-note">
+              <strong>${slotsLeft} vaga(s) livre(s) na carteira</strong>
+              <span>${offers.length ? `${offers.length} proposta(s) comercial(is) aguardam resposta no E-mail.` : "Sem proposta comercial pendente no E-mail."}</span>
+            </div>`
         }
 
         ${
