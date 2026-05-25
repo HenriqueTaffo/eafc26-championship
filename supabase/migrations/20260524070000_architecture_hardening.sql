@@ -11,7 +11,7 @@
 
 begin;
 
-create extension if not exists pgcrypto;
+create extension if not exists pgcrypto with schema extensions;
 
 create table if not exists public.app_manager_sessions (
   id uuid primary key default gen_random_uuid(),
@@ -44,7 +44,7 @@ language sql
 immutable
 set search_path = public
 as $$
-  select encode(digest(coalesce(p_token, ''), 'sha256'), 'hex');
+  select encode(extensions.digest(coalesce(p_token, ''), 'sha256'), 'hex');
 $$;
 
 create or replace function public.app_validate_manager_session_token(
