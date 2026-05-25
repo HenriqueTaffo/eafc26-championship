@@ -2280,6 +2280,9 @@ App.auth = {
       button.dataset.bound = "true";
 
       button.addEventListener("click", async (event) => {
+        const target = event.currentTarget;
+        if (!target) return;
+
         if (App.auth.isSponsorshipSigningLocked()) {
           const lockMessage = App.auth.getSponsorshipSigningLockMessage();
           if (App.ui?.openActionModal) {
@@ -2303,17 +2306,13 @@ App.auth = {
           return;
         }
 
-        const offerId = event.currentTarget.dataset.sponsorOffer;
+        const offerId = target.dataset.sponsorOffer;
         const isReplacement =
-          event.currentTarget.dataset.sponsorReplacement === "true";
-        const fee = Number(event.currentTarget.dataset.sponsorFee || 0);
-        const signingBonus = Number(
-          event.currentTarget.dataset.sponsorSigning || 0,
-        );
-        const rewardValue = Number(
-          event.currentTarget.dataset.sponsorReward || 0,
-        );
-        const cadence = event.currentTarget.dataset.sponsorCadence;
+          target.dataset.sponsorReplacement === "true";
+        const fee = Number(target.dataset.sponsorFee || 0);
+        const signingBonus = Number(target.dataset.sponsorSigning || 0);
+        const rewardValue = Number(target.dataset.sponsorReward || 0);
+        const cadence = target.dataset.sponsorCadence;
         const paymentLabel =
           cadence === "weekly"
             ? `parcela semanal de ${App.utils.formatCurrency(rewardValue)}`
@@ -2327,27 +2326,21 @@ App.auth = {
         const message = isReplacement
           ? `Trocar para este patrocínio? A multa estimada é ${App.utils.formatCurrency(fee)}. ${upfrontLabel} e o contrato paga ${paymentLabel}.`
           : `Assinar este patrocínio? ${upfrontLabel} e o contrato paga ${paymentLabel}.`;
-        const confirmed = App.ui?.openActionModal
-          ? await App.ui.openActionModal({
+        const confirmed = App.ui?.confirmAction
+          ? await App.ui.confirmAction({
               kicker: "Contrato comercial",
               title: isReplacement ? "Trocar patrocínio" : "Assinar patrocínio",
               message,
               tone: "info",
-              actions: [
-                { id: "cancel", label: "Cancelar", variant: "ghost" },
-                {
-                  id: "confirm",
-                  label: isReplacement ? "Trocar marca" : "Assinar contrato",
-                  variant: "primary",
-                  autofocus: true,
-                },
-              ],
+              cancelLabel: "Cancelar",
+              confirmLabel: isReplacement ? "Trocar marca" : "Assinar contrato",
+              confirmVariant: "primary",
             })
           : confirm(message);
         if (!confirmed) return;
 
         try {
-          event.currentTarget.disabled = true;
+          target.disabled = true;
           await App.auth.acceptSponsorship(offerId);
         } catch (error) {
           if (App.ui?.openActionModal) {
@@ -2369,7 +2362,7 @@ App.auth = {
             alert(error.message);
           }
         } finally {
-          event.currentTarget.disabled = false;
+          if (target.isConnected) target.disabled = false;
         }
       });
     });
