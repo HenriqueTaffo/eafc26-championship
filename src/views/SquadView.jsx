@@ -2,51 +2,77 @@ import { useEffect, useMemo, useState } from "react";
 import App from "../../js/app.js";
 import { useAppRuntime } from "./ViewSummaries.jsx";
 
+const goalkeeper = () => [["GK", "GK", 50, 88]];
+
+const backThree = () => [
+  ["LCB", "CB", 32, 69],
+  ["CB", "CB", 50, 70],
+  ["RCB", "CB", 68, 69],
+];
+
+const backFour = () => [
+  ["LB", "LB", 18, 69],
+  ["LCB", "CB", 38, 70],
+  ["RCB", "CB", 62, 70],
+  ["RB", "RB", 82, 69],
+];
+
+const backFive = () => [
+  ["LWB", "LWB", 12, 67],
+  ["LCB", "CB", 31, 71],
+  ["CB", "CB", 50, 72],
+  ["RCB", "CB", 69, 71],
+  ["RWB", "RWB", 88, 67],
+];
+
 const FORMATIONS = {
-  "4-2-3-1": [
-    ["GK", "GK", 50, 88],
-    ["LB", "LB", 18, 68],
-    ["LCB", "CB", 38, 68],
-    ["RCB", "CB", 62, 68],
-    ["RB", "RB", 82, 68],
-    ["LDM", "CDM", 38, 51],
-    ["RDM", "CDM", 62, 51],
-    ["LM", "LM", 20, 34],
+  "3-1-4-2": [
+    ...goalkeeper(),
+    ...backThree(),
+    ["CDM", "CDM", 50, 54],
+    ["LM", "LM", 17, 42],
+    ["LCM", "CM", 38, 43],
+    ["RCM", "CM", 62, 43],
+    ["RM", "RM", 83, 42],
+    ["LS", "ST", 41, 16],
+    ["RS", "ST", 59, 16],
+  ],
+  "3-4-1-2": [
+    ...goalkeeper(),
+    ...backThree(),
+    ["LM", "LM", 16, 45],
+    ["LCM", "CM", 38, 47],
+    ["RCM", "CM", 62, 47],
+    ["RM", "RM", 84, 45],
     ["CAM", "CAM", 50, 31],
-    ["RM", "RM", 80, 34],
-    ["ST", "ST", 50, 14],
+    ["LS", "ST", 40, 15],
+    ["RS", "ST", 60, 15],
   ],
-  "4-4-2": [
-    ["GK", "GK", 50, 88],
-    ["LB", "LB", 18, 68],
-    ["LCB", "CB", 38, 68],
-    ["RCB", "CB", 62, 68],
-    ["RB", "RB", 82, 68],
-    ["LM", "LM", 18, 42],
-    ["LCM", "CM", 38, 44],
-    ["RCM", "CM", 62, 44],
-    ["RM", "RM", 82, 42],
-    ["LS", "ST", 40, 17],
-    ["RS", "ST", 60, 17],
-  ],
-  "4-3-3": [
-    ["GK", "GK", 50, 88],
-    ["LB", "LB", 18, 68],
-    ["LCB", "CB", 38, 68],
-    ["RCB", "CB", 62, 68],
-    ["RB", "RB", 82, 68],
-    ["LCM", "CM", 34, 47],
-    ["CM", "CM", 50, 43],
-    ["RCM", "CM", 66, 47],
-    ["LW", "LW", 23, 18],
+  "3-4-2-1": [
+    ...goalkeeper(),
+    ...backThree(),
+    ["LM", "LM", 16, 44],
+    ["LCM", "CM", 38, 47],
+    ["RCM", "CM", 62, 47],
+    ["RM", "RM", 84, 44],
+    ["LF", "LW", 39, 26],
+    ["RF", "RW", 61, 26],
     ["ST", "ST", 50, 13],
-    ["RW", "RW", 77, 18],
+  ],
+  "3-4-3": [
+    ...goalkeeper(),
+    ...backThree(),
+    ["LM", "LM", 16, 45],
+    ["LCM", "CM", 38, 47],
+    ["RCM", "CM", 62, 47],
+    ["RM", "RM", 84, 45],
+    ["LW", "LW", 24, 18],
+    ["ST", "ST", 50, 13],
+    ["RW", "RW", 76, 18],
   ],
   "3-5-2": [
-    ["GK", "GK", 50, 88],
-    ["LCB", "CB", 32, 69],
-    ["CB", "CB", 50, 70],
-    ["RCB", "CB", 68, 69],
+    ...goalkeeper(),
+    ...backThree(),
     ["LM", "LM", 16, 43],
     ["LCM", "CM", 36, 47],
     ["CM", "CM", 50, 42],
@@ -55,20 +81,252 @@ const FORMATIONS = {
     ["LS", "ST", 40, 16],
     ["RS", "ST", 60, 16],
   ],
+  "4-1-2-1-2": [
+    ...goalkeeper(),
+    ...backFour(),
+    ["CDM", "CDM", 50, 55],
+    ["LM", "LM", 22, 40],
+    ["RM", "RM", 78, 40],
+    ["CAM", "CAM", 50, 29],
+    ["LS", "ST", 41, 14],
+    ["RS", "ST", 59, 14],
+  ],
+  "4-1-2-1-2 (2)": [
+    ...goalkeeper(),
+    ...backFour(),
+    ["CDM", "CDM", 50, 55],
+    ["LCM", "CM", 38, 42],
+    ["RCM", "CM", 62, 42],
+    ["CAM", "CAM", 50, 28],
+    ["LS", "ST", 41, 14],
+    ["RS", "ST", 59, 14],
+  ],
+  "4-1-3-2": [
+    ...goalkeeper(),
+    ...backFour(),
+    ["CDM", "CDM", 50, 55],
+    ["LM", "LM", 21, 40],
+    ["CM", "CM", 50, 40],
+    ["RM", "RM", 79, 40],
+    ["LS", "ST", 41, 15],
+    ["RS", "ST", 59, 15],
+  ],
+  "4-1-4-1": [
+    ...goalkeeper(),
+    ...backFour(),
+    ["CDM", "CDM", 50, 56],
+    ["LM", "LM", 20, 39],
+    ["LCM", "CM", 40, 42],
+    ["RCM", "CM", 60, 42],
+    ["RM", "RM", 80, 39],
+    ["ST", "ST", 50, 14],
+  ],
+  "4-2-1-3": [
+    ...goalkeeper(),
+    ...backFour(),
+    ["LDM", "CDM", 39, 53],
+    ["RDM", "CDM", 61, 53],
+    ["CAM", "CAM", 50, 34],
+    ["LW", "LW", 24, 18],
+    ["ST", "ST", 50, 12],
+    ["RW", "RW", 76, 18],
+  ],
+  "4-2-2-2": [
+    ...goalkeeper(),
+    ...backFour(),
+    ["LDM", "CDM", 39, 53],
+    ["RDM", "CDM", 61, 53],
+    ["LAM", "CAM", 35, 33],
+    ["RAM", "CAM", 65, 33],
+    ["LS", "ST", 42, 14],
+    ["RS", "ST", 58, 14],
+  ],
+  "4-2-3-1": [
+    ...goalkeeper(),
+    ...backFour(),
+    ["LDM", "CDM", 39, 53],
+    ["RDM", "CDM", 61, 53],
+    ["LAM", "CAM", 34, 32],
+    ["CAM", "CAM", 50, 29],
+    ["RAM", "CAM", 66, 32],
+    ["ST", "ST", 50, 13],
+  ],
+  "4-2-3-1 (2)": [
+    ...goalkeeper(),
+    ...backFour(),
+    ["LDM", "CDM", 39, 53],
+    ["RDM", "CDM", 61, 53],
+    ["LM", "LM", 20, 34],
+    ["CAM", "CAM", 50, 31],
+    ["RM", "RM", 80, 34],
+    ["ST", "ST", 50, 14],
+  ],
+  "4-2-4": [
+    ...goalkeeper(),
+    ...backFour(),
+    ["LCM", "CM", 40, 47],
+    ["RCM", "CM", 60, 47],
+    ["LW", "LW", 22, 18],
+    ["LS", "ST", 42, 13],
+    ["RS", "ST", 58, 13],
+    ["RW", "RW", 78, 18],
+  ],
+  "4-3-1-2": [
+    ...goalkeeper(),
+    ...backFour(),
+    ["LCM", "CM", 35, 47],
+    ["CM", "CM", 50, 50],
+    ["RCM", "CM", 65, 47],
+    ["CAM", "CAM", 50, 31],
+    ["LS", "ST", 41, 14],
+    ["RS", "ST", 59, 14],
+  ],
+  "4-3-2-1": [
+    ...goalkeeper(),
+    ...backFour(),
+    ["LCM", "CM", 35, 48],
+    ["CM", "CM", 50, 50],
+    ["RCM", "CM", 65, 48],
+    ["LF", "LW", 39, 27],
+    ["RF", "RW", 61, 27],
+    ["ST", "ST", 50, 12],
+  ],
+  "4-3-3": [
+    ...goalkeeper(),
+    ...backFour(),
+    ["LCM", "CM", 34, 47],
+    ["CM", "CM", 50, 43],
+    ["RCM", "CM", 66, 47],
+    ["LW", "LW", 23, 18],
+    ["ST", "ST", 50, 13],
+    ["RW", "RW", 77, 18],
+  ],
+  "4-3-3 (2)": [
+    ...goalkeeper(),
+    ...backFour(),
+    ["CDM", "CDM", 50, 54],
+    ["LCM", "CM", 37, 43],
+    ["RCM", "CM", 63, 43],
+    ["LW", "LW", 23, 18],
+    ["ST", "ST", 50, 13],
+    ["RW", "RW", 77, 18],
+  ],
+  "4-3-3 (3)": [
+    ...goalkeeper(),
+    ...backFour(),
+    ["LDM", "CDM", 39, 54],
+    ["CM", "CM", 50, 43],
+    ["RDM", "CDM", 61, 54],
+    ["LW", "LW", 23, 18],
+    ["ST", "ST", 50, 13],
+    ["RW", "RW", 77, 18],
+  ],
+  "4-3-3 (4)": [
+    ...goalkeeper(),
+    ...backFour(),
+    ["LCM", "CM", 38, 47],
+    ["RCM", "CM", 62, 47],
+    ["CAM", "CAM", 50, 31],
+    ["LW", "LW", 23, 18],
+    ["ST", "ST", 50, 13],
+    ["RW", "RW", 77, 18],
+  ],
+  "4-4-1-1 (2)": [
+    ...goalkeeper(),
+    ...backFour(),
+    ["LM", "LM", 18, 43],
+    ["LCM", "CM", 39, 45],
+    ["RCM", "CM", 61, 45],
+    ["RM", "RM", 82, 43],
+    ["CF", "CAM", 50, 28],
+    ["ST", "ST", 50, 13],
+  ],
+  "4-4-2": [
+    ...goalkeeper(),
+    ...backFour(),
+    ["LM", "LM", 18, 42],
+    ["LCM", "CM", 38, 44],
+    ["RCM", "CM", 62, 44],
+    ["RM", "RM", 82, 42],
+    ["LS", "ST", 40, 17],
+    ["RS", "ST", 60, 17],
+  ],
+  "4-4-2 (2)": [
+    ...goalkeeper(),
+    ...backFour(),
+    ["LM", "LM", 18, 42],
+    ["LDM", "CDM", 39, 50],
+    ["RDM", "CDM", 61, 50],
+    ["RM", "RM", 82, 42],
+    ["LS", "ST", 40, 17],
+    ["RS", "ST", 60, 17],
+  ],
+  "4-5-1": [
+    ...goalkeeper(),
+    ...backFour(),
+    ["LM", "LM", 17, 42],
+    ["LCM", "CM", 36, 45],
+    ["CM", "CM", 50, 48],
+    ["RCM", "CM", 64, 45],
+    ["RM", "RM", 83, 42],
+    ["ST", "ST", 50, 14],
+  ],
+  "4-5-1 (2)": [
+    ...goalkeeper(),
+    ...backFour(),
+    ["LM", "LM", 18, 41],
+    ["LCM", "CM", 40, 47],
+    ["RCM", "CM", 60, 47],
+    ["RM", "RM", 82, 41],
+    ["CAM", "CAM", 50, 30],
+    ["ST", "ST", 50, 13],
+  ],
+  "5-2-1-2": [
+    ...goalkeeper(),
+    ...backFive(),
+    ["LCM", "CM", 39, 46],
+    ["RCM", "CM", 61, 46],
+    ["CAM", "CAM", 50, 30],
+    ["LS", "ST", 41, 14],
+    ["RS", "ST", 59, 14],
+  ],
+  "5-2-3": [
+    ...goalkeeper(),
+    ...backFive(),
+    ["LCM", "CM", 40, 47],
+    ["RCM", "CM", 60, 47],
+    ["LW", "LW", 23, 18],
+    ["ST", "ST", 50, 13],
+    ["RW", "RW", 77, 18],
+  ],
   "5-3-2": [
-    ["GK", "GK", 50, 88],
-    ["LWB", "LWB", 13, 66],
-    ["LCB", "CB", 32, 70],
-    ["CB", "CB", 50, 72],
-    ["RCB", "CB", 68, 70],
-    ["RWB", "RWB", 87, 66],
+    ...goalkeeper(),
+    ...backFive(),
     ["LCM", "CM", 35, 45],
     ["CM", "CM", 50, 41],
     ["RCM", "CM", 65, 45],
     ["LS", "ST", 41, 16],
     ["RS", "ST", 59, 16],
   ],
+  "5-4-1": [
+    ...goalkeeper(),
+    ...backFive(),
+    ["LM", "LM", 18, 41],
+    ["LCM", "CM", 39, 45],
+    ["RCM", "CM", 61, 45],
+    ["RM", "RM", 82, 41],
+    ["ST", "ST", 50, 13],
+  ],
 };
+
+const FORMATION_OPTIONS = Object.keys(FORMATIONS).map((name) => ({
+  name,
+  group: name.startsWith("3-")
+    ? "3 zagueiros"
+    : name.startsWith("5-")
+      ? "5 zagueiros"
+      : "4 zagueiros",
+}));
 
 const POSITION_FILTERS = [
   ["all", "Todas"],
@@ -80,7 +338,7 @@ const POSITION_FILTERS = [
 
 function getSlots(formation) {
   return (FORMATIONS[formation] || FORMATIONS["4-2-3-1"]).map(
-    ([id, label, x, y]) => ({ id, label, x, y }),
+    ([id, label, x, y]) => ({ id, label, displayLabel: id, x, y }),
   );
 }
 
@@ -165,13 +423,74 @@ function PlayerAvatar({ player, className = "" }) {
   );
 }
 
+function FormationPicker({ formation, onChange, open, onToggle, onClose }) {
+  const groupedOptions = FORMATION_OPTIONS.reduce((acc, option) => {
+    acc[option.group] = acc[option.group] || [];
+    acc[option.group].push(option.name);
+    return acc;
+  }, {});
+
+  return (
+    <div
+      className={`formation-picker ${open ? "is-open" : ""}`}
+      onBlur={(event) => {
+        if (!event.currentTarget.contains(event.relatedTarget)) onClose();
+      }}
+    >
+      <button
+        type="button"
+        className="formation-picker-button"
+        aria-expanded={open}
+        aria-haspopup="listbox"
+        onClick={onToggle}
+      >
+        <span>
+          <small>Formacao</small>
+          <strong>{formation}</strong>
+        </span>
+        <i aria-hidden="true"></i>
+      </button>
+      {open ? (
+        <div className="formation-picker-menu" role="listbox">
+          {Object.entries(groupedOptions).map(([group, names]) => (
+            <section key={group}>
+              <span>{group}</span>
+              <div>
+                {names.map((name) => (
+                  <button
+                    key={name}
+                    type="button"
+                    role="option"
+                    aria-selected={formation === name}
+                    className={formation === name ? "is-active" : ""}
+                    onClick={() => onChange(name)}
+                  >
+                    {name}
+                  </button>
+                ))}
+              </div>
+            </section>
+          ))}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 function PitchSlot({
   slot,
   player,
   selected,
   compatible,
+  dropActive,
+  dragging,
   onSelect,
   onClear,
+  onDragStart,
+  onDropPlayer,
+  onDragOverSlot,
+  onDragLeaveSlot,
+  onDragEnd,
 }) {
   return (
     <button
@@ -181,22 +500,41 @@ function PitchSlot({
         selected ? "is-selected" : "",
         player ? "is-filled" : "",
         compatible ? "is-compatible" : "",
+        dropActive ? "is-drop-target" : "",
+        dragging ? "is-dragging" : "",
       ]
         .filter(Boolean)
         .join(" ")}
+      draggable={Boolean(player)}
       style={{ "--slot-x": `${slot.x}%`, "--slot-y": `${slot.y}%` }}
       onClick={onSelect}
+      onDragStart={(event) => {
+        if (!player) return;
+        event.dataTransfer.effectAllowed = "move";
+        event.dataTransfer.setData("text/plain", String(player.id));
+        onDragStart(player, slot.id);
+      }}
+      onDragOver={(event) => {
+        event.preventDefault();
+        event.dataTransfer.dropEffect = "move";
+        onDragOverSlot(slot.id);
+      }}
+      onDragLeave={() => onDragLeaveSlot(slot.id)}
+      onDrop={(event) => {
+        event.preventDefault();
+        onDropPlayer(event.dataTransfer.getData("text/plain"), slot.id);
+      }}
+      onDragEnd={onDragEnd}
     >
       {player ? (
         <>
           <span className="squad-card-ovr">{player.overall}</span>
           <PlayerAvatar player={player} />
           <strong>{player.name}</strong>
-          <small>{slot.label}</small>
+          <small>{slot.displayLabel}</small>
           <span
             className="squad-slot-remove"
-            role="button"
-            tabIndex={-1}
+            aria-hidden="true"
             onClick={(event) => {
               event.stopPropagation();
               onClear();
@@ -208,7 +546,7 @@ function PitchSlot({
       ) : (
         <>
           <span className="squad-empty-plus">+</span>
-          <strong>{slot.label}</strong>
+          <strong>{slot.displayLabel}</strong>
           <small>Selecionar</small>
         </>
       )}
@@ -216,13 +554,35 @@ function PitchSlot({
   );
 }
 
-function SquadRosterRow({ player, assigned, onPick }) {
+function SquadRosterRow({
+  player,
+  assigned,
+  selected,
+  onPick,
+  onDragStart,
+  onDragEnd,
+}) {
   return (
     <button
       type="button"
-      className={`squad-roster-row ${assigned ? "is-assigned" : ""}`}
+      className={[
+        "squad-roster-row",
+        assigned ? "is-assigned" : "",
+        selected ? "is-selected-player" : "",
+      ]
+        .filter(Boolean)
+        .join(" ")}
+      draggable
+      aria-pressed={selected}
       onClick={onPick}
+      onDragStart={(event) => {
+        event.dataTransfer.effectAllowed = "move";
+        event.dataTransfer.setData("text/plain", String(player.id));
+        onDragStart(player, "");
+      }}
+      onDragEnd={onDragEnd}
     >
+      <span className="squad-drag-grip" aria-hidden="true"></span>
       <PlayerAvatar player={player} />
       <span className="squad-roster-main">
         <strong>{player.name}</strong>
@@ -244,8 +604,12 @@ function SquadManagementView() {
   const [formation, setFormation] = useState("4-2-3-1");
   const [lineup, setLineup] = useState({});
   const [selectedSlot, setSelectedSlot] = useState("ST");
+  const [selectedPlayerId, setSelectedPlayerId] = useState(null);
   const [search, setSearch] = useState("");
   const [positionFilter, setPositionFilter] = useState("all");
+  const [formationMenuOpen, setFormationMenuOpen] = useState(false);
+  const [dragState, setDragState] = useState(null);
+  const [dragOverSlot, setDragOverSlot] = useState("");
   const [message, setMessage] = useState("");
   const [saving, setSaving] = useState(false);
 
@@ -291,6 +655,7 @@ function SquadManagementView() {
     setFormation(savedLineup.formation || "4-2-3-1");
     setLineup(normalizeLineup(savedLineup.lineup || {}));
     setSelectedSlot(getSlots(savedLineup.formation || "4-2-3-1")[0]?.id || "GK");
+    setSelectedPlayerId(null);
     setMessage("");
   }, [activeManagerName, savedLineup.formation, savedLineupKey]);
 
@@ -299,6 +664,9 @@ function SquadManagementView() {
     () => new Map(roster.map((player) => [Number(player.id), player])),
     [roster],
   );
+  const draggingPlayer = dragState?.playerId
+    ? playerById.get(Number(dragState.playerId))
+    : null;
   const assignedIds = new Set(Object.values(lineup).map((value) => Number(value)));
   const lineupPlayers = slots
     .map((slot) => playerById.get(Number(lineup[slot.id])))
@@ -338,17 +706,78 @@ function SquadManagementView() {
     return empty?.id || slots[0]?.id || "GK";
   }
 
-  function assignPlayer(player) {
-    const targetSlot = getBestSlotForPlayer(player);
+  function changeFormation(nextFormation) {
+    setFormation(nextFormation);
+    const nextSlots = new Set(getSlots(nextFormation).map((slot) => slot.id));
+    setLineup((current) =>
+      Object.entries(current).reduce((acc, [slot, playerId]) => {
+        if (nextSlots.has(slot)) acc[slot] = playerId;
+        return acc;
+      }, {}),
+    );
+    setSelectedSlot(getSlots(nextFormation)[0]?.id || "GK");
+    setFormationMenuOpen(false);
+    setMessage("");
+  }
+
+  function assignPlayerToSlot(player, targetSlot, fromSlot = "") {
+    const playerId = Number(player?.id);
+    if (!playerId || !targetSlot) return;
     setLineup((current) => {
-      const next = Object.entries(current).reduce((acc, [slotId, playerId]) => {
-        if (Number(playerId) !== Number(player.id)) acc[slotId] = playerId;
+      const replacedPlayerId = current[targetSlot];
+      const next = Object.entries(current).reduce((acc, [slotId, assignedId]) => {
+        if (Number(assignedId) !== Number(player?.id)) acc[slotId] = assignedId;
         return acc;
       }, {});
+      if (
+        fromSlot &&
+        fromSlot !== targetSlot &&
+        replacedPlayerId &&
+        Number(replacedPlayerId) !== Number(player.id)
+      ) {
+        next[fromSlot] = replacedPlayerId;
+      }
       next[targetSlot] = String(player.id);
       return next;
     });
     setSelectedSlot(targetSlot);
+    setSelectedPlayerId(playerId);
+  }
+
+  function assignPlayer(player) {
+    assignPlayerToSlot(player, getBestSlotForPlayer(player));
+  }
+
+  function getPlayerSlot(playerId) {
+    return (
+      Object.entries(lineup).find(
+        ([, assignedId]) => Number(assignedId) === Number(playerId),
+      )?.[0] || ""
+    );
+  }
+
+  function startPlayerDrag(player, fromSlot = "") {
+    setDragState({
+      playerId: Number(player.id),
+      fromSlot: fromSlot || getPlayerSlot(player.id),
+    });
+    setSelectedPlayerId(Number(player.id));
+  }
+
+  function finishPlayerDrag() {
+    setDragState(null);
+    setDragOverSlot("");
+  }
+
+  function dropPlayerOnSlot(playerId, targetSlot) {
+    const draggedPlayer =
+      playerById.get(Number(playerId)) || playerById.get(Number(dragState?.playerId));
+    if (!draggedPlayer) {
+      finishPlayerDrag();
+      return;
+    }
+    assignPlayerToSlot(draggedPlayer, targetSlot, dragState?.fromSlot || "");
+    finishPlayerDrag();
   }
 
   async function saveLineup() {
@@ -434,27 +863,13 @@ function SquadManagementView() {
             ))}
           </select>
         ) : null}
-        <select
-          value={formation}
-          onChange={(event) => {
-            const nextFormation = event.target.value;
-            setFormation(nextFormation);
-            const nextSlots = new Set(getSlots(nextFormation).map((slot) => slot.id));
-            setLineup((current) =>
-              Object.entries(current).reduce((acc, [slot, playerId]) => {
-                if (nextSlots.has(slot)) acc[slot] = playerId;
-                return acc;
-              }, {}),
-            );
-            setSelectedSlot(getSlots(nextFormation)[0]?.id || "GK");
-          }}
-        >
-          {Object.keys(FORMATIONS).map((item) => (
-            <option key={item} value={item}>
-              {item}
-            </option>
-          ))}
-        </select>
+        <FormationPicker
+          formation={formation}
+          open={formationMenuOpen}
+          onToggle={() => setFormationMenuOpen((current) => !current)}
+          onClose={() => setFormationMenuOpen(false)}
+          onChange={changeFormation}
+        />
         <input
           type="search"
           value={search}
@@ -539,6 +954,11 @@ function SquadManagementView() {
                     selectedSlot === slot.id &&
                     filteredRoster.some((item) => isCompatible(slot.label, item.position))
                   }
+                  dropActive={
+                    dragOverSlot === slot.id ||
+                    (draggingPlayer && isCompatible(slot.label, draggingPlayer.position))
+                  }
+                  dragging={Number(player?.id) === Number(dragState?.playerId)}
                   onSelect={() => setSelectedSlot(slot.id)}
                   onClear={() =>
                     setLineup((current) => {
@@ -547,6 +967,13 @@ function SquadManagementView() {
                       return next;
                     })
                   }
+                  onDragStart={startPlayerDrag}
+                  onDropPlayer={dropPlayerOnSlot}
+                  onDragOverSlot={setDragOverSlot}
+                  onDragLeaveSlot={(slotId) => {
+                    if (dragOverSlot === slotId) setDragOverSlot("");
+                  }}
+                  onDragEnd={finishPlayerDrag}
                 />
               );
             })}
@@ -568,7 +995,10 @@ function SquadManagementView() {
                 key={player.id}
                 player={player}
                 assigned={assignedIds.has(Number(player.id))}
+                selected={Number(selectedPlayerId) === Number(player.id)}
                 onPick={() => assignPlayer(player)}
+                onDragStart={startPlayerDrag}
+                onDragEnd={finishPlayerDrag}
               />
             ))}
           </div>
