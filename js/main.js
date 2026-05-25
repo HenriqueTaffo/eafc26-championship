@@ -257,7 +257,9 @@ App.main = {
   },
 
   canAccessView(viewId) {
-    if (viewId === "submitView") return App.auth?.isCommissioner?.() === true;
+    if (["commissionerView", "submitView"].includes(viewId)) {
+      return App.auth?.isCommissioner?.() === true;
+    }
     return true;
   },
 

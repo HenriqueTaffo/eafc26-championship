@@ -56,7 +56,10 @@ App.auth = {
     }
 
     const activeView = document.querySelector(".view.active")?.id;
-    if (!isCommissioner && activeView === "submitView") {
+    if (
+      !isCommissioner &&
+      ["commissionerView", "submitView"].includes(activeView)
+    ) {
       App.main?.switchToView?.("playersView");
     }
   },

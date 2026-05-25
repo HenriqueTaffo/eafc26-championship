@@ -64,6 +64,13 @@ body *:not(svg):not(path) {
   align-content: center;
 }
 
+body:not(.is-commissioner) .tab-button[data-view="commissionerView"],
+body:not(.is-commissioner) .tab-button[data-view="submitView"],
+body:not(.is-commissioner) #commissionerView,
+body:not(.is-commissioner) #submitView {
+  display: none !important;
+}
+
 .loader-mascot.brand-icon-img {
   padding: 22px;
   object-fit: contain;
