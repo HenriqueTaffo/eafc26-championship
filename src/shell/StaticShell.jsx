@@ -627,9 +627,9 @@ function TransfersView() {
             <div className="submit-card-header">
               <span className="submit-card-icon">⇄</span>
               <div>
-                <h2>Registrar transferência</h2>
+                <h2>Abrir negociação</h2>
                 <p>
-                  Mercado externo, negociação entre técnicos e troca de jogador
+                  Mercado externo, propostas entre técnicos e troca de jogador
                   no mesmo fluxo.
                 </p>
               </div>
@@ -778,6 +778,36 @@ function TransfersView() {
                     required
                   />
                 </label>
+                <div
+                  className="market-offer-field full"
+                  data-market-transfer-field
+                >
+                  <label>
+                    <span>Valor ofertado ao clube</span>
+                    <input
+                      name="offerValue"
+                      type="number"
+                      min="100000"
+                      step="100000"
+                      inputMode="numeric"
+                      placeholder="Ex: 30000000"
+                    />
+                  </label>
+                  <div className="offer-quick-actions">
+                    <button type="button" data-offer-multiplier="0.9">
+                      90%
+                    </button>
+                    <button type="button" data-offer-multiplier="1">
+                      100%
+                    </button>
+                    <button type="button" data-offer-multiplier="1.1">
+                      110%
+                    </button>
+                    <button type="button" data-offer-multiplier="1.25">
+                      125%
+                    </button>
+                  </div>
+                </div>
                 <label data-market-transfer-field>
                   <span>Salario semanal de folha</span>
                   <input
@@ -789,14 +819,7 @@ function TransfersView() {
                     placeholder="Auto: publico ou regulatorio"
                   />
                 </label>
-                <label data-market-transfer-field>
-                  <span>Fonte salarial</span>
-                  <input
-                    name="salarySourceName"
-                    type="text"
-                    placeholder="Auto: Capology ou regra da liga"
-                  />
-                </label>
+                <input type="hidden" name="salarySourceName" value="" />
                 <input type="hidden" name="salarySourceUrl" value="" />
               </div>
 
@@ -816,14 +839,14 @@ function TransfersView() {
                   required
                 />
                 <span>
-                  Confirmo que o comprador selecionado está correto e assumo
-                  esta contratação para esse técnico.
+                  Confirmo que o comprador selecionado está correto para esta
+                  negociação.
                 </span>
               </label>
 
               <div className="form-actions">
                 <button className="primary-button" type="submit">
-                  Enviar transferência
+                  Enviar proposta
                 </button>
                 <span className="app-message" id="transferMessage"></span>
               </div>

@@ -230,6 +230,7 @@ function sanitizeCandidate(candidate = {}) {
     league: String(candidate.league || "").trim(),
     overall: Number(candidate.overall || 0) || 0,
     marketValue: Number(candidate.marketValue || 0) || 0,
+    offerValue: Number(candidate.offerValue || candidate.finalValue || 0) || 0,
     finalValue: Number(candidate.finalValue || 0) || 0,
     weeklySalary: Number(candidate.weeklySalary || 0) || 0,
     salarySourceName: String(candidate.salarySourceName || "").trim(),
@@ -587,26 +588,26 @@ Object.assign(App.transfers, {
     const detail = [
       `1. E-mail inicial para ${isInternal ? payload.seller || "tecnico vendedor" : payload.fromClub || "clube vendedor"}.`,
       `2. Resposta da contraparte sobre ${payload.player}.`,
-      `3. Conferencia de taxa, folha e documentacao.`,
+      `3. Conferencia de oferta, folha e documentacao.`,
       `4. Registro da liga depois da validacao.${tradeDetail}`,
     ].join("\n");
 
     if (!App.ui?.confirmAction) {
       return window.confirm(
-        `Enviar negociacao por ${payload.player} em ${App.utils.formatCurrency(value)}?`,
+        `Enviar proposta por ${payload.player} em ${App.utils.formatCurrency(value)}?`,
       );
     }
 
     return App.ui.confirmAction({
       kicker: "Negociacao de transferencia",
-      title: isInternal ? "Enviar proposta por e-mail" : "Simular mesa de negociacao",
+      title: isInternal ? "Enviar proposta por e-mail" : "Abrir mesa de negociacao",
       message: isInternal
         ? `A proposta por ${payload.player} vai para o inbox do vendedor.`
         : `${payload.fromClub || "O clube vendedor"} vai responder antes da liga registrar ${payload.player}.`,
       detail,
       tone: "market",
       cancelLabel: "Revisar proposta",
-      confirmLabel: isInternal ? "Enviar e-mail" : "Iniciar negociacao",
+      confirmLabel: isInternal ? "Enviar e-mail" : "Enviar proposta",
       confirmVariant: "primary",
     });
   },
@@ -873,6 +874,9 @@ Object.assign(App.transfers, {
         form.elements.marketValue?.value ||
           App.transfers.getMarketPlayerValue(marketPlayer) ||
           0,
+      ),
+      offerValue: Number(
+        form.elements.offerValue?.value || preview?.finalValue || 0,
       ),
       finalValue: Number(preview?.finalValue || 0),
       weeklySalary: Number(
@@ -1196,6 +1200,16 @@ Object.assign(App.transfers, {
       });
     }
 
+    const externalVerdict = App.transfers.getExternalOfferVerdict(preview);
+    if (externalVerdict) {
+      const target = externalVerdict.tone === "success" ? positive : warnings;
+      target.push({
+        key: "seller-read",
+        title: externalVerdict.label,
+        detail: externalVerdict.detail,
+      });
+    }
+
     if (
       preview.isInternal &&
       preview.duplicate &&
@@ -1298,13 +1312,40 @@ Object.assign(App.transfers, {
       submitButton.disabled = Boolean(preview.hardBlock);
     }
 
+    const externalVerdict = App.transfers.getExternalOfferVerdict(preview);
     const metrics = [
       { label: "OVR", value: preview.overall },
-      { label: "Taxa", value: `${Math.round(Number(preview.rate || 0) * 100)}%` },
+      ...(preview.isInternal
+        ? []
+        : [
+            {
+              label: "Referencia",
+              value: App.utils.formatCurrency(preview.marketValue),
+            },
+          ]),
       {
-        label: preview.isInternal ? "Valor negociado" : "Custo final",
+        label: preview.isInternal ? "Valor negociado" : "Oferta enviada",
         value: App.utils.formatCurrency(preview.finalValue),
+        tone:
+          !preview.isInternal && Number(preview.offerDelta || 0) < 0
+            ? "warning"
+            : !preview.isInternal && Number(preview.offerDelta || 0) > 0
+              ? "success"
+              : "",
       },
+      ...(preview.isInternal
+        ? []
+        : [
+            {
+              label: "Pedido provavel",
+              value: App.utils.formatCurrency(preview.sellerExpectationValue),
+            },
+            {
+              label: "Tendencia",
+              value: externalVerdict?.label || "Em analise",
+              tone: externalVerdict?.tone || "",
+            },
+          ]),
       ...(preview.exchangePlayer
         ? [
             {
@@ -2170,7 +2211,7 @@ Object.assign(App.transfers, {
           <article>
             <span>Folha semanal</span>
             <strong>${candidate.weeklySalary ? `${App.utils.formatCurrency(candidate.weeklySalary)}/sem` : "Pendente"}</strong>
-            <small>${App.utils.escapeHtml(candidate.salarySourceName || "Sem fonte consolidada ainda")}</small>
+            <small>entra no teto salarial</small>
           </article>
           <article>
             <span>Encaixe no elenco</span>
@@ -2794,6 +2835,11 @@ Object.assign(App.transfers, {
     }
     if (form.elements.marketValue && clean.marketValue) {
       form.elements.marketValue.value = Math.round(Number(clean.marketValue));
+    }
+    if (form.elements.offerValue && clean.source !== "internal") {
+      form.elements.offerValue.value = App.transfers.roundTransferOfferValue(
+        Number(clean.offerValue || clean.finalValue || clean.marketValue || 0),
+      );
     }
     if (form.elements.weeklySalary && clean.weeklySalary) {
       form.elements.weeklySalary.value = Math.round(Number(clean.weeklySalary));

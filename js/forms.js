@@ -358,7 +358,7 @@ App.forms = {
         offerValue: Number(
           isInternal
             ? payload.marketValue
-            : preview.finalValue || payload.marketValue,
+            : preview.finalValue || payload.offerValue || payload.marketValue,
         ),
         weeklySalary: Number(preview.weeklySalary || payload.weeklySalary || 0),
         salarySourceName:
@@ -527,6 +527,7 @@ App.forms = {
       "fromClub",
       "overall",
       "marketValue",
+      "offerValue",
       "weeklySalary",
       "salarySourceName",
       "salarySourceUrl",
@@ -616,6 +617,20 @@ App.forms = {
         App.transfers.renderMarketPlayerResults,
       );
     }
+
+    transferForm.querySelectorAll("[data-offer-multiplier]").forEach((button) => {
+      button.addEventListener("click", () => {
+        const referenceValue = Number(transferForm.elements.marketValue?.value || 0);
+        const multiplier = Number(button.dataset.offerMultiplier || 1);
+        const offerValue = App.transfers.roundTransferOfferValue(
+          referenceValue * multiplier,
+        );
+        if (offerValue && transferForm.elements.offerValue) {
+          transferForm.elements.offerValue.value = offerValue;
+          App.transfers.refreshWorkspace(transferForm);
+        }
+      });
+    });
 
     App.transfers.bindWorkspaceEvents?.();
     App.transfers.renderMarketPlayerResults();

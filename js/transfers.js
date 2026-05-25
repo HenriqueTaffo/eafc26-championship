@@ -675,6 +675,55 @@ App.transfers = {
     return 0;
   },
 
+  getExternalSellerExpectationRate(overall) {
+    if (overall >= 88) return 0.24;
+    if (overall >= 84) return 0.2;
+    if (overall >= 80) return 0.15;
+    if (overall >= 76) return 0.1;
+    if (overall >= 72) return 0.06;
+    return 0.03;
+  },
+
+  roundTransferOfferValue(value) {
+    const amount = Number(value || 0);
+    if (!Number.isFinite(amount) || amount <= 0) return 0;
+    return Math.max(100000, Math.round(amount / 100000) * 100000);
+  },
+
+  getExternalOfferVerdict(preview = {}) {
+    if (!preview || preview.isInternal || !preview.hasEnoughData) return null;
+
+    const offer = Number(preview.finalValue || 0);
+    const expected = Number(preview.sellerExpectationValue || 0);
+    const reference = Number(preview.marketValue || 0);
+    if (offer <= 0 || expected <= 0 || reference <= 0) return null;
+
+    if (offer >= expected) {
+      return {
+        tone: "success",
+        label: "Aceite provavel",
+        detail:
+          "A oferta esta dentro da faixa que o clube vendedor tende a aceitar.",
+      };
+    }
+
+    if (offer < expected * 0.78) {
+      return {
+        tone: "danger",
+        label: "Risco de recusa",
+        detail:
+          "A oferta esta muito abaixo da avaliacao interna do vendedor.",
+      };
+    }
+
+    return {
+      tone: "warning",
+      label: "Contraoferta provavel",
+      detail:
+        "O vendedor deve responder pedindo ajuste antes da assinatura.",
+    };
+  },
+
   findEaRatingByName(playerName) {
     const key = App.transfers.normalizePlayerRatingKey(playerName);
     if (!key) return null;
@@ -2164,6 +2213,9 @@ App.transfers = {
     const fromClub = form.elements.fromClub?.value || "";
     const overall = Number(form.elements.overall?.value);
     const marketValue = Number(form.elements.marketValue?.value);
+    const rawOfferValue = Number(form.elements.offerValue?.value);
+    const hasOfferValue =
+      !Number.isNaN(rawOfferValue) && Number(rawOfferValue || 0) > 0;
     const manualSalaryReference = {
       player,
       fromClub,
@@ -2188,9 +2240,26 @@ App.transfers = {
       Number.isNaN(overall) || isInternal
         ? 0
         : App.transfers.getTransferRate(overall);
+    const sellerExpectationRate =
+      Number.isNaN(overall) || isInternal
+        ? 0
+        : App.transfers.getExternalSellerExpectationRate(overall);
+    const sellerExpectationValue =
+      Number.isNaN(marketValue) || isInternal
+        ? 0
+        : App.transfers.roundTransferOfferValue(
+            marketValue + marketValue * sellerExpectationRate,
+          );
     const finalValue = Number.isNaN(marketValue)
       ? 0
-      : marketValue + marketValue * rate;
+      : isInternal
+        ? marketValue + marketValue * rate
+        : App.transfers.roundTransferOfferValue(
+            hasOfferValue ? rawOfferValue : marketValue,
+          );
+    const offerDelta = !isInternal ? finalValue - marketValue : 0;
+    const offerRatio =
+      !isInternal && marketValue > 0 ? finalValue / marketValue : 1;
     const exchangePlayer = !isInternal
       ? App.transfers.getExchangePlayerByIndex(
           buyer,
@@ -2278,6 +2347,10 @@ App.transfers = {
       marketValue,
       hasEnoughData,
       rate,
+      sellerExpectationRate,
+      sellerExpectationValue,
+      offerDelta,
+      offerRatio,
       finalValue,
       cashFinalValue,
       exchangePlayer,
@@ -2432,8 +2505,17 @@ App.transfers = {
       );
     }
 
+    const externalVerdict = App.transfers.getExternalOfferVerdict(preview);
+    if (externalVerdict) {
+      messages.push(externalVerdict.detail);
+    }
+
     if (!messages.length) {
-      messages.push("Contratação liberada para envio.");
+      messages.push(
+        preview.isInternal
+          ? "Proposta liberada para envio."
+          : "Proposta liberada para abrir negociacao.",
+      );
     }
 
     if (
@@ -2472,11 +2554,37 @@ App.transfers = {
     `;
     const previewMetrics = [
       { label: "OVR", value: preview.overall },
-      { label: "Taxa", value: `${Math.round(preview.rate * 100)}%` },
+      ...(preview.isInternal
+        ? []
+        : [
+            {
+              label: "Referencia",
+              value: App.utils.formatCurrency(preview.marketValue),
+            },
+          ]),
       {
-        label: preview.isInternal ? "Valor negociado" : "Custo final",
+        label: preview.isInternal ? "Valor negociado" : "Oferta enviada",
         value: App.utils.formatCurrency(preview.finalValue),
+        tone:
+          !preview.isInternal && preview.offerDelta < 0
+            ? "warning"
+            : !preview.isInternal && preview.offerDelta > 0
+              ? "success"
+              : "",
       },
+      ...(preview.isInternal
+        ? []
+        : [
+            {
+              label: "Pedido provavel",
+              value: App.utils.formatCurrency(preview.sellerExpectationValue),
+            },
+            {
+              label: "Tendencia",
+              value: externalVerdict?.label || "Em analise",
+              tone: externalVerdict?.tone || "",
+            },
+          ]),
       ...(preview.exchangePlayer
         ? [
             {
@@ -2503,14 +2611,6 @@ App.transfers = {
         unit: "/sem",
         tone: preview.salaryReferenceMissing ? "danger" : "",
       },
-      ...(preview.salarySourceName
-        ? [
-            {
-              label: "Fonte salarial",
-              value: preview.salarySourceName,
-            },
-          ]
-        : []),
       {
         label: "Compromisso anual",
         value: preview.salaryReferenceMissing
@@ -3085,10 +3185,14 @@ App.transfers = {
     if (form.elements.player) form.elements.player.value = player.name || "";
     if (form.elements.fromClub)
       form.elements.fromClub.value = player.club || "";
-    if (form.elements.marketValue)
-      form.elements.marketValue.value = Math.round(
-        App.transfers.getMarketPlayerValue(player),
-      );
+    const marketValue = Math.round(App.transfers.getMarketPlayerValue(player));
+    if (form.elements.marketValue) {
+      form.elements.marketValue.value = marketValue;
+    }
+    if (form.elements.offerValue) {
+      form.elements.offerValue.value =
+        App.transfers.roundTransferOfferValue(marketValue);
+    }
     const eaRating = App.transfers.findEaRatingForMarketPlayer(player);
     if (eaRating && form.elements.overall)
       form.elements.overall.value = Number(
@@ -3098,7 +3202,7 @@ App.transfers = {
     const salaryReference = App.transfers.getSalaryReferenceFromItem({
       ...player,
       overall: Number(form.elements.overall?.value || eaRating?.overall || 0),
-      marketValue: App.transfers.getMarketPlayerValue(player),
+      marketValue,
     });
     App.transfers.applySalaryReferenceToForm(form, salaryReference);
 
@@ -3109,7 +3213,7 @@ App.transfers = {
     App.transfers.refreshSalaryQuoteForForm(form, {
       ...player,
       overall: Number(form.elements.overall?.value || eaRating?.overall || 0),
-      marketValue: App.transfers.getMarketPlayerValue(player),
+      marketValue,
     });
   },
 
