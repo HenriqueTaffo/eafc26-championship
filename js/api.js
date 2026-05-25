@@ -374,10 +374,12 @@ App.api = {
       ...new Set(
         (names || []).map((name) => String(name || "").trim()).filter(Boolean),
       ),
-    ].slice(0, 40);
+    ]
+      .filter((name) => !App.transfers?.getRatingForPlayerName?.(name)?.overall)
+      .slice(0, 12);
     if (!uniqueNames.length) return App.state.apiRatings || [];
 
-    const groups = await App.api.mapWithConcurrency(uniqueNames, 6, (name) => {
+    const groups = await App.api.mapWithConcurrency(uniqueNames, 2, (name) => {
       const aliases = App.transfers?.getPlayerSearchAliases
         ? App.transfers.getPlayerSearchAliases(name)
         : [name];
@@ -386,11 +388,14 @@ App.api = {
         : App.utils.normalizeText(name);
       const searchAliases = [
         ...new Set([...aliases, normalizedAlias].filter(Boolean)),
-      ];
+      ].slice(0, 2);
       return Promise.all(
-        searchAliases.map((alias) =>
-          App.api.searchEaRatings(alias, limitPerName).catch(() => []),
-        ),
+        searchAliases.map((alias) => {
+          if (App.transfers?.searchEaRatingsCached) {
+            return App.transfers.searchEaRatingsCached(alias, limitPerName);
+          }
+          return App.api.searchEaRatings(alias, limitPerName).catch(() => []);
+        }),
       );
     });
 

@@ -3,12 +3,17 @@ import App from "../../js/app.js";
 
 function HtmlFragment({ html, as = "div", onRendered, ...props }) {
   const ref = useRef(null);
+  const onRenderedRef = useRef(onRendered);
   const Component = as;
 
   useEffect(() => {
+    onRenderedRef.current = onRendered;
+  }, [onRendered]);
+
+  useEffect(() => {
     App.dom.setHtml(ref.current, html || "");
-    onRendered?.(ref.current);
-  }, [html, onRendered]);
+    onRenderedRef.current?.(ref.current);
+  }, [html]);
 
   return <Component ref={ref} {...props}></Component>;
 }

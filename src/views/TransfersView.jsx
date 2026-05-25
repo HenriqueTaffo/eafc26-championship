@@ -3,9 +3,14 @@ import App from "../../js/app.js";
 import { useAppRuntime } from "./ViewSummaries.jsx";
 
 function TransfersRuntime() {
-  useAppRuntime();
+  const runtimeVersion = useAppRuntime();
+  const isActive =
+    typeof document !== "undefined" &&
+    document.getElementById("transfersView")?.classList.contains("active");
 
   useEffect(() => {
+    if (!isActive) return;
+
     App.transfers.renderBudgetBoard();
     App.transfers.renderInsights();
     App.transfers.renderMarketPlayerResults();
@@ -17,7 +22,7 @@ function TransfersRuntime() {
     }
 
     App.transfers.renderHistory?.();
-  });
+  }, [isActive, runtimeVersion]);
 
   return null;
 }

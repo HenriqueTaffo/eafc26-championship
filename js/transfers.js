@@ -2536,6 +2536,8 @@ App.transfers = {
     const cacheKey = `${normalized}|${showContracted ? "all" : "available"}`;
     const cached = App.transfers.marketSearchCache?.[cacheKey];
     if (cached && Date.now() - cached.at < 60000) return cached.players;
+    const pending = App.transfers.marketSearchPending?.[cacheKey];
+    if (pending) return pending;
 
     const remember = (players = []) => {
       App.transfers.marketSearchCache = App.transfers.marketSearchCache || {};
@@ -2546,23 +2548,35 @@ App.transfers = {
       return players;
     };
 
-    try {
-      const rows = await App.api.fetchMarketPlayersDirect(query, 18);
-      const players = App.api.applyMarketPlayerOverrides(
-        Array.isArray(rows) ? rows : [],
-        { showContracted },
-      );
-      App.api.mergeMarketPlayers(players);
-      if (players.length) return remember(players);
-    } catch (error) {
-      console.warn(
-        "Busca direta de mercado indisponível, tentando RPC:",
-        error,
-      );
-    }
+    App.transfers.marketSearchPending = App.transfers.marketSearchPending || {};
+    const request = (async () => {
+      try {
+        const rows = await App.api.fetchMarketPlayersDirect(query, 18);
+        const players = App.api.applyMarketPlayerOverrides(
+          Array.isArray(rows) ? rows : [],
+          { showContracted },
+        );
+        App.api.mergeMarketPlayers(players);
+        if (players.length) return remember(players);
+      } catch (error) {
+        console.warn(
+          "Busca direta de mercado indisponível, tentando RPC:",
+          error,
+        );
+      }
 
-    const fallback = await App.api.loadMarketPlayers(query, showContracted, 14);
-    return remember(fallback);
+      const fallback = await App.api.loadMarketPlayers(
+        query,
+        showContracted,
+        14,
+      );
+      return remember(fallback);
+    })().finally(() => {
+      delete App.transfers.marketSearchPending?.[cacheKey];
+    });
+
+    App.transfers.marketSearchPending[cacheKey] = request;
+    return request;
   },
 
   async searchEaRatingsCached(query = "", limit = 2) {
@@ -2572,14 +2586,32 @@ App.transfers = {
     const cacheKey = `${normalized}|${Number(limit || 2)}`;
     const cached = App.transfers.eaRatingSearchCache?.[cacheKey];
     if (cached && Date.now() - cached.at < 10 * 60000) return cached.rows;
+    const localMatch = App.transfers.findEaRatingForMarketPlayer({
+      name: query,
+    });
+    if (localMatch) return [localMatch];
+    const pending = App.transfers.eaRatingSearchPending?.[cacheKey];
+    if (pending) return pending;
 
-    const rows = await App.api.searchEaRatings(query, limit).catch(() => []);
     App.transfers.eaRatingSearchCache = App.transfers.eaRatingSearchCache || {};
-    App.transfers.eaRatingSearchCache[cacheKey] = {
-      at: Date.now(),
-      rows,
-    };
-    return rows;
+    App.transfers.eaRatingSearchPending =
+      App.transfers.eaRatingSearchPending || {};
+    const request = App.api
+      .searchEaRatings(query, limit)
+      .catch(() => [])
+      .then((rows) => {
+        App.transfers.eaRatingSearchCache[cacheKey] = {
+          at: Date.now(),
+          rows,
+        };
+        return rows;
+      })
+      .finally(() => {
+        delete App.transfers.eaRatingSearchPending?.[cacheKey];
+      });
+
+    App.transfers.eaRatingSearchPending[cacheKey] = request;
+    return request;
   },
 
   selectMarketPlayer(playerId) {
@@ -2625,7 +2657,7 @@ App.transfers = {
 
     const ratingGroups = await Promise.all(
       App.transfers.getPlayerSearchAliases(query).map((alias) =>
-        App.api.searchEaRatings(alias, 8).catch((error) => {
+        App.transfers.searchEaRatingsCached(alias, 8).catch((error) => {
           console.warn("Busca de rating indisponível:", error);
           return [];
         }),
@@ -2722,6 +2754,8 @@ App.transfers = {
     const normalized = App.utils.normalizeText(query);
     if (normalized.length < 2) {
       App.transfers.marketSearchRequestId = "";
+      target.dataset.marketRenderKey = `empty:${normalized}`;
+      target.dataset.marketRenderReady = "true";
       App.dom.setHtml(
         target,
         `
@@ -2733,48 +2767,66 @@ App.transfers = {
       return;
     }
 
+    const showContracted = Boolean(
+      document.getElementById("showContractedPlayers")?.checked,
+    );
+    const renderKey = `${normalized}|${showContracted ? "all" : "available"}`;
+    if (
+      target.dataset.marketRenderKey === renderKey &&
+      target.dataset.marketRenderReady === "true"
+    ) {
+      return;
+    }
+
+    const activeRender = App.transfers.marketResultsPending;
+    if (activeRender?.key === renderKey) return activeRender.promise;
+
     const requestId = `${Date.now()}-${Math.random()}`;
     App.transfers.marketSearchRequestId = requestId;
+    target.dataset.marketRenderKey = renderKey;
+    target.dataset.marketRenderReady = "false";
     App.dom.setHtml(
       target,
       `<div class="market-empty">Buscando jogadores no mercado...</div>`,
     );
 
-    const players = await App.transfers.searchMarketPlayers(query);
-    if (App.transfers.marketSearchRequestId !== requestId) return;
+    const renderRequest = (async () => {
+      const players = await App.transfers.searchMarketPlayers(query);
+      if (App.transfers.marketSearchRequestId !== requestId) return;
 
-    const ratingRows = await Promise.all(
-      players
-        .slice(0, 6)
-        .map((player) =>
-          App.transfers.searchEaRatingsCached(player.name || "", 2),
-        ),
-    );
-    if (App.transfers.marketSearchRequestId !== requestId) return;
-    App.api.mergeEaRatings?.(ratingRows.flat());
+      const ratingRows = await Promise.all(
+        players
+          .slice(0, 6)
+          .map((player) =>
+            App.transfers.searchEaRatingsCached(player.name || "", 2),
+          ),
+      );
+      if (App.transfers.marketSearchRequestId !== requestId) return;
+      App.api.mergeEaRatings?.(ratingRows.flat());
 
-    if (!players.length) {
-      App.dom.setHtml(
-        target,
-        `
+      if (!players.length) {
+        App.dom.setHtml(
+          target,
+          `
         <div class="market-empty">
           Nenhum jogador disponível encontrado. Tente buscar por nome, clube, liga ou posição.
           ${document.getElementById("showContractedPlayers")?.checked ? "" : " Jogadores já contratados estão escondidos por padrão."}
         </div>
       `,
-      );
-      return;
-    }
+        );
+        target.dataset.marketRenderReady = "true";
+        return;
+      }
 
-    App.dom.setHtml(
-      target,
-      players
-        .map((player) => {
-          const isContracted = App.transfers.isMarketPlayerContracted(player);
-          const eaRating = App.transfers.findEaRatingForMarketPlayer(player);
-          const overall = Number(eaRating?.overall || player.overall || 0);
-          const marketValue = App.transfers.getMarketPlayerValue(player);
-          return `
+      App.dom.setHtml(
+        target,
+        players
+          .map((player) => {
+            const isContracted = App.transfers.isMarketPlayerContracted(player);
+            const eaRating = App.transfers.findEaRatingForMarketPlayer(player);
+            const overall = Number(eaRating?.overall || player.overall || 0);
+            const marketValue = App.transfers.getMarketPlayerValue(player);
+            return `
         <button class="market-player-option ${isContracted ? "is-contracted" : ""}" type="button" data-market-player="${player.id}" ${isContracted ? "disabled" : ""}>
           ${App.transfers.renderPlayerPhoto(player, eaRating)}
           <span class="market-player-main">
@@ -2788,15 +2840,27 @@ App.transfers = {
           </span>
         </button>
       `;
-        })
-        .join(""),
-    );
-
-    target.querySelectorAll("[data-market-player]").forEach((button) => {
-      button.addEventListener("click", () =>
-        App.transfers.selectMarketPlayer(button.dataset.marketPlayer),
+          })
+          .join(""),
       );
+
+      target.querySelectorAll("[data-market-player]").forEach((button) => {
+        button.addEventListener("click", () =>
+          App.transfers.selectMarketPlayer(button.dataset.marketPlayer),
+        );
+      });
+      target.dataset.marketRenderReady = "true";
+    })().finally(() => {
+      if (App.transfers.marketResultsPending?.key === renderKey) {
+        App.transfers.marketResultsPending = null;
+      }
     });
+
+    App.transfers.marketResultsPending = {
+      key: renderKey,
+      promise: renderRequest,
+    };
+    return renderRequest;
   },
 
   renderSummary() {

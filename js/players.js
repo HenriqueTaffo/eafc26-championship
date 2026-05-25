@@ -895,7 +895,7 @@ App.players = {
       players
         .slice(0, 8)
         .map((player) =>
-          App.api.searchEaRatings(player.name || "", 2).catch(() => []),
+          App.transfers.searchEaRatingsCached(player.name || "", 2),
         ),
     );
     App.api.mergeEaRatings?.(ratingRows.flat());

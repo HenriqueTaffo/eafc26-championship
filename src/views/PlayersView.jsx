@@ -67,11 +67,16 @@ function getPlayersViewModel() {
 }
 
 function PlayersGrid() {
-  useAppRuntime();
+  const runtimeVersion = useAppRuntime();
+  const isActive =
+    typeof document !== "undefined" &&
+    document.getElementById("playersView")?.classList.contains("active");
 
-  const model = App.state.apiLoaded ? getPlayersViewModel() : null;
+  const model = isActive && App.state.apiLoaded ? getPlayersViewModel() : null;
 
   useEffect(() => {
+    if (!isActive) return;
+
     const { isPersonalOffice, session } = model || {};
     const searchInput = document.getElementById("playersSearchInput");
     const filterInput = document.getElementById("playersFilter");
@@ -91,7 +96,11 @@ function PlayersGrid() {
         ? "Buscar jogador, e-mail, patrocínio ou próximo jogo..."
         : "Buscar técnico, jogador, time, e-mail ou próximo jogo...";
     }
-  }, [model]);
+  }, [isActive, model, runtimeVersion]);
+
+  if (!isActive) {
+    return <section className="player-grid" id="playersGrid"></section>;
+  }
 
   if (!App.state.apiLoaded) {
     return (
@@ -169,6 +178,11 @@ function Leaderboard({ data, label }) {
 
 function PlayerLeaderboards() {
   useAppRuntime();
+  const isActive =
+    typeof document !== "undefined" &&
+    document.getElementById("playersView")?.classList.contains("active");
+
+  if (!isActive) return <section className="leaderboard-grid"></section>;
 
   return (
     <section className="leaderboard-grid">
