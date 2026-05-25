@@ -26,14 +26,6 @@ App.events = {
     element.textContent = `${String(hours).padStart(2, "0")}h ${String(minutes).padStart(2, "0")}m ${String(seconds).padStart(2, "0")}s`;
   },
 
-  renderEventSlots() {
-    const element = document.getElementById("eventSlotList");
-    if (!element) return;
-
-    element.innerHTML = (App.config.eventSlots || [])
-      .map(hour => `<b>${String(Number(hour)).padStart(2, "0")}h</b>`)
-      .join("");
-  },
 
   getCurrentEventSlotKey() {
     const now = new Date();
@@ -287,49 +279,6 @@ App.events = {
     };
   },
 
-  renderEventCard(event) {
-    const presentation = App.events.getEventPresentation(event);
-    const typeClass = App.events.getEventTypeClass(event);
-    const color = App.data.ownerColors[event.Jogador] || App.data.ownerColors["Livre / CPU"];
-    const modifier = Number(event.ModificadorTransferencias || 0);
-    const durationLabel = App.events.getEventDurationLabel(event);
-    const metaItems = [
-      App.events.formatEventDate(event.Data),
-      App.events.formatEventTime(event.Horario),
-      event.Status || "Gerado"
-    ].filter(Boolean);
-
-    return `
-      <article class="event-card event-card-v45 event-category-${presentation.category}" style="--event-color:${color}">
-        <div class="event-card-topline">
-          <span class="event-icon" aria-hidden="true">${presentation.icon}</span>
-          <span class="event-category-label">${presentation.categoryLabel}</span>
-          <span class="owner" style="background:${color}">${event.Jogador || "Liga"}</span>
-        </div>
-
-        <div class="event-card-header">
-          <div>
-            <h2>${App.utils.escapeDisplay(presentation.title)}</h2>
-            <p class="event-flavor">${App.utils.escapeDisplay(presentation.description)}</p>
-          </div>
-          <span class="event-impact ${typeClass}">${App.events.getEventImpactLabel(event)}</span>
-        </div>
-
-        <div class="event-effect-box">
-          <strong>Impacto</strong>
-          <span>${App.utils.escapeDisplay(presentation.effect)}</span>
-        </div>
-
-        <div class="event-badges">
-          ${modifier !== 0 ? `<span class="limit-pill">${modifier > 0 ? "+" : ""}${modifier} transferência(s) hoje</span>` : ""}
-          ${event.JogadorAfetado ? `<span class="injury-pill">${App.transfers.renderPlayerIdentity(event.JogadorAfetado, "", "event-pill-player-identity")}</span>` : ""}
-          ${durationLabel ? `<span class="duration-pill">${App.utils.escapeDisplay(durationLabel)}</span>` : ""}
-        </div>
-
-        <div class="event-meta">${metaItems.map(App.utils.escapeDisplay).join(" · ")}</div>
-      </article>
-    `;
-  },
 
   getEventStats(events) {
     return {
@@ -466,67 +415,8 @@ App.events = {
 
     return "Sem efeito adicional.";
   },
-
   render() {
-    App.events.renderEventSlots();
     App.events.updateEventCountdown();
-
-    const summary = document.getElementById("eventsSummary");
-    const grid = document.getElementById("eventsGrid");
-    if (!grid) return;
-    if (summary) summary.classList.add("events-summary-v45");
     App.react?.notify?.();
-
-    const events = App.events.getFilteredEvents();
-    const stats = App.events.getEventStats(events);
-    const periodSelect = document.getElementById("eventsPeriodFilter");
-    const periodLabel = periodSelect ? periodSelect.options[periodSelect.selectedIndex]?.textContent : "Eventos filtrados";
-
-    const activeFilteredEvents = events.filter(event => App.events.isActiveOrDurationEvent(event)).slice(0, 4);
-
-    grid.innerHTML = events.length ? `
-      <section class="event-workspace">
-        <section class="event-board-header event-board-header-v66">
-          <div>
-            <span class="modal-kicker">Mesa de controle</span>
-            <strong>${periodLabel}</strong>
-            <span>${events.length} ocorrência(s) na tela, organizadas por impacto, técnico e duração.</span>
-          </div>
-          <div class="event-mini-stats">
-            <span>Caixa +${stats.positive}</span>
-            <span>Risco ${stats.negative}</span>
-            <span>DM ${stats.injuries}</span>
-            <span>Mercado ${stats.market}</span>
-          </div>
-        </section>
-
-        <section class="event-focus-strip">
-          <article>
-            <span>Ativos</span>
-            <strong>${activeFilteredEvents.length}</strong>
-            <small>${activeFilteredEvents.length ? activeFilteredEvents.map(event => `${event.Jogador || "Liga"}: ${event.Titulo || "Evento ativo"}`).join(" · ") : "Nenhuma duração ativa no filtro atual."}</small>
-          </article>
-          <article>
-            <span>Financeiro</span>
-            <strong>${stats.positive + stats.negative}</strong>
-            <small>${stats.positive} positivo(s), ${stats.negative} negativo(s)</small>
-          </article>
-          <article>
-            <span>DM / Mercado</span>
-            <strong>${stats.injuries + stats.market}</strong>
-            <small>${stats.injuries} lesão(ões), ${stats.market} trava(s)</small>
-          </article>
-        </section>
-
-        <section class="event-card-grid-v45 event-card-grid-v66">
-          ${events.map(event => App.events.renderEventCard(event)).join("")}
-        </section>
-      </section>
-    ` : `
-      <article class="event-empty-v45">
-        <strong>Nenhum evento encontrado</strong>
-        <p>Troque o período, remova filtros ou pesquise por técnico, jogador, punição, premiação ou impacto financeiro.</p>
-      </article>
-    `;
   }
 };

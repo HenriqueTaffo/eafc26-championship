@@ -3,6 +3,8 @@ import {
   CalendarWeekBoard,
   CupsBracket,
 } from "../views/CalendarCupsViews.jsx";
+import { ExperienceGrid } from "../views/ExperienceView.jsx";
+import { EventsGrid, EventSlotList } from "../views/EventsView.jsx";
 import {
   CalendarSummary,
   CommissionerSummary,
@@ -465,7 +467,7 @@ function EventsView() {
   return (
     <>
       <section id="eventsView" className="view">
-        <section className="summary" id="eventsSummary">
+        <section className="summary events-summary-v45" id="eventsSummary">
           <EventsSummary />
         </section>
         <section className="countdown-card events-command-card">
@@ -478,11 +480,7 @@ function EventsView() {
               nos técnicos.
             </p>
           </div>
-          <div
-            className="event-slot-list"
-            id="eventSlotList"
-            aria-label="Horários de eventos"
-          ></div>
+          <EventSlotList />
         </section>
         <section className="controls">
           <input
@@ -530,7 +528,7 @@ function EventsView() {
           </div>
           <span className="app-message" id="eventsMessage"></span>
         </section>
-        <section className="event-grid" id="eventsGrid"></section>
+        <EventsGrid />
         <p className="footer-note">
           Central de eventos v45: lançamentos financeiros entram no orçamento
           automaticamente; mercado, lesões e punições aparecem com duração e
@@ -563,7 +561,7 @@ function ExperienceView() {
             <a href="#intelligenceMarket">Mercado</a>
           </div>
         </section>
-        <section className="experience-grid" id="experienceGrid"></section>
+        <ExperienceGrid />
       </section>
     </>
   );
