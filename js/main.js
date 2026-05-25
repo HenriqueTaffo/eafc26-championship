@@ -70,6 +70,8 @@ App.main = {
   },
 
   renderCurrentView() {
+    App.main.syncRestrictedNavigation();
+
     const activeView = document.querySelector(".view.active")?.id;
     if (activeView && !App.main.canAccessView(activeView)) {
       App.main.switchToView("playersView");
@@ -239,8 +241,11 @@ App.main = {
   },
 
   setupTabs() {
+    App.main.syncRestrictedNavigation();
+
     document.querySelectorAll(".tab-button").forEach((button) => {
       button.addEventListener("click", () => {
+        App.main.syncRestrictedNavigation();
         if (!App.main.canAccessView(button.dataset.view)) return;
 
         document
@@ -254,6 +259,49 @@ App.main = {
         App.main.renderCurrentView();
       });
     });
+  },
+
+  syncRestrictedNavigation() {
+    const canUseCommissionerViews = App.auth?.isCommissioner?.() === true;
+    const restrictedViews = ["commissionerView", "submitView"];
+
+    document
+      .querySelectorAll(
+        '.tab-button[data-view="commissionerView"], .tab-button[data-view="submitView"]',
+      )
+      .forEach((button) => {
+        const isRestricted = restrictedViews.includes(button.dataset.view);
+        if (!isRestricted) return;
+
+        button.hidden = !canUseCommissionerViews;
+        button.disabled = !canUseCommissionerViews;
+        button.setAttribute(
+          "aria-hidden",
+          canUseCommissionerViews ? "false" : "true",
+        );
+        button.style.display = canUseCommissionerViews ? "" : "none";
+
+        if (!canUseCommissionerViews) {
+          button.classList.remove("active");
+        }
+      });
+
+    restrictedViews.forEach((viewId) => {
+      const view = document.getElementById(viewId);
+      if (!view) return;
+
+      view.hidden = !canUseCommissionerViews;
+      view.style.display = canUseCommissionerViews ? "" : "none";
+
+      if (!canUseCommissionerViews) {
+        view.classList.remove("active");
+      }
+    });
+
+    const activeView = document.querySelector(".view.active")?.id;
+    if (!canUseCommissionerViews && restrictedViews.includes(activeView)) {
+      App.main.switchToView("playersView");
+    }
   },
 
   canAccessView(viewId) {

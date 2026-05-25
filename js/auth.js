@@ -48,6 +48,7 @@ App.auth = {
     document.body.classList.toggle("auth-unlocked", !isLocked);
     document.body.classList.toggle("is-commissioner", isCommissioner);
     document.body.classList.toggle("is-manager", !isLocked && !isCommissioner);
+    App.main?.syncRestrictedNavigation?.();
 
     if (isLocked) {
       App.main?.hideLoader?.(true);
