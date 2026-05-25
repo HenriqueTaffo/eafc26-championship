@@ -129,7 +129,7 @@ export function CalendarSummary() {
   return (
     <SafeSummary fallbackLabel="Calendário">
       {() => {
-        const events = App.calendar.getCalendarEvents();
+        const events = App.calendar.getSessionScopedEvents();
         const pendingTech = events.filter(
           (event) =>
             App.calendar.involvesOurTeam(event) &&
@@ -141,7 +141,10 @@ export function CalendarSummary() {
 
         return (
           <>
-            <SummaryCard label="Início" value="19/05/2026" />
+            <SummaryCard
+              label="Início"
+              value={App.calendar.getCalendarStartDateLabel()}
+            />
             <SummaryCard label="Jogos" value={events.length} />
             <SummaryCard label="Realizados" value={done} />
             <SummaryCard label="Técnicos pendentes" value={pendingTech} />

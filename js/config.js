@@ -4,7 +4,7 @@ App.config = {
   API_URL: "https://fdippspwpugnxwxmjnqf.supabase.co",
   SUPABASE_URL: "https://fdippspwpugnxwxmjnqf.supabase.co",
   SUPABASE_PUBLISHABLE_KEY: "sb_publishable_9YyrYEk9jH5CuatQK_Ejpg_VfQq6qCK",
-  assetVersion: "20260525-public-salary-references-v1",
+  assetVersion: "20260525-manager-calendar-v1",
   transferBudget: 22000000,
   homeMatchBonus: 400000,
   winBonus: 250000,
@@ -15,7 +15,7 @@ App.config = {
   eventSlots: [9, 12, 15, 18],
   calendarConfig: {
     championshipRoundsPerWeek: 3,
-    startDate: "2026-05-19",
+    startDate: "2026-05-26",
     championshipDayOffsets: [0, 2, 5],
     cupDayOffset: 4
   }

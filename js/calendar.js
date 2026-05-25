@@ -120,6 +120,53 @@ App.calendar = {
     return "CPU x CPU";
   },
 
+  getLoggedManagerName() {
+    const session = App.auth?.getSession ? App.auth.getSession() : null;
+    if (!session?.managerName || App.auth?.isCommissioner?.()) return "";
+    return session.managerName;
+  },
+
+  getEffectiveOwnerFilter(rawFilter = "all") {
+    return App.calendar.getLoggedManagerName() || rawFilter || "all";
+  },
+
+  syncOwnerFilterControl() {
+    const select = document.getElementById("calendarOwnerFilter");
+    if (!select) return;
+
+    const managerName = App.calendar.getLoggedManagerName();
+    if (!managerName) {
+      select.disabled = false;
+      select.removeAttribute("title");
+      return;
+    }
+
+    if (![...select.options].some((option) => option.value === managerName)) {
+      select.appendChild(new Option(managerName, managerName));
+    }
+    select.value = managerName;
+    select.disabled = true;
+    select.title = "Calendario filtrado pelo tecnico logado.";
+  },
+
+  getSessionScopedEvents(events = App.calendar.getCalendarEvents()) {
+    const managerName = App.calendar.getLoggedManagerName();
+    if (!managerName) return events;
+    const managerKey = App.utils.normalizeText(managerName);
+    return events.filter((event) =>
+      App.calendar
+        .getMatchOwners(event)
+        .some((owner) => App.utils.normalizeText(owner) === managerKey),
+    );
+  },
+
+  getCalendarStartDateLabel() {
+    return App.utils.formatDate(App.config.calendarConfig.startDate).replace(
+      /^.*?,\s*/,
+      "",
+    );
+  },
+
   getStatusClass(event) {
     return typeof event.homeScore === "number" &&
       typeof event.awayScore === "number"
@@ -176,18 +223,23 @@ App.calendar = {
   },
 
   getFilteredEvents() {
+    App.calendar.syncOwnerFilterControl();
+
     const search = App.utils.normalizeText(
       document.getElementById("calendarSearchInput")?.value,
     );
     const competition =
       document.getElementById("calendarCompetitionFilter")?.value || "all";
-    const ownerFilter =
-      document.getElementById("calendarOwnerFilter")?.value || "all";
+    const ownerFilter = App.calendar.getEffectiveOwnerFilter(
+      document.getElementById("calendarOwnerFilter")?.value || "all",
+    );
     const week = document.getElementById("calendarWeekFilter")?.value || "all";
     const statusFilter =
       document.getElementById("calendarStatusFilter")?.value || "pending";
 
-    let filteredEvents = App.calendar.getCalendarEvents().filter((event) => {
+    let filteredEvents = App.calendar
+      .getSessionScopedEvents()
+      .filter((event) => {
       const owners = App.calendar.getMatchOwners(event);
       const matchType = App.calendar.getMatchType(event);
 
@@ -210,7 +262,10 @@ App.calendar = {
       } else if (ownerFilter === "cpu") {
         matchesOwner = owners.length === 0;
       } else if (ownerFilter !== "all") {
-        matchesOwner = owners.includes(ownerFilter);
+        const ownerFilterKey = App.utils.normalizeText(ownerFilter);
+        matchesOwner = owners.some(
+          (owner) => App.utils.normalizeText(owner) === ownerFilterKey,
+        );
       }
 
       const status = App.calendar.getStatusClass(event);
@@ -485,6 +540,7 @@ App.calendar = {
 
   render() {
     App.calendar.populateWeeks();
+    App.calendar.syncOwnerFilterControl();
     App.react?.notify?.();
   },
 };
