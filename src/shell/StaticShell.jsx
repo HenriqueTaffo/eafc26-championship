@@ -111,9 +111,6 @@ function ShellChrome() {
     <>
       <header className="hero league-hero league-hero-brand">
         <div className="league-brand-lockup" aria-hidden="true">
-          <span className="league-brand-icon">
-            <img src={BRAND_ICON_SRC} alt="" />
-          </span>
           <img
             className="league-brand-wordmark"
             src={BRAND_WORDMARK_SRC}

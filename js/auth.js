@@ -1109,17 +1109,18 @@ App.auth = {
       `
       <form class="manager-login-card manager-login-shell" id="managerLoginForm">
         <div class="manager-login-brand">
-          <span class="manager-login-brand-mark manager-login-avatar-large" aria-hidden="true">
+          <span class="manager-login-mascot-stage manager-login-avatar-large manager-login-brand-mark" aria-hidden="true">
             <span class="manager-login-mascot-ring"></span>
-            <img class="brand-icon-img" src="./assets/4linhas-icon-light.png?v=${App.config.assetVersion}" alt="" loading="lazy" />
+            <span class="manager-login-flip-card">
+              <img class="manager-login-face manager-login-face-front brand-icon-img" src="./assets/4linhas-icon-light.png?v=${App.config.assetVersion}" alt="" loading="lazy" />
+              <img class="manager-login-face manager-login-face-back brand-icon-img" src="./assets/4linhas-icon.png?v=${App.config.assetVersion}" alt="" loading="lazy" />
+            </span>
           </span>
           <div>
-            <img class="manager-login-wordmark" src="./assets/4linhas-wordmark-light.png?v=${App.config.assetVersion}" alt="4 Linhas" loading="lazy" />
-            <strong>Acesso da liga</strong>
-            <small>Entre para abrir seu escritório, calendário e decisões privadas.</small>
+            <strong>&Aacute;rea privada</strong>
+            <small>Acesse seu escrit&oacute;rio da liga.</small>
             <div class="manager-login-meta" aria-hidden="true">
               <b>Temporada 2026</b>
-              <b>Área privada</b>
             </div>
           </div>
         </div>
@@ -1136,7 +1137,7 @@ App.auth = {
               <input name="accessCode" type="password" inputmode="numeric" placeholder="PIN" autocomplete="current-password" required />
             </label>
           </div>
-          <button type="submit" class="primary-button manager-login-submit">Entrar no escritório</button>
+          <button type="submit" class="primary-button manager-login-submit">Entrar</button>
         </div>
       </form>
     `,
@@ -1159,7 +1160,7 @@ App.auth = {
           alert(error.message);
         } finally {
           button.disabled = false;
-          button.textContent = "Entrar no escritório";
+          button.textContent = "Entrar";
         }
       });
   },

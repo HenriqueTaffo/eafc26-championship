@@ -4,7 +4,7 @@ App.config = {
   API_URL: "https://fdippspwpugnxwxmjnqf.supabase.co",
   SUPABASE_URL: "https://fdippspwpugnxwxmjnqf.supabase.co",
   SUPABASE_PUBLISHABLE_KEY: "sb_publishable_9YyrYEk9jH5CuatQK_Ejpg_VfQq6qCK",
-  assetVersion: "20260525-calendar-desktop-v1",
+  assetVersion: "20260525-brand-login-simplify-v2",
   transferBudget: 18000000,
   homeMatchBonus: 150000,
   winBonus: 100000,

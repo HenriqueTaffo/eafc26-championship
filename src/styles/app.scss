@@ -40,7 +40,7 @@ body *:not(svg):not(path) {
 
 .league-hero-brand {
   display: grid !important;
-  grid-template-columns: minmax(280px, 560px) 1px minmax(0, 1fr);
+  grid-template-columns: minmax(240px, 520px) 1px minmax(0, 1fr);
   gap: clamp(18px, 3vw, 34px);
   padding: clamp(18px, 2.8vw, 28px);
 }
@@ -49,35 +49,12 @@ body *:not(svg):not(path) {
   display: flex;
   min-width: 0;
   align-items: center;
-  gap: clamp(14px, 2.2vw, 24px);
-}
-
-.league-brand-icon {
-  display: grid;
-  width: clamp(58px, 7vw, 88px);
-  height: clamp(58px, 7vw, 88px);
-  flex: 0 0 auto;
-  place-items: center;
-  border: 1px solid rgba(251, 191, 36, 0.34);
-  border-radius: 8px;
-  background:
-    linear-gradient(135deg, rgba(251, 191, 36, 0.14), transparent 48%),
-    rgba(2, 6, 23, 0.42);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.1),
-    0 14px 34px rgba(0, 0, 0, 0.24);
-
-  img {
-    width: 78%;
-    height: 78%;
-    object-fit: contain;
-  }
 }
 
 .league-brand-wordmark {
   display: block;
-  width: min(100%, 440px);
-  max-height: 96px;
+  width: min(100%, 390px);
+  max-height: 82px;
   object-fit: contain;
   object-position: left center;
 }
@@ -110,28 +87,90 @@ body *:not(svg):not(path) {
   overflow: visible;
   border-radius: 8px;
 
-  > img {
-    position: relative;
-    z-index: 1;
-    width: 100%;
-    height: 100%;
-    padding: 12px;
+  .manager-login-face {
+    padding: 14px;
     object-fit: contain;
+    object-position: center;
+  }
+
+  .manager-login-face-front {
     background:
       linear-gradient(135deg, rgba(251, 191, 36, 0.12), transparent 48%),
       rgba(2, 6, 23, 0.54);
-    border: 1px solid rgba(255, 255, 255, 0.16);
-    border-radius: 8px;
+  }
+
+  .manager-login-face-back {
+    background: rgba(255, 255, 255, 0.95);
   }
 }
 
-.manager-login-wordmark {
-  display: block;
-  width: min(330px, 68vw);
-  max-height: 58px;
-  margin-bottom: 10px;
-  object-fit: contain;
-  object-position: left center;
+@media (min-width: 721px) {
+  body.auth-gated .manager-login-panel {
+    width: min(900px, 100%);
+  }
+
+  body.auth-gated .manager-login-card.manager-login-shell {
+    grid-template-columns: minmax(0, 0.9fr) minmax(300px, 0.62fr);
+    gap: clamp(20px, 3vw, 34px);
+    max-width: 900px;
+    min-height: 328px;
+    padding: clamp(20px, 3vw, 32px);
+    background:
+      linear-gradient(
+        135deg,
+        rgba(12, 20, 21, 0.92),
+        rgba(8, 16, 20, 0.9) 58%,
+        rgba(7, 24, 22, 0.86)
+      ) !important;
+    box-shadow: 0 24px 62px rgba(0, 0, 0, 0.28);
+    backdrop-filter: blur(14px);
+  }
+
+  body.auth-gated .manager-login-shell::before {
+    opacity: 0.62;
+    background:
+      linear-gradient(90deg, rgba(251, 191, 36, 0.08), transparent 30%),
+      radial-gradient(circle at 88% 24%, rgba(45, 212, 191, 0.12), transparent 34%);
+  }
+
+  body.auth-gated .manager-login-brand {
+    gap: clamp(16px, 2.2vw, 24px);
+  }
+
+  body.auth-gated .manager-login-avatar-large {
+    width: clamp(78px, 8vw, 104px);
+    height: clamp(78px, 8vw, 104px);
+  }
+
+  body.auth-gated .manager-login-card strong {
+    max-width: 360px;
+    font-size: clamp(30px, 3.5vw, 46px);
+    line-height: 1;
+  }
+
+  body.auth-gated .manager-login-card small {
+    max-width: 320px;
+    font-size: 13px;
+    line-height: 1.35;
+  }
+
+  body.auth-gated .manager-login-meta {
+    gap: 6px;
+    margin-top: 12px;
+  }
+
+  body.auth-gated .manager-login-meta b {
+    min-height: 24px;
+    padding: 0 8px;
+    font-size: 9px;
+  }
+
+  body.auth-gated .manager-login-form-panel {
+    gap: 12px;
+    border-color: rgba(148, 163, 184, 0.12);
+    padding: 16px;
+    background: rgba(2, 6, 23, 0.18);
+  }
 }
 
 @media (min-width: 1181px) {
