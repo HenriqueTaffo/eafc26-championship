@@ -460,6 +460,7 @@ App.api = {
         App.api.loadRatingsForPlayerNames(names),
         App.api.loadExperienceData(),
         App.api.loadManagerOnboarding?.(),
+        App.api.loadSalaryReferences?.(),
         App.api.loadFinanceRulesAndForecast?.(),
         App.api.loadSquadManagementData?.(),
         App.governance?.loadData?.(),
@@ -1076,9 +1077,10 @@ App.api = {
 
   async loadFinanceRulesAndForecast() {
     try {
-      const [rules, salaryDebts] = await Promise.all([
+      const [rules, salaryDebts, salaryReferences] = await Promise.all([
         App.api.rpc("app_get_finance_rules", {}, 30000),
         App.api.rpc("app_get_salary_debt_status", {}, 30000),
+        App.api.loadSalaryReferences(),
       ]);
       const forecast = await App.api.rpc(
         "app_get_manager_finance_forecast",
@@ -1088,12 +1090,32 @@ App.api = {
       App.state.apiFinanceRules = rules || null;
       App.state.apiFinanceForecast = Array.isArray(forecast) ? forecast : [];
       App.state.apiSalaryDebts = Array.isArray(salaryDebts) ? salaryDebts : [];
+      App.state.apiSalaryReferences = Array.isArray(salaryReferences)
+        ? salaryReferences
+        : [];
       return App.state.apiFinanceForecast;
     } catch (error) {
       console.warn("Previsão financeira persistente indisponível:", error);
       App.state.apiFinanceRules = null;
       App.state.apiFinanceForecast = [];
       App.state.apiSalaryDebts = [];
+      App.state.apiSalaryReferences = [];
+      return [];
+    }
+  },
+
+  async loadSalaryReferences() {
+    try {
+      const result = await App.api.rpc(
+        "app_get_public_salary_references",
+        {},
+        30000,
+      );
+      App.state.apiSalaryReferences = Array.isArray(result) ? result : [];
+      return App.state.apiSalaryReferences;
+    } catch (error) {
+      console.warn("Referencias publicas de salario indisponiveis:", error);
+      App.state.apiSalaryReferences = [];
       return [];
     }
   },
@@ -1248,6 +1270,7 @@ App.api = {
         activeView === "squadView"
       ) {
         requiredLoads.push(App.api.loadMarketPlayers());
+        requiredLoads.push(App.api.loadSalaryReferences());
       }
       if (activeView === "squadView") {
         requiredLoads.push(App.api.loadSquadManagementData({ force: true }));
@@ -1438,7 +1461,9 @@ App.api = {
         payload.tradeInPlayer && Number(payload.tradeInCredit || 0) > 0;
 
       return App.api.rpc(
-        hasTradeIn ? "app_add_transfer_with_trade" : "app_add_transfer",
+        hasTradeIn
+          ? "app_add_transfer_with_trade_verified_salary"
+          : "app_add_transfer_verified_salary",
         {
           ...App.api.getAuthPayload(),
           p_buyer: payload.buyer,
@@ -1446,6 +1471,9 @@ App.api = {
           p_from_club: payload.fromClub,
           p_overall: Number(payload.overall),
           p_market_value: Number(payload.marketValue),
+          p_weekly_salary_eur: Number(payload.weeklySalary || 0),
+          p_salary_source_name: payload.salarySourceName || "",
+          p_salary_source_url: payload.salarySourceUrl || "",
           ...(hasTradeIn
             ? {
                 p_trade_in_player: payload.tradeInPlayer,

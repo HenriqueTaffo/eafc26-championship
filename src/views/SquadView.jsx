@@ -594,7 +594,7 @@ function SquadRosterRow({
         onDragStart(player, "");
       }}
       onDragEnd={onDragEnd}
-      title={`${player.name} · ${player.position || "-"} · OVR ${player.overall}`}
+      title={`${player.name} · ${player.position || "-"} · OVR ${player.overall} · ${player.salarySourceName || "Fonte salarial publica"}`}
     >
       <span className="squad-drag-grip" aria-hidden="true"></span>
       <PlayerAvatar player={player} />
@@ -611,6 +611,9 @@ function SquadRosterRow({
             ? "Em campo"
             : `${App.utils.formatCurrency(player.weeklySalary || 0)}/sem`}
         </small>
+        {!assigned && player.salarySourceName ? (
+          <small>{player.salarySourceName}</small>
+        ) : null}
       </span>
     </button>
   );

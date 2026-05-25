@@ -322,6 +322,12 @@ App.forms = {
         `Overall: ${payload.overall}`,
         `${isInternal ? "Valor negociado" : "Valor base"}: ${App.utils.formatCurrency(Number(payload.marketValue))}`,
         `${isInternal ? "Débito estimado" : "Valor final estimado"}: ${App.utils.formatCurrency(Number(preview.finalValue || 0))}`,
+        ...(!isInternal
+          ? [
+              `Salario publico: ${App.utils.formatCurrency(Number(preview.weeklySalary || 0))}/sem`,
+              `Fonte salarial: ${payload.salarySourceName || preview.salarySourceName || "pendente"}`,
+            ]
+          : []),
         ...(!isInternal && preview.exchangePlayer
           ? [
               `Troca: ${preview.exchangePlayer.player}`,
@@ -342,9 +348,11 @@ App.forms = {
             ? "O jogador oferecido na troca precisa ser diferente do alvo."
             : preview.duplicateBlock
               ? `Jogador já contratado por ${preview.duplicate.buyer}.`
-              : preview.limitReached
-                ? `${preview.buyer} já atingiu o limite diário.`
-                : "Saldo insuficiente para concluir a contratação.";
+              : preview.salaryReferenceMissing
+                ? "Informe salario semanal e fonte publica antes de enviar."
+                : preview.limitReached
+                  ? `${preview.buyer} já atingiu o limite diário.`
+                  : "Saldo insuficiente para concluir a contratação.";
         throw new Error(reason);
       }
 
@@ -353,6 +361,10 @@ App.forms = {
         ...payload,
         overall: Number(payload.overall),
         marketValue: Number(payload.marketValue),
+        weeklySalary: Number(preview.weeklySalary || payload.weeklySalary || 0),
+        salarySourceName:
+          payload.salarySourceName || preview.salarySourceName || "",
+        salarySourceUrl: payload.salarySourceUrl || preview.salarySourceUrl || "",
       });
 
       if (!data.ok)
@@ -503,6 +515,9 @@ App.forms = {
       "fromClub",
       "overall",
       "marketValue",
+      "weeklySalary",
+      "salarySourceName",
+      "salarySourceUrl",
     ].forEach((name) => {
       const field = transferForm.elements[name];
       if (!field) return;

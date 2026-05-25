@@ -51,7 +51,7 @@ App.players = {
       return forecastPayroll;
     }
     return transfers.reduce(
-      (sum, item) => sum + App.transfers.estimateWeeklySalary(item),
+      (sum, item) => sum + App.transfers.getVerifiedWeeklySalary(item),
       0,
     );
   },

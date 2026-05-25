@@ -1545,8 +1545,12 @@ $shadow-soft: 0 14px 38px rgba(15, 23, 42, 0.1);
   }
 
   small {
+    max-width: 120px;
     color: #93a4af;
     font-size: 0.7rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 }
 

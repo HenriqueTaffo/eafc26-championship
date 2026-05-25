@@ -771,13 +771,41 @@ function TransfersView() {
                     required
                   />
                 </label>
+                <label data-market-transfer-field>
+                  <span>Salario semanal publico</span>
+                  <input
+                    name="weeklySalary"
+                    type="number"
+                    min="1"
+                    step="1"
+                    inputMode="numeric"
+                    placeholder="Ex: 108846"
+                  />
+                </label>
+                <label data-market-transfer-field>
+                  <span>Fonte salarial</span>
+                  <input
+                    name="salarySourceName"
+                    type="text"
+                    placeholder="Ex: Capology"
+                  />
+                </label>
+                <label className="full" data-market-transfer-field>
+                  <span>URL publica do salario</span>
+                  <input
+                    name="salarySourceUrl"
+                    type="url"
+                    placeholder="https://www.capology.com/player/..."
+                  />
+                </label>
               </div>
 
               <div className="transfer-live-preview" id="transferFormPreview">
                 <strong>Prévia da contratação</strong>
                 <span>
-                  Preencha comprador, jogador, overall e valor para calcular
-                  custo final, saldo e travas antes de enviar.
+                  Preencha comprador, jogador, overall, valor e salario
+                  publico para calcular custo final, folha e travas antes de
+                  enviar.
                 </span>
               </div>
 
@@ -854,6 +882,10 @@ function TransfersView() {
               podem alterar esse limite.
             </li>
             <li>Valor final = valor Transfermarkt + percentual por overall.</li>
+            <li>
+              Salario do jogador: somente com referencia publica. Nao usamos
+              overall para estimar folha.
+            </li>
           </ul>
         </section>
         <section className="table-wrapper">
