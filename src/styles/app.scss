@@ -695,6 +695,583 @@ body:not(.is-commissioner) #submitView {
   }
 }
 
+.transfer-ops-board {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.transfer-ops-card,
+.transfer-command-stack > .coach-panel-card,
+.transfer-compare-board,
+.transfer-negotiation-hub {
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  background:
+    linear-gradient(135deg, rgba(45, 212, 191, 0.08), transparent 42%),
+    rgba(8, 13, 18, 0.86);
+  box-shadow: $shadow-soft;
+}
+
+.transfer-ops-card {
+  display: grid;
+  gap: 8px;
+  min-height: 120px;
+  padding: 14px;
+  border-radius: $radius;
+
+  span,
+  small {
+    color: #9fb3bf;
+  }
+
+  span {
+    font-size: 0.72rem;
+    font-weight: 900;
+    text-transform: uppercase;
+  }
+
+  strong {
+    color: #f8fafc;
+    font-size: clamp(1.2rem, 2vw, 1.7rem);
+    line-height: 1.05;
+  }
+
+  small {
+    font-size: 0.72rem;
+    line-height: 1.5;
+  }
+}
+
+.transfer-workbench {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(320px, 0.85fr);
+}
+
+.transfer-command-stack {
+  display: grid;
+  gap: 14px;
+}
+
+.transfer-workspace-empty {
+  display: grid;
+  gap: 6px;
+  min-height: 120px;
+  align-content: center;
+  padding: 14px 2px 2px;
+  color: #93a4af;
+
+  strong {
+    color: #f8fafc;
+    font-size: 0.96rem;
+  }
+
+  p {
+    margin: 0;
+    line-height: 1.55;
+  }
+}
+
+.transfer-pill {
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  border-radius: 999px;
+  padding: 6px 10px;
+  background: rgba(15, 23, 42, 0.54);
+  color: #dbeafe;
+  font-size: 0.68rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.transfer-pill.is-hot {
+  border-color: rgba(248, 113, 113, 0.28);
+  color: #fecaca;
+}
+
+.transfer-pill.is-watch {
+  border-color: rgba(96, 165, 250, 0.28);
+  color: #bfdbfe;
+}
+
+.transfer-pill.is-ready {
+  border-color: rgba(251, 191, 36, 0.32);
+  color: #fde68a;
+}
+
+.transfer-pill.is-live {
+  border-color: rgba(45, 212, 191, 0.3);
+  color: #99f6e4;
+}
+
+.transfer-pill.is-cold {
+  color: #cbd5e1;
+}
+
+.transfer-deal-card,
+.transfer-shortlist-card,
+.transfer-compare-board,
+.transfer-negotiation-hub {
+  display: grid;
+  gap: 14px;
+  padding: 16px;
+  border-radius: $radius;
+}
+
+.transfer-deal-hero,
+.transfer-shortlist-group-head,
+.transfer-hub-card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.transfer-deal-hero {
+  padding: 12px;
+  border: 1px solid rgba(45, 212, 191, 0.16);
+  border-radius: $radius;
+  background: rgba(6, 22, 28, 0.6);
+
+  strong,
+  span {
+    display: block;
+  }
+
+  strong {
+    color: #f8fafc;
+    font-size: 1.18rem;
+  }
+
+  span {
+    margin-top: 4px;
+    color: #a7b7c4;
+    font-size: 0.76rem;
+    line-height: 1.45;
+  }
+}
+
+.transfer-deal-actions,
+.transfer-inline-actions,
+.transfer-swap-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.transfer-deal-actions {
+  justify-content: flex-end;
+}
+
+.transfer-deal-metrics,
+.transfer-compare-stats,
+.transfer-hub-grid,
+.transfer-shortlist-groups {
+  display: grid;
+  gap: 10px;
+}
+
+.transfer-deal-metrics {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.transfer-deal-metrics article,
+.transfer-compare-stats div {
+  display: grid;
+  gap: 4px;
+  padding: 12px;
+  border: 1px solid rgba(148, 163, 184, 0.14);
+  border-radius: $radius;
+  background: rgba(2, 6, 23, 0.34);
+
+  span,
+  small {
+    color: #93a4af;
+  }
+
+  span {
+    font-size: 0.68rem;
+    font-weight: 900;
+    text-transform: uppercase;
+  }
+
+  strong {
+    color: #f8fafc;
+    font-size: 0.98rem;
+  }
+
+  small {
+    font-size: 0.7rem;
+    line-height: 1.45;
+  }
+}
+
+.transfer-deal-columns {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.transfer-deal-section {
+  display: grid;
+  gap: 10px;
+
+  h3 {
+    margin: 0;
+    color: #f8fafc;
+    font-size: 0.9rem;
+  }
+}
+
+.transfer-deal-list,
+.transfer-timeline-list,
+.transfer-summary-stack {
+  display: grid;
+  gap: 10px;
+}
+
+.transfer-deal-alert,
+.transfer-timeline-item,
+.transfer-shortlist-item,
+.transfer-hub-card,
+.transfer-compare-card,
+.transfer-swap-item {
+  border: 1px solid rgba(148, 163, 184, 0.14);
+  border-radius: $radius;
+  background: rgba(2, 6, 23, 0.34);
+}
+
+.transfer-deal-alert,
+.transfer-timeline-item,
+.transfer-swap-item {
+  padding: 12px;
+}
+
+.transfer-deal-alert {
+  display: grid;
+  gap: 5px;
+
+  strong {
+    color: #f8fafc;
+    font-size: 0.8rem;
+  }
+
+  p {
+    margin: 0;
+    color: #c4d2de;
+    font-size: 0.74rem;
+    line-height: 1.5;
+  }
+}
+
+.transfer-deal-alert.is-danger {
+  border-color: rgba(248, 113, 113, 0.26);
+  background: rgba(127, 29, 29, 0.12);
+}
+
+.transfer-deal-alert.is-warning {
+  border-color: rgba(251, 191, 36, 0.24);
+  background: rgba(120, 53, 15, 0.12);
+}
+
+.transfer-deal-alert.is-success {
+  border-color: rgba(45, 212, 191, 0.24);
+  background: rgba(13, 148, 136, 0.1);
+}
+
+.transfer-swap-item {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+
+  strong {
+    color: #f8fafc;
+  }
+
+  p,
+  span {
+    margin: 4px 0 0;
+    color: #9fb3bf;
+    font-size: 0.72rem;
+    line-height: 1.45;
+  }
+}
+
+.transfer-swap-actions {
+  align-items: center;
+  justify-content: flex-end;
+
+  span {
+    margin: 0;
+    color: #99f6e4;
+    font-weight: 900;
+  }
+}
+
+.transfer-timeline-item {
+  display: grid;
+  gap: 4px;
+
+  span {
+    color: #7dd3fc;
+    font-size: 0.66rem;
+    font-weight: 900;
+    text-transform: uppercase;
+  }
+
+  strong {
+    color: #f8fafc;
+    font-size: 0.8rem;
+  }
+
+  p {
+    margin: 0;
+    color: #c4d2de;
+    font-size: 0.73rem;
+    line-height: 1.5;
+  }
+}
+
+.transfer-timeline-item.compact {
+  padding: 10px 12px;
+}
+
+.transfer-shortlist-groups {
+  grid-template-columns: 1fr;
+}
+
+.transfer-shortlist-group {
+  display: grid;
+  gap: 10px;
+}
+
+.transfer-shortlist-group-head strong,
+.transfer-hub-card-head strong {
+  color: #f8fafc;
+  font-size: 0.84rem;
+}
+
+.transfer-shortlist-list {
+  display: grid;
+  gap: 10px;
+}
+
+.transfer-shortlist-item {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+}
+
+.transfer-shortlist-copy {
+  display: grid;
+  gap: 4px;
+
+  strong {
+    color: #f8fafc;
+    font-size: 0.84rem;
+  }
+
+  small,
+  span {
+    color: #9fb3bf;
+    line-height: 1.45;
+  }
+
+  small {
+    font-size: 0.72rem;
+  }
+
+  span {
+    font-size: 0.73rem;
+  }
+}
+
+.transfer-shortlist-tools {
+  display: grid;
+  gap: 8px;
+
+  select {
+    @include control-shell;
+    width: 100%;
+    min-height: 42px;
+  }
+}
+
+.transfer-shortlist-empty {
+  padding: 10px 12px;
+  border: 1px dashed rgba(148, 163, 184, 0.22);
+  border-radius: $radius;
+  color: #93a4af;
+  font-size: 0.73rem;
+  line-height: 1.5;
+}
+
+.transfer-compare-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.transfer-compare-card {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+}
+
+.transfer-compare-top {
+  display: grid;
+  gap: 4px;
+
+  strong {
+    color: #f8fafc;
+    font-size: 0.92rem;
+  }
+
+  span {
+    color: #9fb3bf;
+    font-size: 0.72rem;
+    line-height: 1.45;
+  }
+}
+
+.transfer-compare-stats {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.transfer-compare-detail {
+  margin: 0;
+  color: #b6c5d1;
+  font-size: 0.73rem;
+  line-height: 1.55;
+}
+
+.transfer-hub-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.transfer-hub-card {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+}
+
+.transfer-hub-card-body {
+  display: grid;
+  gap: 10px;
+}
+
+.transfer-summary-stack .proposal-summary-item,
+.transfer-hub-card .decision-card {
+  border-radius: $radius;
+}
+
+.market-player-shell {
+  align-items: flex-start;
+  grid-template-columns: 44px minmax(0, 1fr);
+  row-gap: 10px;
+  cursor: default;
+}
+
+.market-player-shell:hover {
+  transform: translateY(-1px);
+}
+
+.market-player-shell > .market-player-photo {
+  grid-row: 1 / span 3;
+}
+
+.market-player-shell > .market-player-main,
+.market-player-shell > .market-player-side,
+.market-player-shell > .market-player-actions {
+  grid-column: 2;
+}
+
+.market-player-shell .market-player-main {
+  display: grid;
+  gap: 4px;
+}
+
+.market-player-shell .market-player-main strong,
+.market-player-shell .market-player-main small {
+  white-space: normal;
+}
+
+.market-player-shell .market-player-side {
+  justify-content: flex-start;
+  flex-wrap: wrap;
+}
+
+.market-player-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 0;
+}
+
+.submit-mode-switch label {
+  position: relative;
+  display: block;
+  min-width: 0;
+}
+
+.submit-mode-switch span {
+  width: 100%;
+  pointer-events: auto;
+}
+
+@media (max-width: 1180px) {
+  .transfer-workbench,
+  .transfer-ops-board,
+  .transfer-compare-grid,
+  .transfer-hub-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .transfer-workbench {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 760px) {
+  .transfer-ops-board,
+  .transfer-deal-metrics,
+  .transfer-deal-columns,
+  .transfer-compare-grid,
+  .transfer-hub-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .transfer-deal-hero,
+  .transfer-swap-item {
+    grid-template-columns: 1fr;
+  }
+
+  .transfer-deal-hero,
+  .transfer-swap-item,
+  .transfer-shortlist-group-head,
+  .transfer-hub-card-head {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .market-player-shell {
+    grid-template-columns: 40px minmax(0, 1fr);
+  }
+
+  .market-player-shell > .market-player-photo {
+    grid-row: 1 / span 3;
+  }
+
+  .market-player-shell .market-player-side,
+  .market-player-actions {
+    grid-column: 2;
+  }
+}
+
 .submit-card,
 .form-card,
 .rule-card,

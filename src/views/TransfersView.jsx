@@ -14,14 +14,16 @@ function TransfersRuntime() {
     App.transfers.renderBudgetBoard();
     App.transfers.renderInsights();
     App.transfers.renderMarketPlayerResults();
+    App.transfers.bindWorkspaceEvents?.();
 
     const form = document.getElementById("transferForm");
     if (form) {
       if (App.state.apiLoaded) App.transfers.populateExchangePlayers(form);
-      App.transfers.renderTransferPreview(form);
+      App.transfers.refreshWorkspace?.(form);
     }
 
     App.transfers.syncTransferWindowLock();
+    App.transfers.renderWorkspace?.(form);
     App.transfers.renderHistory?.();
   }, [isActive, runtimeVersion]);
 

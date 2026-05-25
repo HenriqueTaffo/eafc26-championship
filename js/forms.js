@@ -465,7 +465,7 @@ App.forms = {
     const transferForm = document.getElementById("transferForm");
     if (transferForm && App.state.apiLoaded) {
       App.transfers.populateExchangePlayers(transferForm);
-      App.transfers.renderTransferPreview(transferForm);
+      App.transfers.refreshWorkspace(transferForm);
     }
 
     const container = document.getElementById("apiSummary");
@@ -522,16 +522,17 @@ App.forms = {
       const field = transferForm.elements[name];
       if (!field) return;
       field.addEventListener("input", () =>
-        App.transfers.renderTransferPreview(transferForm),
+        App.transfers.refreshWorkspace(transferForm),
       );
       field.addEventListener("change", () =>
-        App.transfers.renderTransferPreview(transferForm),
+        App.transfers.refreshWorkspace(transferForm),
       );
     });
 
     transferForm.elements.buyer?.addEventListener("change", () => {
+      App.transfers.populateSellerOptions?.(transferForm);
       App.transfers.populateExchangePlayers(transferForm);
-      App.transfers.renderTransferPreview(transferForm);
+      App.transfers.refreshWorkspace(transferForm);
     });
     transferForm.elements.exchangePlayer?.addEventListener("focus", () => {
       App.transfers.populateExchangePlayers(transferForm);
@@ -604,9 +605,10 @@ App.forms = {
       );
     }
 
+    App.transfers.bindWorkspaceEvents?.();
     App.transfers.renderMarketPlayerResults();
     App.transfers.syncInternalTransferFields(transferForm);
-    App.transfers.renderTransferPreview(transferForm);
+    App.transfers.refreshWorkspace(transferForm);
   },
 
   setupForms() {

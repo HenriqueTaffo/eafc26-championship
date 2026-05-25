@@ -16,6 +16,7 @@ import "../js/standings.js";
 import "../js/calendar.js";
 import "../js/cups.js";
 import "../js/transfers.js";
+import "../js/transfers-cockpit.js";
 import "../js/squad.js";
 import "../js/events.js";
 import "../js/players.js";

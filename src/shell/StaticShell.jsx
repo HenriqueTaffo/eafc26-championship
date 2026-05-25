@@ -620,6 +620,8 @@ function TransfersView() {
           id="transferBudgetBoard"
         ></section>
 
+        <section className="transfer-ops-board" id="transferOpsBoard"></section>
+
         <section className="transfer-workbench">
           <section className="form-card submit-card submit-card-transfer">
             <div className="submit-card-header">
@@ -834,7 +836,28 @@ function TransfersView() {
               </div>
             </form>
           </section>
+
+          <aside className="transfer-command-stack">
+            <section
+              className="coach-panel-card transfer-deal-card"
+              id="transferDealCenter"
+            ></section>
+            <section
+              className="coach-panel-card transfer-shortlist-card"
+              id="transferShortlistBoard"
+            ></section>
+          </aside>
         </section>
+
+        <section
+          className="transfer-compare-board coach-panel-card"
+          id="transferCompareBoard"
+        ></section>
+
+        <section
+          className="transfer-negotiation-hub"
+          id="transferNegotiationHub"
+        ></section>
 
         <section className="controls">
           <input
