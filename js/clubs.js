@@ -1,6 +1,8 @@
 import App from "./app.js";
 
 App.clubs = {
+  failedLogoUrls: new Set(),
+
   fallbackColors: {
     "Coventry City": ["#3b82f6", "#ffffff"],
     "Ipswich Town": ["#2563eb", "#ffffff"],
@@ -186,11 +188,16 @@ App.clubs = {
     const secondary = club.CorSecundaria || "#ffffff";
     const logo = String(club.LogoUrl || "").trim();
 
-    if (logo && !App.clubs.isPlaceholder(teamName) && !App.clubs.isDuplicateLogoUrl(teamName, logo)) {
+    if (
+      logo &&
+      !App.clubs.isPlaceholder(teamName) &&
+      !App.clubs.isDuplicateLogoUrl(teamName, logo) &&
+      !App.clubs.isLogoUnavailable(logo)
+    ) {
       return `
         <span class="club-badge has-logo ${extraClass}" style="--club-primary:${primary}; --club-secondary:${secondary}">
           <span class="logo-fallback">${App.clubs.getInitials(teamName)}</span>
-          <img src="${App.utils.escapeHtml(logo)}" alt="${App.utils.escapeHtml(teamName)}" loading="lazy" referrerpolicy="no-referrer" onload="this.previousElementSibling.style.display='none'" onerror="this.remove()" />
+          <img src="${App.utils.escapeHtml(logo)}" alt="${App.utils.escapeHtml(teamName)}" loading="lazy" referrerpolicy="no-referrer" onload="App.clubs.handleLogoLoad(this)" onerror="App.clubs.handleLogoError(this)" />
         </span>
       `;
     }
@@ -200,6 +207,30 @@ App.clubs = {
         <span>${App.clubs.getInitials(teamName)}</span>
       </span>
     `;
+  },
+
+  isLogoUnavailable(logoUrl) {
+    return App.clubs.failedLogoUrls.has(String(logoUrl || "").trim());
+  },
+
+  handleLogoLoad(image) {
+    const badge = image?.parentElement;
+    if (!badge) return;
+    badge.classList.remove("logo-failed");
+    badge.classList.add("logo-loaded");
+  },
+
+  handleLogoError(image) {
+    const logoUrl = String(image?.currentSrc || image?.src || "").trim();
+    if (logoUrl) App.clubs.failedLogoUrls.add(logoUrl);
+
+    const badge = image?.parentElement;
+    if (badge) {
+      badge.classList.remove("logo-loaded", "has-logo");
+      badge.classList.add("fallback", "logo-failed");
+    }
+
+    image?.remove();
   },
 
   isDuplicateLogoUrl(teamName, logoUrl) {

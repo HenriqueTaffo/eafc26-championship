@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import App from "../../js/app.js";
 import { useAppRuntime } from "./ViewSummaries.jsx";
 
@@ -24,7 +24,13 @@ function PlayerPhoto({ playerName, className = "player-avatar" }) {
     rating,
   );
   const [avatarIndex, setAvatarIndex] = useState(0);
-  const avatar = candidates[avatarIndex] || "";
+  const [avatarLoaded, setAvatarLoaded] = useState(false);
+  const [avatarRefreshKey, setAvatarRefreshKey] = useState(0);
+  const availableCandidates = candidates.filter(
+    (candidate) => !App.transfers.isAvatarUnavailable(candidate),
+  );
+  const avatar =
+    availableCandidates[avatarIndex] || availableCandidates[0] || "";
   const sourceClass = avatar
     ? App.transfers.getPlayerAvatarSourceClass(avatar)
     : "";
@@ -33,19 +39,29 @@ function PlayerPhoto({ playerName, className = "player-avatar" }) {
     "player-photo-shell",
     sourceClass,
     avatar ? "has-player-image" : "",
+    avatar && avatarLoaded ? "avatar-loaded" : "",
   ]
     .filter(Boolean)
     .join(" ");
+
+  useEffect(() => setAvatarLoaded(false), [avatar]);
 
   return (
     <span className={shellClass}>
       {avatar ? (
         <img
+          key={`${avatar}-${avatarRefreshKey}`}
           src={avatar}
           alt=""
           loading="lazy"
           referrerPolicy="no-referrer"
-          onError={() => setAvatarIndex((index) => index + 1)}
+          onLoad={() => setAvatarLoaded(true)}
+          onError={() => {
+            App.transfers.failedAvatarUrls.add(avatar);
+            setAvatarLoaded(false);
+            setAvatarIndex(0);
+            setAvatarRefreshKey((key) => key + 1);
+          }}
         />
       ) : null}
       <i>{String(playerName || "?").charAt(0)}</i>

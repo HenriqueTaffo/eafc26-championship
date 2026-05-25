@@ -1,6 +1,8 @@
 import App from "./app.js";
 
 App.transfers = {
+  failedAvatarUrls: new Set(),
+
   femaleRatingNames: [
     "Alexia Putellas",
     "Aitana Bonmatí",
@@ -788,9 +790,14 @@ App.transfers = {
       App.transfers.getMarketPlayerAvatar(player),
     ]
       .filter(App.transfers.isUsablePlayerAvatar)
-      .map((url) => String(url).trim());
+      .map((url) => String(url).trim())
+      .filter((url) => !App.transfers.isAvatarUnavailable(url));
 
     return [...new Set(candidates)];
+  },
+
+  isAvatarUnavailable(url = "") {
+    return App.transfers.failedAvatarUrls.has(String(url || "").trim());
   },
 
   getPlayerAvatarSourceClass(url = "") {
@@ -819,6 +826,9 @@ App.transfers = {
   },
 
   handlePlayerPhotoError(image) {
+    const failedUrl = String(image?.currentSrc || image?.src || "").trim();
+    if (failedUrl) App.transfers.failedAvatarUrls.add(failedUrl);
+
     const candidates = (() => {
       try {
         return JSON.parse(
@@ -829,17 +839,27 @@ App.transfers = {
       }
     })();
     const nextIndex = Number(image.dataset.avatarIndex || 0) + 1;
-    const nextAvatar = candidates[nextIndex];
+    const nextAvatar = candidates
+      .slice(nextIndex)
+      .find((candidate) => !App.transfers.isAvatarUnavailable(candidate));
 
     if (nextAvatar) {
-      image.dataset.avatarIndex = String(nextIndex);
+      image.dataset.avatarIndex = String(candidates.indexOf(nextAvatar));
       image.src = nextAvatar;
+      image.parentElement?.classList.remove("avatar-loaded", "avatar-failed");
+      image.parentElement?.classList.add("has-player-image");
       App.transfers.syncPlayerPhotoSourceClass(image.parentElement, nextAvatar);
       return;
     }
 
-    image.parentElement?.classList.remove("has-player-image");
+    image.parentElement?.classList.remove("avatar-loaded", "has-player-image");
+    image.parentElement?.classList.add("avatar-failed");
     image.remove();
+  },
+
+  handlePlayerPhotoLoad(image) {
+    image?.parentElement?.classList.remove("avatar-failed");
+    image?.parentElement?.classList.add("avatar-loaded");
   },
 
   renderPlayerPhoto(player, rating = null, className = "market-player-photo") {
@@ -859,7 +879,7 @@ App.transfers = {
 
     return `
       <span class="${className} player-photo-shell ${sourceClass} ${avatar ? "has-player-image" : ""}">
-        ${avatar ? `<img src="${App.utils.escapeHtml(avatar)}" alt="" loading="lazy" referrerpolicy="no-referrer" data-avatar-candidates="${encodedCandidates}" data-avatar-index="0" onerror="App.transfers.handlePlayerPhotoError(this)" />` : ""}
+        ${avatar ? `<img src="${App.utils.escapeHtml(avatar)}" alt="" loading="lazy" referrerpolicy="no-referrer" data-avatar-candidates="${encodedCandidates}" data-avatar-index="0" onload="App.transfers.handlePlayerPhotoLoad(this)" onerror="App.transfers.handlePlayerPhotoError(this)" />` : ""}
         <i>${fallback}</i>
       </span>
     `;

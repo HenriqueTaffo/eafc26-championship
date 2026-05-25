@@ -1,9 +1,12 @@
+import { useState } from "react";
 import App from "../../js/app.js";
 import { useAppRuntime } from "./ViewSummaries.jsx";
 
 const WEEKDAYS = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"];
 
 function TeamBadge({ teamName, className = "" }) {
+  const [logoFailed, setLogoFailed] = useState(false);
+  const [logoLoaded, setLogoLoaded] = useState(false);
   const club = App.clubs.getClubByTeamName(teamName);
   const primary = club.CorPrimaria || "#64748b";
   const secondary = club.CorSecundaria || "#ffffff";
@@ -11,7 +14,9 @@ function TeamBadge({ teamName, className = "" }) {
   const hasLogo =
     logo &&
     !App.clubs.isPlaceholder(teamName) &&
-    !App.clubs.isDuplicateLogoUrl(teamName, logo);
+    !App.clubs.isDuplicateLogoUrl(teamName, logo) &&
+    !App.clubs.isLogoUnavailable(logo) &&
+    !logoFailed;
   const style = {
     "--club-primary": primary,
     "--club-secondary": secondary,
@@ -30,7 +35,12 @@ function TeamBadge({ teamName, className = "" }) {
 
   return (
     <span
-      className={["club-badge", "has-logo", className].join(" ")}
+      className={[
+        "club-badge",
+        "has-logo",
+        logoLoaded ? "logo-loaded" : "",
+        className,
+      ].join(" ")}
       style={style}
     >
       <span className="logo-fallback">{App.clubs.getInitials(teamName)}</span>
@@ -39,7 +49,14 @@ function TeamBadge({ teamName, className = "" }) {
         alt={teamName}
         loading="lazy"
         referrerPolicy="no-referrer"
-        onError={(event) => event.currentTarget.remove()}
+        onLoad={(event) => {
+          App.clubs.handleLogoLoad(event.currentTarget);
+          setLogoLoaded(true);
+        }}
+        onError={(event) => {
+          App.clubs.handleLogoError(event.currentTarget);
+          setLogoFailed(true);
+        }}
       />
     </span>
   );
