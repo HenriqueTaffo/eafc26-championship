@@ -336,6 +336,8 @@ const POSITION_FILTERS = [
   ["ATT", "Ataque"],
 ];
 
+const TRANSFER_ROSTER_ID_OFFSET = 1000000000;
+
 function getSlots(formation) {
   return (FORMATIONS[formation] || FORMATIONS["4-2-3-1"]).map(
     ([id, label, x, y]) => ({ id, label, displayLabel: id, x, y }),
@@ -366,6 +368,69 @@ function normalizeLineup(lineup = {}) {
     if (Number.isFinite(id) && id > 0) acc[slot] = String(id);
     return acc;
   }, {});
+}
+
+function getSyntheticTransferRosterId(transfer = {}) {
+  const id = Number(transfer.id || 0);
+  return Number.isFinite(id) && id > 0 ? TRANSFER_ROSTER_ID_OFFSET + id : 0;
+}
+
+function buildRosterWithTransfers(baseRoster = [], managerName = "") {
+  const normalizedManager = App.utils.normalizeText(managerName);
+  const seenNames = new Set(
+    baseRoster.map((player) => App.utils.normalizeText(player.name)),
+  );
+  const transferRows = App.transfers
+    .getValidTransfers()
+    .filter(
+      (item) =>
+        !App.transfers.isCpuSaleTransfer(item) &&
+        App.utils.normalizeText(item.buyer) === normalizedManager,
+    )
+    .map((item) => {
+      const id = getSyntheticTransferRosterId(item);
+      const playerKey = App.utils.normalizeText(item.player);
+      if (!id || seenNames.has(playerKey)) return null;
+      const rating = App.transfers.getRatingForPlayerName(item.player, {
+        club: item.fromClub,
+        overall: item.overall,
+      });
+      const marketPlayer = App.transfers.findMarketPlayerByName(item.player, {
+        club: item.fromClub,
+      });
+      seenNames.add(playerKey);
+      return {
+        id,
+        clubName: item.buyer,
+        managerName,
+        eaId: `transfer-${item.id}`,
+        rank: null,
+        name: item.player,
+        position: rating?.position || marketPlayer?.position || "",
+        positionLabel: rating?.position || marketPlayer?.position || "",
+        overall: Number(item.overall || rating?.overall || 0),
+        weeklySalary: Number(item.weeklySalary || 0),
+        salarySourceName:
+          item.salarySourceName || "Referencia salarial aprovada",
+        salarySourceUrl: item.salarySourceUrl || "",
+        salaryReferenceType: item.salaryReferenceType || "transfer_verified",
+        salaryCheckedAt: item.timestamp || "",
+        sourceWeeklyPayroll: Number(item.weeklySalary || 0),
+        avatarUrl: rating?.avatar_url || marketPlayer?.avatar_url || "",
+        shieldUrl: rating?.shield_url || "",
+        nation: rating?.nation || marketPlayer?.country || item.fromClub || "Mercado",
+        sourceName: "Transferencia aprovada",
+        sourceUrl: item.salarySourceUrl || "",
+        rosterSource: "transfer",
+      };
+    })
+    .filter(Boolean);
+
+  return [...baseRoster, ...transferRows].sort(
+    (a, b) =>
+      Number(b.overall || 0) - Number(a.overall || 0) ||
+      String(a.name || "").localeCompare(String(b.name || "")),
+  );
 }
 
 function getPlayerInitials(name = "") {
@@ -667,7 +732,11 @@ function SquadManagementView() {
     [managers, selectedManager],
   );
   const activeManagerName = activeManager?.managerName || selectedManager || "";
-  const roster = data.rosters?.[activeManagerName] || [];
+  const baseRoster = data.rosters?.[activeManagerName] || [];
+  const roster = useMemo(
+    () => buildRosterWithTransfers(baseRoster, activeManagerName),
+    [activeManagerName, baseRoster, runtimeVersion],
+  );
   const savedLineup = data.lineups?.[activeManagerName] || {};
   const savedLineupKey = JSON.stringify(savedLineup.lineup || {});
 

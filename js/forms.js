@@ -390,6 +390,9 @@ App.forms = {
           ? "Proposta enviada. Atualizando pendências do mercado..."
           : "Transferência salva. Atualizando orçamento, lista de transferências e painel...",
       });
+      if (!isInternal) {
+        await App.api.loadSquadManagementData?.({ force: true });
+      }
       await App.transfers.showNegotiationResultModal?.(
         negotiationEntry,
         isInternal,
