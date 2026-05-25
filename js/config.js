@@ -8,9 +8,14 @@ App.config = {
   transferBudget: 18000000,
   homeMatchBonus: 150000,
   winBonus: 100000,
-  transferWindowLocked: true,
+  transferWindowLocked: false,
+  transferWindowOpenUntil: "2026-05-31T23:59:59-03:00",
   transferWindowLockedMessage:
-    "Janela de transferências fechada enquanto consolidamos o app.",
+    "Janela de transferencias encerrada em 31/05/2026, 23:59.",
+  sponsorshipSigningLocked: false,
+  sponsorshipSigningOpenUntil: "2026-05-31T23:59:59-03:00",
+  sponsorshipSigningLockedMessage:
+    "Assinatura de patrocinios encerrada em 31/05/2026, 23:59.",
   baseDailyTransferLimit: 3,
   eventSlots: [9, 12, 15, 18],
   calendarConfig: {

@@ -4,7 +4,13 @@ App.transfers = {
   failedAvatarUrls: new Set(),
 
   isTransferWindowLocked() {
-    return App.config.transferWindowLocked === true;
+    if (App.config.transferWindowLocked === true) return true;
+
+    const openUntil = App.config.transferWindowOpenUntil;
+    if (!openUntil) return false;
+
+    const deadline = new Date(openUntil);
+    return !Number.isNaN(deadline.getTime()) && Date.now() > deadline.getTime();
   },
 
   getTransferWindowLockMessage() {

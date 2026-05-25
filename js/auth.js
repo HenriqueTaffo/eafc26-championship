@@ -845,6 +845,9 @@ App.auth = {
   },
 
   async acceptSponsorship(offerId) {
+    const signingLocked = App.auth.isSponsorshipSigningLocked();
+    if (signingLocked)
+      throw new Error(App.auth.getSponsorshipSigningLockMessage());
     const session = App.auth.getSession();
     if (!session)
       throw new Error("Faça login como técnico antes de assinar patrocínio.");
@@ -1477,6 +1480,13 @@ App.auth = {
       0,
       Number(data.activeSlotsLeft ?? maxActive - active.length),
     );
+    const signingLocked = App.auth.isSponsorshipSigningLocked();
+    const signingDeadlineLabel = App.utils.formatDateTime(
+      App.config.sponsorshipSigningOpenUntil,
+    );
+    const signingStatusLabel = signingLocked
+      ? App.auth.getSponsorshipSigningLockMessage()
+      : `Assinaturas abertas ate ${signingDeadlineLabel}.`;
     const offersByCategory = offers.reduce((groups, offer) => {
       const category = offer.category || "Patrocínio";
       groups[category] = groups[category] || [];
@@ -1622,6 +1632,7 @@ App.auth = {
             <strong>${active.length}/${maxActive} contratos ativos · ${slotsLeft} vaga(s) livre(s)</strong>
             <span>${offers.length} proposta(s) em ${offerCategories.length} categoria(s). Propostas da mesma categoria substituem o contrato atual e aplicam multa de rescisão.</span>
           </div>
+          <div class="calendar-muted sponsor-window-note">${App.utils.escapeDisplay(signingStatusLabel)}</div>
           <div class="sponsor-category-list">
             ${offerCategories
               .map(
@@ -1722,8 +1733,8 @@ App.auth = {
                             <small>${offer.isReplacement ? "rescisão atual" : "sem troca de marca"}</small>
                           </span>
                         </div>
-                        <button type="button" data-sponsor-offer="${App.utils.escapeHtml(offer.id)}" data-sponsor-fee="${Number(offer.terminationFee || 0)}" data-sponsor-replacement="${offer.isReplacement ? "true" : "false"}" data-sponsor-signing="${Number(offer.signingBonus || 0)}" data-sponsor-reward="${Number(offer.rewardValue || 0)}" data-sponsor-cadence="${App.utils.escapeHtml(cadence || "goal")}">
-                          ${offer.isReplacement ? "Trocar marca" : "Assinar contrato"}
+                        <button type="button" data-sponsor-offer="${App.utils.escapeHtml(offer.id)}" data-sponsor-fee="${Number(offer.terminationFee || 0)}" data-sponsor-replacement="${offer.isReplacement ? "true" : "false"}" data-sponsor-signing="${Number(offer.signingBonus || 0)}" data-sponsor-reward="${Number(offer.rewardValue || 0)}" data-sponsor-cadence="${App.utils.escapeHtml(cadence || "goal")}"${signingLocked ? " disabled" : ""}>
+                          ${signingLocked ? "Assinatura encerrada" : offer.isReplacement ? "Trocar marca" : "Assinar contrato"}
                         </button>
                       </article>
                     `;
@@ -1978,6 +1989,23 @@ App.auth = {
       .map((word) => word.charAt(0))
       .join("")
       .toUpperCase();
+  },
+
+  isSponsorshipSigningLocked() {
+    if (App.config.sponsorshipSigningLocked === true) return true;
+
+    const openUntil = App.config.sponsorshipSigningOpenUntil;
+    if (!openUntil) return false;
+
+    const deadline = new Date(openUntil);
+    return !Number.isNaN(deadline.getTime()) && Date.now() > deadline.getTime();
+  },
+
+  getSponsorshipSigningLockMessage() {
+    return (
+      App.config.sponsorshipSigningLockedMessage ||
+      "Assinatura de patrocinios encerrada em 31/05/2026, 23:59."
+    );
   },
 
   getSponsorshipCadence(item = {}) {
@@ -2266,6 +2294,29 @@ App.auth = {
       button.dataset.bound = "true";
 
       button.addEventListener("click", async (event) => {
+        if (App.auth.isSponsorshipSigningLocked()) {
+          const lockMessage = App.auth.getSponsorshipSigningLockMessage();
+          if (App.ui?.openActionModal) {
+            await App.ui.openActionModal({
+              kicker: "Janela comercial",
+              title: "Assinatura encerrada",
+              message: lockMessage,
+              tone: "warning",
+              actions: [
+                {
+                  id: "confirm",
+                  label: "Entendi",
+                  variant: "primary",
+                  autofocus: true,
+                },
+              ],
+            });
+          } else {
+            window.alert(lockMessage);
+          }
+          return;
+        }
+
         const offerId = event.currentTarget.dataset.sponsorOffer;
         const isReplacement =
           event.currentTarget.dataset.sponsorReplacement === "true";
