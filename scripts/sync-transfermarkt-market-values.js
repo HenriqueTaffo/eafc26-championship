@@ -106,7 +106,7 @@ async function loadMarketPlayers(supabaseUrl, key, limit, playerQuery) {
 async function fetchTransfermarktValue(player) {
   const response = await fetchWithTimeout(player.transfermarkt_url, {
     headers: {
-      "user-agent": "Mozilla/5.0 (compatible; MisturaManagersBot/1.0; +https://henriquetaffo.github.io/eafc26-championship/)",
+      "user-agent": "Mozilla/5.0 (compatible; 4LinhasBot/1.0; +https://henriquetaffo.github.io/eafc26-championship/)",
       "accept-language": "en-US,en;q=0.9,pt-BR;q=0.8"
     }
   });

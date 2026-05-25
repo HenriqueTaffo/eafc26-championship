@@ -1081,7 +1081,7 @@ App.auth = {
         <div class="manager-session-card is-logged manager-login-shell">
           <div class="manager-login-identity">
             <span class="manager-login-avatar">
-              <img src="./assets/mistura-mascot.png?v=${App.config.assetVersion}" alt="" loading="lazy" />
+              <img class="brand-icon-img" src="./assets/4linhas-icon-light.png?v=${App.config.assetVersion}" alt="" loading="lazy" />
             </span>
             <div>
               <span>${session.isCommissioner ? "Comissário" : "Técnico conectado"}</span>
@@ -1109,15 +1109,12 @@ App.auth = {
       `
       <form class="manager-login-card manager-login-shell" id="managerLoginForm">
         <div class="manager-login-brand">
-          <span class="manager-login-mascot-stage manager-login-avatar-large" aria-hidden="true">
+          <span class="manager-login-brand-mark manager-login-avatar-large" aria-hidden="true">
             <span class="manager-login-mascot-ring"></span>
-            <span class="manager-login-flip-card">
-              <img class="manager-login-face manager-login-face-front" src="./assets/login-cat-icon.gif?v=${App.config.assetVersion}" alt="" loading="lazy" />
-              <img class="manager-login-face manager-login-face-back" src="./assets/mistura-mascot.png?v=${App.config.assetVersion}" alt="" loading="lazy" />
-            </span>
+            <img class="brand-icon-img" src="./assets/4linhas-icon-light.png?v=${App.config.assetVersion}" alt="" loading="lazy" />
           </span>
           <div>
-            <span>Mistura Managers League</span>
+            <img class="manager-login-wordmark" src="./assets/4linhas-wordmark-light.png?v=${App.config.assetVersion}" alt="4 Linhas" loading="lazy" />
             <strong>Acesso da liga</strong>
             <small>Entre para abrir seu escritório, calendário e decisões privadas.</small>
             <div class="manager-login-meta" aria-hidden="true">

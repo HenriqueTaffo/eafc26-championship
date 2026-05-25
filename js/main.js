@@ -124,7 +124,10 @@ App.main = {
         await Promise.all(
           cacheNames
             .filter(
-              (name) => name.startsWith("mml-") || name.includes("mistura"),
+              (name) =>
+                name.startsWith("mml-") ||
+                name.includes("mistura") ||
+                name.includes("4linhas"),
             )
             .map((name) => caches.delete(name)),
         );

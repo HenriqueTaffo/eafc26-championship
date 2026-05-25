@@ -32,7 +32,10 @@ import {
   TransfersSummary,
 } from "../views/ViewSummaries.jsx";
 
-const MASCOT_SRC = "./assets/mistura-mascot.png?v=20260524-sponsor-icons-v1";
+const BRAND_ASSET_VERSION = "20260525-4linhas-brand-v1";
+const BRAND_NAME = "4 Linhas";
+const BRAND_ICON_SRC = `./assets/4linhas-icon-light.png?v=${BRAND_ASSET_VERSION}`;
+const BRAND_WORDMARK_SRC = `./assets/4linhas-wordmark-light.png?v=${BRAND_ASSET_VERSION}`;
 
 function GlobalLoader() {
   return (
@@ -64,7 +67,11 @@ function GlobalLoader() {
             <div className="loader-mascot-wrap">
               <div className="loader-ring"></div>
               <div className="loader-orbit"></div>
-              <img className="loader-mascot" src={MASCOT_SRC} alt="" />
+              <img
+                className="loader-mascot brand-icon-img"
+                src={BRAND_ICON_SRC}
+                alt=""
+              />
             </div>
 
             <div className="loader-tactical-board">
@@ -102,19 +109,20 @@ function GlobalLoader() {
 function ShellChrome() {
   return (
     <>
-      <header className="hero league-hero">
-        <div className="league-seal" aria-hidden="true">
-          <div className="league-seal-ring">
-            <span className="seal-top">MISTURA</span>
-            <img src={MASCOT_SRC} alt="" />
-            <span className="seal-left">20</span>
-            <span className="seal-right">24</span>
-            <span className="seal-bottom">MANAGERS LEAGUE</span>
-          </div>
+      <header className="hero league-hero league-hero-brand">
+        <div className="league-brand-lockup" aria-hidden="true">
+          <span className="league-brand-icon">
+            <img src={BRAND_ICON_SRC} alt="" />
+          </span>
+          <img
+            className="league-brand-wordmark"
+            src={BRAND_WORDMARK_SRC}
+            alt=""
+          />
         </div>
         <div className="league-hero-divider" aria-hidden="true"></div>
         <div className="league-hero-copy">
-          <h1>Mistura Managers League</h1>
+          <h1 className="sr-only">{BRAND_NAME}</h1>
           <p>
             Competição oficial de managers. Paixão, estratégia e glória em uma
             liga com identidade própria.

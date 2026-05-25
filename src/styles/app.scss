@@ -11,6 +11,137 @@ $warning: #b45309;
 $radius: 8px;
 $shadow-soft: 0 14px 38px rgba(15, 23, 42, 0.1);
 
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.brand-icon-img {
+  object-fit: contain !important;
+  object-position: center !important;
+  transform: none !important;
+}
+
+.league-hero-brand {
+  display: grid !important;
+  grid-template-columns: minmax(280px, 560px) 1px minmax(0, 1fr);
+  gap: clamp(18px, 3vw, 34px);
+  padding: clamp(18px, 2.8vw, 28px);
+}
+
+.league-brand-lockup {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: clamp(14px, 2.2vw, 24px);
+}
+
+.league-brand-icon {
+  display: grid;
+  width: clamp(58px, 7vw, 88px);
+  height: clamp(58px, 7vw, 88px);
+  flex: 0 0 auto;
+  place-items: center;
+  border: 1px solid rgba(251, 191, 36, 0.34);
+  border-radius: 8px;
+  background:
+    linear-gradient(135deg, rgba(251, 191, 36, 0.14), transparent 48%),
+    rgba(2, 6, 23, 0.42);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.1),
+    0 14px 34px rgba(0, 0, 0, 0.24);
+
+  img {
+    width: 78%;
+    height: 78%;
+    object-fit: contain;
+  }
+}
+
+.league-brand-wordmark {
+  display: block;
+  width: min(100%, 440px);
+  max-height: 96px;
+  object-fit: contain;
+  object-position: left center;
+}
+
+.league-hero-brand .league-hero-copy {
+  display: grid;
+  align-content: center;
+}
+
+.loader-mascot.brand-icon-img {
+  padding: 22px;
+  object-fit: contain;
+  background:
+    linear-gradient(135deg, rgba(251, 191, 36, 0.16), transparent 48%),
+    rgba(2, 6, 23, 0.82);
+  border: 1px solid rgba(251, 191, 36, 0.28);
+}
+
+.manager-login-avatar img.brand-icon-img {
+  padding: 9px;
+  object-fit: contain;
+  background: transparent;
+}
+
+.manager-login-brand-mark {
+  position: relative;
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  overflow: visible;
+  border-radius: 8px;
+
+  > img {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    height: 100%;
+    padding: 12px;
+    object-fit: contain;
+    background:
+      linear-gradient(135deg, rgba(251, 191, 36, 0.12), transparent 48%),
+      rgba(2, 6, 23, 0.54);
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    border-radius: 8px;
+  }
+}
+
+.manager-login-wordmark {
+  display: block;
+  width: min(330px, 68vw);
+  max-height: 58px;
+  margin-bottom: 10px;
+  object-fit: contain;
+  object-position: left center;
+}
+
+@media (max-width: 720px) {
+  .league-hero-brand {
+    grid-template-columns: 1fr;
+  }
+
+  .league-hero-brand .league-hero-divider {
+    display: none;
+  }
+
+  .league-brand-lockup {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .league-brand-wordmark {
+    width: min(100%, 320px);
+  }
+}
+
 @mixin control-shell {
   min-height: 44px;
   border: 1px solid $line;
