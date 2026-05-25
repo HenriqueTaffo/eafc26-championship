@@ -94,6 +94,10 @@ App.events = {
 
     if (expiresAt && !Number.isNaN(expiresAt.getTime())) {
       const diff = Math.max(0, expiresAt - new Date());
+      const days = Math.ceil(diff / 86400000);
+      if (durationType.includes("dia") || days >= 1) {
+        return `${affectedPlayer ? `${affectedPlayer}: ` : ""}${days} dia(s) corrido(s) restante(s)`;
+      }
       const hours = Math.floor(diff / 3600000);
       const minutes = Math.floor((diff % 3600000) / 60000);
       return `${affectedPlayer ? `${affectedPlayer}: ` : ""}${String(hours).padStart(2, "0")}h ${String(minutes).padStart(2, "0")}m restantes`;
@@ -330,8 +334,11 @@ App.events = {
 
     const hasDuration = Boolean(event.ExpiraEm || event.DuracaoTipo || event.JogadorAfetado);
     const expiresAt = event.ExpiraEm ? new Date(event.ExpiraEm) : null;
-    const stillInTime = expiresAt && !Number.isNaN(expiresAt.getTime()) ? expiresAt >= new Date() : false;
     const remainingMatches = Number(event.PartidasRestantes || 0);
+    const hasValidExpiry = expiresAt && !Number.isNaN(expiresAt.getTime());
+    const stillInTime = hasValidExpiry ? expiresAt >= new Date() : false;
+
+    if (hasValidExpiry) return stillInTime || remainingMatches > 0;
 
     return status === "ativo" || status === "active" || stillInTime || remainingMatches > 0 || (hasDuration && ["aplicado", "gerado", "applied"].includes(status));
   },

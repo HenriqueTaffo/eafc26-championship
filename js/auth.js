@@ -185,6 +185,7 @@ App.auth = {
         App.auth.loadMyTransferTargets(),
         App.auth.loadMyTransferSaleListings(),
         App.auth.loadMySponsorships(),
+        App.api?.loadMedicalCenterData?.(),
         App.auth.loadMyQoL(),
         App.auth.loadPublicNews(),
       ]);
@@ -274,6 +275,7 @@ App.auth = {
       await App.auth.loadMyTransferTargets();
       await App.auth.loadMyTransferSaleListings();
       await App.auth.loadMySponsorships();
+      await App.api?.loadMedicalCenterData?.();
       await App.auth.loadMyQoL();
     }
     await App.governance?.loadData?.();

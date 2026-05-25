@@ -462,6 +462,7 @@ App.api = {
         App.api.loadManagerOnboarding?.(),
         App.api.loadSalaryReferences?.(),
         App.api.loadFinanceRulesAndForecast?.(),
+        App.api.loadMedicalCenterData?.(),
         App.api.loadSquadManagementData?.(),
         App.governance?.loadData?.(),
         App.auth?.loadPublicNews?.(),
@@ -1120,6 +1121,31 @@ App.api = {
     }
   },
 
+  async loadMedicalCenterData() {
+    try {
+      const result = await App.api.rpc(
+        "app_get_medical_center_data",
+        App.api.getAuthPayload(),
+        30000,
+      );
+      App.state.apiMedicalCenter = result || {
+        ok: false,
+        options: [],
+        plans: {},
+      };
+      App.react?.notify?.();
+      return App.state.apiMedicalCenter;
+    } catch (error) {
+      console.warn("Centro medico indisponivel:", error);
+      App.state.apiMedicalCenter = App.state.apiMedicalCenter || {
+        ok: false,
+        options: [],
+        plans: {},
+      };
+      return App.state.apiMedicalCenter;
+    }
+  },
+
   async getPlayerSalaryQuote(player = {}) {
     const result = await App.api.rpc(
       "app_get_player_salary_quote",
@@ -1299,6 +1325,9 @@ App.api = {
       ) {
         requiredLoads.push(App.api.loadMarketPlayers());
         requiredLoads.push(App.api.loadSalaryReferences());
+      }
+      if (activeView === "playersView") {
+        requiredLoads.push(App.api.loadMedicalCenterData?.());
       }
       if (activeView === "squadView") {
         requiredLoads.push(App.api.loadSquadManagementData({ force: true }));
@@ -1519,6 +1548,38 @@ App.api = {
         "app_generate_due_events",
         {
           ...App.api.getAuthPayload(),
+        },
+        45000,
+      );
+    }
+
+    if (payload.action === "setMedicalPlan") {
+      App.api.requireSession(
+        "Faca login como tecnico antes de contratar estrutura medica.",
+      );
+      return App.api.rpc(
+        "app_set_manager_medical_plan",
+        {
+          ...App.api.getAuthPayload(),
+          p_plan_key: payload.planKey || "base_dm",
+        },
+        45000,
+      );
+    }
+
+    if (payload.action === "applyMedicalTreatment") {
+      App.api.requireSession(
+        "Faca login como tecnico antes de tratar uma lesao.",
+      );
+      return App.api.rpc(
+        "app_apply_medical_action",
+        {
+          ...App.api.getAuthPayload(),
+          p_event_id: Number(payload.eventId || 0),
+          p_event_key: payload.eventKey || "",
+          p_event_owner: payload.eventOwner || "",
+          p_player_name: payload.playerName || "",
+          p_action_type: payload.actionType || "intensive",
         },
         45000,
       );

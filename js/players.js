@@ -409,6 +409,116 @@ App.players = {
       );
   },
 
+  getMedicalPlanOptions() {
+    const options = App.state.apiMedicalCenter?.options;
+    if (Array.isArray(options) && options.length) return options;
+    return [
+      {
+        planKey: "base_dm",
+        name: "DM base",
+        description: "Departamento medico padrao do clube.",
+        weeklyCost: 0,
+        setupCost: 0,
+        preventionPct: 0,
+        recoveryPct: 0,
+        treatmentDaysBonus: 1,
+      },
+    ];
+  },
+
+  getMedicalPlanForCoach(owner) {
+    const plans = App.state.apiMedicalCenter?.plans || {};
+    const direct = plans[owner];
+    if (direct) return direct;
+    return App.players.getMedicalPlanOptions()[0] || {};
+  },
+
+  formatMedicalPercent(value) {
+    return `${Math.round(Number(value || 0) * 100)}%`;
+  },
+
+  renderCoachMedicalCenter(owner, injuries = []) {
+    const plan = App.players.getMedicalPlanForCoach(owner);
+    const options = App.players.getMedicalPlanOptions();
+    const activePlanKey = plan.planKey || "base_dm";
+    const treatmentDays = Number(plan.treatmentDaysBonus || 1);
+
+    return `
+      <article class="coach-panel-card coach-medical-card" data-medical-owner="${App.utils.escapeHtml(owner)}">
+        <div class="home-panel-header">
+          <div>
+            <h2>Centro medico</h2>
+            <p class="coach-card-subtitle">Prevencao, tratamento e recuperacao por dias corridos de calendario.</p>
+          </div>
+          <span class="coach-section-kicker">${injuries.length} lesao(oes)</span>
+        </div>
+
+        <div class="medical-plan-hero">
+          <div>
+            <span>Estrutura atual</span>
+            <strong>${App.utils.escapeDisplay(plan.name || "DM base")}</strong>
+            <small>${App.utils.escapeDisplay(plan.description || "Departamento medico padrao do clube.")}</small>
+          </div>
+          <div>
+            <span>Custo semanal</span>
+            <strong>${App.utils.formatCurrency(plan.weeklyCost || 0)}</strong>
+            <small>tratamento reduz ate ${treatmentDays} dia(s)</small>
+          </div>
+        </div>
+
+        <div class="medical-metric-grid">
+          <span><b>Prevencao</b><strong>${App.players.formatMedicalPercent(plan.preventionPct)}</strong></span>
+          <span><b>Recuperacao</b><strong>${App.players.formatMedicalPercent(plan.recoveryPct)}</strong></span>
+          <span><b>Implantacao</b><strong>${App.utils.formatCurrency(plan.setupCost || 0)}</strong></span>
+        </div>
+
+        <div class="medical-plan-options">
+          ${options
+            .map((item) => {
+              const isActive = item.planKey === activePlanKey;
+              return `
+                <button
+                  type="button"
+                  class="${isActive ? "is-active" : ""}"
+                  data-medical-plan-key="${App.utils.escapeHtml(item.planKey)}"
+                  ${isActive ? "disabled" : ""}
+                >
+                  <strong>${App.utils.escapeDisplay(item.name)}</strong>
+                  <small>${App.utils.formatCurrency(item.weeklyCost || 0)}/sem · ${App.players.formatMedicalPercent(item.recoveryPct)} recuperacao</small>
+                </button>
+              `;
+            })
+            .join("")}
+        </div>
+
+        <div class="coach-injury-list medical-injury-list">
+          ${
+            injuries.length
+              ? injuries
+                  .map(
+                    (event) => `
+              <div class="injury-chip medical-injury-chip">
+                ${App.transfers.renderPlayerIdentity(event.JogadorAfetado, event.Titulo || "Lesao ativa", "injury-player-identity")}
+                <b>${App.events.getEventDurationLabel(event)}</b>
+                <button
+                  type="button"
+                  data-medical-treatment
+                  data-event-id="${App.utils.escapeHtml(event.Id || event.id || "")}"
+                  data-event-key="${App.utils.escapeHtml(event.ChaveUnica || "")}"
+                  data-event-owner="${App.utils.escapeHtml(event.Jogador || owner)}"
+                  data-event-player="${App.utils.escapeHtml(event.JogadorAfetado || "")}"
+                >Tratamento intensivo</button>
+              </div>
+            `,
+                  )
+                  .join("")
+              : `<p class="calendar-muted">Nenhum jogador lesionado no momento.</p>`
+          }
+        </div>
+      </article>
+    `;
+  },
+
   getPrivateTargetsKey(owner) {
     const session = App.auth?.getSession ? App.auth.getSession() : null;
     const ownerKey = App.utils.normalizeText(owner).replace(/[^a-z0-9]+/g, "-");
@@ -1468,29 +1578,10 @@ App.players = {
       </article>
     `;
 
-    const injuriesCard = `
-      <article class="coach-panel-card coach-injuries-card">
-        <div class="home-panel-header"><h2>Lesões ativas</h2></div>
-        ${
-          injuries.length
-            ? `
-          <div class="coach-injury-list">
-            ${injuries
-              .map(
-                (event) => `
-              <div class="injury-chip">
-                ${App.transfers.renderPlayerIdentity(event.JogadorAfetado, event.Titulo || "Lesão ativa", "injury-player-identity")}
-                <b>${App.events.getEventDurationLabel(event)}</b>
-              </div>
-            `,
-              )
-              .join("")}
-          </div>
-        `
-            : `<p class="calendar-muted">Nenhum jogador lesionado no momento.</p>`
-        }
-      </article>
-    `;
+    const medicalCard = App.players.renderCoachMedicalCenter(
+      activeTeam.owner,
+      injuries,
+    );
 
     const decisionCard = App.auth?.renderCoachDecisionCard
       ? App.auth.renderCoachDecisionCard(activeTeam.owner)
@@ -1578,7 +1669,7 @@ App.players = {
         <section class="coach-layout-v54">
           <div class="coach-top-row-v54 ${canViewPrivate ? "" : "public-only"}">
             ${nextMatchCard}
-            ${canViewPrivate ? injuriesCard : ""}
+            ${canViewPrivate ? medicalCard : ""}
           </div>
 
           ${decisionCard ? `<div class="coach-full-row-v54">${decisionCard}</div>` : ""}
@@ -1659,6 +1750,186 @@ App.players = {
     });
 
     App.calendar.bindCalendarActions?.();
+
+    document.querySelectorAll("[data-medical-plan-key]").forEach((button) => {
+      if (button.dataset.bound === "true") return;
+      button.dataset.bound = "true";
+      button.addEventListener("click", async () => {
+        const card = button.closest("[data-medical-owner]");
+        const owner = card?.dataset.medicalOwner || "";
+        const planKey = button.dataset.medicalPlanKey || "base_dm";
+        const option =
+          App.players
+            .getMedicalPlanOptions()
+            .find((item) => item.planKey === planKey) || {};
+        const confirmed = App.ui?.confirmAction
+          ? await App.ui.confirmAction({
+              kicker: "Departamento medico",
+              title: "Contratar estrutura?",
+              message: `${owner} vai ativar ${option.name || "estrutura medica"}.`,
+              detail: [
+                `Implantacao: ${App.utils.formatCurrency(option.setupCost || 0)}`,
+                `Custo semanal: ${App.utils.formatCurrency(option.weeklyCost || 0)}`,
+                `Prevencao: ${App.players.formatMedicalPercent(option.preventionPct)}`,
+                `Recuperacao: ${App.players.formatMedicalPercent(option.recoveryPct)}`,
+              ].join("\n"),
+              tone: "market",
+              cancelLabel: "Revisar",
+              confirmLabel: "Contratar",
+            })
+          : confirm("Contratar estrutura medica?");
+        if (!confirmed) return;
+
+        try {
+          button.disabled = true;
+          App.main?.showLoader?.({
+            variant: "market",
+            title: "Atualizando DM",
+            message: "Contratando estrutura medica e recalculando o painel.",
+          });
+          const result = await App.api.postToApi({
+            action: "setMedicalPlan",
+            planKey,
+          });
+          if (!result.ok)
+            throw new Error(
+              result.message || result.error || "Nao consegui contratar o DM.",
+            );
+          await App.api.loadApiData({
+            force: true,
+            showLoader: false,
+            skipBackgroundRefresh: true,
+          });
+          await App.api.loadMedicalCenterData?.();
+          App.players.render();
+          if (App.ui?.openActionModal) {
+            await App.ui.openActionModal({
+              kicker: "Departamento medico",
+              title: "Estrutura ativa",
+              message: result.message || "Plano medico atualizado.",
+              tone: "success",
+              actions: [
+                {
+                  id: "confirm",
+                  label: "Entendi",
+                  variant: "primary",
+                  autofocus: true,
+                },
+              ],
+            });
+          }
+        } catch (error) {
+          if (App.ui?.openActionModal) {
+            await App.ui.openActionModal({
+              kicker: "Departamento medico",
+              title: "Nao consegui contratar",
+              message: error.message || "Tente novamente depois de sincronizar.",
+              tone: "danger",
+              actions: [
+                {
+                  id: "confirm",
+                  label: "Entendi",
+                  variant: "primary",
+                  autofocus: true,
+                },
+              ],
+            });
+          } else {
+            alert(error.message);
+          }
+        } finally {
+          App.main?.hideLoader?.();
+          if (button.isConnected) button.disabled = false;
+        }
+      });
+    });
+
+    document.querySelectorAll("[data-medical-treatment]").forEach((button) => {
+      if (button.dataset.bound === "true") return;
+      button.dataset.bound = "true";
+      button.addEventListener("click", async () => {
+        const player = button.dataset.eventPlayer || "jogador";
+        const confirmed = App.ui?.confirmAction
+          ? await App.ui.confirmAction({
+              kicker: "Tratamento medico",
+              title: "Aplicar tratamento intensivo?",
+              message: `${player} tera o prazo de lesao recalculado pelo DM ativo.`,
+              detail:
+                "O tratamento gera custo medico, reduz dias corridos restantes e atualiza o calendario da lesao.",
+              tone: "market",
+              cancelLabel: "Cancelar",
+              confirmLabel: "Aplicar tratamento",
+            })
+          : confirm("Aplicar tratamento intensivo?");
+        if (!confirmed) return;
+
+        try {
+          button.disabled = true;
+          App.main?.showLoader?.({
+            variant: "market",
+            title: "Tratando lesao",
+            message: "Aplicando atendimento intensivo e atualizando calendario.",
+          });
+          const result = await App.api.postToApi({
+            action: "applyMedicalTreatment",
+            eventId: button.dataset.eventId || "",
+            eventKey: button.dataset.eventKey || "",
+            eventOwner: button.dataset.eventOwner || "",
+            playerName: button.dataset.eventPlayer || "",
+            actionType: "intensive",
+          });
+          if (!result.ok)
+            throw new Error(
+              result.message || result.error || "Nao consegui tratar a lesao.",
+            );
+          await App.api.loadApiData({
+            force: true,
+            showLoader: false,
+            skipBackgroundRefresh: true,
+          });
+          await App.api.loadMedicalCenterData?.();
+          App.players.render();
+          if (App.ui?.openActionModal) {
+            await App.ui.openActionModal({
+              kicker: "Tratamento aplicado",
+              title: "Prazo atualizado",
+              message: result.message || "Lesao atualizada pelo calendario.",
+              tone: "success",
+              actions: [
+                {
+                  id: "confirm",
+                  label: "Entendi",
+                  variant: "primary",
+                  autofocus: true,
+                },
+              ],
+            });
+          }
+        } catch (error) {
+          if (App.ui?.openActionModal) {
+            await App.ui.openActionModal({
+              kicker: "Tratamento medico",
+              title: "Nao consegui aplicar",
+              message: error.message || "Tente novamente depois de sincronizar.",
+              tone: "danger",
+              actions: [
+                {
+                  id: "confirm",
+                  label: "Entendi",
+                  variant: "primary",
+                  autofocus: true,
+                },
+              ],
+            });
+          } else {
+            alert(error.message);
+          }
+        } finally {
+          App.main?.hideLoader?.();
+          if (button.isConnected) button.disabled = false;
+        }
+      });
+    });
 
     document.querySelectorAll("[data-sale-listing-form]").forEach((form) => {
       if (form.dataset.bound === "true") return;

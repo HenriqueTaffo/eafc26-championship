@@ -50,6 +50,11 @@ App.state = {
   apiSalaryDebts: [],
   apiSalaryReferences: [],
   apiFinanceRules: null,
+  apiMedicalCenter: {
+    ok: false,
+    options: [],
+    plans: {}
+  },
   apiSquadManagement: null,
   apiSquadManagementLoading: false,
   apiLoaded: false,
