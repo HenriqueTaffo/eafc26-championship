@@ -138,6 +138,13 @@ function clampScoutingValue(value = 0, min = 0, max = 5) {
   return Math.max(min, Math.min(max, rounded));
 }
 
+function formatScoutingNumber(value = 0, maximumFractionDigits = 0) {
+  return new Intl.NumberFormat("pt-BR", {
+    maximumFractionDigits,
+    minimumFractionDigits: 0,
+  }).format(Number(value || 0));
+}
+
 function getWorkspaceDefaults() {
   return {
     compare: [],
@@ -1649,7 +1656,7 @@ Object.assign(App.transfers, {
                   <label class="scout-priority-row">
                     <span class="scout-priority-title">
                       <strong>${App.utils.escapeHtml(item.label || item.group)}</strong>
-                      <small>automatica ${App.utils.formatNumber(item.autoWeight || 0, 0)}</small>
+                      <small>automatica ${formatScoutingNumber(item.autoWeight || 0)}</small>
                     </span>
                     <div class="scout-priority-control">
                       <span>Ajuste tecnico</span>
@@ -1692,7 +1699,7 @@ Object.assign(App.transfers, {
                           <small>${App.utils.escapeHtml(`${item.weight.positional || ""} · OVR ${item.candidate.overall || 0} · ${App.utils.formatCurrency(item.candidate.marketValue)}`)}</small>
                         </div>
                         <p>
-                          <span>${renderWorkspacePill(App.utils.formatNumber(score, 0), score >= 85 ? "hot" : score >= 70 ? "ready" : score >= 55 ? "watch" : "cold")}</span>
+                          <span>${renderWorkspacePill(formatScoutingNumber(score), score >= 85 ? "hot" : score >= 70 ? "ready" : score >= 55 ? "watch" : "cold")}</span>
                           ${App.utils.escapeHtml(reason)}
                         </p>
                         <small>

@@ -1289,6 +1289,119 @@ body:not(.is-commissioner) #submitView {
   gap: 8px;
 }
 
+.sponsorship-inbox-card {
+  gap: 16px;
+}
+
+.sponsorship-inbox-card .sponsor-market-note {
+  align-items: flex-start;
+  border-color: rgba(96, 165, 250, 0.18);
+  background:
+    linear-gradient(90deg, rgba(96, 165, 250, 0.08), transparent 42%),
+    rgba(2, 6, 23, 0.42);
+}
+
+.sponsorship-inbox-card .sponsor-category-list {
+  display: grid;
+  gap: 12px;
+}
+
+.sponsorship-inbox-card .sponsor-category-group {
+  overflow: hidden;
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  border-radius: $radius;
+  background: rgba(2, 6, 23, 0.28);
+}
+
+.sponsorship-inbox-card .sponsor-category-header {
+  min-height: 46px;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.12);
+  padding: 10px 12px;
+  background: rgba(15, 23, 42, 0.46);
+}
+
+.sponsorship-inbox-card .sponsor-category-header strong {
+  color: #f8fafc;
+}
+
+.sponsorship-inbox-card .sponsor-category-header span {
+  color: #9fb3bf;
+}
+
+.sponsorship-inbox-card .sponsor-category-group .sponsor-offer-grid {
+  grid-template-columns: 1fr;
+  gap: 0;
+}
+
+.sponsor-email-card {
+  position: relative;
+  gap: 12px;
+  border: 0;
+  border-radius: 0;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.12);
+  padding: 13px 14px;
+  background:
+    linear-gradient(90deg, var(--sponsor-accent-soft, rgba(45, 212, 191, 0.1)), transparent 38%),
+    rgba(8, 13, 18, 0.46);
+}
+
+.sponsor-email-card:last-child {
+  border-bottom: 0;
+}
+
+.sponsor-email-card:hover {
+  transform: none;
+  border-color: transparent;
+  background:
+    linear-gradient(90deg, var(--sponsor-accent-soft, rgba(45, 212, 191, 0.1)), transparent 46%),
+    rgba(15, 23, 42, 0.58);
+}
+
+.sponsor-email-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-width: 0;
+}
+
+.sponsor-email-top span,
+.sponsor-email-top b {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-size: 0.68rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.sponsor-email-top span {
+  color: #9fb3bf;
+}
+
+.sponsor-email-top b {
+  color: var(--sponsor-accent, #2dd4bf);
+}
+
+.sponsor-email-card .sponsor-offer-shell {
+  align-items: center;
+}
+
+.sponsor-email-card .sponsor-offer-story {
+  margin: 0;
+  border-left: 2px solid var(--sponsor-accent, #2dd4bf);
+  padding-left: 10px;
+}
+
+.sponsor-email-card .sponsor-offer-hero,
+.sponsor-email-card .sponsor-offer-terms {
+  background: rgba(2, 6, 23, 0.28);
+}
+
+.sponsor-email-card button {
+  justify-self: end;
+  min-width: min(100%, 210px);
+}
+
 .transfer-compare-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));

@@ -1489,13 +1489,13 @@ App.auth = {
     const offerCategories = Object.keys(offersByCategory);
 
     return `
-      <article class="coach-panel-card sponsorship-card">
+      <article class="coach-panel-card sponsorship-card sponsorship-inbox-card">
         <div class="home-panel-header">
           <div>
-            <h2>Patrocínios</h2>
-            <p class="coach-card-subtitle">Escolha até ${maxActive} contratos ativos. Marcas da mesma categoria disputam espaço e podem substituir contrato com multa.</p>
+            <h2>Inbox comercial</h2>
+            <p class="coach-card-subtitle">Propostas de marcas chegam como e-mails. Leia condições, luvas e parcelas antes de responder.</p>
           </div>
-          <span class="coach-section-kicker">${active.length}/${maxActive} ativo(s)</span>
+          <span class="coach-section-kicker">${offers.length} e-mail(s)</span>
         </div>
 
         ${
@@ -1623,7 +1623,7 @@ App.auth = {
             ? `
           <div class="sponsor-market-note">
             <strong>${active.length}/${maxActive} contratos ativos · ${slotsLeft} vaga(s) livre(s)</strong>
-            <span>${offers.length} proposta(s) em ${offerCategories.length} categoria(s). Propostas da mesma categoria substituem o contrato atual e aplicam multa de rescisão.</span>
+            <span>${offers.length} e-mail(s) comercial(is) em aberto. Responder uma proposta aceita o contrato; marcas da mesma categoria substituem o acordo atual com multa.</span>
           </div>
           <div class="sponsor-category-list">
             ${offerCategories
@@ -1631,8 +1631,8 @@ App.auth = {
                 (category) => `
               <section class="sponsor-category-group">
                 <div class="sponsor-category-header">
-                  <strong>${App.utils.escapeDisplay(category)}</strong>
-                  <span>${offersByCategory[category].length} proposta(s)</span>
+                  <strong>Assunto: ${App.utils.escapeDisplay(category)}</strong>
+                  <span>${offersByCategory[category].length} e-mail(s)</span>
                 </div>
                 <div class="sponsor-offer-grid">
                   ${offersByCategory[category]
@@ -1685,7 +1685,11 @@ App.auth = {
                           : "";
 
                       return `
-                      <article class="sponsor-offer-card sponsor-offer-card-${toneClass}">
+                      <article class="sponsor-offer-card sponsor-offer-card-${toneClass} sponsor-email-card">
+                        <div class="sponsor-email-top">
+                          <span>De: ${App.utils.escapeDisplay(offer.sponsorName)}</span>
+                          <b>${offer.isReplacement ? "Resposta com troca de marca" : "Nova proposta comercial"}</b>
+                        </div>
                         <div class="sponsor-brand-shell sponsor-offer-shell">
                           ${App.auth.renderSponsorBrandMark(offer.sponsorName)}
                           <div class="sponsor-brand-copy">
@@ -1726,7 +1730,7 @@ App.auth = {
                           </span>
                         </div>
                         <button type="button" data-sponsor-offer="${App.utils.escapeHtml(offer.id)}" data-sponsor-fee="${Number(offer.terminationFee || 0)}" data-sponsor-replacement="${offer.isReplacement ? "true" : "false"}" data-sponsor-signing="${Number(offer.signingBonus || 0)}" data-sponsor-reward="${Number(offer.rewardValue || 0)}" data-sponsor-cadence="${App.utils.escapeHtml(cadence || "goal")}">
-                          ${offer.isReplacement ? "Trocar marca" : "Assinar contrato"}
+                          ${offer.isReplacement ? "Responder e trocar marca" : "Responder proposta"}
                         </button>
                       </article>
                     `;
@@ -2324,16 +2328,16 @@ App.auth = {
             ? `A luva de ${App.utils.formatCurrency(signingBonus)} entra agora`
             : "Não há luva imediata";
         const message = isReplacement
-          ? `Trocar para este patrocínio? A multa estimada é ${App.utils.formatCurrency(fee)}. ${upfrontLabel} e o contrato paga ${paymentLabel}.`
-          : `Assinar este patrocínio? ${upfrontLabel} e o contrato paga ${paymentLabel}.`;
+          ? `Responder aceitando a troca de marca? A multa estimada é ${App.utils.formatCurrency(fee)}. ${upfrontLabel} e o contrato paga ${paymentLabel}.`
+          : `Responder aceitando esta proposta comercial? ${upfrontLabel} e o contrato paga ${paymentLabel}.`;
         const confirmed = App.ui?.confirmAction
           ? await App.ui.confirmAction({
               kicker: "Contrato comercial",
-              title: isReplacement ? "Trocar patrocínio" : "Assinar patrocínio",
+              title: isReplacement ? "Responder proposta" : "Responder e-mail",
               message,
               tone: "info",
               cancelLabel: "Cancelar",
-              confirmLabel: isReplacement ? "Trocar marca" : "Assinar contrato",
+              confirmLabel: isReplacement ? "Aceitar troca" : "Aceitar proposta",
               confirmVariant: "primary",
             })
           : confirm(message);
