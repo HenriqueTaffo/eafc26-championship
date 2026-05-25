@@ -4,10 +4,13 @@ App.config = {
   API_URL: "https://fdippspwpugnxwxmjnqf.supabase.co",
   SUPABASE_URL: "https://fdippspwpugnxwxmjnqf.supabase.co",
   SUPABASE_PUBLISHABLE_KEY: "sb_publishable_9YyrYEk9jH5CuatQK_Ejpg_VfQq6qCK",
-  assetVersion: "20260524-sponsor-icons-v1",
+  assetVersion: "20260525-transfer-window-locked-v1",
   transferBudget: 22000000,
   homeMatchBonus: 400000,
   winBonus: 250000,
+  transferWindowLocked: true,
+  transferWindowLockedMessage:
+    "Janela de transferências fechada enquanto consolidamos o app.",
   baseDailyTransferLimit: 3,
   eventSlots: [9, 12, 15, 18],
   calendarConfig: {

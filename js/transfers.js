@@ -3,6 +3,32 @@ import App from "./app.js";
 App.transfers = {
   failedAvatarUrls: new Set(),
 
+  isTransferWindowLocked() {
+    return App.config.transferWindowLocked === true;
+  },
+
+  getTransferWindowLockMessage() {
+    return (
+      App.config.transferWindowLockedMessage ||
+      "Janela de transferências fechada enquanto consolidamos o app."
+    );
+  },
+
+  syncTransferWindowLock() {
+    const locked = App.transfers.isTransferWindowLocked();
+    const view = document.getElementById("transfersView");
+    const form = document.getElementById("transferForm");
+
+    view?.classList.toggle("is-transfer-window-locked", locked);
+    if (!form) return;
+
+    form.querySelectorAll("input, select, textarea, button").forEach((field) => {
+      field.disabled = locked;
+    });
+
+    if (locked) App.transfers.renderTransferPreview(form);
+  },
+
   femaleRatingNames: [
     "Alexia Putellas",
     "Aitana Bonmatí",
@@ -1936,6 +1962,19 @@ App.transfers = {
 
     const preview = App.transfers.getTransferPreview(form);
     const submitButton = form.querySelector("button[type='submit']");
+
+    if (App.transfers.isTransferWindowLocked()) {
+      if (submitButton) submitButton.disabled = true;
+      target.className = "transfer-live-preview danger";
+      App.dom.setHtml(
+        target,
+        `
+        <strong>Janela de transferências fechada</strong>
+        <span>${App.utils.escapeHtml(App.transfers.getTransferWindowLockMessage())}</span>
+      `,
+      );
+      return;
+    }
 
     if (!preview?.hasEnoughData) {
       if (submitButton && !submitButton.dataset.submitting)

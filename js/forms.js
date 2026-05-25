@@ -220,6 +220,16 @@ App.forms = {
     const message = document.getElementById("transferMessage");
     const payload = Object.fromEntries(new FormData(form).entries());
 
+    if (App.transfers?.isTransferWindowLocked?.()) {
+      App.utils.setMessage(
+        message,
+        App.transfers.getTransferWindowLockMessage(),
+        "error",
+      );
+      App.transfers.renderTransferPreview(form);
+      return;
+    }
+
     button.disabled = true;
     App.utils.setMessage(message, "Enviando transferência...", "warning");
     App.main.showLoader({

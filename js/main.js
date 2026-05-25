@@ -513,6 +513,10 @@ App.main = {
   updateTransferCountdown() {
     const element = document.getElementById("nextTransferCountdown");
     if (!element) return;
+    if (App.transfers?.isTransferWindowLocked?.()) {
+      element.textContent = "Fechada";
+      return;
+    }
     const now = new Date();
     const nextReset = new Date(now);
     nextReset.setHours(24, 0, 0, 0);

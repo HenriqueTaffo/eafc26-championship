@@ -601,6 +601,15 @@ function TransfersView() {
           </p>
         </section>
 
+        <section className="transfer-lock-card" aria-live="polite">
+          <span className="modal-kicker">Mercado travado</span>
+          <h2>Janela de transferências fechada</h2>
+          <p>
+            As contratações ficam bloqueadas até a liga considerar o app pronto.
+            Histórico e orçamento seguem visíveis para conferência.
+          </p>
+        </section>
+
         <section
           className="transfer-budget-board"
           id="transferBudgetBoard"

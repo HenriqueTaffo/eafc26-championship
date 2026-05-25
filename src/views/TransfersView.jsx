@@ -21,6 +21,7 @@ function TransfersRuntime() {
       App.transfers.renderTransferPreview(form);
     }
 
+    App.transfers.syncTransferWindowLock();
     App.transfers.renderHistory?.();
   }, [isActive, runtimeVersion]);
 
