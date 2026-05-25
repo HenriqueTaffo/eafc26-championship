@@ -13,9 +13,8 @@ App.config = {
   transferWindowLockedMessage:
     "Janela de transferencias encerrada em 31/05/2026, 23:59.",
   sponsorshipSigningLocked: false,
-  sponsorshipSigningOpenUntil: "2026-05-31T23:59:59-03:00",
   sponsorshipSigningLockedMessage:
-    "Assinatura de patrocinios encerrada em 31/05/2026, 23:59.",
+    "Assinaturas de patrocinio indisponiveis no momento.",
   baseDailyTransferLimit: 3,
   eventSlots: [9, 12, 15, 18],
   calendarConfig: {

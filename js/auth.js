@@ -1481,12 +1481,6 @@ App.auth = {
       Number(data.activeSlotsLeft ?? maxActive - active.length),
     );
     const signingLocked = App.auth.isSponsorshipSigningLocked();
-    const signingDeadlineLabel = App.utils.formatDateTime(
-      App.config.sponsorshipSigningOpenUntil,
-    );
-    const signingStatusLabel = signingLocked
-      ? App.auth.getSponsorshipSigningLockMessage()
-      : `Assinaturas abertas ate ${signingDeadlineLabel}.`;
     const offersByCategory = offers.reduce((groups, offer) => {
       const category = offer.category || "Patrocínio";
       groups[category] = groups[category] || [];
@@ -1632,7 +1626,6 @@ App.auth = {
             <strong>${active.length}/${maxActive} contratos ativos · ${slotsLeft} vaga(s) livre(s)</strong>
             <span>${offers.length} proposta(s) em ${offerCategories.length} categoria(s). Propostas da mesma categoria substituem o contrato atual e aplicam multa de rescisão.</span>
           </div>
-          <div class="calendar-muted sponsor-window-note">${App.utils.escapeDisplay(signingStatusLabel)}</div>
           <div class="sponsor-category-list">
             ${offerCategories
               .map(
@@ -1992,19 +1985,13 @@ App.auth = {
   },
 
   isSponsorshipSigningLocked() {
-    if (App.config.sponsorshipSigningLocked === true) return true;
-
-    const openUntil = App.config.sponsorshipSigningOpenUntil;
-    if (!openUntil) return false;
-
-    const deadline = new Date(openUntil);
-    return !Number.isNaN(deadline.getTime()) && Date.now() > deadline.getTime();
+    return App.config.sponsorshipSigningLocked === true;
   },
 
   getSponsorshipSigningLockMessage() {
     return (
       App.config.sponsorshipSigningLockedMessage ||
-      "Assinatura de patrocinios encerrada em 31/05/2026, 23:59."
+      "Assinaturas de patrocinio indisponiveis no momento."
     );
   },
 
