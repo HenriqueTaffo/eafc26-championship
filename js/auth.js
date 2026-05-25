@@ -1480,7 +1480,6 @@ App.auth = {
       0,
       Number(data.activeSlotsLeft ?? maxActive - active.length),
     );
-    const signingLocked = App.auth.isSponsorshipSigningLocked();
     const offersByCategory = offers.reduce((groups, offer) => {
       const category = offer.category || "Patrocínio";
       groups[category] = groups[category] || [];
@@ -1726,8 +1725,8 @@ App.auth = {
                             <small>${offer.isReplacement ? "rescisão atual" : "sem troca de marca"}</small>
                           </span>
                         </div>
-                        <button type="button" data-sponsor-offer="${App.utils.escapeHtml(offer.id)}" data-sponsor-fee="${Number(offer.terminationFee || 0)}" data-sponsor-replacement="${offer.isReplacement ? "true" : "false"}" data-sponsor-signing="${Number(offer.signingBonus || 0)}" data-sponsor-reward="${Number(offer.rewardValue || 0)}" data-sponsor-cadence="${App.utils.escapeHtml(cadence || "goal")}"${signingLocked ? " disabled" : ""}>
-                          ${signingLocked ? "Assinatura encerrada" : offer.isReplacement ? "Trocar marca" : "Assinar contrato"}
+                        <button type="button" data-sponsor-offer="${App.utils.escapeHtml(offer.id)}" data-sponsor-fee="${Number(offer.terminationFee || 0)}" data-sponsor-replacement="${offer.isReplacement ? "true" : "false"}" data-sponsor-signing="${Number(offer.signingBonus || 0)}" data-sponsor-reward="${Number(offer.rewardValue || 0)}" data-sponsor-cadence="${App.utils.escapeHtml(cadence || "goal")}">
+                          ${offer.isReplacement ? "Trocar marca" : "Assinar contrato"}
                         </button>
                       </article>
                     `;
