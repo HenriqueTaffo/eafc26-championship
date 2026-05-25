@@ -167,6 +167,17 @@ App.calendar = {
     );
   },
 
+  getCurrentCalendarMonthKey(referenceDate = new Date()) {
+    return App.calendar.getCalendarMonthKey(referenceDate);
+  },
+
+  getCurrentMonthEvents(events = []) {
+    const currentMonthKey = App.calendar.getCurrentCalendarMonthKey();
+    return events.filter(
+      (event) => App.calendar.getCalendarMonthKey(event.date) === currentMonthKey,
+    );
+  },
+
   getStatusClass(event) {
     return typeof event.homeScore === "number" &&
       typeof event.awayScore === "number"

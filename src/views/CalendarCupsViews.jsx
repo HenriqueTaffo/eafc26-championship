@@ -338,7 +338,9 @@ function CalendarMonth({ monthKey, eventsByDate, events }) {
 
 export function CalendarWeekBoard() {
   useAppRuntime();
-  const events = App.calendar.getFilteredEvents();
+  const events = App.calendar.getCurrentMonthEvents(
+    App.calendar.getFilteredEvents(),
+  );
 
   return (
     <section className="calendar-week-board" id="calendarWeekBoard">
@@ -349,28 +351,13 @@ export function CalendarWeekBoard() {
 
 export function CalendarMonthBoard() {
   useAppRuntime();
-  const events = App.calendar.getFilteredEvents();
+  const currentMonthKey = App.calendar.getCurrentCalendarMonthKey();
+  const events = App.calendar.getCurrentMonthEvents(
+    App.calendar.getFilteredEvents(),
+  );
   const datedEvents = events.filter((event) =>
     App.calendar.normalizeCalendarDate(event.date),
   );
-
-  if (!datedEvents.length) {
-    return (
-      <section
-        className="calendar-month-board"
-        id="calendarBoard"
-        aria-live="polite"
-      >
-        <article className="calendar-empty-panel">
-          <strong>Nenhum jogo encontrado</strong>
-          <span>
-            Ajuste os filtros para ver partidas realizadas ou o calendário
-            completo.
-          </span>
-        </article>
-      </section>
-    );
-  }
 
   const eventsByDate = datedEvents.reduce((map, event) => {
     const key = App.calendar.getCalendarDateKey(event.date);
@@ -389,28 +376,17 @@ export function CalendarMonthBoard() {
     );
   });
 
-  const monthKeys = [
-    ...new Set(
-      datedEvents
-        .map((event) => App.calendar.getCalendarMonthKey(event.date))
-        .filter(Boolean),
-    ),
-  ].sort();
-
   return (
     <section
       className="calendar-month-board"
       id="calendarBoard"
       aria-live="polite"
     >
-      {monthKeys.map((monthKey) => (
-        <CalendarMonth
-          monthKey={monthKey}
-          eventsByDate={eventsByDate}
-          events={datedEvents}
-          key={monthKey}
-        />
-      ))}
+      <CalendarMonth
+        monthKey={currentMonthKey}
+        eventsByDate={eventsByDate}
+        events={datedEvents}
+      />
     </section>
   );
 }
