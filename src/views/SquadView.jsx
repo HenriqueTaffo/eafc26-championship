@@ -962,7 +962,19 @@ function SquadManagementView() {
             </div>
           </div>
           <div className="squad-pitch">
-            <div className="squad-pitch-lines" aria-hidden="true"></div>
+            <div className="squad-pitch-lines" aria-hidden="true">
+              <span className="pitch-line pitch-halfway"></span>
+              <span className="pitch-line pitch-center-circle"></span>
+              <span className="pitch-line pitch-center-spot"></span>
+              <span className="pitch-box pitch-box-top"></span>
+              <span className="pitch-box pitch-box-bottom"></span>
+              <span className="pitch-six-yard pitch-six-yard-top"></span>
+              <span className="pitch-six-yard pitch-six-yard-bottom"></span>
+              <span className="pitch-spot pitch-spot-top"></span>
+              <span className="pitch-spot pitch-spot-bottom"></span>
+              <span className="pitch-arc pitch-arc-top"></span>
+              <span className="pitch-arc pitch-arc-bottom"></span>
+            </div>
             {slots.map((slot) => {
               const player = playerById.get(Number(lineup[slot.id]));
               return (
