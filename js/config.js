@@ -4,7 +4,7 @@ App.config = {
   API_URL: "https://fdippspwpugnxwxmjnqf.supabase.co",
   SUPABASE_URL: "https://fdippspwpugnxwxmjnqf.supabase.co",
   SUPABASE_PUBLISHABLE_KEY: "sb_publishable_9YyrYEk9jH5CuatQK_Ejpg_VfQq6qCK",
-  assetVersion: "20260525-commissioner-runtime-hide-v1",
+  assetVersion: "20260525-events-copy-v1",
   transferBudget: 18000000,
   homeMatchBonus: 150000,
   winBonus: 100000,

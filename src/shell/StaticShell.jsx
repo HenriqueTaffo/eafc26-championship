@@ -552,9 +552,9 @@ function EventsView() {
         </section>
         <EventsGrid />
         <p className="footer-note">
-          Central de eventos v45: lançamentos financeiros entram no orçamento
-          automaticamente; mercado, lesões e punições aparecem com duração e
-          impacto destacado para cada técnico.
+          Central de eventos: impactos financeiros, mercado, lesões, punições e
+          premiações ficam consolidados por técnico com status e efeitos
+          atualizados.
         </p>
       </section>
     </>
