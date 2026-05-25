@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import App from "../../js/app.js";
 import { useAppRuntime } from "./ViewSummaries.jsx";
 
-const goalkeeper = () => [["GK", "GK", 50, 88]];
+const goalkeeper = () => [["GK", "GK", 50, 84]];
 
 const backThree = () => [
   ["LCB", "CB", 32, 69],
@@ -525,16 +525,27 @@ function PitchSlot({
         onDropPlayer(event.dataTransfer.getData("text/plain"), slot.id);
       }}
       onDragEnd={onDragEnd}
+      aria-label={
+        player
+          ? `${player.name}, ${slot.displayLabel}, overall ${player.overall}`
+          : `Selecionar jogador para ${slot.displayLabel}`
+      }
     >
       {player ? (
         <>
-          <span className="squad-card-ovr">{player.overall}</span>
-          <PlayerAvatar player={player} />
-          <strong>{player.name}</strong>
-          <small>{slot.displayLabel}</small>
+          <span className="squad-card-top">
+            <span className="squad-card-ovr">{player.overall}</span>
+            <small>{slot.displayLabel}</small>
+          </span>
+          <PlayerAvatar player={player} className="squad-card-avatar" />
+          <span className="squad-card-name">
+            <strong>{player.name}</strong>
+            <em>{player.position || slot.label}</em>
+          </span>
           <span
             className="squad-slot-remove"
-            aria-hidden="true"
+            aria-label={`Remover ${player.name}`}
+            title={`Remover ${player.name}`}
             onClick={(event) => {
               event.stopPropagation();
               onClear();
@@ -545,8 +556,10 @@ function PitchSlot({
         </>
       ) : (
         <>
-          <span className="squad-empty-plus">+</span>
-          <strong>{slot.displayLabel}</strong>
+          <span className="squad-empty-target">
+            <span className="squad-empty-plus">+</span>
+            <strong>{slot.displayLabel}</strong>
+          </span>
           <small>Selecionar</small>
         </>
       )}
@@ -581,6 +594,7 @@ function SquadRosterRow({
         onDragStart(player, "");
       }}
       onDragEnd={onDragEnd}
+      title={`${player.name} · ${player.position || "-"} · OVR ${player.overall}`}
     >
       <span className="squad-drag-grip" aria-hidden="true"></span>
       <PlayerAvatar player={player} />
@@ -592,7 +606,11 @@ function SquadRosterRow({
       </span>
       <span className="squad-roster-meta">
         <b>{player.overall}</b>
-        <small>{App.utils.formatCurrency(player.weeklySalary || 0)}/sem</small>
+        <small>
+          {assigned
+            ? "Em campo"
+            : `${App.utils.formatCurrency(player.weeklySalary || 0)}/sem`}
+        </small>
       </span>
     </button>
   );
@@ -951,13 +969,12 @@ function SquadManagementView() {
                   player={player}
                   selected={selectedSlot === slot.id}
                   compatible={
-                    selectedSlot === slot.id &&
-                    filteredRoster.some((item) => isCompatible(slot.label, item.position))
+                    draggingPlayer
+                      ? isCompatible(slot.label, draggingPlayer.position)
+                      : selectedSlot === slot.id &&
+                        filteredRoster.some((item) => isCompatible(slot.label, item.position))
                   }
-                  dropActive={
-                    dragOverSlot === slot.id ||
-                    (draggingPlayer && isCompatible(slot.label, draggingPlayer.position))
-                  }
+                  dropActive={dragOverSlot === slot.id}
                   dragging={Number(player?.id) === Number(dragState?.playerId)}
                   onSelect={() => setSelectedSlot(slot.id)}
                   onClear={() =>
