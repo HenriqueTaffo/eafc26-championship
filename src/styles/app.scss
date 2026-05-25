@@ -92,22 +92,27 @@ body:not(.is-commissioner) #submitView {
   place-items: center;
   flex: 0 0 auto;
   overflow: visible;
-  border-radius: 8px;
+  border-radius: 10px;
 
   .manager-login-face {
-    padding: 14px;
+    padding: 16px;
     object-fit: contain;
     object-position: center;
+    filter: drop-shadow(0 0 10px rgba(45, 212, 191, 0.24));
   }
 
   .manager-login-face-front {
     background:
-      linear-gradient(135deg, rgba(251, 191, 36, 0.12), transparent 48%),
-      rgba(2, 6, 23, 0.54);
+      radial-gradient(circle at 50% 46%, rgba(255, 255, 255, 0.16), transparent 52%),
+      linear-gradient(135deg, rgba(251, 191, 36, 0.14), transparent 46%),
+      rgba(2, 6, 23, 0.84);
   }
 
   .manager-login-face-back {
-    background: rgba(255, 255, 255, 0.95);
+    background:
+      radial-gradient(circle at 50% 46%, rgba(94, 234, 212, 0.18), transparent 56%),
+      linear-gradient(135deg, rgba(20, 184, 166, 0.14), transparent 50%),
+      rgba(2, 6, 23, 0.86);
   }
 }
 

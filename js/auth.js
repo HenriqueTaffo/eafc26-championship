@@ -1116,8 +1116,8 @@ App.auth = {
           <span class="manager-login-mascot-stage manager-login-avatar-large manager-login-brand-mark" aria-hidden="true">
             <span class="manager-login-mascot-ring"></span>
             <span class="manager-login-flip-card">
-              <img class="manager-login-face manager-login-face-front brand-icon-img" src="./assets/4linhas-icon-light.png?v=${App.config.assetVersion}" alt="" loading="lazy" />
-              <img class="manager-login-face manager-login-face-back brand-icon-img" src="./assets/4linhas-icon.png?v=${App.config.assetVersion}" alt="" loading="lazy" />
+              <img class="manager-login-face manager-login-face-front brand-icon-img" src="./assets/4linhas-icon-teal.png?v=${App.config.assetVersion}" alt="" loading="lazy" />
+              <img class="manager-login-face manager-login-face-back brand-icon-img" src="./assets/4linhas-icon-teal.png?v=${App.config.assetVersion}" alt="" loading="lazy" />
             </span>
           </span>
           <div>
