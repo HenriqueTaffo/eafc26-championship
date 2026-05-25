@@ -863,7 +863,7 @@ App.auth = {
     await App.api.loadApiData({
       variant: "market",
       title: "Patrocínio assinado",
-      message: "Registrando bônus, contrato e novas metas comerciais...",
+      message: "Registrando contrato, datas de pagamento e metas comerciais...",
     });
 
     await App.auth.syncManagerState();
@@ -1578,7 +1578,7 @@ App.auth = {
                   <span>
                     <b>Luva</b>
                     <strong>${App.utils.formatCurrency(signingBonus)}</strong>
-                    <small>${signingPaidAt ? `paga em ${App.utils.formatDate(signingPaidAt)}` : "pagamento inicial"}</small>
+                    <small>${signingBonus > 0 ? (signingPaidAt ? `paga em ${App.utils.formatDate(signingPaidAt)}` : "pagamento inicial") : "sem luva inicial"}</small>
                   </span>
                   <span>
                     <b>Total pago</b>
@@ -1610,7 +1610,7 @@ App.auth = {
               .join("")}
           </div>
         `
-            : `<p class="calendar-muted">Nenhum patrocinador ativo. Escolha com cuidado: as luvas agora entram como pagamento oficial e as marcas competem por categoria.</p>`
+            : `<p class="calendar-muted">Nenhum patrocinador ativo. As novas propostas não pagam luva imediata: o dinheiro entra por parcelas programadas ou por metas aprovadas.</p>`
         }
 
         ${
@@ -1665,6 +1665,19 @@ App.auth = {
                       const frequencyLabel =
                         App.auth.getSponsorshipFrequencyLabel(offer);
                       const offerStyle = offer.dealStyle || frequencyLabel;
+                      const signingBonus = Number(
+                        offer.signingBonus || offer.signing_bonus || 0,
+                      );
+                      const rewardValue = Number(
+                        offer.rewardValue || offer.reward_value || 0,
+                      );
+                      const firstPaymentAt = App.auth.parseSponsorshipDate(
+                        offer.firstPaymentAt || offer.first_payment_at,
+                      );
+                      const firstPaymentLabel =
+                        firstPaymentAt && cadence
+                          ? ` · começa em ${App.utils.formatDate(firstPaymentAt)}`
+                          : "";
 
                       return `
                       <article class="sponsor-offer-card sponsor-offer-card-${toneClass}">
@@ -1687,17 +1700,18 @@ App.auth = {
                           <p>
                             ${App.utils.escapeDisplay(offer.conditionLabel || "Meta cumprida")}
                             ${offer.isReplacement ? ` · substitui ${App.utils.escapeDisplay(offer.currentSponsorName || "contrato atual")}` : ""}
+                            ${App.utils.escapeDisplay(firstPaymentLabel)}
                           </p>
                         </div>
                         <div class="sponsor-terms-row sponsor-offer-terms">
                           <span>
-                            <b>Luva agora</b>
-                            <strong>${App.utils.formatCurrency(offer.signingBonus || 0)}</strong>
-                            <small>entrada imediata</small>
+                            <b>${signingBonus > 0 ? "Luva agora" : "Entrada"}</b>
+                            <strong>${App.utils.formatCurrency(signingBonus)}</strong>
+                            <small>${signingBonus > 0 ? "entrada imediata" : "sem luva inicial"}</small>
                           </span>
                           <span>
                             <b>${cadence ? "Parcela" : "Bônus"}</b>
-                            <strong>${App.utils.formatCurrency(offer.rewardValue || 0)}</strong>
+                            <strong>${App.utils.formatCurrency(rewardValue)}</strong>
                             <small>${App.utils.escapeDisplay(frequencyLabel)}</small>
                           </span>
                           <span>
@@ -2036,17 +2050,25 @@ App.auth = {
     const signedAt = App.auth.parseSponsorshipDate(
       item.created_at || item.createdAt || item.createdAtUtc || "",
     );
-    if (!signedAt) return null;
+    const payoutStartAt = App.auth.parseSponsorshipDate(
+      item.payout_start_at ||
+        item.payoutStartAt ||
+        item.firstPaymentAt ||
+        item.first_payment_at,
+    );
+    if (!signedAt && !payoutStartAt) return null;
 
     const claimsUsed = Number(item.claims_used || item.claimsUsed || 0);
     const maxClaims = Number(item.max_claims || item.maxClaims || 0);
     const intervalMs = intervalDays * 24 * 60 * 60 * 1000;
+    const anchorAt =
+      payoutStartAt || new Date(signedAt.getTime() + intervalMs);
     const lastPaymentAt =
       App.auth.parseSponsorshipDate(
         item.last_installment_at || item.lastInstallmentAt,
       ) ||
       (claimsUsed > 0
-        ? new Date(signedAt.getTime() + claimsUsed * intervalMs)
+        ? new Date(anchorAt.getTime() + (claimsUsed - 1) * intervalMs)
         : null);
     const nextPaymentAt =
       App.auth.parseSponsorshipDate(
@@ -2054,7 +2076,7 @@ App.auth = {
       ) ||
       (maxClaims && claimsUsed >= maxClaims
         ? null
-        : new Date(signedAt.getTime() + (claimsUsed + 1) * intervalMs));
+        : new Date(anchorAt.getTime() + claimsUsed * intervalMs));
 
     return {
       cadence: intervalDays === 7 ? "semanal" : "mensal",
@@ -2259,16 +2281,54 @@ App.auth = {
             : cadence === "monthly"
               ? `parcela mensal de ${App.utils.formatCurrency(rewardValue)}`
               : `bônus por meta de ${App.utils.formatCurrency(rewardValue)}`;
+        const upfrontLabel =
+          signingBonus > 0
+            ? `A luva de ${App.utils.formatCurrency(signingBonus)} entra agora`
+            : "Não há luva imediata";
         const message = isReplacement
-          ? `Trocar para este patrocínio? A multa estimada é ${App.utils.formatCurrency(fee)}. A luva de ${App.utils.formatCurrency(signingBonus)} entra agora e o contrato paga ${paymentLabel}.`
-          : `Assinar este patrocínio? A luva de ${App.utils.formatCurrency(signingBonus)} entra agora e o contrato paga ${paymentLabel}.`;
-        if (!confirm(message)) return;
+          ? `Trocar para este patrocínio? A multa estimada é ${App.utils.formatCurrency(fee)}. ${upfrontLabel} e o contrato paga ${paymentLabel}.`
+          : `Assinar este patrocínio? ${upfrontLabel} e o contrato paga ${paymentLabel}.`;
+        const confirmed = App.ui?.openActionModal
+          ? await App.ui.openActionModal({
+              kicker: "Contrato comercial",
+              title: isReplacement ? "Trocar patrocínio" : "Assinar patrocínio",
+              message,
+              tone: "info",
+              actions: [
+                { id: "cancel", label: "Cancelar", variant: "ghost" },
+                {
+                  id: "confirm",
+                  label: isReplacement ? "Trocar marca" : "Assinar contrato",
+                  variant: "primary",
+                  autofocus: true,
+                },
+              ],
+            })
+          : confirm(message);
+        if (!confirmed) return;
 
         try {
           event.currentTarget.disabled = true;
           await App.auth.acceptSponsorship(offerId);
         } catch (error) {
-          alert(error.message);
+          if (App.ui?.openActionModal) {
+            await App.ui.openActionModal({
+              kicker: "Patrocínio não aplicado",
+              title: "Não consegui assinar",
+              message: error.message || "Tente novamente depois de sincronizar.",
+              tone: "danger",
+              actions: [
+                {
+                  id: "confirm",
+                  label: "Entendi",
+                  variant: "primary",
+                  autofocus: true,
+                },
+              ],
+            });
+          } else {
+            alert(error.message);
+          }
         } finally {
           event.currentTarget.disabled = false;
         }
