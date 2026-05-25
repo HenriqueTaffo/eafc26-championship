@@ -2580,7 +2580,7 @@ App.transfers = {
     if (valueLabel)
       valueLabel.textContent = isInternal
         ? "Valor negociado entre técnicos"
-        : "Valor Transfermarkt";
+        : "Referencia de mercado";
 
     if (!isInternal) {
       if (form.elements.seller) form.elements.seller.value = "";

@@ -354,6 +354,12 @@ App.forms = {
         ...payload,
         overall: Number(payload.overall),
         marketValue: Number(payload.marketValue),
+        referenceValue: Number(payload.marketValue),
+        offerValue: Number(
+          isInternal
+            ? payload.marketValue
+            : preview.finalValue || payload.marketValue,
+        ),
         weeklySalary: Number(preview.weeklySalary || payload.weeklySalary || 0),
         salarySourceName:
           payload.salarySourceName || preview.salarySourceName || "",
@@ -375,7 +381,7 @@ App.forms = {
         data.message ||
           (isInternal
             ? "Proposta enviada com sucesso."
-            : "Transferência enviada com sucesso."),
+            : "Proposta enviada ao clube vendedor."),
         "success",
       );
       form.reset();
@@ -388,9 +394,9 @@ App.forms = {
         title: "Atualizando dados",
         message: isInternal
           ? "Proposta enviada. Atualizando pendências do mercado..."
-          : "Transferência salva. Atualizando orçamento, lista de transferências e painel...",
+          : "Resposta recebida. Atualizando hub de negociação e e-mails...",
       });
-      if (!isInternal) {
+      if (!isInternal && data.status === "accepted") {
         await App.api.loadSquadManagementData?.({ force: true });
       }
       await App.transfers.showNegotiationResultModal?.(

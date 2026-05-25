@@ -767,7 +767,7 @@ function TransfersView() {
                   />
                 </label>
                 <label className="full">
-                  <span id="transferValueLabel">Valor Transfermarkt</span>
+                  <span id="transferValueLabel">Referencia de mercado</span>
                   <input
                     name="marketValue"
                     type="number"
@@ -905,7 +905,7 @@ function TransfersView() {
               Limite base: <strong>3 transferências por dia</strong>. Eventos
               podem alterar esse limite.
             </li>
-            <li>Valor final = valor Transfermarkt + percentual por overall.</li>
+              <li>Proposta inicial = referencia de mercado + percentual por overall.</li>
             <li>
               Salario do jogador: somente com referencia publica. Nao usamos
               overall para estimar folha.

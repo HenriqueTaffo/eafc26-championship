@@ -3444,3 +3444,51 @@ body:not(.is-commissioner) #submitView {
     animation-iteration-count: 1 !important;
   }
 }
+
+.external-market-proposal {
+  gap: 10px;
+  align-items: stretch;
+  border-color: rgba(20, 184, 166, 0.24);
+  background:
+    linear-gradient(135deg, rgba(20, 184, 166, 0.12), transparent 38%),
+    rgba(4, 10, 18, 0.74);
+}
+
+.external-market-proposal > span {
+  width: fit-content;
+  color: #5eead4;
+  background: rgba(20, 184, 166, 0.12);
+  border-color: rgba(20, 184, 166, 0.24);
+}
+
+.proposal-market-meta {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(136px, 1fr));
+  gap: 8px;
+}
+
+.proposal-market-meta b {
+  min-width: 0;
+  padding: 8px 10px;
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  border-radius: 8px;
+  color: #dce7ef;
+  background: rgba(15, 23, 42, 0.54);
+  font-size: 0.72rem;
+  line-height: 1.35;
+}
+
+.proposal-market-actions {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-top: 2px;
+}
+
+.proposal-market-actions button {
+  min-height: 72px;
+}
+
+@media (max-width: 760px) {
+  .proposal-market-actions {
+    grid-template-columns: 1fr;
+  }
+}

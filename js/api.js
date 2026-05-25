@@ -1514,29 +1514,44 @@ App.api = {
         );
       }
 
-      const hasTradeIn =
-        payload.tradeInPlayer && Number(payload.tradeInCredit || 0) > 0;
-
       return App.api.rpc(
-        hasTradeIn
-          ? "app_add_transfer_with_trade_verified_salary"
-          : "app_add_transfer_verified_salary",
+        "app_create_external_transfer_proposal",
         {
           ...App.api.getAuthPayload(),
           p_buyer: payload.buyer,
           p_player: payload.player,
           p_from_club: payload.fromClub,
           p_overall: Number(payload.overall),
-          p_market_value: Number(payload.marketValue),
+          p_reference_value: Number(
+            payload.referenceValue || payload.marketValue,
+          ),
+          p_offer_value: Number(payload.offerValue || payload.marketValue),
           p_weekly_salary_eur: Number(payload.weeklySalary || 0),
           p_salary_source_name: payload.salarySourceName || "",
           p_salary_source_url: payload.salarySourceUrl || "",
-          ...(hasTradeIn
-            ? {
-                p_trade_in_player: payload.tradeInPlayer,
-                p_trade_in_credit: Number(payload.tradeInCredit || 0),
-              }
-            : {}),
+          p_trade_in_player: payload.tradeInPlayer || "",
+          p_trade_in_credit: Number(payload.tradeInCredit || 0),
+        },
+        45000,
+      );
+    }
+
+    if (payload.action === "answerExternalTransferProposal") {
+      App.api.requireSession(
+        "Faca login como comprador antes de responder a negociacao.",
+      );
+      return App.api.rpc(
+        "app_answer_external_transfer_proposal",
+        {
+          ...App.api.getAuthPayload(),
+          p_proposal_id: Number(payload.proposalId),
+          p_decision: payload.decision,
+          p_counter_value:
+            payload.counterValue === null ||
+            payload.counterValue === undefined ||
+            payload.counterValue === ""
+              ? null
+              : Number(payload.counterValue),
         },
         45000,
       );

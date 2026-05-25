@@ -353,6 +353,11 @@ Object.assign(App.transfers, {
       options.isInternal ||
       App.utils.normalizeText(item.transferType || item.transfer_type) ===
         "internal";
+    const normalizedStatus = App.utils.normalizeText(
+      item.status || item.Status || options.status || "",
+    );
+    const isRejected = normalizedStatus === "rejected";
+    const isBuyerReview = normalizedStatus === "buyer_review";
     const buyer = item.buyer || preview?.buyer || "Comprador";
     const seller = item.seller || preview?.seller || "";
     const fromClub = item.fromClub || item.club || preview?.fromClub || "";
@@ -412,11 +417,21 @@ Object.assign(App.transfers, {
             tone: "ready",
           },
       {
-        title: isInternal ? "Aguardando assinatura" : "Registro da liga",
+        title: isInternal
+          ? "Aguardando assinatura"
+          : isRejected
+            ? "Negociacao encerrada"
+            : isBuyerReview
+              ? "Aguardando confirmacao"
+              : "Registro da liga",
         detail: isInternal
           ? "A negociacao fica no inbox ate a resposta do vendedor."
-          : "Contrato aceito, validado pela liga e publicado no historico de transferencias.",
-        tone: "success",
+          : isRejected
+            ? "A resposta do vendedor encerrou a mesa sem registrar contrato."
+            : isBuyerReview
+              ? "A resposta chegou no hub; o tecnico ainda precisa aceitar, contraofertar ou desistir."
+              : "Contrato aceito, validado pela liga e publicado no historico de transferencias.",
+        tone: isRejected ? "hot" : isBuyerReview ? "watch" : "success",
       },
     ];
 
@@ -435,6 +450,14 @@ Object.assign(App.transfers, {
         payload.proposed_value ||
         0,
     );
+    const normalizedResultStatus = App.utils.normalizeText(data.status || "");
+    const entryStatus = isInternal
+      ? "sent"
+      : normalizedResultStatus === "rejected"
+        ? "rejected"
+        : normalizedResultStatus === "accepted"
+          ? "approved"
+          : "buyer_review";
     const entry = {
       id: data.transferId || data.id || `${Date.now()}-${Math.random()}`,
       createdAt: now,
@@ -449,10 +472,11 @@ Object.assign(App.transfers, {
       tradeInPlayer: payload.tradeInPlayer || preview?.exchangePlayer?.player || "",
       tradeInCredit: Number(payload.tradeInCredit || preview?.exchangeCredit || 0),
       transferType: isInternal ? "internal" : "market",
-      status: isInternal ? "sent" : "approved",
+      status: entryStatus,
       responseMessage: isInternal
         ? "Proposta enviada ao vendedor."
-        : data.message || "Clube vendedor aceitou e a liga registrou a transferencia.",
+        : data.message ||
+          "Clube vendedor respondeu. Revise a negociacao no hub antes do registro.",
     };
     entry.signature = App.transfers.getTransferNegotiationSignature(entry);
     entry.stages = App.transfers.buildTransferNegotiationStages(entry, preview, {
@@ -475,6 +499,7 @@ Object.assign(App.transfers, {
       .filter(
         (item) =>
           item.status !== "sent" &&
+          item.status !== "buyer_review" &&
           (!ownerKey || App.utils.normalizeText(item.buyer) === ownerKey),
       )
       .map((item) => ({
@@ -588,21 +613,38 @@ Object.assign(App.transfers, {
 
   async showNegotiationResultModal(entry = {}, isInternal = false) {
     if (!entry || !App.ui?.openActionModal) return;
+    const status = App.utils.normalizeText(entry.status || "");
+    const isBuyerReview = status === "buyer_review";
+    const isRejected = status === "rejected";
     const stages = Array.isArray(entry.stages)
       ? entry.stages
       : App.transfers.buildTransferNegotiationStages(entry, null, {
           isInternal,
         });
     await App.ui.openActionModal({
-      kicker: isInternal ? "Proposta enviada" : "Resposta recebida",
-      title: isInternal ? "E-mail enviado ao vendedor" : "Negociacao registrada",
+      kicker: isInternal
+        ? "Proposta enviada"
+        : isRejected
+          ? "Mesa encerrada"
+          : "Resposta recebida",
+      title: isInternal
+        ? "E-mail enviado ao vendedor"
+        : isRejected
+          ? "Clube vendedor recusou"
+          : isBuyerReview
+            ? "Resposta no hub"
+            : "Negociacao registrada",
       message: isInternal
         ? `${entry.player} agora depende da resposta do vendedor no inbox.`
-        : `${entry.player} passou por resposta do vendedor, contrato e registro da liga.`,
+        : isBuyerReview
+          ? `${entry.player} ainda precisa de confirmacao, contraoferta ou desistencia no hub.`
+          : isRejected
+            ? `${entry.player} nao virou contratacao nesta mesa.`
+            : `${entry.player} passou por resposta do vendedor, contrato e registro da liga.`,
       detail: stages
         .map((stage, index) => `${index + 1}. ${stage.title}: ${stage.detail}`)
         .join("\n"),
-      tone: "success",
+      tone: isRejected ? "danger" : isBuyerReview ? "market" : "success",
       actions: [
         {
           id: "confirm",
@@ -974,7 +1016,7 @@ Object.assign(App.transfers, {
     if (valueLabel) {
       valueLabel.textContent = isInternal
         ? "Valor negociado entre tecnicos"
-        : "Valor Transfermarkt";
+        : "Referencia de mercado";
     }
 
     if (!isInternal) {
@@ -1843,10 +1885,14 @@ Object.assign(App.transfers, {
     const preview = form ? App.transfers.getTransferPreview(form) : null;
     const shortlistCount = App.transfers.getShortlistTargets().length;
     const pendingReceived = (App.auth?.myTransferProposals || []).filter(
-      (item) => item.proposal_role !== "sent" && item.status === "pending",
+      (item) =>
+        item.proposal_role !== "sent" &&
+        App.auth?.isOpenTransferProposal?.(item),
     ).length;
     const pendingSent = (App.auth?.myTransferProposals || []).filter(
-      (item) => item.proposal_role === "sent" && item.status === "pending",
+      (item) =>
+        item.proposal_role === "sent" &&
+        App.auth?.isOpenTransferProposal?.(item),
     ).length;
     const listings = Number(
       App.auth?.myTransferSaleListings?.listings?.length || 0,
@@ -2441,13 +2487,19 @@ Object.assign(App.transfers, {
       ? App.auth.myTransferProposals
       : [];
     const receivedPending = proposals.filter(
-      (item) => item.proposal_role !== "sent" && item.status === "pending",
+      (item) =>
+        item.proposal_role !== "sent" &&
+        App.auth?.isOpenTransferProposal?.(item),
     );
     const sentPending = proposals.filter(
-      (item) => item.proposal_role === "sent" && item.status === "pending",
+      (item) =>
+        item.proposal_role === "sent" &&
+        App.auth?.isOpenTransferProposal?.(item),
     );
     const resolved = proposals
-      .filter((item) => item.status && item.status !== "pending")
+      .filter(
+        (item) => item.status && !App.auth?.isOpenTransferProposal?.(item),
+      )
       .slice(0, 6);
     const completedTimelines = App.transfers
       .getCompletedTransferNegotiationItems(session.managerName)
