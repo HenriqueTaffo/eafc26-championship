@@ -1611,7 +1611,7 @@ App.auth = {
               .join("")}
           </div>
         `
-            : `<p class="calendar-muted">Nenhum patrocinador ativo. As novas propostas não pagam luva imediata: o dinheiro entra por parcelas programadas ou por metas aprovadas.</p>`
+            : `<p class="calendar-muted">Nenhum patrocinador ativo. As propostas agora usam luvas realistas, parcelas programadas e bônus por metas aprovadas.</p>`
         }
 
         ${
@@ -1708,7 +1708,7 @@ App.auth = {
                           <span>
                             <b>${signingBonus > 0 ? "Luva agora" : "Entrada"}</b>
                             <strong>${App.utils.formatCurrency(signingBonus)}</strong>
-                            <small>${signingBonus > 0 ? "entrada imediata" : "sem luva inicial"}</small>
+                            <small>${signingBonus > 0 ? "entrada imediata" : "sem entrada inicial"}</small>
                           </span>
                           <span>
                             <b>${cadence ? "Parcela" : "Bônus"}</b>
