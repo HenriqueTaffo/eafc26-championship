@@ -363,6 +363,26 @@ Object.assign(App.transfers, {
     const seller = item.seller || preview?.seller || "";
     const fromClub = item.fromClub || item.club || preview?.fromClub || "";
     const player = item.player || preview?.player || "Jogador";
+    const buyerOffer = Number(
+      item.buyerOfferValue ||
+        item.buyer_offer_value ||
+        preview?.finalValue ||
+        item.value ||
+        item.totalCost ||
+        0,
+    );
+    const sellerValue = Number(
+      item.sellerValue ||
+        item.proposed_value ||
+        item.seller_value ||
+        item.totalCost ||
+        item.value ||
+        preview?.sellerExpectationValue ||
+        buyerOffer ||
+        0,
+    );
+    const responseMessage =
+      item.responseMessage || item.response_message || options.responseMessage || "";
     const value = Number(
       options.value ||
         item.totalCost ||
@@ -403,8 +423,12 @@ Object.assign(App.transfers, {
         title: isInternal ? "Proposta em mesa" : "Resposta do vendedor",
         detail: isInternal
           ? `O vendedor recebeu a oferta de ${App.utils.formatCurrency(value)} e precisa responder.`
-          : `${fromClub || "O clube vendedor"} respondeu dentro da base de ${App.utils.formatCurrency(value)}.`,
-        tone: "watch",
+          : isRejected
+            ? `${fromClub || "O clube vendedor"} recusou a abertura de ${App.utils.formatCurrency(buyerOffer || value)}.`
+            : isBuyerReview && sellerValue > buyerOffer
+              ? `${fromClub || "O clube vendedor"} pediu ${App.utils.formatCurrency(sellerValue)} após oferta de ${App.utils.formatCurrency(buyerOffer)}.`
+              : `${fromClub || "O clube vendedor"} aceitou a base de ${App.utils.formatCurrency(buyerOffer || sellerValue || value)}.`,
+        tone: isRejected ? "hot" : "watch",
       },
       tradePlayer
         ? {
@@ -413,22 +437,31 @@ Object.assign(App.transfers, {
             tone: "ready",
           }
         : {
-            title: "Contrato financeiro",
-            detail: `${App.utils.formatCurrency(value)} em taxa e ${App.utils.formatCurrency(salary)}/sem na folha foram validados.`,
-            tone: "ready",
+            title: isRejected
+              ? "Contrato pendente"
+              : isBuyerReview
+                ? "Termos do vendedor"
+                : "Contrato financeiro",
+            detail: isRejected
+              ? "Nenhum contrato foi validado porque a mesa foi recusada."
+              : isBuyerReview
+                ? `Pedido de ${App.utils.formatCurrency(sellerValue || value)} e folha de ${App.utils.formatCurrency(salary)}/sem aguardam sua confirmacao.`
+                : `${App.utils.formatCurrency(sellerValue || value)} em taxa e ${App.utils.formatCurrency(salary)}/sem na folha foram validados.`,
+            tone: isRejected ? "hot" : "ready",
           },
       {
         title: isInternal
           ? "Aguardando assinatura"
           : isRejected
-            ? "Negociacao encerrada"
+            ? "Proposta recusada"
             : isBuyerReview
               ? "Aguardando confirmacao"
               : "Registro da liga",
         detail: isInternal
           ? "A negociacao fica no inbox ate a resposta do vendedor."
           : isRejected
-            ? "A resposta do vendedor encerrou a mesa sem registrar contrato."
+            ? responseMessage ||
+              "A mesa foi encerrada sem registrar contrato. Envie nova oferta mais proxima do pedido para reabrir."
             : isBuyerReview
               ? "A resposta chegou no hub; o tecnico ainda precisa aceitar, contraofertar ou desistir."
               : "Contrato aceito, validado pela liga e publicado no historico de transferencias.",
@@ -472,6 +505,9 @@ Object.assign(App.transfers, {
       weeklySalary: Number(preview?.weeklySalary || payload.weeklySalary || 0),
       tradeInPlayer: payload.tradeInPlayer || preview?.exchangePlayer?.player || "",
       tradeInCredit: Number(payload.tradeInCredit || preview?.exchangeCredit || 0),
+      referenceValue: Number(data.referenceValue || preview?.marketValue || 0),
+      buyerOfferValue: Number(data.buyerOfferValue || preview?.finalValue || 0),
+      sellerValue: Number(data.sellerValue || value || 0),
       transferType: isInternal ? "internal" : "market",
       status: entryStatus,
       responseMessage: isInternal
