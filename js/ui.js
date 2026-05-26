@@ -54,6 +54,8 @@ App.ui = {
       { id: "confirm", label: "Confirmar", variant: "primary" },
     ];
     const fields = options.fields || [];
+    const summary = options.summary || [];
+    const steps = options.steps || [];
     const tone = options.tone || "market";
     const titleId = "appActionModalTitle";
     const descriptionId = "appActionModalDescription";
@@ -88,22 +90,67 @@ App.ui = {
           data-modal-action="${App.utils.escapeHtml(action.id)}"
           ${action.autofocus ? "autofocus" : ""}
         >
-          ${App.utils.escapeDisplay(action.label)}
+          <span>${App.utils.escapeDisplay(action.label)}</span>
+          ${action.description ? `<small>${App.utils.escapeDisplay(action.description)}</small>` : ""}
         </button>
       `;
       })
+      .join("");
+
+    const summaryHtml = summary
+      .map(
+        (item) => {
+          const itemClass = [
+            "app-action-modal-summary-item",
+            item.variant ? `is-${item.variant}` : "",
+          ]
+            .filter(Boolean)
+            .join(" ");
+          return `
+      <div class="${App.utils.escapeHtml(itemClass)}">
+        <span>${App.utils.escapeDisplay(item.label || "")}</span>
+        <strong>${App.utils.escapeDisplay(item.value || "")}</strong>
+        ${item.detail ? `<small>${App.utils.escapeDisplay(item.detail)}</small>` : ""}
+      </div>
+    `;
+        },
+      )
+      .join("");
+
+    const stepsHtml = steps
+      .map(
+        (step, index) => {
+          const stepClass = [
+            "app-action-modal-step",
+            step.tone ? `is-${step.tone}` : "",
+          ]
+            .filter(Boolean)
+            .join(" ");
+          return `
+      <div class="${App.utils.escapeHtml(stepClass)}">
+        <b>${index + 1}</b>
+        <div>
+          <strong>${App.utils.escapeDisplay(step.title || "")}</strong>
+          ${step.detail ? `<small>${App.utils.escapeDisplay(step.detail)}</small>` : ""}
+        </div>
+      </div>
+    `;
+        },
+      )
       .join("");
 
     App.dom.setHtml(
       modal,
       `
       <div class="app-action-modal-backdrop" data-modal-action="cancel"></div>
-      <form class="app-action-modal-card app-action-modal-${App.utils.escapeHtml(tone)}" role="dialog" aria-modal="true" aria-labelledby="${titleId}" aria-describedby="${descriptionId}">
+      <form class="app-action-modal-card app-action-modal-${App.utils.escapeHtml(tone)}${summaryHtml ? " has-summary" : ""}${stepsHtml ? " has-steps" : ""}" role="dialog" aria-modal="true" aria-labelledby="${titleId}" aria-describedby="${descriptionId}">
         <div class="app-action-modal-header">
           <span>${App.utils.escapeDisplay(options.kicker || "Confirmacao")}</span>
           <h2 id="${titleId}">${App.utils.escapeDisplay(options.title || "Confirmar acao")}</h2>
           <p id="${descriptionId}">${App.utils.escapeDisplay(options.message || "")}</p>
         </div>
+        ${summaryHtml ? `<div class="app-action-modal-summary">${summaryHtml}</div>` : ""}
+        ${stepsHtml ? `<div class="app-action-modal-steps">${stepsHtml}</div>` : ""}
         ${options.detail ? `<div class="app-action-modal-detail">${App.utils.escapeDisplay(options.detail)}</div>` : ""}
         ${fieldHtml ? `<div class="app-action-modal-fields">${fieldHtml}</div>` : ""}
         <p class="app-action-modal-error" role="alert" hidden></p>
@@ -176,13 +223,18 @@ App.ui = {
 
       document.addEventListener("keydown", handleKeydown);
       setTimeout(() => {
+        const card = modal.querySelector(".app-action-modal-card");
         const firstInput = modal.querySelector("input, select, textarea");
         const preferredButton =
           modal.querySelector("[autofocus]") ||
           modal.querySelector(
             '[data-modal-action]:not([data-modal-action="cancel"])',
           );
-        (firstInput || preferredButton)?.focus();
+        const focusTarget = firstInput || preferredButton;
+        if (focusTarget?.focus) {
+          focusTarget.focus({ preventScroll: true });
+        }
+        if (card) card.scrollTop = 0;
       }, 0);
     });
   },

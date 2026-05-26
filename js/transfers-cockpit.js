@@ -617,16 +617,85 @@ Object.assign(App.transfers, {
 
   async confirmNegotiationSubmission({ payload = {}, preview = null, isInternal = false } = {}) {
     const value = Number(preview?.cashFinalValue || preview?.finalValue || payload.marketValue || 0);
-    const tradeDetail =
+    const sellerLabel = isInternal
+      ? payload.seller || "Técnico vendedor"
+      : payload.fromClub || "Clube vendedor";
+    const externalVerdict = App.transfers.getExternalOfferVerdict?.(preview);
+    const responseLabel = externalVerdict
+      ? externalVerdict.tone === "success"
+        ? "Aceite provável"
+        : externalVerdict.tone === "danger"
+          ? "Risco de recusa"
+          : "Contraoferta provável"
+      : isInternal
+        ? "Aguardando técnico"
+        : "Em análise";
+    const weeklySalary = Number(preview?.weeklySalary || payload.weeklySalary || 0);
+    const referenceValue = Number(preview?.marketValue || payload.marketValue || 0);
+    const sellerExpectationValue = Number(preview?.sellerExpectationValue || 0);
+    const tradeLabel =
       !isInternal && preview?.exchangePlayer
-        ? `\nTroca de contrato: ${preview.exchangePlayer.player} abate ${App.utils.formatCurrency(Number(preview.exchangeCredit || 0))}.`
-        : "";
-    const detail = [
-      `1. E-mail inicial para ${isInternal ? payload.seller || "tecnico vendedor" : payload.fromClub || "clube vendedor"}.`,
-      `2. Resposta da contraparte sobre ${payload.player}.`,
-      `3. Conferencia de oferta, folha e documentacao.`,
-      `4. Registro da liga depois da validacao.${tradeDetail}`,
-    ].join("\n");
+        ? `${preview.exchangePlayer.player} abate ${App.utils.formatCurrency(Number(preview.exchangeCredit || 0))}`
+        : "Sem jogador na troca";
+    const summary = [
+      {
+        label: "Alvo da mesa",
+        value: payload.player || "Jogador",
+        detail: [
+          payload.overall ? `OVR ${payload.overall}` : "",
+          sellerLabel,
+          !isInternal ? tradeLabel : "",
+        ]
+          .filter(Boolean)
+          .join(" · "),
+        variant: "hero",
+      },
+      {
+        label: "Pacote enviado",
+        value: App.utils.formatCurrency(value),
+        detail: preview?.offerRatio
+          ? `${Math.round(Number(preview.offerRatio || 0) * 100)}% da referência${referenceValue ? ` · ref. ${App.utils.formatCurrency(referenceValue)}` : ""}`
+          : "",
+        variant: "accent",
+      },
+      {
+        label: "Resposta esperada",
+        value: responseLabel,
+        detail: sellerExpectationValue
+          ? `Pedido provável ${App.utils.formatCurrency(sellerExpectationValue)}`
+          : externalVerdict?.detail || "",
+        variant: externalVerdict?.tone || "watch",
+      },
+      {
+        label: "Folha semanal",
+        value: weeklySalary ? `${App.utils.formatCurrency(weeklySalary)}/sem` : "Pendente",
+        detail: "Impacto recorrente no orçamento",
+      },
+    ];
+    const steps = [
+      {
+        title: "Contato formal por e-mail",
+        detail: `A proposta entra como e-mail para ${sellerLabel}.`,
+        tone: "live",
+      },
+      {
+        title: "Resposta da contraparte",
+        detail: isInternal
+          ? "O técnico vendedor pode aceitar, recusar ou contraofertar."
+          : "O clube vendedor pode aceitar a base, pedir ajuste ou encerrar a mesa.",
+        tone: externalVerdict?.tone || "watch",
+      },
+      {
+        title: "Contrato no escritório",
+        detail: "Se houver aceite ou contraproposta, a assinatura aparece no e-mail do técnico.",
+        tone: "ready",
+      },
+      {
+        title: "Registro da liga",
+        detail: "Depois da assinatura, caixa, folha e elenco são atualizados.",
+        tone: "success",
+      },
+    ];
 
     if (!App.ui?.confirmAction) {
       return window.confirm(
@@ -635,16 +704,31 @@ Object.assign(App.transfers, {
     }
 
     return App.ui.confirmAction({
-      kicker: "Negociacao de transferencia",
-      title: isInternal ? "Enviar proposta por e-mail" : "Abrir mesa de negociacao",
+      kicker: "Briefing de transferência",
+      title: isInternal ? "Proposta interna" : "Mesa de negociação",
       message: isInternal
-        ? `A proposta por ${payload.player} vai para o inbox do vendedor.`
-        : `${payload.fromClub || "O clube vendedor"} vai responder antes da liga registrar ${payload.player}.`,
-      detail,
+        ? `Confira os termos antes de enviar ${payload.player} ao inbox do vendedor.`
+        : `Você está abrindo uma mesa com ${sellerLabel}; a liga só registra depois da resposta e assinatura.`,
+      summary,
+      steps,
       tone: "market",
-      cancelLabel: "Revisar proposta",
-      confirmLabel: isInternal ? "Enviar e-mail" : "Enviar proposta",
-      confirmVariant: "primary",
+      actions: [
+        {
+          id: "cancel",
+          label: "Revisar valores",
+          description: "Ajustar oferta, troca ou folha antes de enviar.",
+          variant: "secondary",
+        },
+        {
+          id: "confirm",
+          label: isInternal ? "Enviar e-mail" : "Abrir negociação",
+          description: isInternal
+            ? "Dispara a proposta ao vendedor."
+            : "Cria o e-mail e aguarda a resposta do vendedor.",
+          variant: "primary",
+          autofocus: true,
+        },
+      ],
     });
   },
 
