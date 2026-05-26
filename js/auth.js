@@ -94,6 +94,14 @@ App.auth = {
     );
   },
 
+  isExternalTransferContractEmail(item = {}) {
+    return (
+      item.proposal_role === "sent" &&
+      App.auth.isExternalMarketProposal(item) &&
+      App.auth.isOpenTransferProposal(item)
+    );
+  },
+
   isOpenTransferProposal(item = {}) {
     return ["pending", "buyer_review"].includes(
       App.utils.normalizeText(item.status || "pending"),
@@ -1443,10 +1451,16 @@ App.auth = {
         App.auth.isOpenTransferProposal(item),
     );
     const sentAll = App.auth.myTransferProposals.filter(
-      (item) => item.proposal_role === "sent",
+      (item) =>
+        item.proposal_role === "sent" &&
+        !App.auth.isExternalTransferContractEmail(item),
     );
     const sent = sentAll
-      .filter((item) => App.auth.isOpenTransferProposal(item))
+      .filter(
+        (item) =>
+          App.auth.isOpenTransferProposal(item) &&
+          !App.auth.isExternalTransferContractEmail(item),
+      )
       .slice(0, 4);
     const accepted = App.auth.myTransferProposals.filter(
       (item) => item.status === "accepted",
@@ -1719,16 +1733,18 @@ App.auth = {
           pendingTotal
             ? `
           <div class="coach-decision-grid email-thread-grid">
+            ${transferEmails
+              .map((item) =>
+                App.auth.isExternalTransferContractEmail(item)
+                  ? App.auth.renderTransferProposalContractEmail(item)
+                  : item.proposal_role === "sent"
+                    ? App.auth.renderTransferProposalSummary(item)
+                    : App.auth.renderTransferProposalCard(item),
+              )
+              .join("")}
             ${sponsorshipOffers
               .map((item) =>
                 App.auth.renderSponsorshipEmailCard(item, sponsorshipOffers),
-              )
-              .join("")}
-            ${transferEmails
-              .map((item) =>
-                item.proposal_role === "sent"
-                  ? App.auth.renderTransferProposalSummary(item)
-                  : App.auth.renderTransferProposalCard(item),
               )
               .join("")}
             ${pending.map((item) => App.auth.renderDecisionCard(item)).join("")}
@@ -2523,13 +2539,13 @@ App.auth = {
           if (decision === "counter") {
             const suggestion = Math.max(currentOffer, 1000000);
             const modalResult = await App.ui.openActionModal({
-              kicker: isExternal ? "Mercado externo" : "Negociacao externa",
-              title: "Enviar contraoferta",
+              kicker: isExternal ? "Contrato de transferencia" : "Negociacao externa",
+              title: isExternal ? "Renegociar termos" : "Enviar contraoferta",
               message: isExternal
-                ? `${sourceLabel} pediu ${offerLabel} por ${playerLabel}. Informe a nova proposta para o clube avaliar.`
+                ? `${sourceLabel} pediu ${offerLabel} por ${playerLabel}. Informe o novo valor para responder por e-mail.`
                 : `${sourceLabel} ofereceu ${offerLabel} por ${playerLabel}. Informe o novo valor para a CPU avaliar.`,
               detail:
-                "A contraparte pode aceitar, recusar ou responder com uma nova contraoferta.",
+                "A resposta volta para a mesa. Se ficar distante do pedido, o clube pode encerrar a negociacao.",
               tone: "market",
               fields: [
                 {
@@ -2575,27 +2591,31 @@ App.auth = {
               kicker: isExternal ? "Mercado externo" : "Oferta externa",
               title: isAccepted
                 ? isExternal
-                  ? "Fechar contrato"
+                  ? "Assinar contrato"
                   : "Aceitar proposta"
                 : isExternal
-                  ? "Desistir da mesa"
+                  ? "Encerrar mesa"
                   : "Recusar proposta",
               message: isAccepted
                 ? isExternal
-                  ? `Registrar ${playerLabel} vindo de ${sourceLabel} por ${offerLabel}?`
+                  ? `Assinar os termos enviados por ${sourceLabel} para ${playerLabel} por ${offerLabel}?`
                   : `Vender ${playerLabel} para ${sourceLabel} por ${offerLabel}?`
                 : isExternal
                   ? `Encerrar a negociacao com ${sourceLabel} por ${playerLabel}?`
                   : `Recusar a proposta de ${sourceLabel} por ${playerLabel}?`,
               detail: isAccepted
                 ? isExternal
-                  ? "A transferencia sera registrada, o orcamento e a folha serao atualizados."
+                  ? "Depois da assinatura, a liga registra a transferencia, atualiza caixa, folha e elenco."
                   : "A transferencia sera aplicada e o orcamento sera atualizado."
                 : "A proposta sera encerrada sem movimentacao.",
               tone: isAccepted ? "success" : "danger",
               confirmLabel: isAccepted
-                ? "Aceitar proposta"
-                : "Recusar proposta",
+                ? isExternal
+                  ? "Assinar contrato"
+                  : "Aceitar proposta"
+                : isExternal
+                  ? "Encerrar mesa"
+                  : "Recusar proposta",
               confirmVariant: isAccepted ? "primary" : "danger",
             });
 
@@ -2805,7 +2825,126 @@ App.auth = {
     `;
   },
 
-  renderTransferProposalSummary(item) {
+  renderTransferProposalContractEmail(item) {
+    const status = App.utils.normalizeText(item.status || "pending");
+    const statusLabel = App.auth.getTransferProposalStatusLabel(item);
+    const proposedValue = Number(item.proposed_value || 0);
+    const referenceValue = Number(item.reference_value || 0);
+    const buyerOffer = Number(item.buyer_offer_value || 0);
+    const cashValue = Number(item.cash_offer_value || proposedValue || 0);
+    const weeklySalary = Number(item.weekly_salary_eur || 0);
+    const sourceLabel = App.auth.getTransferProposalSourceLabel(item);
+    const sourceLabelEscaped = App.utils.escapeDisplay(sourceLabel);
+    const playerLabel = App.utils.escapeDisplay(item.player || "Jogador");
+    const isCounter = proposedValue > buyerOffer;
+    const tradeLabel = item.trade_in_player
+      ? `${item.trade_in_player} abate ${App.utils.formatCurrency(Number(item.trade_in_credit || 0))}`
+      : "Sem jogador na troca";
+    const expiresLabel = item.expires_at
+      ? App.utils.formatDateTime(item.expires_at)
+      : "Sem prazo definido";
+    const actionKicker =
+      status === "buyer_review"
+        ? isCounter
+          ? "Contraproposta recebida"
+          : "Base financeira aceita"
+        : "Mesa aberta";
+
+    return `
+      <article class="decision-card decision-email-message transfer-contract-email proposal-status-${status}">
+        <div class="transfer-contract-mailbar">
+          <span>De: ${sourceLabelEscaped}</span>
+          <b>${App.utils.escapeDisplay(statusLabel)}</b>
+        </div>
+
+        <div class="transfer-contract-header">
+          <div>
+            <small>Assunto: confirmacao de proposta</small>
+            <h3>${playerLabel}</h3>
+            <p>${sourceLabelEscaped} respondeu a mesa aberta por ${App.utils.escapeDisplay(item.buyer || "seu clube")}. Revise os termos antes de assinar.</p>
+          </div>
+          <span>${App.utils.escapeDisplay(actionKicker)}</span>
+        </div>
+
+        <div class="transfer-contract-terms">
+          <div>
+            <span>Referencia publica</span>
+            <strong>${App.utils.formatCurrency(referenceValue)}</strong>
+          </div>
+          <div>
+            <span>Sua oferta</span>
+            <strong>${App.utils.formatCurrency(buyerOffer || cashValue)}</strong>
+          </div>
+          <div class="${isCounter ? "is-highlight" : ""}">
+            <span>${isCounter ? "Pedido do vendedor" : "Base aceita"}</span>
+            <strong>${App.utils.formatCurrency(proposedValue)}</strong>
+          </div>
+          <div>
+            <span>Impacto no caixa</span>
+            <strong>${App.utils.formatCurrency(cashValue)}</strong>
+          </div>
+          <div>
+            <span>Folha semanal</span>
+            <strong>${App.utils.formatCurrency(weeklySalary)}/sem</strong>
+          </div>
+          <div>
+            <span>Troca de contrato</span>
+            <strong>${App.utils.escapeDisplay(tradeLabel)}</strong>
+          </div>
+        </div>
+
+        <div class="transfer-contract-clause">
+          <span>Clausula de mesa</span>
+          <p>${App.utils.escapeDisplay(item.response_message || "O clube vendedor respondeu e aguarda sua decisao.")}</p>
+          <small>Prazo interno: ${App.utils.escapeDisplay(expiresLabel)}</small>
+        </div>
+
+        <div class="decision-options email-response-actions transfer-contract-actions">
+          <button
+            type="button"
+            data-transfer-proposal-answer
+            data-proposal-type="external_market"
+            data-proposal-id="${App.utils.escapeHtml(item.id)}"
+            data-decision="accepted"
+            data-proposal-source-label="${sourceLabelEscaped}"
+            data-proposal-player="${playerLabel}"
+            data-proposal-counter-value="${proposedValue}"
+          >
+            <strong>Assinar contrato</strong>
+            <small>Registra ${App.utils.formatCurrency(cashValue)} no caixa.</small>
+          </button>
+          <button
+            type="button"
+            data-transfer-proposal-answer
+            data-proposal-type="external_market"
+            data-proposal-id="${App.utils.escapeHtml(item.id)}"
+            data-decision="counter"
+            data-proposal-source-label="${sourceLabelEscaped}"
+            data-proposal-player="${playerLabel}"
+            data-proposal-counter-value="${proposedValue || buyerOffer}"
+          >
+            <strong>Renegociar</strong>
+            <small>Envia novo valor ao vendedor.</small>
+          </button>
+          <button
+            type="button"
+            data-transfer-proposal-answer
+            data-proposal-type="external_market"
+            data-proposal-id="${App.utils.escapeHtml(item.id)}"
+            data-decision="rejected"
+            data-proposal-source-label="${sourceLabelEscaped}"
+            data-proposal-player="${playerLabel}"
+            data-proposal-counter-value="${proposedValue}"
+          >
+            <strong>Encerrar mesa</strong>
+            <small>Arquiva sem contrato.</small>
+          </button>
+        </div>
+      </article>
+    `;
+  },
+
+  renderTransferProposalSummary(item, options = {}) {
     const status = App.utils.normalizeText(item.status || "pending");
     const statusLabel = App.auth.getTransferProposalStatusLabel(item);
     const isExternal = App.auth.isExternalMarketProposal(item);
@@ -2821,6 +2960,20 @@ App.auth = {
         : "Sem jogador na troca";
       const isActionable = status === "buyer_review" || status === "pending";
       const sourceLabelEscaped = App.utils.escapeDisplay(sourceLabel);
+      if (options.compact) {
+        return `
+          <article class="proposal-summary-item external-market-proposal compact-proposal-summary proposal-status-${status}">
+            <span>Mercado externo - ${statusLabel}</span>
+            <strong>${App.utils.escapeHtml(item.player)}</strong>
+            <small>${App.utils.escapeHtml(sourceLabel)} respondeu. A assinatura fica no e-mail do escritorio.</small>
+            <div class="proposal-market-meta">
+              <b>Oferta ${App.utils.formatCurrency(buyerOffer || cashValue)}</b>
+              <b>Pedido ${App.utils.formatCurrency(proposedValue)}</b>
+              <b>Folha ${App.utils.formatCurrency(Number(item.weekly_salary_eur || 0))}/sem</b>
+            </div>
+          </article>
+        `;
+      }
       return `
         <article class="proposal-summary-item external-market-proposal proposal-status-${status}">
           <span>Mercado externo - ${statusLabel}</span>

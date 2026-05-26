@@ -463,7 +463,7 @@ Object.assign(App.transfers, {
             ? responseMessage ||
               "A mesa foi encerrada sem registrar contrato. Envie nova oferta mais proxima do pedido para reabrir."
             : isBuyerReview
-              ? "A resposta chegou no hub; o tecnico ainda precisa aceitar, contraofertar ou desistir."
+              ? "A resposta chegou no escritorio; o tecnico ainda precisa assinar, renegociar ou encerrar."
               : "Contrato aceito, validado pela liga e publicado no historico de transferencias.",
         tone: isRejected ? "hot" : isBuyerReview ? "watch" : "success",
       },
@@ -513,7 +513,7 @@ Object.assign(App.transfers, {
       responseMessage: isInternal
         ? "Proposta enviada ao vendedor."
         : data.message ||
-          "Clube vendedor respondeu. Revise a negociacao no hub antes do registro.",
+          "Clube vendedor respondeu. Revise o e-mail de contrato antes do registro.",
     };
     entry.signature = App.transfers.getTransferNegotiationSignature(entry);
     entry.stages = App.transfers.buildTransferNegotiationStages(entry, preview, {
@@ -658,23 +658,25 @@ Object.assign(App.transfers, {
       : App.transfers.buildTransferNegotiationStages(entry, null, {
           isInternal,
         });
-    await App.ui.openActionModal({
+    const result = await App.ui.openActionModal({
       kicker: isInternal
         ? "Proposta enviada"
         : isRejected
           ? "Mesa encerrada"
-          : "Resposta recebida",
+          : isBuyerReview
+            ? "E-mail recebido"
+            : "Resposta recebida",
       title: isInternal
         ? "E-mail enviado ao vendedor"
         : isRejected
           ? "Clube vendedor recusou"
           : isBuyerReview
-            ? "Resposta no hub"
+            ? "Resposta no escritorio"
             : "Negociacao registrada",
       message: isInternal
         ? `${entry.player} agora depende da resposta do vendedor no inbox.`
         : isBuyerReview
-          ? `${entry.player} ainda precisa de confirmacao, contraoferta ou desistencia no hub.`
+          ? `${entry.player} virou um e-mail de contrato no escritorio. Assine, renegocie ou encerre por la.`
           : isRejected
             ? `${entry.player} nao virou contratacao nesta mesa.`
             : `${entry.player} passou por resposta do vendedor, contrato e registro da liga.`,
@@ -685,12 +687,21 @@ Object.assign(App.transfers, {
       actions: [
         {
           id: "confirm",
-          label: "Ver no hub",
+          label: isBuyerReview ? "Abrir escritorio" : "Ver no hub",
           variant: "primary",
           autofocus: true,
         },
       ],
     });
+
+    if (!isInternal && isBuyerReview && result?.action === "confirm") {
+      App.main?.switchToView?.("playersView");
+      requestAnimationFrame(() => {
+        document
+          .querySelector(".email-office-card")
+          ?.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+    }
   },
 
   getScoutingState() {
@@ -2759,7 +2770,13 @@ Object.assign(App.transfers, {
                 sentPending.length
                   ? sentPending
                       .slice(0, 6)
-                      .map((item) => App.auth.renderTransferProposalSummary(item))
+                      .map((item) =>
+                        App.auth.renderTransferProposalSummary(item, {
+                          compact:
+                            App.auth?.isExternalTransferContractEmail?.(item) ===
+                            true,
+                        }),
+                      )
                       .join("")
                   : `<div class="transfer-shortlist-empty">Nenhuma proposta em aberto do seu lado.</div>`
               }
