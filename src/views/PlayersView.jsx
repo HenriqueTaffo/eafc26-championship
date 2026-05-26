@@ -151,6 +151,7 @@ function PlayersGrid() {
       onRendered={(root) => {
         App.players.bindCoachActions();
         App.auth?.bindPinChangeForm?.();
+        App.auth?.bindEmailOfficeControls?.(root);
         App.auth?.bindDecisionAnswerButtons?.(root);
         App.auth?.bindTransferProposalButtons?.(root);
         App.auth?.bindSponsorshipButtons?.(root);

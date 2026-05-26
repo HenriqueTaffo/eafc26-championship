@@ -165,6 +165,206 @@ App.auth = {
     };
   },
 
+  getEmailOfficeStorageKey() {
+    const session = App.auth.getSession();
+    return `mistura_email_office_v1:${session?.managerId || "anon"}`;
+  },
+
+  getEmailOfficeState() {
+    try {
+      const raw = localStorage.getItem(App.auth.getEmailOfficeStorageKey());
+      const parsed = raw ? JSON.parse(raw) : {};
+      return {
+        read: parsed.read && typeof parsed.read === "object" ? parsed.read : {},
+        archived:
+          parsed.archived && typeof parsed.archived === "object"
+            ? parsed.archived
+            : {},
+      };
+    } catch (error) {
+      return { read: {}, archived: {} };
+    }
+  },
+
+  saveEmailOfficeState(state = {}) {
+    try {
+      localStorage.setItem(
+        App.auth.getEmailOfficeStorageKey(),
+        JSON.stringify({
+          read: state.read || {},
+          archived: state.archived || {},
+        }),
+      );
+    } catch (error) {
+      console.warn("Não consegui salvar o estado local do e-mail:", error);
+    }
+  },
+
+  updateEmailOfficeState(mutator) {
+    const state = App.auth.getEmailOfficeState();
+    mutator?.(state);
+    App.auth.saveEmailOfficeState(state);
+    return state;
+  },
+
+  getEmailKey(type, id) {
+    return `${App.utils.normalizeText(type)}:${String(id || "").trim()}`;
+  },
+
+  isEmailRead(key) {
+    return Boolean(App.auth.getEmailOfficeState().read?.[key]);
+  },
+
+  isEmailArchived(key) {
+    return Boolean(App.auth.getEmailOfficeState().archived?.[key]);
+  },
+
+  setEmailsRead(keys = [], isRead = true) {
+    const list = Array.isArray(keys) ? keys : [keys];
+    App.auth.updateEmailOfficeState((state) => {
+      list.filter(Boolean).forEach((key) => {
+        if (isRead) state.read[key] = true;
+        else delete state.read[key];
+      });
+    });
+  },
+
+  setEmailsArchived(keys = [], isArchived = true) {
+    const list = Array.isArray(keys) ? keys : [keys];
+    App.auth.updateEmailOfficeState((state) => {
+      list.filter(Boolean).forEach((key) => {
+        if (isArchived) state.archived[key] = true;
+        else delete state.archived[key];
+      });
+    });
+  },
+
+  getStableEmailHash(value = "") {
+    const text = String(value || "");
+    let hash = 2166136261;
+    for (let index = 0; index < text.length; index += 1) {
+      hash ^= text.charCodeAt(index);
+      hash = Math.imul(hash, 16777619);
+    }
+    return (hash >>> 0) / 4294967295;
+  },
+
+  getSponsorshipCurrentContract(offer = {}, activeContracts = []) {
+    const categoryKey = App.utils.normalizeText(offer.category || "Patrocínio");
+    return (
+      activeContracts.find(
+        (item) =>
+          App.utils.normalizeText(item.category || "Patrocínio") ===
+          categoryKey,
+      ) || null
+    );
+  },
+
+  enrichSponsorshipOfferForInbox(offer = {}, data = {}, ownerName = "") {
+    const active = Array.isArray(data.active) ? data.active : [];
+    const current = App.auth.getSponsorshipCurrentContract(offer, active);
+    const offerTotal = App.auth.getSponsorshipTotalValue(offer);
+    const currentTotal = current ? App.auth.getSponsorshipTotalValue(current) : 0;
+    const terminationFee = Number(
+      offer.terminationFee || offer.termination_fee || current?.termination_fee || 0,
+    );
+    const netGain = offerTotal - currentTotal - terminationFee;
+    const signingBonus = Number(offer.signingBonus || offer.signing_bonus || 0);
+    const rewardValue = Number(offer.rewardValue || offer.reward_value || 0);
+    const currentReward = Number(
+      current?.reward_value || current?.rewardValue || 0,
+    );
+    const dateKey = new Date().toISOString().slice(0, 10);
+    const seed = App.auth.getStableEmailHash(
+      `${dateKey}|${ownerName}|${offer.id}|${offer.category}`,
+    );
+    const isReplacement = Boolean(current);
+    const commercialReason = isReplacement
+      ? netGain > 0
+        ? `Melhora líquida estimada de ${App.utils.formatCurrency(netGain)} sobre ${current.sponsor_name || current.sponsorName || "a marca atual"}.`
+        : rewardValue > currentReward
+          ? `Parcela maior, mas exige compensar multa e perda potencial de ${App.utils.formatCurrency(Math.abs(netGain))}.`
+          : `Oferta agressiva da marca, mas abaixo do contrato atual por ${App.utils.formatCurrency(Math.abs(netGain))}.`
+      : "Categoria ainda livre na carteira comercial.";
+
+    return {
+      ...offer,
+      isReplacement,
+      currentSponsorName:
+        offer.currentSponsorName ||
+        offer.current_sponsor_name ||
+        current?.sponsor_name ||
+        current?.sponsorName ||
+        "",
+      currentTotalValue: currentTotal,
+      currentRewardValue: currentReward,
+      terminationFee,
+      netGain,
+      commercialReason,
+      inboxSeed: seed,
+      inboxScore:
+        seed * 18 +
+        Math.min(18, offerTotal / 180000) +
+        (isReplacement ? Math.max(-8, Math.min(12, netGain / 120000)) : 4) +
+        Math.min(5, signingBonus / 100000),
+    };
+  },
+
+  isSponsorshipOfferInboxWorthy(offer = {}, data = {}) {
+    const active = Array.isArray(data.active) ? data.active : [];
+    const maxActive = Number(data.maxActiveContracts || 3);
+    const slotsLeft = Math.max(
+      0,
+      Number(data.activeSlotsLeft ?? maxActive - active.length),
+    );
+    const isReplacement = Boolean(offer.isReplacement);
+    if (!isReplacement) return slotsLeft > 0;
+
+    const netGain = Number(offer.netGain || 0);
+    const currentTotal = Number(offer.currentTotalValue || 0);
+    const offerTotal = App.auth.getSponsorshipTotalValue(offer);
+    const rewardValue = Number(offer.rewardValue || offer.reward_value || 0);
+    const signingBonus = Number(offer.signingBonus || offer.signing_bonus || 0);
+    const terminationFee = Number(offer.terminationFee || offer.termination_fee || 0);
+
+    return (
+      netGain > 0 ||
+      offerTotal >= currentTotal * 1.08 ||
+      signingBonus >= terminationFee + 100000 ||
+      rewardValue >= Number(offer.currentRewardValue || 0) * 1.12
+    );
+  },
+
+  selectSponsorshipOffersForInbox(ownerName = "") {
+    const data = App.auth.mySponsorships || {};
+    const offers = Array.isArray(data.offers) ? data.offers : [];
+    if (!offers.length) return [];
+
+    const active = Array.isArray(data.active) ? data.active : [];
+    const maxVisible = active.length ? 4 : 5;
+    const categoryLimit = active.length ? 1 : 2;
+    const categoryCounts = new Map();
+
+    return offers
+      .map((offer) =>
+        App.auth.enrichSponsorshipOfferForInbox(offer, data, ownerName),
+      )
+      .filter((offer) => {
+        const key = App.auth.getEmailKey("sponsor", offer.id);
+        if (App.auth.isEmailArchived(key)) return false;
+        return App.auth.isSponsorshipOfferInboxWorthy(offer, data);
+      })
+      .sort((a, b) => Number(b.inboxScore || 0) - Number(a.inboxScore || 0))
+      .filter((offer) => {
+        const categoryKey = App.utils.normalizeText(offer.category || "Patrocínio");
+        const count = categoryCounts.get(categoryKey) || 0;
+        if (count >= categoryLimit) return false;
+        categoryCounts.set(categoryKey, count + 1);
+        return true;
+      })
+      .slice(0, maxVisible);
+  },
+
   renderDecisionEmailStats(pending = [], resolved = []) {
     const highPriority = pending.filter(
       (item) => App.auth.getDecisionEmailMeta(item).priority === "Alta",
@@ -1006,8 +1206,30 @@ App.auth = {
       message: "Registrando contrato, datas de pagamento e metas comerciais...",
     });
 
+    App.auth.archiveSponsorshipOfferThread(offerId);
     await App.auth.syncManagerState();
     return result;
+  },
+
+  archiveSponsorshipOfferThread(offerId) {
+    const offers = Array.isArray(App.auth.mySponsorships?.offers)
+      ? App.auth.mySponsorships.offers
+      : [];
+    const accepted = offers.find((item) => String(item.id) === String(offerId));
+    if (!accepted) {
+      App.auth.setEmailsArchived(App.auth.getEmailKey("sponsor", offerId), true);
+      return;
+    }
+
+    const categoryKey = App.utils.normalizeText(accepted.category || "Patrocínio");
+    const keys = offers
+      .filter(
+        (item) =>
+          String(item.id) === String(offerId) ||
+          App.utils.normalizeText(item.category || "Patrocínio") === categoryKey,
+      )
+      .map((item) => App.auth.getEmailKey("sponsor", item.id));
+    App.auth.setEmailsArchived(keys, true);
   },
 
   async generateDueDecisions() {
@@ -1517,8 +1739,7 @@ App.auth = {
       return [];
     }
 
-    const data = App.auth.mySponsorships || {};
-    return Array.isArray(data.offers) ? data.offers : [];
+    return App.auth.selectSponsorshipOffersForInbox(ownerName);
   },
 
   getSponsorshipCompetitionMeta(offer = {}, offers = []) {
@@ -1585,7 +1806,9 @@ App.auth = {
         ? App.utils.formatDate(firstPaymentAt)
         : "apos assinatura";
     const rankDetail =
-      competition.leaderDelta > 0
+      offer.isReplacement && offer.commercialReason
+        ? offer.commercialReason
+        : competition.leaderDelta > 0
         ? `Fica ${App.utils.formatCurrency(competition.leaderDelta)} abaixo da lider.`
         : competition.count > 1
           ? "Esta e a melhor proposta financeira da categoria."
@@ -1645,8 +1868,196 @@ App.auth = {
             <strong>${offer.isReplacement ? "Aceitar troca de marca" : "Aceitar proposta"}</strong>
             <small>${offer.isReplacement ? "Encerra o contrato atual da categoria e assume a multa." : "Fecha o acordo e arquiva as concorrentes da mesma disputa."}</small>
           </button>
+          <button
+            type="button"
+            data-email-action="archive"
+            data-email-key="${App.utils.escapeHtml(App.auth.getEmailKey("sponsor", offer.id))}"
+          >
+            <strong>Recusar e arquivar</strong>
+            <small>Some da caixa sem assinar contrato.</small>
+          </button>
         </div>
       </article>
+    `;
+  },
+
+  buildCoachEmailItems(owner = "", pending = [], sponsorshipOffers = [], transferEmails = []) {
+    const sponsorOfferPool = sponsorshipOffers;
+    const transferItems = transferEmails.map((item) => {
+      const sourceLabel = App.auth.getTransferProposalSourceLabel(item);
+      const isContract = App.auth.isExternalTransferContractEmail(item);
+      const isSent = item.proposal_role === "sent";
+      const statusLabel = App.auth.getTransferProposalStatusLabel(item);
+      const key = App.auth.getEmailKey("transfer", item.id);
+      return {
+        key,
+        type: "transfer",
+        folder: "Mercado",
+        sender: sourceLabel,
+        subject: isContract
+          ? `Contrato: ${item.player || "jogador"}`
+          : `Proposta por ${item.player || "jogador"}`,
+        preview: isContract
+          ? `${sourceLabel} respondeu a mesa. Revise antes de assinar.`
+          : `${sourceLabel} movimentou uma proposta de ${App.utils.formatCurrency(Number(item.proposed_value || 0))}.`,
+        badge: statusLabel,
+        tone: "high",
+        archived: App.auth.isEmailArchived(key),
+        read: App.auth.isEmailRead(key),
+        detailHtml: isContract
+          ? App.auth.renderTransferProposalContractEmail(item)
+          : isSent
+            ? App.auth.renderTransferProposalSummary(item)
+            : App.auth.renderTransferProposalCard(item),
+      };
+    });
+
+    const sponsorItems = sponsorOfferPool.map((offer) => {
+      const key = App.auth.getEmailKey("sponsor", offer.id);
+      const competition = App.auth.getSponsorshipCompetitionMeta(
+        offer,
+        sponsorOfferPool,
+      );
+      return {
+        key,
+        type: "sponsor",
+        folder: "Comercial",
+        sender: offer.sponsorName || "Marca",
+        subject: offer.isReplacement
+          ? `Troca de marca: ${offer.title || "proposta comercial"}`
+          : offer.title || "Proposta comercial",
+        preview:
+          offer.commercialReason ||
+          offer.description ||
+          "Marca interessada em fechar contrato com o clube.",
+        badge: competition.label,
+        tone: offer.isReplacement ? "high" : "normal",
+        archived: App.auth.isEmailArchived(key),
+        read: App.auth.isEmailRead(key),
+        detailHtml: App.auth.renderSponsorshipEmailCard(offer, sponsorOfferPool),
+      };
+    });
+
+    const decisionItems = pending.map((item) => {
+      const meta = App.auth.getDecisionEmailMeta(item);
+      const key = App.auth.getEmailKey("decision", item.id);
+      return {
+        key,
+        type: "decision",
+        folder: meta.folder,
+        sender: meta.sender,
+        subject: item.title || "E-mail da diretoria",
+        preview: item.description || "Mensagem pendente do clube.",
+        badge: meta.priority === "Alta" ? "Prioridade" : "Diretoria",
+        tone: meta.tone,
+        archived: App.auth.isEmailArchived(key),
+        read: App.auth.isEmailRead(key),
+        detailHtml: App.auth.renderDecisionCard(item),
+      };
+    });
+
+    return [...transferItems, ...sponsorItems, ...decisionItems].sort((a, b) => {
+      const folderPriority = { Mercado: 0, Comercial: 1 };
+      const folderDiff =
+        (folderPriority[a.folder] ?? 2) - (folderPriority[b.folder] ?? 2);
+      if (folderDiff !== 0) return folderDiff;
+      if (a.read !== b.read) return a.read ? 1 : -1;
+      return String(a.subject).localeCompare(String(b.subject), "pt-BR");
+    });
+  },
+
+  renderEmailThread(item = {}) {
+    const readClass = item.read ? "is-read" : "is-unread";
+    const archivedClass = item.archived ? "is-archived" : "";
+    return `
+      <details class="email-thread ${readClass} ${archivedClass} priority-${App.utils.escapeHtml(item.tone || "normal")}" data-email-key="${App.utils.escapeHtml(item.key)}">
+        <summary class="email-thread-summary">
+          <label class="email-thread-check" title="Selecionar e-mail">
+            <input type="checkbox" data-email-select value="${App.utils.escapeHtml(item.key)}" />
+            <span></span>
+          </label>
+          <span class="email-thread-folder">${App.utils.escapeDisplay(item.folder || "Inbox")}</span>
+          <span class="email-thread-sender">${App.utils.escapeDisplay(item.sender || "Remetente")}</span>
+          <span class="email-thread-copy">
+            <strong>${App.utils.escapeDisplay(item.subject || "Sem assunto")}</strong>
+            <small>${App.utils.escapeDisplay(item.preview || "")}</small>
+          </span>
+          <span class="email-thread-badge">${App.utils.escapeDisplay(item.badge || "")}</span>
+          <span class="email-thread-row-actions">
+            <button type="button" data-email-action="${item.read ? "unread" : "read"}" data-email-key="${App.utils.escapeHtml(item.key)}">${item.read ? "Marcar não lido" : "Marcar lido"}</button>
+            <button type="button" data-email-action="${item.archived ? "restore" : "archive"}" data-email-key="${App.utils.escapeHtml(item.key)}">${item.archived ? "Restaurar" : "Arquivar"}</button>
+          </span>
+        </summary>
+        <div class="email-thread-body">
+          ${item.detailHtml || ""}
+        </div>
+      </details>
+    `;
+  },
+
+  renderEmailMailbox(items = [], resolved = []) {
+    const state = App.auth.getEmailOfficeState();
+    const inboxItems = items.filter((item) => !item.archived);
+    const unreadCount = inboxItems.filter((item) => !item.read).length;
+    const priorityCount = inboxItems.filter((item) => item.tone === "high").length;
+    const commercialCount = inboxItems.filter((item) => item.folder === "Comercial").length;
+    const marketCount = inboxItems.filter((item) => item.folder === "Mercado").length;
+    const archivedCount = Object.keys(state.archived || {}).length + resolved.length;
+    const folders = inboxItems.reduce((groups, item) => {
+      const folder = item.folder || "Inbox";
+      groups[folder] = groups[folder] || [];
+      groups[folder].push(item);
+      return groups;
+    }, {});
+    const folderNames = Object.keys(folders);
+
+    return `
+      <div class="email-office-command-row email-office-tabs">
+        <span>Entrada ${inboxItems.length}</span>
+        <span>Não lidos ${unreadCount}</span>
+        <span>Prioridade ${priorityCount}</span>
+        <span>Comercial ${commercialCount}</span>
+        <span>Mercado ${marketCount}</span>
+        <span>Arquivados ${archivedCount}</span>
+      </div>
+      <div class="email-bulk-toolbar">
+        <label>
+          <input type="checkbox" data-email-select-all />
+          <span>Selecionar visíveis</span>
+        </label>
+        <button type="button" data-email-bulk-action="read">Marcar lido</button>
+        <button type="button" data-email-bulk-action="unread">Marcar não lido</button>
+        <button type="button" data-email-bulk-action="archive">Arquivar selecionados</button>
+      </div>
+      ${
+        inboxItems.length
+          ? `
+        <div class="email-thread-stack">
+          ${folderNames
+            .map(
+              (folder) => `
+            <section class="email-folder-group">
+              <div class="email-folder-header">
+                <strong>${App.utils.escapeDisplay(folder)}</strong>
+                <span>${folders[folder].length} assunto(s)</span>
+              </div>
+              ${folders[folder].map((item) => App.auth.renderEmailThread(item)).join("")}
+            </section>
+          `,
+            )
+            .join("")}
+        </div>
+      `
+          : `
+        <div class="coach-empty-state decision-empty-visible email-empty-state">
+          <span>0</span>
+          <div>
+            <strong>Nenhum e-mail pendente</strong>
+            <p>Quando uma nova mensagem chegar, ela entra como assunto recolhido e pode ser lida, arquivada ou respondida.</p>
+          </div>
+        </div>
+      `
+      }
     `;
   },
 
@@ -1703,14 +2114,17 @@ App.auth = {
         (item.proposal_role !== "sent" ||
           App.auth.isExternalMarketProposal(item)),
     );
+    const emailItems = App.auth.buildCoachEmailItems(
+      owner,
+      pending,
+      sponsorshipOffers,
+      transferEmails,
+    );
+    const inboxItems = emailItems.filter((item) => !item.archived);
     const resolved = App.auth.myDecisions
       .filter((item) => item.status !== "pending")
       .slice(0, 3);
-    const highPriority = pending.filter(
-      (item) => App.auth.getDecisionEmailMeta(item).priority === "Alta",
-    ).length + sponsorshipOffers.filter((item) => item.isReplacement).length + transferEmails.length;
-    const pendingTotal =
-      pending.length + sponsorshipOffers.length + transferEmails.length;
+    const unreadCount = inboxItems.filter((item) => !item.read).length;
 
     return `
       <article class="coach-panel-card coach-decision-card email-office-card">
@@ -1719,47 +2133,9 @@ App.auth = {
             <h2>E-mail</h2>
             <p class="coach-card-subtitle">Inbox privada do escritório: diretoria, mercado, elenco, comercial e bastidores.</p>
           </div>
-          <span class="coach-section-kicker">${pendingTotal} não respondida(s)</span>
+          <span class="coach-section-kicker">${unreadCount} não lida(s)</span>
         </div>
-        <div class="email-office-command-row">
-          <span>Entrada ${pendingTotal}</span>
-          <span>Prioridade ${highPriority}</span>
-          <span>Comercial ${sponsorshipOffers.length}</span>
-          <span>Mercado ${transferEmails.length}</span>
-          <span>Arquivados ${resolved.length}</span>
-        </div>
-
-        ${
-          pendingTotal
-            ? `
-          <div class="coach-decision-grid email-thread-grid">
-            ${transferEmails
-              .map((item) =>
-                App.auth.isExternalTransferContractEmail(item)
-                  ? App.auth.renderTransferProposalContractEmail(item)
-                  : item.proposal_role === "sent"
-                    ? App.auth.renderTransferProposalSummary(item)
-                    : App.auth.renderTransferProposalCard(item),
-              )
-              .join("")}
-            ${sponsorshipOffers
-              .map((item) =>
-                App.auth.renderSponsorshipEmailCard(item, sponsorshipOffers),
-              )
-              .join("")}
-            ${pending.map((item) => App.auth.renderDecisionCard(item)).join("")}
-          </div>
-        `
-            : `
-          <div class="coach-empty-state decision-empty-visible email-empty-state">
-            <span>0</span>
-            <div>
-              <strong>Nenhum e-mail pendente</strong>
-              <p>Quando uma nova mensagem chegar para ${App.utils.escapeHtml(session.managerName)}, ela aparece aqui com ações de resposta.</p>
-            </div>
-          </div>
-        `
-        }
+        ${App.auth.renderEmailMailbox(emailItems, resolved)}
 
         ${
           resolved.length
@@ -1782,6 +2158,7 @@ App.auth = {
         }
       </article>
     `;
+
   },
 
   renderCoachTransferProposalCard(ownerName) {
@@ -1827,7 +2204,7 @@ App.auth = {
 
     const data = App.auth.mySponsorships || {};
     const active = Array.isArray(data.active) ? data.active : [];
-    const offers = Array.isArray(data.offers) ? data.offers : [];
+    const offers = App.auth.getSponsorshipInboxOffers(ownerName);
     const rewards = Array.isArray(data.recentRewards) ? data.recentRewards : [];
     const visibleRewards = rewards.slice(0, 5);
     const hiddenRewards = Math.max(0, rewards.length - visibleRewards.length);
@@ -2480,6 +2857,78 @@ App.auth = {
         <small><b>Próxima</b><strong>${nextLabel}</strong></small>
       </div>
     `;
+  },
+
+  getSelectedEmailKeys(root = document) {
+    return [...root.querySelectorAll("[data-email-select]:checked")].map(
+      (input) => input.value,
+    );
+  },
+
+  bindEmailOfficeControls(root = document) {
+    const office = root.querySelector?.(".email-office-card") || root;
+    if (!office || office.dataset.emailOfficeBound === "true") return;
+    office.dataset.emailOfficeBound = "true";
+
+    office.addEventListener("click", (event) => {
+      if (event.target.closest?.("[data-email-select]")) {
+        event.stopPropagation();
+        return;
+      }
+
+      const actionButton = event.target.closest?.("[data-email-action]");
+      if (actionButton) {
+        event.preventDefault();
+        event.stopPropagation();
+        const action = actionButton.dataset.emailAction;
+        const key = actionButton.dataset.emailKey;
+        if (!key) return;
+
+        if (action === "read") App.auth.setEmailsRead(key, true);
+        if (action === "unread") App.auth.setEmailsRead(key, false);
+        if (action === "archive") App.auth.setEmailsArchived(key, true);
+        if (action === "restore") App.auth.setEmailsArchived(key, false);
+        App.main?.renderCurrentView?.();
+        return;
+      }
+
+      const bulkButton = event.target.closest?.("[data-email-bulk-action]");
+      if (bulkButton) {
+        event.preventDefault();
+        const keys = App.auth.getSelectedEmailKeys(office);
+        if (!keys.length) return;
+        const action = bulkButton.dataset.emailBulkAction;
+        if (action === "read") App.auth.setEmailsRead(keys, true);
+        if (action === "unread") App.auth.setEmailsRead(keys, false);
+        if (action === "archive") App.auth.setEmailsArchived(keys, true);
+        App.main?.renderCurrentView?.();
+      }
+    });
+
+    office.addEventListener("change", (event) => {
+      const selectAll = event.target.closest?.("[data-email-select-all]");
+      if (selectAll) {
+        office
+          .querySelectorAll("[data-email-select]")
+          .forEach((input) => {
+            input.checked = selectAll.checked;
+          });
+      }
+    });
+
+    office.addEventListener("toggle", (event) => {
+      const thread = event.target;
+      if (!thread.matches?.("details[data-email-key]") || !thread.open) return;
+      const key = thread.dataset.emailKey;
+      App.auth.setEmailsRead(key, true);
+      thread.classList.remove("is-unread");
+      thread.classList.add("is-read");
+      const markButton = thread.querySelector('[data-email-action="read"]');
+      if (markButton) {
+        markButton.dataset.emailAction = "unread";
+        markButton.textContent = "Marcar não lido";
+      }
+    }, true);
   },
 
   bindDecisionAnswerButtons(root = document) {
