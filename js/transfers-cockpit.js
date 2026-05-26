@@ -1266,12 +1266,108 @@ Object.assign(App.transfers, {
     return { blocking, warnings, positive };
   },
 
+  getOfferStrategyMeta(preview = {}) {
+    if (!preview?.hasEnoughData || preview.isInternal) {
+      return {
+        tone: "idle",
+        title: "Defina a abertura da mesa",
+        detail: "A oferta inicial pode ficar abaixo ou acima da referência.",
+      };
+    }
+
+    const ratio = Number(preview.offerRatio || 1);
+    if (ratio >= 1.18) {
+      return {
+        tone: "success",
+        title: "Agressiva",
+        detail: "Oferta forte. Boa chance de reduzir rodadas de negociação.",
+      };
+    }
+    if (ratio >= 1.08) {
+      return {
+        tone: "success",
+        title: "Competitiva",
+        detail: "Acima da referência. Deve aproximar a resposta do vendedor.",
+      };
+    }
+    if (ratio >= 0.98) {
+      return {
+        tone: "neutral",
+        title: "Valor base",
+        detail: "Oferta em linha com a referência. Pode virar contraproposta.",
+      };
+    }
+    if (ratio >= 0.86) {
+      return {
+        tone: "warning",
+        title: "Teste baixo",
+        detail: "Abaixo da referência. Use se quiser medir a resistência do clube.",
+      };
+    }
+    return {
+      tone: "danger",
+      title: "Risco alto",
+      detail: "Muito abaixo da referência. A recusa fica provável.",
+    };
+  },
+
+  renderOfferComposerState(form, preview = null) {
+    const composer = form?.querySelector?.("[data-offer-composer]");
+    if (!composer) return;
+
+    const reference = App.transfers.parseTransferMoneyInput(
+      form.elements.marketValue?.value,
+    );
+    const offer = preview?.hasEnoughData
+      ? Number(preview.finalValue || 0)
+      : App.transfers.parseTransferMoneyInput(form.elements.offerValue?.value);
+    const expected = preview?.sellerExpectationValue || 0;
+    const ratio = reference > 0 && offer > 0 ? offer / reference : 0;
+    const meta = App.transfers.getOfferStrategyMeta(preview || {});
+
+    composer.dataset.offerTone = meta.tone;
+    composer.style.setProperty(
+      "--offer-strength",
+      `${Math.max(6, Math.min(100, ratio * 100 || 0))}%`,
+    );
+
+    const strategy = document.getElementById("transferOfferStrategy");
+    if (strategy) strategy.textContent = meta.title;
+
+    const referenceLabel = document.getElementById("transferOfferReference");
+    if (referenceLabel) {
+      referenceLabel.textContent = reference
+        ? `Referência ${App.utils.formatCurrency(reference)}${expected ? ` · pedido provável ${App.utils.formatCurrency(expected)}` : ""}`
+        : "Selecione um jogador para carregar a referência.";
+    }
+
+    const guidance = document.getElementById("transferOfferGuidanceText");
+    if (guidance) {
+      guidance.textContent =
+        reference && offer
+          ? `${meta.detail} Oferta atual: ${App.utils.formatCurrency(offer)}.`
+          : meta.detail;
+    }
+
+    composer.querySelectorAll("[data-offer-multiplier]").forEach((button) => {
+      const multiplier = Number(button.dataset.offerMultiplier || 1);
+      const target = reference
+        ? App.transfers.roundTransferOfferValue(reference * multiplier)
+        : 0;
+      button.classList.toggle(
+        "is-active",
+        Boolean(target && Math.abs(target - offer) < 50000),
+      );
+    });
+  },
+
   renderTransferPreview(form) {
     const target = document.getElementById("transferFormPreview");
     if (!target || !form) return;
 
     const preview = App.transfers.getTransferPreview(form);
     const submitButton = form.querySelector("button[type='submit']");
+    App.transfers.renderOfferComposerState(form, preview);
 
     if (App.transfers.isTransferWindowLocked()) {
       if (submitButton) submitButton.disabled = true;
@@ -1313,19 +1409,40 @@ Object.assign(App.transfers, {
     }
 
     const externalVerdict = App.transfers.getExternalOfferVerdict(preview);
+    const leadMetrics = preview.isInternal
+      ? []
+      : [
+          {
+            label: "Referência",
+            value: App.utils.formatCurrency(preview.marketValue),
+          },
+          {
+            label: "Oferta enviada",
+            value: App.utils.formatCurrency(preview.finalValue),
+            tone:
+              !preview.isInternal && Number(preview.offerDelta || 0) < 0
+                ? "warning"
+                : !preview.isInternal && Number(preview.offerDelta || 0) > 0
+                  ? "success"
+                  : "",
+            detail:
+              preview.offerRatio && preview.marketValue
+                ? `${Math.round(preview.offerRatio * 100)}% da referência`
+                : "",
+          },
+          {
+            label: "Pedido provável",
+            value: App.utils.formatCurrency(preview.sellerExpectationValue),
+            tone: externalVerdict?.tone || "",
+            detail: externalVerdict?.label || "Em análise",
+          },
+        ];
+
     const metrics = [
       { label: "OVR", value: preview.overall },
-      ...(preview.isInternal
-        ? []
-        : [
-            {
-              label: "Referencia",
-              value: App.utils.formatCurrency(preview.marketValue),
-            },
-          ]),
       {
-        label: preview.isInternal ? "Valor negociado" : "Oferta enviada",
-        value: App.utils.formatCurrency(preview.finalValue),
+        label: preview.isInternal ? "Valor negociado" : "Caixa efetivo",
+        value: App.utils.formatCurrency(preview.cashFinalValue),
         tone:
           !preview.isInternal && Number(preview.offerDelta || 0) < 0
             ? "warning"
@@ -1336,10 +1453,6 @@ Object.assign(App.transfers, {
       ...(preview.isInternal
         ? []
         : [
-            {
-              label: "Pedido provavel",
-              value: App.utils.formatCurrency(preview.sellerExpectationValue),
-            },
             {
               label: "Tendencia",
               value: externalVerdict?.label || "Em analise",
@@ -1395,10 +1508,31 @@ Object.assign(App.transfers, {
     App.dom.setHtml(
       target,
       `
-        <div class="preview-header">
-          <strong>${App.utils.escapeHtml(preview.player)}</strong>
-          <span>${App.utils.escapeHtml(preview.buyer)}</span>
+        <div class="preview-header preview-header-modern">
+          <div>
+            <small>${preview.isInternal ? "E-mail entre técnicos" : "Mesa de negociação externa"}</small>
+            <strong>${App.utils.escapeHtml(preview.player)}</strong>
+            <span>${App.utils.escapeHtml([preview.fromClub, preview.buyer ? `Destino: ${preview.buyer}` : ""].filter(Boolean).join(" · "))}</span>
+          </div>
+          ${renderWorkspacePill(externalVerdict?.label || (preview.isInternal ? "Interna" : "Em análise"), externalVerdict?.tone || "watch")}
         </div>
+        ${
+          leadMetrics.length
+            ? `<div class="preview-offer-lane">
+                ${leadMetrics
+                  .map(
+                    (item) => `
+                      <article class="preview-offer-card ${item.tone ? `is-${item.tone}` : ""}">
+                        <small>${App.utils.escapeHtml(item.label)}</small>
+                        <strong>${App.utils.escapeHtml(String(item.value))}</strong>
+                        ${item.detail ? `<em>${App.utils.escapeHtml(item.detail)}</em>` : ""}
+                      </article>
+                    `,
+                  )
+                  .join("")}
+              </div>`
+            : ""
+        }
         <div class="preview-grid">
           ${metrics
             .map(
@@ -2837,7 +2971,8 @@ Object.assign(App.transfers, {
       form.elements.marketValue.value = Math.round(Number(clean.marketValue));
     }
     if (form.elements.offerValue && clean.source !== "internal") {
-      form.elements.offerValue.value = App.transfers.roundTransferOfferValue(
+      App.transfers.setTransferOfferInputValue(
+        form,
         Number(clean.offerValue || clean.finalValue || clean.marketValue || 0),
       );
     }

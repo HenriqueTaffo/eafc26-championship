@@ -634,7 +634,7 @@ function TransfersView() {
                 </p>
               </div>
             </div>
-            <form id="transferForm">
+            <form id="transferForm" noValidate>
               <div className="form-grid">
                 <div
                   className="submit-mode-switch full"
@@ -779,36 +779,75 @@ function TransfersView() {
                   />
                 </label>
                 <div
-                  className="market-offer-field full"
+                  className="market-offer-field transfer-offer-composer full"
                   data-market-transfer-field
+                  data-offer-composer
                 >
-                  <label>
-                    <span>Valor ofertado ao clube</span>
-                    <input
-                      name="offerValue"
-                      type="number"
-                      min="100000"
-                      step="100000"
-                      inputMode="numeric"
-                      placeholder="Ex: 30000000"
-                    />
-                  </label>
+                  <div className="offer-composer-head">
+                    <div>
+                      <span>Oferta ao clube</span>
+                      <strong id="transferOfferStrategy">
+                        Defina a abertura da mesa
+                      </strong>
+                    </div>
+                    <small id="transferOfferReference">
+                      Selecione um jogador para carregar a referência.
+                    </small>
+                  </div>
+                  <div className="offer-value-row">
+                    <label className="offer-input-shell">
+                      <span>Valor ofertado</span>
+                      <div className="currency-input-shell">
+                        <b>€</b>
+                        <input
+                          name="offerValue"
+                          type="text"
+                          inputMode="numeric"
+                          autoComplete="off"
+                          placeholder="1.800.000"
+                          aria-describedby="transferOfferGuidance"
+                        />
+                      </div>
+                    </label>
+                    <div
+                      className="offer-guidance-strip"
+                      id="transferOfferGuidance"
+                    >
+                      <span id="transferOfferGuidanceText">
+                        A oferta inicial pode ficar abaixo ou acima da
+                        referência.
+                      </span>
+                      <div
+                        className="offer-strength-meter"
+                        aria-hidden="true"
+                      >
+                        <i id="transferOfferStrength"></i>
+                      </div>
+                    </div>
+                  </div>
                   <div className="offer-quick-actions">
                     <button type="button" data-offer-multiplier="0.9">
-                      90%
+                      <strong>90%</strong>
+                      <span>Testar baixo</span>
                     </button>
                     <button type="button" data-offer-multiplier="1">
-                      100%
+                      <strong>100%</strong>
+                      <span>Valor base</span>
                     </button>
                     <button type="button" data-offer-multiplier="1.1">
-                      110%
+                      <strong>110%</strong>
+                      <span>Competitivo</span>
                     </button>
                     <button type="button" data-offer-multiplier="1.25">
-                      125%
+                      <strong>125%</strong>
+                      <span>Fechar rápido</span>
                     </button>
                   </div>
                 </div>
-                <label data-market-transfer-field>
+                <label
+                  className="transfer-salary-field"
+                  data-market-transfer-field
+                >
                   <span>Salario semanal de folha</span>
                   <input
                     name="weeklySalary"

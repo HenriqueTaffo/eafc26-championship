@@ -690,6 +690,32 @@ App.transfers = {
     return Math.max(100000, Math.round(amount / 100000) * 100000);
   },
 
+  parseTransferMoneyInput(value) {
+    if (typeof value === "number") {
+      return Number.isFinite(value) ? value : 0;
+    }
+
+    const digits = String(value || "").replace(/[^\d]/g, "");
+    return digits ? Number(digits) : 0;
+  },
+
+  formatTransferMoneyInput(value) {
+    const amount = Math.round(App.transfers.parseTransferMoneyInput(value));
+    if (!amount) return "";
+    return amount.toLocaleString("pt-BR");
+  },
+
+  setTransferOfferInputValue(fieldOrForm, value) {
+    const field = fieldOrForm?.elements?.offerValue || fieldOrForm;
+    if (!field) return;
+
+    const rounded = App.transfers.roundTransferOfferValue(
+      App.transfers.parseTransferMoneyInput(value),
+    );
+    field.value = rounded ? App.transfers.formatTransferMoneyInput(rounded) : "";
+    field.dataset.rawValue = rounded ? String(rounded) : "";
+  },
+
   getExternalOfferVerdict(preview = {}) {
     if (!preview || preview.isInternal || !preview.hasEnoughData) return null;
 
@@ -2213,7 +2239,9 @@ App.transfers = {
     const fromClub = form.elements.fromClub?.value || "";
     const overall = Number(form.elements.overall?.value);
     const marketValue = Number(form.elements.marketValue?.value);
-    const rawOfferValue = Number(form.elements.offerValue?.value);
+    const rawOfferValue = App.transfers.parseTransferMoneyInput(
+      form.elements.offerValue?.value,
+    );
     const hasOfferValue =
       !Number.isNaN(rawOfferValue) && Number(rawOfferValue || 0) > 0;
     const manualSalaryReference = {
@@ -3190,8 +3218,7 @@ App.transfers = {
       form.elements.marketValue.value = marketValue;
     }
     if (form.elements.offerValue) {
-      form.elements.offerValue.value =
-        App.transfers.roundTransferOfferValue(marketValue);
+      App.transfers.setTransferOfferInputValue(form, marketValue);
     }
     const eaRating = App.transfers.findEaRatingForMarketPlayer(player);
     if (eaRating && form.elements.overall)

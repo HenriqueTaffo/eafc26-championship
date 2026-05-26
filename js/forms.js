@@ -518,6 +518,7 @@ App.forms = {
     if (!transferForm || transferForm.dataset.previewReady === "true") return;
 
     transferForm.dataset.previewReady = "true";
+    transferForm.noValidate = true;
     [
       "buyer",
       "seller",
@@ -549,6 +550,15 @@ App.forms = {
     });
     transferForm.elements.exchangePlayer?.addEventListener("focus", () => {
       App.transfers.populateExchangePlayers(transferForm);
+    });
+    transferForm.elements.offerValue?.addEventListener("blur", () => {
+      App.transfers.setTransferOfferInputValue(
+        transferForm,
+        App.transfers.parseTransferMoneyInput(
+          transferForm.elements.offerValue?.value,
+        ),
+      );
+      App.transfers.refreshWorkspace(transferForm);
     });
 
     transferForm
@@ -626,7 +636,7 @@ App.forms = {
           referenceValue * multiplier,
         );
         if (offerValue && transferForm.elements.offerValue) {
-          transferForm.elements.offerValue.value = offerValue;
+          App.transfers.setTransferOfferInputValue(transferForm, offerValue);
           App.transfers.refreshWorkspace(transferForm);
         }
       });
