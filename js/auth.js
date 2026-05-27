@@ -116,6 +116,73 @@ App.auth = {
     return "Pendente";
   },
 
+  getTransferProposalStatusHint(item = {}) {
+    const status = App.utils.normalizeText(item.status || "pending");
+    if (status === "accepted") {
+      return "Contrato validado. A movimentação foi registrada na liga.";
+    }
+    if (status === "rejected") {
+      return "Negociação encerrada sem assinatura.";
+    }
+    if (status === "buyer_review") {
+      return "Aguardando decisão final do vendedor e sua assinatura no escritório.";
+    }
+    return "Aguardando resposta inicial do contraparte.";
+  },
+
+  getTransferProposalTimeline(item = {}, options = {}) {
+    const isInternal =
+      options.forceInternal ||
+      !App.auth.isExternalMarketProposal(item);
+    const stages = App.transfers?.buildTransferNegotiationStages
+      ? App.transfers.buildTransferNegotiationStages(item, null, {
+          isInternal,
+        })
+      : [];
+    const fallback = [
+      {
+        title: item.proposal_type === "external_market" ? "Mesa aberta" : "Negociação interna",
+        detail: App.auth.getTransferProposalStatusHint(item),
+        tone: "watch",
+      },
+    ];
+    const items = Array.isArray(stages) ? stages : [];
+    const normalizedItems = items.length
+      ? items
+      : fallback;
+
+    const maxItems = Number(options.maxItems || 3);
+    const compact = options.compact ? " transfer-negotiation-stage-list--compact" : "";
+
+    return `
+      <div class="transfer-proposal-timeline">
+        <span>Histórico</span>
+        <div class="transfer-negotiation-stage-list${compact}">
+          ${normalizedItems
+            .slice(-Math.max(1, maxItems))
+            .map((stage) => {
+              const title = App.utils.escapeHtml(stage.title || "Etapa");
+              const detail = App.utils.escapeHtml(stage.detail || App.auth.getTransferProposalStatusHint(item));
+              const tone = App.utils.escapeHtml(stage.tone || "live");
+              const when = stage.when
+                ? `<small class="transfer-negotiation-date">${App.utils.formatDateTime(
+                    stage.when,
+                  )}</small>`
+                : "";
+              return `
+                <div class="transfer-negotiation-stage is-${tone}">
+                  ${when}
+                  <span>${title}</span>
+                  <p>${detail}</p>
+                </div>
+              `;
+            })
+            .join("")}
+        </div>
+      </div>
+    `;
+  },
+
   getTransferProposalSourceLabel(item = {}) {
     if (App.auth.isExternalMarketProposal(item)) {
       return item.seller || item.from_club || "clube vendedor";
@@ -1886,9 +1953,11 @@ App.auth = {
     const transferItems = transferEmails.map((item) => {
       const sourceLabel = App.auth.getTransferProposalSourceLabel(item);
       const isContract = App.auth.isExternalTransferContractEmail(item);
-      const isSent = item.proposal_role === "sent";
+      const isOpen = App.auth.isOpenTransferProposal(item);
+      const isExternal = App.auth.isExternalMarketProposal(item);
       const statusLabel = App.auth.getTransferProposalStatusLabel(item);
       const key = App.auth.getEmailKey("transfer", item.id);
+      const previewValue = Number(item.proposed_value || item.cash_offer_value || 0);
       return {
         key,
         type: "transfer",
@@ -1896,19 +1965,23 @@ App.auth = {
         sender: sourceLabel,
         subject: isContract
           ? `Contrato: ${item.player || "jogador"}`
-          : `Proposta por ${item.player || "jogador"}`,
+          : `${isOpen ? "Proposta" : "Fechamento"} por ${item.player || "jogador"}`,
         preview: isContract
           ? `${sourceLabel} respondeu a mesa. Revise antes de assinar.`
-          : `${sourceLabel} movimentou uma proposta de ${App.utils.formatCurrency(Number(item.proposed_value || 0))}.`,
+          : isOpen
+            ? `${sourceLabel} movimentou uma proposta de ${App.utils.formatCurrency(previewValue)}.`
+            : `${sourceLabel} encerrou com status ${statusLabel.toLowerCase()} em ${App.utils.formatCurrency(previewValue)}.`,
         badge: statusLabel,
         tone: "high",
         archived: App.auth.isEmailArchived(key),
         read: App.auth.isEmailRead(key),
         detailHtml: isContract
           ? App.auth.renderTransferProposalContractEmail(item)
-          : isSent
-            ? App.auth.renderTransferProposalSummary(item)
-            : App.auth.renderTransferProposalCard(item),
+          : isOpen
+            ? isExternal
+              ? App.auth.renderTransferProposalSummary(item)
+              : App.auth.renderTransferProposalCard(item)
+            : App.auth.renderTransferProposalSummary(item, { compact: true }),
       };
     });
 
@@ -2109,10 +2182,7 @@ App.auth = {
     );
     const sponsorshipOffers = App.auth.getSponsorshipInboxOffers(owner);
     const transferEmails = App.auth.myTransferProposals.filter(
-      (item) =>
-        App.auth.isOpenTransferProposal(item) &&
-        (item.proposal_role !== "sent" ||
-          App.auth.isExternalMarketProposal(item)),
+      (item) => App.auth.isExternalMarketProposal(item),
     );
     const emailItems = App.auth.buildCoachEmailItems(
       owner,
@@ -3226,6 +3296,8 @@ App.auth = {
           <span>OVR ${App.utils.escapeHtml(item.overall || "-")}</span>
           <span>${App.utils.escapeHtml(item.from_club || "Negociação interna")}</span>
         </div>
+        <p>${App.auth.getTransferProposalStatusHint(item)}</p>
+        ${App.auth.getTransferProposalTimeline(item, { compact: true, maxItems: 2 })}
         <div class="decision-options">
           <button
             type="button"
@@ -3347,6 +3419,7 @@ App.auth = {
           <p>${App.utils.escapeDisplay(item.response_message || "O clube vendedor respondeu e aguarda sua decisao.")}</p>
           <small>Prazo interno: ${App.utils.escapeDisplay(expiresLabel)}</small>
         </div>
+        ${App.auth.getTransferProposalTimeline(item, { maxItems: 4 })}
 
         <div class="decision-options email-response-actions transfer-contract-actions">
           <button
@@ -3412,29 +3485,31 @@ App.auth = {
       if (options.compact) {
         return `
           <article class="proposal-summary-item external-market-proposal compact-proposal-summary proposal-status-${status}">
-            <span>Mercado externo - ${statusLabel}</span>
-            <strong>${App.utils.escapeHtml(item.player)}</strong>
-            <small>${App.utils.escapeHtml(sourceLabel)} respondeu. A assinatura fica no e-mail do escritorio.</small>
-            <div class="proposal-market-meta">
-              <b>Oferta ${App.utils.formatCurrency(buyerOffer || cashValue)}</b>
-              <b>Pedido ${App.utils.formatCurrency(proposedValue)}</b>
-              <b>Folha ${App.utils.formatCurrency(Number(item.weekly_salary_eur || 0))}/sem</b>
-            </div>
-          </article>
-        `;
+          <span>Mercado externo - ${statusLabel}</span>
+          <strong>${App.utils.escapeHtml(item.player)}</strong>
+          <small>${App.utils.escapeHtml(sourceLabel)} respondeu. A assinatura fica no e-mail do escritorio.</small>
+          <div class="proposal-market-meta">
+            <b>Oferta ${App.utils.formatCurrency(buyerOffer || cashValue)}</b>
+            <b>Pedido ${App.utils.formatCurrency(proposedValue)}</b>
+            <b>Folha ${App.utils.formatCurrency(Number(item.weekly_salary_eur || 0))}/sem</b>
+          </div>
+          ${App.auth.getTransferProposalTimeline(item, { compact: true, maxItems: 2 })}
+        </article>
+      `;
       }
       return `
         <article class="proposal-summary-item external-market-proposal proposal-status-${status}">
           <span>Mercado externo - ${statusLabel}</span>
           <strong>${App.utils.escapeHtml(item.player)}</strong>
           <small>${App.utils.escapeHtml(sourceLabel)} - ${App.utils.escapeHtml(item.response_message || "Resposta comercial recebida.")}</small>
-          <div class="proposal-market-meta">
+        <div class="proposal-market-meta">
             <b>Ref. ${App.utils.formatCurrency(referenceValue)}</b>
             <b>Pedido ${App.utils.formatCurrency(proposedValue)}</b>
             <b>Caixa ${App.utils.formatCurrency(cashValue)}</b>
             <b>Folha ${App.utils.formatCurrency(Number(item.weekly_salary_eur || 0))}/sem</b>
             <b>${App.utils.escapeHtml(tradeLabel)}</b>
           </div>
+          ${options.compact ? "" : App.auth.getTransferProposalTimeline(item, { compact: true, maxItems: 2 })}
           ${
             isActionable
               ? `
@@ -3491,6 +3566,7 @@ App.auth = {
         <span>${statusLabel}</span>
         <strong>${App.utils.escapeHtml(item.player)}</strong>
         <small>${App.utils.escapeHtml(item.seller)} - ${App.utils.escapeHtml(sourceLabel)} - ${App.utils.formatCurrency(proposedValue)}</small>
+        ${App.auth.getTransferProposalTimeline(item, { compact: true, maxItems: 2 })}
       </article>
     `;
   },

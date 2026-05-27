@@ -1718,6 +1718,18 @@ body.auth-login-success .manager-login-panel {
   gap: 7px;
 }
 
+.transfer-proposal-timeline {
+  display: grid;
+  gap: 8px;
+}
+
+.transfer-proposal-timeline > span {
+  color: #7dd3fc;
+  font-size: 0.66rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
 .transfer-negotiation-stage {
   position: relative;
   display: grid;
@@ -1739,6 +1751,17 @@ body.auth-login-success .manager-login-panel {
     font-size: 0.7rem;
     line-height: 1.45;
   }
+}
+
+.transfer-negotiation-stage-list.transfer-negotiation-stage-list--compact {
+  gap: 6px;
+}
+
+.transfer-negotiation-date {
+  color: #7dd3fc;
+  font-size: 0.6rem;
+  font-weight: 900;
+  text-transform: uppercase;
 }
 
 .transfer-negotiation-stage.is-success {
