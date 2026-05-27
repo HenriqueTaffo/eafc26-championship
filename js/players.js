@@ -1510,6 +1510,8 @@ App.players = {
         ).riskTone === "danger",
     ).length;
     const agenda = [];
+    const formatCount = (count, singular, plural) =>
+      App.utils.formatCountLabel(count, singular, plural);
 
     if (next) {
       agenda.push({
@@ -1523,7 +1525,11 @@ App.players = {
       agenda.push({
         tone: "danger",
         label: "Diretoria",
-        title: `${pendingDecisions} decisao(oes) aguardando resposta`,
+        title: formatCount(
+          pendingDecisions,
+          "decisao aguardando resposta",
+          "decisoes aguardando resposta",
+        ),
         detail: "Abra o escritorio para evitar fila atrasada no inbox.",
       });
     }
@@ -1531,15 +1537,23 @@ App.players = {
       agenda.push({
         tone: "warning",
         label: "Mercado",
-        title: `${transferActionCount} negociacao(oes) pedem retorno`,
-        detail: "Revise proposta, contraoferta ou assinatura antes de perder timing.",
+        title: formatCount(
+          transferActionCount,
+          "negociacao pede retorno",
+          "negociacoes pedem retorno",
+        ),
+        detail: "Revise proposta, contraoferta ou assinatura antes de perder o prazo.",
       });
     }
     if (sponsorOffers) {
       agenda.push({
         tone: "success",
         label: "Comercial",
-        title: `${sponsorOffers} oferta(s) de patrocinio na mesa`,
+        title: formatCount(
+          sponsorOffers,
+          "oferta de patrocinio na mesa",
+          "ofertas de patrocinio na mesa",
+        ),
         detail: "Compare contratos no escritorio antes de trocar uma marca ativa.",
       });
     }
@@ -1547,7 +1561,11 @@ App.players = {
       agenda.push({
         tone: "danger",
         label: "DM",
-        title: `${highRiskCount} caso(s) com risco alto`,
+        title: formatCount(
+          highRiskCount,
+          "caso com risco alto",
+          "casos com risco alto",
+        ),
         detail: "Considere preservar elenco e evitar retorno precoce.",
       });
     }
@@ -1583,13 +1601,13 @@ App.players = {
             <h2>Central do dia</h2>
             <p class="coach-card-subtitle">Fila executiva com o que exige resposta do tecnico neste momento.</p>
           </div>
-          <span class="coach-section-kicker">${agenda.length} foco(s)</span>
+          <span class="coach-section-kicker">${formatCount(agenda.length, "foco", "focos")}</span>
         </div>
 
         <div class="coach-central-grid">
-          <article><span>Diretoria</span><strong>${pendingDecisions}</strong><small>decisao(oes) pendente(s)</small></article>
-          <article><span>Mercado</span><strong>${transferActionCount}</strong><small>acao(oes) no escritorio</small></article>
-          <article><span>DM</span><strong>${injuries.length}</strong><small>caso(s) monitorado(s)</small></article>
+          <article><span>Diretoria</span><strong>${pendingDecisions}</strong><small>${App.utils.pluralize(pendingDecisions, "decisao pendente", "decisoes pendentes")}</small></article>
+          <article><span>Mercado</span><strong>${transferActionCount}</strong><small>${App.utils.pluralize(transferActionCount, "acao no escritorio", "acoes no escritorio")}</small></article>
+          <article><span>DM</span><strong>${injuries.length}</strong><small>${App.utils.pluralize(injuries.length, "caso monitorado", "casos monitorados")}</small></article>
           <article><span>Janela</span><strong>${transferLimit ? `${transfersToday}/${transferLimit}` : transfersToday}</strong><small>${budget.marketEmbargo ? "bloqueada" : "uso diario"}</small></article>
         </div>
 

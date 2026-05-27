@@ -117,6 +117,18 @@ App.utils = {
       .replace(/[\u0300-\u036f]/g, "");
   },
 
+  pluralize(count, singular, plural = `${singular}s`) {
+    return Number(count) === 1 ? singular : plural;
+  },
+
+  formatCountLabel(count, singular, plural = `${singular}s`) {
+    return `${Number(count || 0)} ${App.utils.pluralize(
+      count,
+      singular,
+      plural,
+    )}`;
+  },
+
   normalizeTeamName(value) {
     const normalized = App.utils.normalizeText(value);
     const aliases = {
@@ -210,6 +222,28 @@ App.utils = {
       [/Ò¢/g, "â"],
       [/Ò‰/g, "É"],
       [/Ò‡/g, "Ç"],
+      [/\bnegociacao\b/gi, "negociaÃ§Ã£o"],
+      [/\bNegociacao\b/g, "NegociaÃ§Ã£o"],
+      [/\bnegociacoes\b/gi, "negociaÃ§Ãµes"],
+      [/\bNegociacoes\b/g, "NegociaÃ§Ãµes"],
+      [/\bdecisoes\b/gi, "decisÃµes"],
+      [/\bDecisoes\b/g, "DecisÃµes"],
+      [/\bdiario\b/gi, "diÃ¡rio"],
+      [/\bDiario\b/g, "DiÃ¡rio"],
+      [/\burgencia\b/gi, "urgÃªncia"],
+      [/\bUrgencia\b/g, "UrgÃªncia"],
+      [/\burgencias\b/gi, "urgÃªncias"],
+      [/\bUrgencias\b/g, "UrgÃªncias"],
+      [/\bobservacao\b/gi, "observaÃ§Ã£o"],
+      [/\bObservacao\b/g, "ObservaÃ§Ã£o"],
+      [/\bpreparacao\b/gi, "preparaÃ§Ã£o"],
+      [/\bPreparacao\b/g, "PreparaÃ§Ã£o"],
+      [/\bproxima\b/gi, "prÃ³xima"],
+      [/\bProxima\b/g, "PrÃ³xima"],
+      [/\bclinico\b/gi, "clÃ­nico"],
+      [/\bClinico\b/g, "ClÃ­nico"],
+      [/\bclinicos\b/gi, "clÃ­nicos"],
+      [/\bClinicos\b/g, "ClÃ­nicos"],
     ];
 
     const replacements = [
