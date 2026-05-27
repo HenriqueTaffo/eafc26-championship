@@ -99,9 +99,18 @@ App.utils = {
     return current.replace(/\u00ad/g, "").replace(/\uFFFD/g, "");
   },
 
+  repairBrokenUtf8Fragments(value) {
+    if (value === null || value === undefined) return "";
+
+    return String(value).replace(
+      /[^\s<>"']*[ÃÂÆâðÒï][^\s<>"']*/g,
+      (chunk) => App.utils.repairBrokenUtf8(chunk),
+    );
+  },
+
   normalizeText(value) {
     return App.utils
-      .repairBrokenUtf8(value)
+      .repairBrokenUtf8Fragments(App.utils.repairBrokenUtf8(value))
       .trim()
       .toLowerCase()
       .normalize("NFD")
@@ -338,7 +347,9 @@ App.utils = {
     );
 
     return App.utils.normalizeUppercaseAccents(
-      App.utils.repairBrokenUtf8(replaced),
+      App.utils.repairBrokenUtf8Fragments(
+        App.utils.repairBrokenUtf8(replaced),
+      ),
     );
   },
 
