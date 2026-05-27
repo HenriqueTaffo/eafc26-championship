@@ -16,9 +16,9 @@ begin
       returns bytea
       language sql
       immutable strict
-      as $$
+      as $fn$
         select public.digest(coalesce(p_data, ''), p_algorithm);
-      $$;
+      $fn$;
     $sql$;
   end if;
 end;

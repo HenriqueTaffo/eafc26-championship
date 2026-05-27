@@ -661,7 +661,7 @@ $$;
 
 grant execute on function public.app_begin_operation_audit(text, text, text, text, text, jsonb, integer, integer) to anon, authenticated;
 grant execute on function public.app_finalize_operation_audit(bigint, text, jsonb, text) to anon, authenticated;
-grant execute on function public.app_add_result(text, text, text, integer, text, text, text, integer, integer, text, text, text, text) to anon, authenticated;
+grant execute on function public.app_add_result(text, text, text, integer, text, text, text, integer, integer, text, text, text, text, text) to anon, authenticated;
 grant execute on function public.app_accept_sponsorship(text, text, text) to anon, authenticated;
 grant execute on function public.app_create_external_transfer_proposal(text, text, text, text, text, integer, numeric, numeric, numeric, text, text, text, numeric) to anon, authenticated;
 grant execute on function public.app_answer_external_transfer_proposal(text, text, bigint, text, numeric) to anon, authenticated;

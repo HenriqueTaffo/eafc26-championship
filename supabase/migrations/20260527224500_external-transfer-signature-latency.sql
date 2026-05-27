@@ -831,8 +831,7 @@ begin
     into v_sql;
 
   if v_sql is not null and position(
-    'p.status in (''pending'', ''buyer_review'')',
-    v_sql
+    'p.status in (''pending'', ''buyer_review'')' in v_sql
   ) > 0 then
     v_sql := replace(
       v_sql,
