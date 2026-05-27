@@ -2146,22 +2146,49 @@ Object.assign(App.transfers, {
       });
     }
     proposals.forEach((item) => {
-      items.push({
-        when: item.created_at || item.createdAt || "",
-        title:
-          item.proposal_role === "sent"
-            ? "Proposta enviada"
-            : "Oferta recebida",
-        detail: `${App.utils.formatCurrency(Number(item.proposed_value || 0))} - ${item.status || "pending"}.`,
-      });
-      if (item.answered_at || item.answeredAt) {
-        items.push({
-          when: item.answered_at || item.answeredAt || "",
-          title: "Resposta da negociacao",
-          detail:
-            item.response_message ||
-            `Status final: ${item.status || "respondido"}.`,
+      const proposalTimeline = Array.isArray(item.operation_audit_timeline)
+        ? item.operation_audit_timeline
+            .filter((entry) => entry && typeof entry === "object")
+            .map((entry) => ({
+              when: entry.when || "",
+              title: entry.title || "Evento da negociacao",
+              detail: entry.detail || App.utils.formatCurrency(Number(item.proposed_value || 0)),
+            }))
+            .sort((a, b) => {
+              const aWhen = a.when ? new Date(a.when).getTime() : NaN;
+              const bWhen = b.when ? new Date(b.when).getTime() : NaN;
+              const aValue = Number.isNaN(aWhen) ? Number.MAX_SAFE_INTEGER : aWhen;
+              const bValue = Number.isNaN(bWhen) ? Number.MAX_SAFE_INTEGER : bWhen;
+              return aValue - bValue;
+            })
+        : [];
+
+      if (proposalTimeline.length) {
+        proposalTimeline.forEach((entry) => {
+          items.push({
+            when: entry.when,
+            title: entry.title,
+            detail: entry.detail || App.utils.formatCurrency(Number(item.proposed_value || 0)),
+          });
         });
+      } else {
+        items.push({
+          when: item.created_at || item.createdAt || "",
+          title:
+            item.proposal_role === "sent"
+              ? "Proposta enviada"
+              : "Oferta recebida",
+          detail: `${App.utils.formatCurrency(Number(item.proposed_value || 0))} - ${item.status || "pending"}.`,
+        });
+        if (item.answered_at || item.answeredAt) {
+          items.push({
+            when: item.answered_at || item.answeredAt || "",
+            title: "Resposta da negociacao",
+            detail:
+              item.response_message ||
+              `Status final: ${item.status || "respondido"}.`,
+          });
+        }
       }
     });
     transfers.forEach((item) => {

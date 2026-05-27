@@ -141,11 +141,38 @@ App.auth = {
     const isInternal =
       options.forceInternal ||
       !App.auth.isExternalMarketProposal(item);
-    const stages = App.transfers?.buildTransferNegotiationStages
-      ? App.transfers.buildTransferNegotiationStages(item, null, {
-          isInternal,
-        })
+    const auditTimeline = Array.isArray(item.operation_audit_timeline)
+      ? item.operation_audit_timeline
       : [];
+    const stages = Array.isArray(auditTimeline)
+      ? auditTimeline
+          .filter(
+            (entry) =>
+              entry &&
+              typeof entry === "object" &&
+              (entry.title || entry.detail || entry.when),
+          )
+          .map((entry) => ({
+            when: entry.when || "",
+            title: entry.title || "Evento da negociacao",
+            detail:
+              entry.detail ||
+              App.auth.getTransferProposalStatusHint(item) ||
+              "Status atualizado.",
+            tone: entry.tone || "watch",
+          }))
+          .sort((a, b) => {
+            const aWhen = a.when ? new Date(a.when).getTime() : NaN;
+            const bWhen = b.when ? new Date(b.when).getTime() : NaN;
+            const aValue = Number.isNaN(aWhen) ? Number.MAX_SAFE_INTEGER : aWhen;
+            const bValue = Number.isNaN(bWhen) ? Number.MAX_SAFE_INTEGER : bWhen;
+            return aValue - bValue;
+          })
+      : App.transfers?.buildTransferNegotiationStages
+        ? App.transfers.buildTransferNegotiationStages(item, null, {
+            isInternal,
+          })
+        : [];
     const fallback = [
       {
         title: item.proposal_type === "external_market" ? "Mesa aberta" : "Negociação interna",
@@ -991,8 +1018,46 @@ App.auth = {
         },
         30000,
       );
+      const proposals = Array.isArray(result) ? result : [];
+      const proposalIds = proposals
+        .map((item) => Number(item.id))
+        .filter((value) => Number.isFinite(value) && value > 0);
+      let auditTimeline = [];
+      if (proposalIds.length && typeof App.api.getTransferNegotiationAuditTimeline === "function") {
+        try {
+          const resultTimeline = await App.api.getTransferNegotiationAuditTimeline(proposalIds);
+          auditTimeline = Array.isArray(resultTimeline) ? resultTimeline : [];
+        } catch (timelineError) {
+          console.warn(
+            "Timeline de proposta indisponível para auditoria. Prosseguindo sem ela:",
+            timelineError,
+          );
+          auditTimeline = [];
+        }
+      }
+      const timelineById = {};
 
-      App.auth.myTransferProposals = Array.isArray(result) ? result : [];
+      if (Array.isArray(auditTimeline)) {
+        auditTimeline.forEach((entry) => {
+          const proposalId = Number(entry?.proposalId);
+          if (Number.isFinite(proposalId) && proposalId > 0) {
+            timelineById[proposalId] = Array.isArray(entry?.timeline)
+              ? entry.timeline
+              : [];
+          }
+        });
+      }
+
+      App.auth.myTransferProposals = proposals.map((item) => {
+        const proposalId = Number(item.id);
+        const timeline = Number.isFinite(proposalId)
+          ? timelineById[proposalId]
+          : [];
+        return {
+          ...item,
+          operation_audit_timeline: Array.isArray(timeline) ? timeline : [],
+        };
+      });
       return App.auth.myTransferProposals;
     } catch (error) {
       console.warn("Propostas de transferência indisponíveis:", error);

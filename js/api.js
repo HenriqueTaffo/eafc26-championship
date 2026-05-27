@@ -1617,6 +1617,29 @@ App.api = {
     return Number(club?.Forca || 70);
   },
 
+  async getTransferNegotiationAuditTimeline(proposalIds = [], options = {}) {
+    const ids = Array.isArray(proposalIds) ? proposalIds : [];
+    const uniqueIds = [...new Set(
+      ids
+        .map((value) => Number(value))
+        .filter((value) => Number.isFinite(value) && value > 0),
+    )];
+
+    if (!uniqueIds.length) return [];
+
+    const payload = {
+      ...App.api.getAuthPayload(),
+      p_proposal_ids: uniqueIds,
+    };
+
+    const timeoutMs = Number.isFinite(options.timeoutMs) ? options.timeoutMs : 30000;
+    return App.api.rpc(
+      "app_get_transfer_negotiation_audit_timeline",
+      payload,
+      timeoutMs,
+    );
+  },
+
   simulateScore(home, away) {
     const homeStrength = App.api.getTeamStrength(home);
     const awayStrength = App.api.getTeamStrength(away);
