@@ -296,9 +296,21 @@ function GlobalLoader() {
 }
 
 function WorkspaceNavigation() {
+  useAppRuntime();
+
+  const session = App.auth?.getSession?.() || null;
+  const isCommissioner = Boolean(
+    session?.isCommissioner || App.auth?.isCommissioner?.(),
+  );
+  const visibleGroups = WORKSPACE_NAV_GROUPS.filter((group) => {
+    if (!group.role) return true;
+    if (group.role === "commissioner") return isCommissioner;
+    return false;
+  });
+
   return (
     <nav className="tabs workspace-nav" aria-label="Navegação principal">
-      {WORKSPACE_NAV_GROUPS.map((group) => (
+      {visibleGroups.map((group) => (
         <section
           className="workspace-nav-group"
           data-role={group.role || "all"}
