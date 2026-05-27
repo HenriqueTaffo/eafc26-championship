@@ -6,6 +6,12 @@ App.forms = {
     if (error?.name === "AbortError") {
       return "A operacao demorou demais para responder. Verifique o Supabase e tente novamente.";
     }
+    if (
+      message.includes("app_add_result_v1") &&
+      message.includes("does not exist")
+    ) {
+      return "A rotina de resultados ficou fora de sincronia com o banco. Tente novamente em alguns segundos.";
+    }
     if (App.utils.normalizeText(message).includes("statement timeout")) {
       return "O Supabase demorou demais para concluir a acao. Tente novamente em alguns segundos.";
     }
