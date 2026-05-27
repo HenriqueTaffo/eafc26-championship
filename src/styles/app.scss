@@ -76,6 +76,7 @@ body *:not(svg):not(path) {
 
 body:not(.is-commissioner) .tab-button[data-view="commissionerView"],
 body:not(.is-commissioner) .tab-button[data-view="submitView"],
+body:not(.is-commissioner) .workspace-nav-group[data-role="commissioner"],
 body:not(.is-commissioner) #commissionerView,
 body:not(.is-commissioner) #submitView {
   display: none !important;
@@ -5464,38 +5465,162 @@ body.auth-login-success .manager-login-panel {
   text-transform: uppercase;
 }
 
-.tabs-grouped {
+.workspace-nav {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 10px;
-  padding: 12px;
-  border: 1px solid rgba(148, 163, 184, 0.12);
-  border-radius: $radius;
-  background: rgba(2, 6, 23, 0.34);
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 14px;
 }
 
-.tab-group {
+.workspace-nav-group {
   display: grid;
-  gap: 8px;
+  gap: 14px;
   min-width: 0;
+  padding: 14px;
+  border: 1px solid rgba(148, 163, 184, 0.14);
+  border-radius: 12px;
+  background:
+    radial-gradient(circle at 100% 0%, rgba(45, 212, 191, 0.12), transparent 34%),
+    linear-gradient(180deg, rgba(5, 11, 18, 0.96), rgba(3, 8, 14, 0.92));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.03),
+    0 18px 40px rgba(0, 0, 0, 0.2);
 }
 
-.tab-group-label {
+.workspace-nav-group[data-role="commissioner"] {
+  grid-template-columns: 1fr;
+}
+
+.workspace-nav-group-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+
+  div {
+    display: grid;
+    gap: 5px;
+    min-width: 0;
+  }
+
+  p {
+    margin: 0;
+    max-width: 42ch;
+    color: #8ea3b5;
+    font-size: 0.72rem;
+    line-height: 1.45;
+  }
+
+  b {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 34px;
+    height: 34px;
+    border: 1px solid rgba(45, 212, 191, 0.22);
+    border-radius: 999px;
+    padding: 0 10px;
+    color: #dffdf8;
+    background: rgba(10, 24, 27, 0.84);
+    font-size: 0.76rem;
+    font-weight: 900;
+  }
+}
+
+.workspace-nav-group-kicker {
   color: #8fd3ff;
   font-size: 0.62rem;
   font-weight: 900;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
 }
 
-.tabs-grouped .tab-button {
-  justify-content: flex-start;
-  min-height: 42px;
+.workspace-nav-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
 }
 
-.tabs-grouped .tab-icon {
+.workspace-nav-tab {
+  position: relative;
+  display: grid;
+  grid-template-columns: 46px minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 74px;
+  padding: 12px;
+  border: 1px solid rgba(148, 163, 184, 0.14);
+  border-radius: 10px;
+  background:
+    linear-gradient(180deg, rgba(15, 23, 42, 0.68), rgba(2, 6, 23, 0.56)),
+    rgba(2, 6, 23, 0.48);
+  color: inherit;
+  text-align: left;
+  transition:
+    transform 180ms ease,
+    border-color 180ms ease,
+    background 180ms ease,
+    box-shadow 180ms ease;
+
+  &:hover,
+  &:focus-visible {
+    transform: translateY(-1px);
+    border-color: rgba(96, 165, 250, 0.3);
+    background:
+      linear-gradient(180deg, rgba(17, 30, 53, 0.78), rgba(4, 11, 21, 0.62)),
+      rgba(2, 6, 23, 0.58);
+    box-shadow: 0 14px 28px rgba(0, 0, 0, 0.18);
+  }
+}
+
+.workspace-nav-tab.active {
+  border-color: rgba(45, 212, 191, 0.38);
+  background:
+    linear-gradient(135deg, rgba(251, 191, 36, 0.18), rgba(45, 212, 191, 0.14) 62%, rgba(15, 23, 42, 0.82)),
+    rgba(4, 16, 19, 0.9);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    0 18px 36px rgba(0, 0, 0, 0.22);
+}
+
+.workspace-nav-tab-icon {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  width: 46px;
+  height: 46px;
+  border: 1px solid rgba(148, 163, 184, 0.14);
+  border-radius: 12px;
+  background: rgba(10, 15, 24, 0.88);
+  color: #b8c5d1;
+  transition:
+    background 180ms ease,
+    border-color 180ms ease,
+    color 180ms ease;
+}
+
+.workspace-nav-tab.active .workspace-nav-tab-icon {
+  border-color: rgba(251, 191, 36, 0.24);
+  background: rgba(32, 24, 6, 0.9);
+  color: #fde68a;
+}
+
+.workspace-nav-tab-copy {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+
+  strong {
+    color: #f8fafc;
+    font-size: 0.92rem;
+    line-height: 1.2;
+  }
+
+  small {
+    color: #91a3b4;
+    font-size: 0.69rem;
+    line-height: 1.4;
+  }
 }
 
 .status-primary {
@@ -5520,7 +5645,7 @@ body.auth-login-success .manager-login-panel {
 }
 
 body.auth-gated {
-  .tabs-grouped,
+  .workspace-nav,
   .app-status-bar,
   #transferProposalPanel {
     display: none;
@@ -5975,7 +6100,8 @@ body.auth-gated {
 }
 
 @media (max-width: 980px) {
-  .tabs-grouped,
+  .workspace-nav,
+  .workspace-nav-grid,
   .coach-top-row-v54,
   .email-office-headline,
   .email-office-toolbar,

@@ -96,6 +96,90 @@ const BRAND_ASSET_VERSION = "20260525-4linhas-brand-v1";
 const BRAND_NAME = "4 Linhas";
 const BRAND_ICON_SRC = `./assets/4linhas-icon-light.png?v=${BRAND_ASSET_VERSION}`;
 const BRAND_WORDMARK_SRC = `./assets/4linhas-wordmark-light.png?v=${BRAND_ASSET_VERSION}`;
+const WORKSPACE_NAV_GROUPS = [
+  {
+    key: "league",
+    label: "Liga",
+    detail: "Rodada, agenda e leitura macro da temporada.",
+    views: [
+      {
+        view: "standingsView",
+        label: "Classificação",
+        detail: "Tabela, forma e pressão de campanha",
+        icon: BarChart3,
+      },
+      {
+        view: "calendarView",
+        label: "Calendário",
+        detail: "Agenda mensal, semanas e placares pendentes",
+        icon: CalendarDays,
+      },
+      {
+        view: "cupsView",
+        label: "Copas",
+        detail: "Chaves, avanço de fase e bônus",
+        icon: Trophy,
+      },
+      {
+        view: "eventsView",
+        label: "Eventos",
+        detail: "Caos, bastidores, punições e impactos",
+        icon: Sparkles,
+      },
+    ],
+  },
+  {
+    key: "club",
+    label: "Clube",
+    detail: "Fluxo privado do técnico, elenco e mercado.",
+    views: [
+      {
+        view: "playersView",
+        label: "Escritório",
+        detail: "Inbox, caixa, diretoria e contratos",
+        icon: WalletCards,
+      },
+      {
+        view: "squadView",
+        label: "Elenco",
+        detail: "Formação, disponibilidade e folha",
+        icon: Users,
+      },
+      {
+        view: "experienceView",
+        label: "Inteligência",
+        detail: "Risco, prioridades e leitura do momento",
+        icon: Brain,
+      },
+      {
+        view: "transfersView",
+        label: "Transferências",
+        detail: "Mesa ativa, scouting e negociações",
+        icon: ArrowLeftRight,
+      },
+    ],
+  },
+  {
+    key: "admin",
+    label: "Liga / Admin",
+    detail: "Governança, auditoria e fechamento operacional.",
+    role: "commissioner",
+    views: [
+      {
+        view: "commissionerView",
+        label: "Comissário",
+        detail: "Leilões, auditoria e ações médicas",
+        icon: Scale,
+      },
+      {
+        view: "submitView",
+        label: "Enviar dados",
+        detail: "Resultados, CPU e rotinas da rodada",
+        icon: UploadCloud,
+      },
+    ],
+  },
+];
 
 function ViewLoadingPlaceholder({
   title = "Carregando painel",
@@ -211,6 +295,51 @@ function GlobalLoader() {
   );
 }
 
+function WorkspaceNavigation() {
+  return (
+    <nav className="tabs workspace-nav" aria-label="Navegação principal">
+      {WORKSPACE_NAV_GROUPS.map((group) => (
+        <section
+          className="workspace-nav-group"
+          data-role={group.role || "all"}
+          key={group.key}
+        >
+          <header className="workspace-nav-group-header">
+            <div>
+              <span className="workspace-nav-group-kicker">{group.label}</span>
+              <p>{group.detail}</p>
+            </div>
+            <b>{group.views.length}</b>
+          </header>
+          <div className="workspace-nav-grid">
+            {group.views.map((item, index) => {
+              const Icon = item.icon;
+              return (
+                <button
+                  className={`tab-button workspace-nav-tab${
+                    index === 0 && group.key === "league" ? " active" : ""
+                  }`}
+                  data-view={item.view}
+                  key={item.view}
+                  type="button"
+                >
+                  <span className="workspace-nav-tab-icon" aria-hidden="true">
+                    <Icon size={16} strokeWidth={2.2} />
+                  </span>
+                  <span className="workspace-nav-tab-copy">
+                    <strong>{item.label}</strong>
+                    <small>{item.detail}</small>
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </section>
+      ))}
+    </nav>
+  );
+}
+
 function ShellChrome() {
   return (
     <>
@@ -243,77 +372,7 @@ function ShellChrome() {
           className="decision-center"
         ></section>
 
-        <nav className="tabs tabs-grouped" aria-label="Navegação principal">
-          <div className="tab-group">
-            <span className="tab-group-label">Liga</span>
-            <button className="tab-button active" data-view="standingsView">
-              <span className="tab-icon" aria-hidden="true">
-                <BarChart3 size={16} strokeWidth={2.2} />
-              </span>
-              Classificação
-            </button>
-            <button className="tab-button" data-view="calendarView">
-              <span className="tab-icon" aria-hidden="true">
-                <CalendarDays size={16} strokeWidth={2.2} />
-              </span>
-              Calendário
-            </button>
-            <button className="tab-button" data-view="cupsView">
-              <span className="tab-icon" aria-hidden="true">
-                <Trophy size={16} strokeWidth={2.2} />
-              </span>
-              Copas
-            </button>
-            <button className="tab-button" data-view="eventsView">
-              <span className="tab-icon" aria-hidden="true">
-                <Sparkles size={16} strokeWidth={2.2} />
-              </span>
-              Eventos
-            </button>
-          </div>
-          <div className="tab-group">
-            <span className="tab-group-label">Clube</span>
-            <button className="tab-button" data-view="playersView">
-              <span className="tab-icon" aria-hidden="true">
-                <WalletCards size={16} strokeWidth={2.2} />
-              </span>
-              Escritório
-            </button>
-            <button className="tab-button" data-view="squadView">
-              <span className="tab-icon" aria-hidden="true">
-                <Users size={16} strokeWidth={2.2} />
-              </span>
-              Elenco
-            </button>
-            <button className="tab-button" data-view="experienceView">
-              <span className="tab-icon" aria-hidden="true">
-                <Brain size={16} strokeWidth={2.2} />
-              </span>
-              Inteligência
-            </button>
-            <button className="tab-button" data-view="transfersView">
-              <span className="tab-icon" aria-hidden="true">
-                <ArrowLeftRight size={16} strokeWidth={2.2} />
-              </span>
-              Transferências
-            </button>
-          </div>
-          <div className="tab-group">
-            <span className="tab-group-label">Liga / Admin</span>
-            <button className="tab-button" data-view="commissionerView">
-              <span className="tab-icon" aria-hidden="true">
-                <Scale size={16} strokeWidth={2.2} />
-              </span>
-              Comissário
-            </button>
-            <button className="tab-button" data-view="submitView">
-              <span className="tab-icon" aria-hidden="true">
-                <UploadCloud size={16} strokeWidth={2.2} />
-              </span>
-              Enviar dados
-            </button>
-          </div>
-        </nav>
+        <WorkspaceNavigation />
 
         <section className="app-status-bar" aria-live="polite">
           <div className="status-primary">
