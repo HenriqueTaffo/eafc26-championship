@@ -11,6 +11,16 @@ $warning: #b45309;
 $radius: 8px;
 $shadow-soft: 0 14px 38px rgba(15, 23, 42, 0.1);
 
+@keyframes app-skeleton-shimmer {
+  0% {
+    background-position: 160% 0;
+  }
+
+  100% {
+    background-position: -160% 0;
+  }
+}
+
 :root {
   --app-font-family:
     "ethnocentric", "Ethnocentric Rg", "Ethnocentric", "Bank Gothic",
@@ -868,6 +878,53 @@ body.auth-login-success .manager-login-panel {
     font-size: 0.72rem;
     line-height: 1.5;
   }
+}
+
+.transfer-ops-alerts {
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.transfer-ops-alert {
+  display: grid;
+  gap: 5px;
+  min-height: 82px;
+  align-content: center;
+  border: 1px solid rgba(148, 163, 184, 0.14);
+  border-radius: $radius;
+  padding: 12px;
+  background:
+    linear-gradient(135deg, rgba(15, 23, 42, 0.8), rgba(2, 6, 23, 0.52)),
+    rgba(2, 6, 23, 0.58);
+
+  strong {
+    color: #f8fafc;
+    font-size: 0.78rem;
+    line-height: 1.25;
+  }
+
+  p {
+    margin: 0;
+    color: #a7b7c4;
+    font-size: 0.7rem;
+    line-height: 1.45;
+  }
+}
+
+.transfer-ops-alert.is-warning {
+  border-color: rgba(251, 191, 36, 0.26);
+  background:
+    linear-gradient(135deg, rgba(120, 53, 15, 0.2), rgba(2, 6, 23, 0.62)),
+    rgba(2, 6, 23, 0.58);
+}
+
+.transfer-ops-alert.is-danger {
+  border-color: rgba(248, 113, 113, 0.3);
+  background:
+    linear-gradient(135deg, rgba(127, 29, 29, 0.22), rgba(2, 6, 23, 0.64)),
+    rgba(2, 6, 23, 0.58);
 }
 
 .transfer-workbench {
@@ -2361,7 +2418,7 @@ body.auth-login-success .manager-login-panel {
 }
 
 .email-office-tabs {
-  grid-template-columns: repeat(6, minmax(0, 1fr));
+  grid-template-columns: repeat(7, minmax(0, 1fr));
 }
 
 .email-bulk-toolbar {
@@ -2415,6 +2472,70 @@ body.auth-login-success .manager-login-panel {
 .email-thread-row-actions button:hover {
   border-color: rgba(45, 212, 191, 0.32);
   color: #ecfeff;
+}
+
+.email-mailbox-section {
+  display: grid;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.email-mailbox-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border: 1px solid rgba(148, 163, 184, 0.14);
+  border-radius: $radius;
+  padding: 11px 12px;
+  color: #f8fafc;
+  background: rgba(15, 23, 42, 0.42);
+  list-style: none;
+}
+
+.email-mailbox-section-header::-webkit-details-marker {
+  display: none;
+}
+
+.email-mailbox-section-header div {
+  display: grid;
+  min-width: 0;
+  gap: 3px;
+}
+
+.email-mailbox-section-header strong {
+  color: #fffef8;
+  font-size: 0.82rem;
+}
+
+.email-mailbox-section-header span {
+  color: #99a9b8;
+  font-size: 0.7rem;
+}
+
+.email-mailbox-section-header b {
+  display: grid;
+  place-items: center;
+  min-width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  color: #061512;
+  background: #2dd4bf;
+  font-size: 0.76rem;
+}
+
+.email-mailbox-section.is-closed {
+  margin-top: 14px;
+}
+
+.email-mailbox-section.is-closed .email-mailbox-section-header {
+  cursor: pointer;
+  background: rgba(2, 6, 23, 0.34);
+}
+
+.email-mailbox-section.is-closed .email-mailbox-section-header b {
+  color: #cbd5e1;
+  background: rgba(148, 163, 184, 0.14);
 }
 
 .email-thread-stack,
@@ -2547,6 +2668,16 @@ body.auth-login-success .manager-login-panel {
   opacity: 0.78;
 }
 
+.email-thread.is-closed {
+  background: rgba(2, 6, 23, 0.26);
+}
+
+.email-thread.is-closed .email-thread-badge {
+  border-color: rgba(148, 163, 184, 0.18);
+  color: #cbd5e1;
+  background: rgba(148, 163, 184, 0.08);
+}
+
 .email-thread-badge {
   border: 1px solid rgba(45, 212, 191, 0.18);
   border-radius: 999px;
@@ -2628,6 +2759,134 @@ body.auth-login-success .manager-login-panel {
   }
 }
 
+.proposal-workflow-sections {
+  display: grid;
+  gap: 14px;
+}
+
+.proposal-workflow-section {
+  display: grid;
+  gap: 12px;
+  border: 1px solid rgba(148, 163, 184, 0.14);
+  border-radius: $radius;
+  padding: 12px;
+  background: rgba(2, 6, 23, 0.2);
+}
+
+.proposal-workflow-section.is-open {
+  border-color: rgba(45, 212, 191, 0.18);
+  background:
+    linear-gradient(90deg, rgba(45, 212, 191, 0.08), transparent 50%),
+    rgba(2, 6, 23, 0.22);
+}
+
+.proposal-workflow-section.is-closed {
+  background: rgba(2, 6, 23, 0.16);
+}
+
+.proposal-workflow-header,
+.proposal-columns {
+  display: grid;
+  gap: 12px;
+}
+
+.proposal-workflow-header {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+}
+
+.proposal-workflow-header strong {
+  color: #fffef8;
+  font-size: 0.84rem;
+}
+
+.proposal-workflow-header span {
+  color: #8fd3ff;
+  font-size: 0.68rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.proposal-columns {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.proposal-columns > div,
+.proposal-sent-list,
+.proposal-history-list {
+  display: grid;
+  gap: 10px;
+}
+
+.proposal-columns h3 {
+  margin: 0;
+  color: #e2e8f0;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+}
+
+@media (max-width: 860px) {
+  .proposal-columns {
+    grid-template-columns: 1fr;
+  }
+}
+
+.operation-audit-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.operation-audit-metrics article {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  border: 1px solid rgba(148, 163, 184, 0.14);
+  border-radius: $radius;
+  padding: 12px;
+  background: rgba(2, 6, 23, 0.28);
+}
+
+.operation-audit-metrics span,
+.operation-audit-metrics small,
+.operation-audit-row {
+  color: #99a9b8;
+  font-size: 0.68rem;
+}
+
+.operation-audit-metrics strong {
+  color: #fffef8;
+  font-size: 1.25rem;
+}
+
+.operation-audit-metrics .is-danger {
+  border-color: rgba(248, 113, 113, 0.28);
+  background: rgba(127, 29, 29, 0.14);
+}
+
+.operation-audit-metrics .is-warning {
+  border-color: rgba(244, 211, 63, 0.28);
+  background: rgba(120, 83, 11, 0.14);
+}
+
+.operation-audit-grid {
+  margin-top: 12px;
+}
+
+.operation-audit-row.failed {
+  color: #fecaca;
+}
+
+.operation-audit-row.running {
+  color: #fde68a;
+}
+
+@media (max-width: 760px) {
+  .operation-audit-metrics {
+    grid-template-columns: 1fr;
+  }
+}
+
 .transfer-compare-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -2694,6 +2953,58 @@ body.auth-login-success .manager-login-panel {
   cursor: default;
 }
 
+.market-player-skeleton,
+.app-skeleton-stack {
+  display: grid;
+  gap: 10px;
+}
+
+.app-skeleton-row {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr);
+  gap: 10px;
+  min-height: 82px;
+  align-items: center;
+  border: 1px solid rgba(148, 163, 184, 0.12);
+  border-radius: $radius;
+  padding: 12px;
+  background: rgba(2, 6, 23, 0.38);
+}
+
+.app-skeleton-row i,
+.app-skeleton-row b,
+.app-skeleton-row em {
+  display: block;
+  min-width: 0;
+  border-radius: 999px;
+  background:
+    linear-gradient(
+      90deg,
+      rgba(30, 41, 59, 0.66) 0%,
+      rgba(45, 212, 191, 0.16) 42%,
+      rgba(30, 41, 59, 0.66) 82%
+    );
+  background-size: 220% 100%;
+  animation: app-skeleton-shimmer 1.25s ease-in-out infinite;
+}
+
+.app-skeleton-row i {
+  grid-row: 1 / span 2;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+}
+
+.app-skeleton-row b {
+  width: 78%;
+  height: 14px;
+}
+
+.app-skeleton-row em {
+  width: 56%;
+  height: 10px;
+}
+
 .market-player-shell:hover {
   transform: translateY(-1px);
 }
@@ -2756,6 +3067,7 @@ body.auth-login-success .manager-login-panel {
 
 @media (max-width: 760px) {
   .transfer-ops-board,
+  .transfer-ops-alerts,
   .transfer-deal-metrics,
   .transfer-deal-columns,
   .transfer-compare-grid,

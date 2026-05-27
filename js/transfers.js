@@ -724,29 +724,75 @@ App.transfers = {
     const reference = Number(preview.marketValue || 0);
     if (offer <= 0 || expected <= 0 || reference <= 0) return null;
 
+    const acceptanceRatio = offer / expected;
+    const referenceRatio = offer / reference;
+    const acceptanceProbability = Math.max(
+      4,
+      Math.min(
+        98,
+        Math.round(
+          (acceptanceRatio >= 1 ? 72 + (acceptanceRatio - 1) * 220 : 24 + acceptanceRatio * 50)
+          + Math.max(0, (referenceRatio - 1) * 90),
+        ),
+      ),
+    );
+
+    if (offer >= expected * 1.12) {
+      return {
+        tone: "success",
+        label: "Alta chance de aceite",
+        detail:
+          "Oferta acima do esperado para esse perfil. O clube vendedor tende a aceitar ou pedir ajustes pequenos.",
+        acceptanceProbability,
+        acceptanceDelta: acceptanceRatio - 1,
+        deltaTag: "Muito acima",
+      };
+    }
+
     if (offer >= expected) {
       return {
         tone: "success",
-        label: "Aceite provavel",
+        label: "Aceite provável",
         detail:
-          "A oferta esta dentro da faixa que o clube vendedor tende a aceitar.",
+          "Dentro do patamar esperado; boa chance de aceitação com validação do clube.",
+        acceptanceProbability,
+        acceptanceDelta: acceptanceRatio - 1,
+        deltaTag: "No alvo",
+      };
+    }
+
+    if (offer >= expected * 0.9) {
+      return {
+        tone: "warning",
+        label: "Aceite parcial provável",
+        detail:
+          "Pode precisar de ajuste menor ou prazo para reavaliação do clube vendedor.",
+        acceptanceProbability,
+        acceptanceDelta: acceptanceRatio - 1,
+        deltaTag: "Abaixo do esperado",
       };
     }
 
     if (offer < expected * 0.78) {
       return {
         tone: "danger",
-        label: "Risco de recusa",
+        label: "Risco alto",
         detail:
-          "A oferta esta muito abaixo da avaliacao interna do vendedor.",
+          "Oferta abaixo do esperado; tendência de contraoferta ou recusa.",
+        acceptanceProbability,
+        acceptanceDelta: acceptanceRatio - 1,
+        deltaTag: "Muito abaixo",
       };
     }
 
     return {
       tone: "warning",
-      label: "Contraoferta provavel",
+      label: "Contraoferta provável",
       detail:
-        "O vendedor deve responder pedindo ajuste antes da assinatura.",
+        "Proposta abaixo de mercado pode gerar contraoferta com nova rodada.",
+      acceptanceProbability,
+      acceptanceDelta: acceptanceRatio - 1,
+      deltaTag: "Zona de negociação",
     };
   },
 
@@ -2536,6 +2582,11 @@ App.transfers = {
     const externalVerdict = App.transfers.getExternalOfferVerdict(preview);
     if (externalVerdict) {
       messages.push(externalVerdict.detail);
+      if (Number.isFinite(externalVerdict.acceptanceProbability)) {
+        messages.push(
+          `Chance de aceite estimada: ${externalVerdict.acceptanceProbability}%.`,
+        );
+      }
     }
 
     if (!messages.length) {
@@ -2604,12 +2655,20 @@ App.transfers = {
         ? []
         : [
             {
-              label: "Pedido provavel",
+              label: "Pedido provável",
               value: App.utils.formatCurrency(preview.sellerExpectationValue),
             },
             {
               label: "Tendencia",
               value: externalVerdict?.label || "Em analise",
+              tone: externalVerdict?.tone || "",
+            },
+            {
+              label: "Chance de aceite",
+              value:
+                externalVerdict?.acceptanceProbability === undefined
+                  ? "N/A"
+                  : `${externalVerdict.acceptanceProbability}%`,
               tone: externalVerdict?.tone || "",
             },
           ]),
@@ -3395,9 +3454,12 @@ App.transfers = {
     App.transfers.marketSearchRequestId = requestId;
     target.dataset.marketRenderKey = renderKey;
     target.dataset.marketRenderReady = "false";
+    target.setAttribute("aria-busy", "true");
     App.dom.setHtml(
       target,
-      `<div class="market-empty">Buscando jogadores no mercado...</div>`,
+      App.ui?.skeletonRows
+        ? App.ui.skeletonRows(4, "market-player-skeleton")
+        : `<div class="market-empty">Buscando jogadores no mercado...</div>`,
     );
 
     const renderRequest = (async () => {
@@ -3425,6 +3487,7 @@ App.transfers = {
       `,
         );
         target.dataset.marketRenderReady = "true";
+        target.setAttribute("aria-busy", "false");
         return;
       }
 
@@ -3470,9 +3533,11 @@ App.transfers = {
         );
       });
       target.dataset.marketRenderReady = "true";
+      target.setAttribute("aria-busy", "false");
     })().finally(() => {
       if (App.transfers.marketResultsPending?.key === renderKey) {
         App.transfers.marketResultsPending = null;
+        target.setAttribute("aria-busy", "false");
       }
     });
 

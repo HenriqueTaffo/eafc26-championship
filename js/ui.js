@@ -34,6 +34,24 @@ App.ui = {
     `;
   },
 
+  skeletonRows(count = 3, className = "app-skeleton-stack") {
+    const total = Math.max(1, Math.min(Number(count || 3), 8));
+    return `
+      <div class="${App.utils.escapeHtml(className)}" aria-hidden="true">
+        ${Array.from(
+          { length: total },
+          (_, index) => `
+            <span class="app-skeleton-row">
+              <i></i>
+              <b style="width:${Math.max(42, 78 - index * 8)}%"></b>
+              <em style="width:${Math.max(28, 58 - index * 7)}%"></em>
+            </span>
+          `,
+        ).join("")}
+      </div>
+    `;
+  },
+
   getActionModal() {
     let modal = document.getElementById("appActionModal");
     if (modal) return modal;

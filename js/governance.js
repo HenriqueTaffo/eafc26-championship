@@ -4,7 +4,7 @@ App.governance = {
   async loadData() {
     try {
       const session = App.auth?.getSession ? App.auth.getSession() : null;
-      const [result, weeklyCloseStatus] = await Promise.all([
+      const [result, weeklyCloseStatus, operationAudit] = await Promise.all([
         App.api.rpc(
           "app_get_governance_data",
           {
@@ -14,6 +14,9 @@ App.governance = {
           30000,
         ),
         App.api.rpc("app_get_weekly_close_status", {}, 30000).catch(() => null),
+        App.api.loadOperationAuditDashboard?.({ cacheTtlMs: 45000 }).catch(
+          () => null,
+        ),
       ]);
 
       App.state.apiGovernance = result || {
@@ -22,6 +25,13 @@ App.governance = {
         weeklyReviews: [],
       };
       App.state.apiWeeklyCloseStatus = weeklyCloseStatus || null;
+      App.state.apiOperationAudit =
+        operationAudit || App.state.apiOperationAudit || {
+          ok: false,
+          summary: {},
+          byOperation: [],
+          recent: [],
+        };
       return App.state.apiGovernance;
     } catch (error) {
       console.warn("Governança indisponível:", error);
@@ -584,6 +594,83 @@ App.governance = {
           `,
             )
             .join("")}
+        </div>
+      </article>
+    `;
+  },
+
+  renderOperationAudit() {
+    const audit = App.state.apiOperationAudit || {};
+    const summary = audit.summary || {};
+    const recent = Array.isArray(audit.recent) ? audit.recent : [];
+    const byOperation = Array.isArray(audit.byOperation)
+      ? audit.byOperation
+      : [];
+    const failed = Number(summary.failed14d || 0);
+    const running = Number(summary.running14d || 0);
+    const completed = Number(summary.completed14d || 0);
+    const total = Number(summary.total14d || 0);
+    const health =
+      failed > 0 ? "Atenção" : running > 0 ? "Em andamento" : "Estável";
+
+    return `
+      <article class="commissioner-card commissioner-operation-audit-card">
+        <div class="home-panel-header">
+          <div>
+            <span class="modal-kicker">Backend seguro</span>
+            <h2>Operações críticas</h2>
+          </div>
+          <span class="coach-section-kicker">${App.utils.escapeHtml(health)}</span>
+        </div>
+        <div class="operation-audit-metrics">
+          <article>
+            <span>14 dias</span>
+            <strong>${total}</strong>
+            <small>${completed} concluída(s)</small>
+          </article>
+          <article class="${failed ? "is-danger" : ""}">
+            <span>Falhas</span>
+            <strong>${failed}</strong>
+            <small>${summary.lastFailureAt ? App.utils.formatDateTime(summary.lastFailureAt) : "sem falha recente"}</small>
+          </article>
+          <article class="${running ? "is-warning" : ""}">
+            <span>Em andamento</span>
+            <strong>${running}</strong>
+            <small>lock/idempotência ativo</small>
+          </article>
+        </div>
+        <div class="commissioner-split-list operation-audit-grid">
+          <div>
+            <strong>Por contrato RPC</strong>
+            ${
+              byOperation.length
+                ? byOperation
+                    .slice(0, 6)
+                    .map(
+                      (item) =>
+                        `<span>${App.utils.escapeHtml(item.operation)} · ${Number(item.total || 0)} total · ${Number(item.failed || 0)} falha(s)</span>`,
+                    )
+                    .join("")
+                : `<span>Nenhuma operação auditada ainda.</span>`
+            }
+          </div>
+          <div>
+            <strong>Recentes</strong>
+            ${
+              recent.length
+                ? recent
+                    .slice(0, 6)
+                    .map(
+                      (item) => `
+                <span class="operation-audit-row ${App.utils.escapeHtml(item.status || "running")}">
+                  ${App.utils.escapeHtml(item.operation || "operação")} · ${App.utils.escapeHtml(item.status || "-")} · ${App.utils.escapeHtml(item.actor || "Liga")}
+                </span>
+              `,
+                    )
+                    .join("")
+                : `<span>Sem histórico recente carregado.</span>`
+            }
+          </div>
         </div>
       </article>
     `;
@@ -1174,6 +1261,7 @@ App.governance = {
       `
       ${App.governance.renderIntegrityAudit()}
       ${App.governance.renderLeagueRadar()}
+      ${App.governance.renderOperationAudit()}
       ${App.governance.renderEconomyControl()}
       ${App.governance.renderRumorDesk()}
       ${App.governance.renderTransferReversal()}

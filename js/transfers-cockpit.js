@@ -455,6 +455,8 @@ Object.assign(App.transfers, {
           ? "Aguardando assinatura"
           : isRejected
             ? "Proposta recusada"
+            : isSignaturePending
+              ? "Assinatura da liga"
             : isBuyerReview
               ? "Aguardando confirmacao"
               : "Registro da liga",
@@ -465,8 +467,10 @@ Object.assign(App.transfers, {
               "A mesa foi encerrada sem registrar contrato. Envie nova oferta mais proxima do pedido para reabrir."
             : isBuyerReview
               ? "A resposta chegou no escritorio; o tecnico ainda precisa assinar, renegociar ou encerrar."
+              : isSignaturePending
+                ? "Contrato aceito pelo vendedor e aguardando prazo de assinatura da liga."
               : "Contrato aceito, validado pela liga e publicado no historico de transferencias.",
-        tone: isRejected ? "hot" : isBuyerReview ? "watch" : "success",
+        tone: isRejected || isBuyerReview || isSignaturePending ? "watch" : "success",
       },
     ];
 
@@ -639,6 +643,13 @@ Object.assign(App.transfers, {
       !isInternal && preview?.exchangePlayer
         ? `${preview.exchangePlayer.player} abate ${App.utils.formatCurrency(Number(preview.exchangeCredit || 0))}`
         : "Sem jogador na troca";
+    const acceptanceLabel = Number.isFinite(
+      Number(externalVerdict?.acceptanceProbability),
+    )
+      ? `${Number(externalVerdict.acceptanceProbability)}% estimado`
+      : "Aguardando mesa";
+    const cashAfter = Number(preview?.remainingAfter || 0);
+    const runwayWeeks = Number(preview?.runwayWeeksAfter);
     const summary = [
       {
         label: "Alvo da mesa",
@@ -668,6 +679,26 @@ Object.assign(App.transfers, {
           : externalVerdict?.detail || "",
         variant: externalVerdict?.tone || "watch",
       },
+      ...(!isInternal
+        ? [
+            {
+              label: "Chance de aceite",
+              value: acceptanceLabel,
+              detail:
+                externalVerdict?.deltaTag ||
+                "A oferta ainda pode gerar contraproposta.",
+              variant: externalVerdict?.tone || "watch",
+            },
+            {
+              label: "Caixa pos-envio",
+              value: App.utils.formatCurrency(cashAfter),
+              detail: Number.isFinite(runwayWeeks)
+                ? `${runwayWeeks} semana(s) de folego estimado`
+                : "Sem folha semanal consolidada",
+              variant: cashAfter < 0 ? "danger" : "success",
+            },
+          ]
+        : []),
       {
         label: "Folha semanal",
         value: weeklySalary ? `${App.utils.formatCurrency(weeklySalary)}/sem` : "Pendente",
@@ -787,7 +818,7 @@ Object.assign(App.transfers, {
 
     if (!isInternal && (isBuyerReview || isSignaturePending) && result?.action === "confirm") {
       App.main?.switchToView?.("playersView");
-      requestAnimationFrame(() => {
+      window.requestAnimationFrame(() => {
         document
           .querySelector(".email-office-card")
           ?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -2246,6 +2277,55 @@ Object.assign(App.transfers, {
           Number(budget.transferLimit || 0) - Number(budget.transfersToday || 0),
         )
       : 0;
+    const injuries = App.events?.getActiveEventsForBuyer
+      ? App.events
+          .getActiveEventsForBuyer(buyer)
+          .filter((event) => String(event.JogadorAfetado || "").trim())
+      : [];
+    const runwayWeeksAfter = Number(preview?.runwayWeeksAfter);
+    const opsAlerts = [];
+
+    if (App.transfers.isTransferWindowLocked()) {
+      opsAlerts.push({
+        tone: "danger",
+        title: "Janela fechada",
+        detail: App.transfers.getTransferWindowLockMessage(),
+      });
+    }
+    if (remainingMoves <= 0) {
+      opsAlerts.push({
+        tone: "danger",
+        title: "Limite diario usado",
+        detail: "Novas compras externas devem aguardar a proxima liberacao.",
+      });
+    }
+    if (pendingReceived + pendingSent > 0) {
+      opsAlerts.push({
+        tone: "warning",
+        title: "Mesas abertas",
+        detail: `${pendingReceived} recebida(s) e ${pendingSent} enviada(s) aguardam decisao no escritorio.`,
+      });
+    }
+    if (preview?.payrollBlocked) {
+      opsAlerts.push({
+        tone: "danger",
+        title: "Folha projetada acima do teto",
+        detail: "Ajuste salario, troca ou valor antes de enviar.",
+      });
+    } else if (Number.isFinite(runwayWeeksAfter) && runwayWeeksAfter < 3) {
+      opsAlerts.push({
+        tone: "warning",
+        title: "Folego de caixa curto",
+        detail: "A compra deixaria menos de tres semanas de caixa para a folha.",
+      });
+    }
+    if (injuries.length) {
+      opsAlerts.push({
+        tone: "warning",
+        title: "Departamento medico ativo",
+        detail: `${injuries.length} jogador(es) com restricao podem alterar a prioridade do mercado.`,
+      });
+    }
 
     if (!buyer || !budget) {
       App.dom.setHtml(
@@ -2291,6 +2371,25 @@ Object.assign(App.transfers, {
           <strong>${pendingReceived + pendingSent}</strong>
           <small>${pendingReceived} recebida(s), ${pendingSent} enviada(s), ${listings} jogador(es) na vitrine.</small>
         </article>
+        ${
+          opsAlerts.length
+            ? `
+              <section class="transfer-ops-alerts" aria-label="Alertas operacionais">
+                ${opsAlerts
+                  .slice(0, 4)
+                  .map(
+                    (alert) => `
+                      <article class="transfer-ops-alert is-${App.utils.escapeHtml(alert.tone)}">
+                        <strong>${App.utils.escapeHtml(alert.title)}</strong>
+                        <p>${App.utils.escapeHtml(alert.detail)}</p>
+                      </article>
+                    `,
+                  )
+                  .join("")}
+              </section>
+            `
+            : ""
+        }
       `,
     );
   },
@@ -3017,9 +3116,12 @@ Object.assign(App.transfers, {
     App.transfers.marketSearchRequestId = requestId;
     target.dataset.marketRenderKey = renderKey;
     target.dataset.marketRenderReady = "false";
+    target.setAttribute("aria-busy", "true");
     App.dom.setHtml(
       target,
-      `<div class="market-empty">Buscando jogadores no mercado...</div>`,
+      App.ui?.skeletonRows
+        ? App.ui.skeletonRows(4, "market-player-skeleton")
+        : `<div class="market-empty">Buscando jogadores no mercado...</div>`,
     );
 
     const renderRequest = (async () => {
@@ -3047,6 +3149,7 @@ Object.assign(App.transfers, {
           `,
         );
         target.dataset.marketRenderReady = "true";
+        target.setAttribute("aria-busy", "false");
         return;
       }
 
@@ -3106,9 +3209,11 @@ Object.assign(App.transfers, {
         );
       });
       target.dataset.marketRenderReady = "true";
+      target.setAttribute("aria-busy", "false");
     })().finally(() => {
       if (App.transfers.marketResultsPending?.key === renderKey) {
         App.transfers.marketResultsPending = null;
+        target.setAttribute("aria-busy", "false");
       }
     });
 

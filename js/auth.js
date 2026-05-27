@@ -97,8 +97,7 @@ App.auth = {
   isExternalTransferContractEmail(item = {}) {
     return (
       item.proposal_role === "sent" &&
-      App.auth.isExternalMarketProposal(item) &&
-      App.auth.isOpenTransferProposal(item)
+      App.auth.isExternalMarketProposal(item)
     );
   },
 
@@ -108,11 +107,40 @@ App.auth = {
     );
   },
 
+  isTransferProposalClosed(item = {}) {
+    const status = App.utils.normalizeText(item.status || "pending");
+    return (
+      !App.auth.isOpenTransferProposal(item) &&
+      ["accepted", "rejected", "expired", "cancelled", "voided"].includes(status)
+    );
+  },
+
+  getTransferProposalState(item = {}) {
+    return App.auth.isOpenTransferProposal(item) ? "open" : "closed";
+  },
+
+  getTransferProposalSortValue(item = {}) {
+    const candidates = [
+      item.updated_at,
+      item.created_at,
+      item.expires_at,
+      item.signature_expires_at,
+      item.signature_expires,
+    ];
+    const values = candidates
+      .map((value) => (value ? new Date(value).getTime() : NaN))
+      .filter((value) => Number.isFinite(value));
+    return values.length ? Math.max(...values) : 0;
+  },
+
   getTransferProposalStatusLabel(item = {}) {
     const status = App.utils.normalizeText(item.status || "pending");
     if (status === "accepted") return "Aceita";
     if (status === "signature_pending") return "Aguardando assinatura";
     if (status === "rejected") return "Recusada";
+    if (status === "cancelled") return "Cancelada";
+    if (status === "expired") return "Expirada";
+    if (status === "voided") return "Estornada";
     if (status === "buyer_review") return "Responder";
     return "Pendente";
   },
@@ -130,6 +158,15 @@ App.auth = {
     }
     if (status === "rejected") {
       return "Negociação encerrada sem assinatura.";
+    }
+    if (status === "cancelled") {
+      return "Mesa cancelada antes da assinatura final.";
+    }
+    if (status === "expired") {
+      return "Prazo encerrado. A proposta saiu da fila ativa.";
+    }
+    if (status === "voided") {
+      return "Movimentacao estornada pela liga.";
     }
     if (status === "buyer_review") {
       return "Aguardando decisão final do vendedor e sua assinatura no escritório.";
@@ -1827,6 +1864,20 @@ App.auth = {
           !App.auth.isExternalTransferContractEmail(item),
       )
       .slice(0, 4);
+    const closed = App.auth.myTransferProposals
+      .filter(
+        (item) =>
+          App.auth.isTransferProposalClosed(item) &&
+          !App.auth.isExternalTransferContractEmail(item),
+      )
+      .slice()
+      .sort(
+        (a, b) =>
+          App.auth.getTransferProposalSortValue(b) -
+          App.auth.getTransferProposalSortValue(a),
+      )
+      .slice(0, 4);
+    const openCount = received.length + sent.length;
     const accepted = App.auth.myTransferProposals.filter(
       (item) => item.status === "accepted",
     ).length;
@@ -1834,7 +1885,7 @@ App.auth = {
       (item) => item.status === "rejected",
     ).length;
 
-    if (!received.length && !sent.length) {
+    if (!openCount && !closed.length) {
       App.dom.clear(panel);
       return;
     }
@@ -1846,24 +1897,53 @@ App.auth = {
         <div class="decision-header">
           <div>
             <span>Central de negociação</span>
-            <strong>${received.length} recebida(s) · ${sentAll.length} enviada(s)</strong>
+            <strong>${openCount} aberta(s) · ${closed.length} encerrada(s)</strong>
             <p>${App.utils.escapeHtml(session.managerName)}, acompanhe pendências, respostas e histórico recente entre técnicos e clubes.</p>
           </div>
           <span class="decision-auto-pill">${accepted} aceita(s) · ${rejected} recusada(s)</span>
         </div>
-        <div class="proposal-columns">
-          <div>
-            <h3>Recebidas</h3>
-            <div class="decision-grid">
-              ${received.length ? received.map((item) => App.auth.renderTransferProposalCard(item)).join("") : `<p class="calendar-muted">Nenhuma oferta para responder.</p>`}
-            </div>
-          </div>
-          <div>
-            <h3>Enviadas</h3>
-            <div class="proposal-sent-list">
-              ${sent.length ? sent.map((item) => App.auth.renderTransferProposalSummary(item)).join("") : `<p class="calendar-muted">Nenhuma proposta enviada recentemente.</p>`}
-            </div>
-          </div>
+        <div class="proposal-workflow-sections">
+          ${
+            openCount
+              ? `
+            <section class="proposal-workflow-section is-open">
+              <div class="proposal-workflow-header">
+                <strong>Mesas abertas</strong>
+                <span>${openCount} assunto(s)</span>
+              </div>
+              <div class="proposal-columns">
+                <div>
+                  <h3>Recebidas</h3>
+                  <div class="decision-grid">
+                    ${received.length ? received.map((item) => App.auth.renderTransferProposalCard(item)).join("") : `<p class="calendar-muted">Nenhuma oferta para responder.</p>`}
+                  </div>
+                </div>
+                <div>
+                  <h3>Enviadas</h3>
+                  <div class="proposal-sent-list">
+                    ${sent.length ? sent.map((item) => App.auth.renderTransferProposalSummary(item)).join("") : `<p class="calendar-muted">Nenhuma proposta enviada recentemente.</p>`}
+                  </div>
+                </div>
+              </div>
+            </section>
+          `
+              : ""
+          }
+          ${
+            closed.length
+              ? `
+            <section class="proposal-workflow-section is-closed">
+              <div class="proposal-workflow-header">
+                <strong>Historico recente</strong>
+                <span>${closed.length} fechamento(s)</span>
+              </div>
+              <div class="proposal-sent-list proposal-history-list">
+                ${closed.map((item) => App.auth.renderTransferProposalSummary(item, { compact: true })).join("")}
+              </div>
+            </section>
+          `
+              : ""
+          }
         </div>
       </section>
     `,
@@ -2025,6 +2105,7 @@ App.auth = {
   },
 
   buildCoachEmailItems(owner = "", pending = [], sponsorshipOffers = [], transferEmails = []) {
+    void owner;
     const sponsorOfferPool = sponsorshipOffers;
     const transferItems = transferEmails.map((item) => {
       const sourceLabel = App.auth.getTransferProposalSourceLabel(item);
@@ -2032,23 +2113,33 @@ App.auth = {
       const isOpen = App.auth.isOpenTransferProposal(item);
       const isExternal = App.auth.isExternalMarketProposal(item);
       const statusLabel = App.auth.getTransferProposalStatusLabel(item);
+      const state = App.auth.getTransferProposalState(item);
+      const isClosed = state === "closed";
+      const status = App.utils.normalizeText(item.status || "pending");
       const key = App.auth.getEmailKey("transfer", item.id);
       const previewValue = Number(item.proposed_value || item.cash_offer_value || 0);
+      const direction = item.proposal_role === "sent" ? "Enviada" : "Recebida";
       return {
         key,
         type: "transfer",
         folder: "Mercado",
         sender: sourceLabel,
         subject: isContract
-          ? `Contrato: ${item.player || "jogador"}`
+          ? `${isClosed ? "Fechamento" : "Contrato"}: ${item.player || "jogador"}`
           : `${isOpen ? "Proposta" : "Fechamento"} por ${item.player || "jogador"}`,
         preview: isContract
-          ? `${sourceLabel} respondeu a mesa. Revise antes de assinar.`
+          ? isClosed
+            ? `Mesa encerrada como ${statusLabel.toLowerCase()}.`
+            : status === "signature_pending"
+              ? `${sourceLabel} confirmou os termos. A assinatura esta em andamento.`
+              : `${sourceLabel} respondeu a mesa. Revise antes de assinar.`
           : isOpen
             ? `${sourceLabel} movimentou uma proposta de ${App.utils.formatCurrency(previewValue)}.`
             : `${sourceLabel} encerrou com status ${statusLabel.toLowerCase()} em ${App.utils.formatCurrency(previewValue)}.`,
-        badge: statusLabel,
-        tone: "high",
+        badge: `${direction} | ${statusLabel}`,
+        tone: isClosed ? "normal" : "high",
+        state,
+        sortValue: App.auth.getTransferProposalSortValue(item),
         archived: App.auth.isEmailArchived(key),
         read: App.auth.isEmailRead(key),
         detailHtml: isContract
@@ -2081,6 +2172,8 @@ App.auth = {
           "Marca interessada em fechar contrato com o clube.",
         badge: competition.label,
         tone: offer.isReplacement ? "high" : "normal",
+        state: "open",
+        sortValue: offer.createdAt || offer.created_at ? new Date(offer.createdAt || offer.created_at).getTime() : 0,
         archived: App.auth.isEmailArchived(key),
         read: App.auth.isEmailRead(key),
         detailHtml: App.auth.renderSponsorshipEmailCard(offer, sponsorOfferPool),
@@ -2099,6 +2192,8 @@ App.auth = {
         preview: item.description || "Mensagem pendente do clube.",
         badge: meta.priority === "Alta" ? "Prioridade" : "Diretoria",
         tone: meta.tone,
+        state: "open",
+        sortValue: item.created_at ? new Date(item.created_at).getTime() : 0,
         archived: App.auth.isEmailArchived(key),
         read: App.auth.isEmailRead(key),
         detailHtml: App.auth.renderDecisionCard(item),
@@ -2106,11 +2201,17 @@ App.auth = {
     });
 
     return [...transferItems, ...sponsorItems, ...decisionItems].sort((a, b) => {
+      const statePriority = { open: 0, closed: 1 };
+      const stateDiff =
+        (statePriority[a.state] ?? 0) - (statePriority[b.state] ?? 0);
+      if (stateDiff !== 0) return stateDiff;
+      if (a.read !== b.read) return a.read ? 1 : -1;
       const folderPriority = { Mercado: 0, Comercial: 1 };
       const folderDiff =
         (folderPriority[a.folder] ?? 2) - (folderPriority[b.folder] ?? 2);
       if (folderDiff !== 0) return folderDiff;
-      if (a.read !== b.read) return a.read ? 1 : -1;
+      const timeDiff = Number(b.sortValue || 0) - Number(a.sortValue || 0);
+      if (timeDiff !== 0) return timeDiff;
       return String(a.subject).localeCompare(String(b.subject), "pt-BR");
     });
   },
@@ -2118,8 +2219,9 @@ App.auth = {
   renderEmailThread(item = {}) {
     const readClass = item.read ? "is-read" : "is-unread";
     const archivedClass = item.archived ? "is-archived" : "";
+    const state = item.state === "closed" ? "closed" : "open";
     return `
-      <details class="email-thread ${readClass} ${archivedClass} priority-${App.utils.escapeHtml(item.tone || "normal")}" data-email-key="${App.utils.escapeHtml(item.key)}">
+      <details class="email-thread ${readClass} ${archivedClass} is-${state} priority-${App.utils.escapeHtml(item.tone || "normal")}" data-email-key="${App.utils.escapeHtml(item.key)}" data-email-state="${state}">
         <summary class="email-thread-summary">
           <label class="email-thread-check" title="Selecionar e-mail">
             <input type="checkbox" data-email-select value="${App.utils.escapeHtml(item.key)}" />
@@ -2147,22 +2249,40 @@ App.auth = {
   renderEmailMailbox(items = [], resolved = []) {
     const state = App.auth.getEmailOfficeState();
     const inboxItems = items.filter((item) => !item.archived);
+    const openItems = inboxItems.filter((item) => item.state !== "closed");
+    const closedItems = inboxItems.filter((item) => item.state === "closed");
     const unreadCount = inboxItems.filter((item) => !item.read).length;
     const priorityCount = inboxItems.filter((item) => item.tone === "high").length;
     const commercialCount = inboxItems.filter((item) => item.folder === "Comercial").length;
     const marketCount = inboxItems.filter((item) => item.folder === "Mercado").length;
     const archivedCount = Object.keys(state.archived || {}).length + resolved.length;
-    const folders = inboxItems.reduce((groups, item) => {
-      const folder = item.folder || "Inbox";
-      groups[folder] = groups[folder] || [];
-      groups[folder].push(item);
-      return groups;
-    }, {});
-    const folderNames = Object.keys(folders);
+    const renderFolderGroups = (collection = []) => {
+      const folders = collection.reduce((groups, item) => {
+        const folder = item.folder || "Inbox";
+        groups[folder] = groups[folder] || [];
+        groups[folder].push(item);
+        return groups;
+      }, {});
+      const folderNames = Object.keys(folders);
+      return folderNames
+        .map(
+          (folder) => `
+        <section class="email-folder-group">
+          <div class="email-folder-header">
+            <strong>${App.utils.escapeDisplay(folder)}</strong>
+            <span>${folders[folder].length} assunto(s)</span>
+          </div>
+          ${folders[folder].map((item) => App.auth.renderEmailThread(item)).join("")}
+        </section>
+      `,
+        )
+        .join("");
+    };
 
     return `
       <div class="email-office-command-row email-office-tabs">
-        <span>Entrada ${inboxItems.length}</span>
+        <span>Abertos ${openItems.length}</span>
+        <span>Encerrados ${closedItems.length}</span>
         <span>Não lidos ${unreadCount}</span>
         <span>Prioridade ${priorityCount}</span>
         <span>Comercial ${commercialCount}</span>
@@ -2179,23 +2299,20 @@ App.auth = {
         <button type="button" data-email-bulk-action="archive">Arquivar selecionados</button>
       </div>
       ${
-        inboxItems.length
+        openItems.length
           ? `
-        <div class="email-thread-stack">
-          ${folderNames
-            .map(
-              (folder) => `
-            <section class="email-folder-group">
-              <div class="email-folder-header">
-                <strong>${App.utils.escapeDisplay(folder)}</strong>
-                <span>${folders[folder].length} assunto(s)</span>
-              </div>
-              ${folders[folder].map((item) => App.auth.renderEmailThread(item)).join("")}
-            </section>
-          `,
-            )
-            .join("")}
-        </div>
+        <section class="email-mailbox-section is-open">
+          <div class="email-mailbox-section-header">
+            <div>
+              <strong>Caixa de entrada</strong>
+              <span>Assuntos que ainda pedem decisao ou leitura do tecnico.</span>
+            </div>
+            <b>${openItems.length}</b>
+          </div>
+          <div class="email-thread-stack">
+            ${renderFolderGroups(openItems)}
+          </div>
+        </section>
       `
           : `
         <div class="coach-empty-state decision-empty-visible email-empty-state">
@@ -2206,6 +2323,24 @@ App.auth = {
           </div>
         </div>
       `
+      }
+      ${
+        closedItems.length
+          ? `
+        <details class="email-mailbox-section is-closed">
+          <summary class="email-mailbox-section-header">
+            <div>
+              <strong>Negociacoes encerradas</strong>
+              <span>Historico recolhido para nao poluir a entrada principal.</span>
+            </div>
+            <b>${closedItems.length}</b>
+          </summary>
+          <div class="email-thread-stack">
+            ${renderFolderGroups(closedItems)}
+          </div>
+        </details>
+      `
+          : ""
       }
     `;
   },
@@ -2633,7 +2768,7 @@ App.auth = {
             ? `
           <div class="sponsor-reward-list">
             <div class="sponsor-reward-header">
-              <strong>Últimos pagamentos</strong>
+              <strong>�altimos pagamentos</strong>
               <span>${visibleRewards.length}/${rewards.length}</span>
             </div>
             ${visibleRewards
@@ -2999,7 +3134,7 @@ App.auth = {
     return `
       <div class="sponsor-payment-schedule">
         <span>${schedule.cadence}</span>
-        <small><b>Última</b><strong>${lastLabel}</strong></small>
+        <small><b>�altima</b><strong>${lastLabel}</strong></small>
         <small><b>Próxima</b><strong>${nextLabel}</strong></small>
       </div>
     `;
@@ -3426,6 +3561,7 @@ App.auth = {
     const status = App.utils.normalizeText(item.status || "pending");
     const statusLabel = App.auth.getTransferProposalStatusLabel(item);
     const isSignaturePending = status === "signature_pending";
+    const isClosed = App.auth.isTransferProposalClosed(item);
     const proposedValue = Number(item.proposed_value || 0);
     const referenceValue = Number(item.reference_value || 0);
     const buyerOffer = Number(item.buyer_offer_value || 0);
@@ -3441,9 +3577,11 @@ App.auth = {
     const expiresLabel = item.expires_at
       ? App.utils.formatDateTime(item.expires_at)
       : "Sem prazo definido";
-    const actionKicker = isSignaturePending
-      ? "Aguardando assinatura no escritorio"
-      : status === "buyer_review"
+    const actionKicker = isClosed
+      ? statusLabel
+      : isSignaturePending
+        ? "Aguardando assinatura no escritorio"
+        : status === "buyer_review"
         ? isCounter
           ? "Contraproposta recebida"
           : "Base financeira aceita"
@@ -3499,7 +3637,11 @@ App.auth = {
         </div>
         ${App.auth.getTransferProposalTimeline(item, { maxItems: 4 })}
 
-        ${isSignaturePending
+        ${isClosed
+          ? `<div class="decision-options email-response-actions transfer-contract-actions">
+              <span class="proposal-status-hint">${App.utils.escapeDisplay(App.auth.getTransferProposalStatusHint(item))}</span>
+            </div>`
+          : isSignaturePending
           ? `<div class="decision-options email-response-actions transfer-contract-actions">
               <span class="proposal-status-hint">A proposta entrou em etapa de assinatura e será concluída automaticamente no prazo da liga.</span>
             </div>`
@@ -3570,7 +3712,7 @@ App.auth = {
           <article class="proposal-summary-item external-market-proposal compact-proposal-summary proposal-status-${status}">
           <span>Mercado externo - ${statusLabel}</span>
           <strong>${App.utils.escapeHtml(item.player)}</strong>
-          <small>${App.utils.escapeHtml(sourceLabel)} respondeu. A assinatura fica no e-mail do escritorio.</small>
+          <small>${App.utils.escapeHtml(sourceLabel)} respondeu. ${App.utils.escapeHtml(App.auth.getTransferProposalStatusHint(item))}</small>
           <div class="proposal-market-meta">
             <b>Oferta ${App.utils.formatCurrency(buyerOffer || cashValue)}</b>
             <b>Pedido ${App.utils.formatCurrency(proposedValue)}</b>

@@ -2,6 +2,8 @@ import App from "./app.js";
 
 App.api = {
   reversedTransferKeys: ["rafael|ayoze perez|villarreal club de futbol s.a.d."],
+  pendingRpcRequests: new Map(),
+  rpcMemoryCache: new Map(),
 
   getTransferStateKey(item = {}) {
     return [
@@ -61,40 +63,117 @@ App.api = {
     };
   },
 
-  async rpc(functionName, payload = {}, timeoutMs = 45000) {
-    const response = await App.api.fetchWithTimeout(
-      `${App.config.SUPABASE_URL}/rest/v1/rpc/${functionName}`,
-      {
-        method: "POST",
-        headers: App.api.getSupabaseHeaders(),
-        body: JSON.stringify(payload),
-      },
-      timeoutMs,
-    );
+  stableStringify(value) {
+    if (Array.isArray(value)) {
+      return `[${value.map((item) => App.api.stableStringify(item)).join(",")}]`;
+    }
+    if (value && typeof value === "object") {
+      return `{${Object.keys(value)
+        .sort()
+        .map(
+          (key) =>
+            `${JSON.stringify(key)}:${App.api.stableStringify(value[key])}`,
+        )
+        .join(",")}}`;
+    }
+    return JSON.stringify(value);
+  },
 
-    const text = await response.text();
-    let data = null;
+  getRpcCacheKey(functionName, payload = {}) {
+    return `${functionName}:${App.api.stableStringify(payload || {})}`;
+  },
 
-    try {
-      data = text ? JSON.parse(text) : null;
-    } catch (error) {
-      data = text;
+  getRpcCache(functionName, payload = {}, ttlMs = 0) {
+    if (!ttlMs) return null;
+    const key = App.api.getRpcCacheKey(functionName, payload);
+    const entry = App.api.rpcMemoryCache.get(key);
+    if (!entry || Date.now() - Number(entry.createdAt || 0) > ttlMs) {
+      App.api.rpcMemoryCache.delete(key);
+      return null;
+    }
+    return entry.value;
+  },
+
+  setRpcCache(functionName, payload = {}, value, ttlMs = 0) {
+    if (!ttlMs) return value;
+    const key = App.api.getRpcCacheKey(functionName, payload);
+    App.api.rpcMemoryCache.set(key, {
+      createdAt: Date.now(),
+      value,
+    });
+    if (App.api.rpcMemoryCache.size > 80) {
+      const oldestKey = App.api.rpcMemoryCache.keys().next().value;
+      if (oldestKey) App.api.rpcMemoryCache.delete(oldestKey);
+    }
+    return value;
+  },
+
+  async rpc(functionName, payload = {}, timeoutMs = 45000, options = {}) {
+    const cacheTtlMs = Number(options.cacheTtlMs || 0);
+    const cached = App.api.getRpcCache(functionName, payload, cacheTtlMs);
+    if (cached !== null) return cached;
+
+    const requestKey = App.api.getRpcCacheKey(functionName, payload);
+    if (App.api.pendingRpcRequests.has(requestKey)) {
+      return App.api.pendingRpcRequests.get(requestKey);
     }
 
-    if (!response.ok) {
-      const message =
-        data?.message ||
-        data?.hint ||
-        data?.details ||
-        text ||
-        `Erro Supabase ${response.status}`;
-      throw new Error(message);
-    }
+    const request = (async () => {
+      const response = await App.api.fetchWithTimeout(
+        `${App.config.SUPABASE_URL}/rest/v1/rpc/${functionName}`,
+        {
+          method: "POST",
+          headers: App.api.getSupabaseHeaders(),
+          body: JSON.stringify(payload),
+        },
+        timeoutMs,
+      );
 
-    return data;
+      const text = await response.text();
+      let data = null;
+
+      try {
+        data = text ? JSON.parse(text) : null;
+      } catch (error) {
+        data = text;
+      }
+
+      if (!response.ok) {
+        const message =
+          data?.message ||
+          data?.hint ||
+          data?.details ||
+          text ||
+          `Erro Supabase ${response.status}`;
+        throw new Error(message);
+      }
+
+      return App.api.setRpcCache(functionName, payload, data, cacheTtlMs);
+    })().finally(() => {
+      App.api.pendingRpcRequests.delete(requestKey);
+    });
+
+    App.api.pendingRpcRequests.set(requestKey, request);
+    return request;
   },
 
   async loadMarketPlayers(query = "", showContracted = false, limit = 12) {
+    const normalizedQuery = App.utils.normalizeText(query || "");
+    const cachePayload = {
+      p_query: normalizedQuery,
+      p_show_contracted: Boolean(showContracted),
+      p_limit: Number(limit || 12),
+    };
+    const cachedRows = App.api.getRpcCache(
+      "local_market_players",
+      cachePayload,
+      8 * 60 * 1000,
+    );
+    if (Array.isArray(cachedRows)) {
+      App.api.mergeMarketPlayers(cachedRows);
+      return cachedRows;
+    }
+
     try {
       const data = await App.api.rpc(
         "app_search_market_players",
@@ -111,6 +190,7 @@ App.api = {
         { showContracted: Boolean(showContracted) },
       );
       App.api.mergeMarketPlayers(rows);
+      App.api.setRpcCache("local_market_players", cachePayload, rows, 8 * 60 * 1000);
       return rows;
     } catch (rpcError) {
       console.warn(
@@ -128,6 +208,7 @@ App.api = {
           { showContracted: Boolean(showContracted) },
         );
         App.api.mergeMarketPlayers(rows);
+        App.api.setRpcCache("local_market_players", cachePayload, rows, 8 * 60 * 1000);
         return rows;
       } catch (error) {
         console.warn("Não consegui carregar players_market:", error);
@@ -580,6 +661,48 @@ App.api = {
     } catch (error) {
       console.warn("Reconciliação de orçamento indisponível:", error);
       return null;
+    }
+  },
+
+  async loadOperationAuditDashboard(options = {}) {
+    const session = App.auth?.getSession?.();
+    if (!session || !App.auth?.isCommissioner?.()) {
+      App.state.apiOperationAudit = {
+        ok: false,
+        summary: {},
+        byOperation: [],
+        recent: [],
+      };
+      return App.state.apiOperationAudit;
+    }
+
+    try {
+      const result = await App.api.rpc(
+        "app_get_operation_audit_dashboard",
+        {
+          p_manager_id: session.managerId,
+          p_access_code: session.accessCode,
+          p_limit: Number(options.limit || 30),
+        },
+        30000,
+        { cacheTtlMs: Number(options.cacheTtlMs || 45000) },
+      );
+      App.state.apiOperationAudit = result || {
+        ok: false,
+        summary: {},
+        byOperation: [],
+        recent: [],
+      };
+      return App.state.apiOperationAudit;
+    } catch (error) {
+      console.warn("Auditoria operacional indisponivel:", error);
+      App.state.apiOperationAudit = App.state.apiOperationAudit || {
+        ok: false,
+        summary: {},
+        byOperation: [],
+        recent: [],
+      };
+      return App.state.apiOperationAudit;
     }
   },
 
