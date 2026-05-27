@@ -1,5 +1,5 @@
 import App from "../../js/app.js";
-import { Matchup, TeamBadge } from "./CalendarCupsViews.jsx";
+import { Matchup, TeamBadge } from "./SharedClubComponents.jsx";
 import { useAppRuntime } from "./ViewSummaries.jsx";
 
 function ViewButton({ target, children, className = "" }) {

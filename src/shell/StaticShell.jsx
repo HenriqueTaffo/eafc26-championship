@@ -1,13 +1,4 @@
-import {
-  CalendarMonthBoard,
-  CalendarWeekBoard,
-  CupsBracket,
-} from "../views/CalendarCupsViews.jsx";
-import { CommissionerRuntime } from "../views/CommissionerView.jsx";
-import { ExperienceGrid } from "../views/ExperienceView.jsx";
-import { EventsGrid, EventSlotList } from "../views/EventsView.jsx";
-import { PlayerLeaderboards, PlayersGrid } from "../views/PlayersView.jsx";
-import { SquadManagementView } from "../views/SquadView.jsx";
+import { Suspense, lazy, useEffect, useState } from "react";
 import {
   ActivityPanel,
   AttentionPanel,
@@ -19,7 +10,6 @@ import {
   StandingsMobileList,
   ViewButton,
 } from "../views/StandingsView.jsx";
-import { TransfersRuntime } from "../views/TransfersView.jsx";
 import {
   CalendarSummary,
   CommissionerSummary,
@@ -30,12 +20,127 @@ import {
   SquadSummary,
   StandingsSummary,
   TransfersSummary,
+  useAppRuntime,
 } from "../views/ViewSummaries.jsx";
+import {
+  ArrowLeftRight,
+  BarChart3,
+  Brain,
+  CalendarDays,
+  Scale,
+  Sparkles,
+  Trophy,
+  UploadCloud,
+  Users,
+  WalletCards,
+} from "lucide-react";
+import App from "../../js/app.js";
+
+const CalendarMonthBoard = lazy(() =>
+  import("../views/CalendarCupsViews.jsx").then((module) => ({
+    default: module.CalendarMonthBoard,
+  })),
+);
+const CalendarWeekBoard = lazy(() =>
+  import("../views/CalendarCupsViews.jsx").then((module) => ({
+    default: module.CalendarWeekBoard,
+  })),
+);
+const CupsBracket = lazy(() =>
+  import("../views/CalendarCupsViews.jsx").then((module) => ({
+    default: module.CupsBracket,
+  })),
+);
+const CommissionerRuntime = lazy(() =>
+  import("../views/CommissionerView.jsx").then((module) => ({
+    default: module.CommissionerRuntime,
+  })),
+);
+const ExperienceGrid = lazy(() =>
+  import("../views/ExperienceView.jsx").then((module) => ({
+    default: module.ExperienceGrid,
+  })),
+);
+const EventsGrid = lazy(() =>
+  import("../views/EventsView.jsx").then((module) => ({
+    default: module.EventsGrid,
+  })),
+);
+const EventSlotList = lazy(() =>
+  import("../views/EventsView.jsx").then((module) => ({
+    default: module.EventSlotList,
+  })),
+);
+const PlayerLeaderboards = lazy(() =>
+  import("../views/PlayersView.jsx").then((module) => ({
+    default: module.PlayerLeaderboards,
+  })),
+);
+const PlayersGrid = lazy(() =>
+  import("../views/PlayersView.jsx").then((module) => ({
+    default: module.PlayersGrid,
+  })),
+);
+const SquadManagementView = lazy(() =>
+  import("../views/SquadView.jsx").then((module) => ({
+    default: module.SquadManagementView,
+  })),
+);
+const TransfersRuntime = lazy(() =>
+  import("../views/TransfersView.jsx").then((module) => ({
+    default: module.TransfersRuntime,
+  })),
+);
 
 const BRAND_ASSET_VERSION = "20260525-4linhas-brand-v1";
 const BRAND_NAME = "4 Linhas";
 const BRAND_ICON_SRC = `./assets/4linhas-icon-light.png?v=${BRAND_ASSET_VERSION}`;
 const BRAND_WORDMARK_SRC = `./assets/4linhas-wordmark-light.png?v=${BRAND_ASSET_VERSION}`;
+
+function ViewLoadingPlaceholder({
+  title = "Carregando painel",
+  detail = "Preparando a tela selecionada...",
+}) {
+  return (
+    <section className="app-skeleton-stack view-loading-placeholder" aria-live="polite">
+      <div className="home-panel-header">
+        <h2>{title}</h2>
+      </div>
+      <p className="calendar-muted">{detail}</p>
+      <div className="app-skeleton-row">
+        <i></i>
+        <b></b>
+        <em></em>
+      </div>
+      <div className="app-skeleton-row">
+        <i></i>
+        <b></b>
+        <em></em>
+      </div>
+    </section>
+  );
+}
+
+function useViewActivation(viewId) {
+  useAppRuntime();
+  const isActive =
+    typeof document !== "undefined" &&
+    document.getElementById(viewId)?.classList.contains("active");
+  const [hasActivated, setHasActivated] = useState(Boolean(isActive));
+
+  useEffect(() => {
+    if (isActive) setHasActivated(true);
+  }, [isActive]);
+
+  return hasActivated || Boolean(isActive);
+}
+
+function DeferredViewSection({ viewId, title, detail, children }) {
+  const isReady = useViewActivation(viewId);
+  const fallback = <ViewLoadingPlaceholder title={title} detail={detail} />;
+  if (!isReady) return fallback;
+  return <Suspense fallback={fallback}>{children}</Suspense>;
+}
 
 function GlobalLoader() {
   return (
@@ -109,80 +214,133 @@ function GlobalLoader() {
 function ShellChrome() {
   return (
     <>
-      <header className="hero league-hero league-hero-brand">
-        <div className="league-brand-lockup" aria-hidden="true">
-          <img
-            className="league-brand-wordmark"
-            src={BRAND_WORDMARK_SRC}
-            alt=""
-          />
-        </div>
-        <div className="league-hero-divider" aria-hidden="true"></div>
-        <div className="league-hero-copy">
-          <h1 className="sr-only">{BRAND_NAME}</h1>
-          <p>
-            Competição oficial de managers. Paixão, estratégia e glória em uma
-            liga com identidade própria.
-          </p>
-        </div>
-      </header>
+      <section className="shell-top-cluster">
+        <header className="hero league-hero league-hero-brand">
+          <div className="league-brand-lockup" aria-hidden="true">
+            <img
+              className="league-brand-wordmark"
+              src={BRAND_WORDMARK_SRC}
+              alt=""
+            />
+          </div>
+          <div className="league-hero-divider" aria-hidden="true"></div>
+          <div className="league-hero-copy">
+            <h1 className="sr-only">{BRAND_NAME}</h1>
+            <span className="league-brand-meta">Championship managers hub</span>
+            <p>
+              Liga privada de gestão esportiva com mesa de mercado, escritório,
+              elenco e governança em um só fluxo.
+            </p>
+          </div>
+        </header>
 
-      <section id="managerLoginPanel" className="manager-login-panel"></section>
-      <section id="transferProposalPanel" className="decision-center"></section>
+        <section
+          id="managerLoginPanel"
+          className="manager-login-panel"
+        ></section>
+        <section
+          id="transferProposalPanel"
+          className="decision-center"
+        ></section>
 
-      <nav className="tabs" aria-label="Navegação principal">
-        <button className="tab-button active" data-view="standingsView">
-          <span className="tab-icon">♜</span>Classificação
-        </button>
-        <button className="tab-button" data-view="calendarView">
-          <span className="tab-icon">▦</span>Calendário
-        </button>
-        <button className="tab-button" data-view="cupsView">
-          <span className="tab-icon">🏆</span>Copas
-        </button>
-        <button className="tab-button" data-view="playersView">
-          <span className="tab-icon">▣</span>Escritório
-        </button>
-        <button className="tab-button" data-view="squadView">
-          <span className="tab-icon">XI</span>Elenco
-        </button>
-        <button className="tab-button" data-view="experienceView">
-          <span className="tab-icon">◇</span>Inteligência
-        </button>
-        <button className="tab-button" data-view="eventsView">
-          <span className="tab-icon">✦</span>Eventos
-        </button>
-        <button className="tab-button" data-view="transfersView">
-          <span className="tab-icon">⇄</span>Transferências
-        </button>
-        <button className="tab-button" data-view="commissionerView">
-          <span className="tab-icon">⚖</span>Comissário
-        </button>
-        <button className="tab-button" data-view="submitView">
-          <span className="tab-icon">☁</span>Enviar dados
-        </button>
-      </nav>
+        <nav className="tabs tabs-grouped" aria-label="Navegação principal">
+          <div className="tab-group">
+            <span className="tab-group-label">Liga</span>
+            <button className="tab-button active" data-view="standingsView">
+              <span className="tab-icon" aria-hidden="true">
+                <BarChart3 size={16} strokeWidth={2.2} />
+              </span>
+              Classificação
+            </button>
+            <button className="tab-button" data-view="calendarView">
+              <span className="tab-icon" aria-hidden="true">
+                <CalendarDays size={16} strokeWidth={2.2} />
+              </span>
+              Calendário
+            </button>
+            <button className="tab-button" data-view="cupsView">
+              <span className="tab-icon" aria-hidden="true">
+                <Trophy size={16} strokeWidth={2.2} />
+              </span>
+              Copas
+            </button>
+            <button className="tab-button" data-view="eventsView">
+              <span className="tab-icon" aria-hidden="true">
+                <Sparkles size={16} strokeWidth={2.2} />
+              </span>
+              Eventos
+            </button>
+          </div>
+          <div className="tab-group">
+            <span className="tab-group-label">Clube</span>
+            <button className="tab-button" data-view="playersView">
+              <span className="tab-icon" aria-hidden="true">
+                <WalletCards size={16} strokeWidth={2.2} />
+              </span>
+              Escritório
+            </button>
+            <button className="tab-button" data-view="squadView">
+              <span className="tab-icon" aria-hidden="true">
+                <Users size={16} strokeWidth={2.2} />
+              </span>
+              Elenco
+            </button>
+            <button className="tab-button" data-view="experienceView">
+              <span className="tab-icon" aria-hidden="true">
+                <Brain size={16} strokeWidth={2.2} />
+              </span>
+              Inteligência
+            </button>
+            <button className="tab-button" data-view="transfersView">
+              <span className="tab-icon" aria-hidden="true">
+                <ArrowLeftRight size={16} strokeWidth={2.2} />
+              </span>
+              Transferências
+            </button>
+          </div>
+          <div className="tab-group">
+            <span className="tab-group-label">Liga / Admin</span>
+            <button className="tab-button" data-view="commissionerView">
+              <span className="tab-icon" aria-hidden="true">
+                <Scale size={16} strokeWidth={2.2} />
+              </span>
+              Comissário
+            </button>
+            <button className="tab-button" data-view="submitView">
+              <span className="tab-icon" aria-hidden="true">
+                <UploadCloud size={16} strokeWidth={2.2} />
+              </span>
+              Enviar dados
+            </button>
+          </div>
+        </nav>
 
-      <section className="app-status-bar" aria-live="polite">
-        <span id="syncStatusText">Sincronizando dados da liga...</span>
-        <div className="global-search" data-global-search>
-          <input
-            id="globalSearchInput"
-            type="search"
-            placeholder="Buscar jogo, técnico, jogador..."
-            autoComplete="off"
-            aria-label="Busca global da liga"
-          />
-          <div
-            id="globalSearchResults"
-            className="global-search-results"
-            role="listbox"
-            aria-label="Resultados da busca global"
-          ></div>
-        </div>
-        <button type="button" data-manual-sync>
-          Sincronizar agora
-        </button>
+        <section className="app-status-bar" aria-live="polite">
+          <div className="status-primary">
+            <span className="status-kicker">Estado da liga</span>
+            <strong id="syncStatusText">Sincronizando dados da liga...</strong>
+          </div>
+          <div className="status-actions">
+            <div className="global-search" data-global-search>
+              <input
+                id="globalSearchInput"
+                type="search"
+                placeholder="Buscar jogo, técnico, jogador..."
+                autoComplete="off"
+                aria-label="Busca global da liga"
+              />
+              <div
+                id="globalSearchResults"
+                className="global-search-results"
+                role="listbox"
+                aria-label="Resultados da busca global"
+              ></div>
+            </div>
+            <button type="button" data-manual-sync>
+              Sincronizar agora
+            </button>
+          </div>
+        </section>
       </section>
     </>
   );
@@ -365,8 +523,16 @@ function CalendarView() {
             </span>
           </div>
         </section>
-        <CalendarWeekBoard />
-        <CalendarMonthBoard />
+        <DeferredViewSection
+          viewId="calendarView"
+          title="Carregando calendário"
+          detail="Montando agenda mensal e semana atual."
+        >
+          <>
+            <CalendarWeekBoard />
+            <CalendarMonthBoard />
+          </>
+        </DeferredViewSection>
       </section>
     </>
   );
@@ -432,7 +598,13 @@ function CupsView() {
             </span>
           </div>
         </section>
-        <CupsBracket />
+        <DeferredViewSection
+          viewId="cupsView"
+          title="Carregando copas"
+          detail="Montando chaves, rodadas pendentes e classificação."
+        >
+          <CupsBracket />
+        </DeferredViewSection>
       </section>
     </>
   );
@@ -460,8 +632,16 @@ function PlayersView() {
             <option value="Bruno Silva">Bruno Silva</option>
           </select>
         </section>
-        <PlayersGrid />
-        <PlayerLeaderboards />
+        <DeferredViewSection
+          viewId="playersView"
+          title="Carregando escritório"
+          detail="Buscando dados privados, DM e alertas do técnico."
+        >
+          <>
+            <PlayersGrid />
+            <PlayerLeaderboards />
+          </>
+        </DeferredViewSection>
         <p className="footer-note">
           Os gols por time consideram apenas os clubes controlados por técnicos.
           A lista ao lado mostra as cinco contratações mais caras aprovadas até
@@ -479,7 +659,13 @@ function SquadView() {
         <section className="summary squad-summary" id="squadSummary">
           <SquadSummary />
         </section>
-        <SquadManagementView />
+        <DeferredViewSection
+          viewId="squadView"
+          title="Carregando elenco"
+          detail="Sincronizando formação, folha e disponibilidade."
+        >
+          <SquadManagementView />
+        </DeferredViewSection>
       </section>
     </>
   );
@@ -502,7 +688,13 @@ function EventsView() {
               nos técnicos.
             </p>
           </div>
-          <EventSlotList />
+          <DeferredViewSection
+            viewId="eventsView"
+            title="Carregando eventos"
+            detail="Sincronizando slots, impactos e estado atual da rodada."
+          >
+            <EventSlotList />
+          </DeferredViewSection>
         </section>
         <section className="controls">
           <input
@@ -550,7 +742,13 @@ function EventsView() {
           </div>
           <span className="app-message" id="eventsMessage"></span>
         </section>
-        <EventsGrid />
+        <DeferredViewSection
+          viewId="eventsView"
+          title="Carregando eventos"
+          detail="Organizando histórico, filtros e eventos ativos."
+        >
+          <EventsGrid />
+        </DeferredViewSection>
         <p className="footer-note">
           Central de eventos: impactos financeiros, mercado, lesões, punições e
           premiações ficam consolidados por técnico com status e efeitos
@@ -583,7 +781,13 @@ function ExperienceView() {
             <a href="#intelligenceMarket">Mercado</a>
           </div>
         </section>
-        <ExperienceGrid />
+        <DeferredViewSection
+          viewId="experienceView"
+          title="Carregando inteligência"
+          detail="Preparando painéis de risco, mercado e operação."
+        >
+          <ExperienceGrid />
+        </DeferredViewSection>
       </section>
     </>
   );
@@ -593,7 +797,13 @@ function TransfersView() {
   return (
     <>
       <section id="transfersView" className="view">
-        <TransfersRuntime />
+        <DeferredViewSection
+          viewId="transfersView"
+          title="Carregando mercado"
+          detail="Sincronizando negociações, scouting e diagnóstico financeiro."
+        >
+          <TransfersRuntime />
+        </DeferredViewSection>
         <section className="summary" id="transferSummary">
           <TransfersSummary />
         </section>
@@ -1004,7 +1214,13 @@ function CommissionerView() {
   return (
     <>
       <section id="commissionerView" className="view">
-        <CommissionerRuntime />
+        <DeferredViewSection
+          viewId="commissionerView"
+          title="Carregando governança"
+          detail="Preparando auditoria, ações médicas e controles da liga."
+        >
+          <CommissionerRuntime />
+        </DeferredViewSection>
         <section
           className="summary commissioner-summary"
           id="commissionerSummary"

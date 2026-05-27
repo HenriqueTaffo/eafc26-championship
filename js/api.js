@@ -518,6 +518,79 @@ App.api = {
       .filter(Boolean);
   },
 
+  getSecondaryHydrationGroups(data = {}) {
+    const activeView = document.querySelector(".view.active")?.id || "";
+    const names = App.api.getTransferLookupNames(data);
+    const isLoggedIn = App.auth?.isLoggedIn?.() === true;
+    const isCommissioner = App.auth?.isCommissioner?.() === true;
+
+    const common = [
+      () => App.auth?.loadPublicNews?.(),
+      () =>
+        names.length
+          ? App.api.loadMarketPlayersForNames(names)
+          : App.state.apiMarketPlayers || [],
+      () => App.api.loadEaRatings("", 50),
+      () =>
+        names.length
+          ? App.api.loadRatingsForPlayerNames(names)
+          : App.state.apiEaRatings || [],
+    ];
+
+    const clubOps = [];
+    if (
+      activeView === "playersView" ||
+      activeView === "transfersView" ||
+      activeView === "experienceView" ||
+      activeView === "squadView"
+    ) {
+      clubOps.push(() => App.api.loadSalaryReferences?.());
+      clubOps.push(() => App.api.loadFinanceRulesAndForecast?.());
+    }
+    if (
+      activeView === "playersView" ||
+      activeView === "eventsView" ||
+      activeView === "squadView"
+    ) {
+      clubOps.push(() => App.api.loadMedicalCenterData?.());
+    }
+    if (activeView === "squadView") {
+      clubOps.push(() => App.api.loadSquadManagementData?.());
+    }
+    if (activeView === "experienceView" || activeView === "transfersView") {
+      clubOps.push(() => App.api.loadExperienceData?.());
+      clubOps.push(() => App.api.loadManagerOnboarding?.());
+    }
+
+    const privateOps = [];
+    if (isLoggedIn && !isCommissioner) {
+      if (
+        activeView === "playersView" ||
+        activeView === "transfersView" ||
+        activeView === "experienceView"
+      ) {
+        privateOps.push(() => App.auth?.loadMyDecisions?.());
+        privateOps.push(() => App.auth?.loadMyTransferProposals?.());
+        privateOps.push(() => App.auth?.loadMyQoL?.());
+      }
+      if (activeView === "transfersView" || activeView === "experienceView") {
+        privateOps.push(() => App.auth?.loadMyTransferTargets?.());
+        privateOps.push(() => App.auth?.loadMyTransferSaleListings?.());
+      }
+      if (activeView === "playersView" || activeView === "experienceView") {
+        privateOps.push(() => App.auth?.loadMySponsorships?.());
+      }
+    }
+
+    const governanceOps = isCommissioner
+      ? [() => App.governance?.loadData?.()]
+      : [];
+
+    return [common, clubOps, privateOps, governanceOps].filter(
+      (group) => group.length,
+    );
+  },
+
   async hydrateSecondaryData(data = {}, options = {}) {
     const { minIntervalMs = 5 * 60 * 1000 } = options;
     const now = Date.now();
@@ -532,27 +605,12 @@ App.api = {
 
     App.state.secondaryHydrationRunning = true;
     App.state.lastSecondaryHydrationAt = now;
-    const names = App.api.getTransferLookupNames(data);
 
     try {
-      await Promise.allSettled([
-        App.api.loadMarketPlayersForNames(names),
-        App.api.loadEaRatings("", 50),
-        App.api.loadRatingsForPlayerNames(names),
-        App.api.loadExperienceData(),
-        App.api.loadManagerOnboarding?.(),
-        App.api.loadSalaryReferences?.(),
-        App.api.loadFinanceRulesAndForecast?.(),
-        App.api.loadMedicalCenterData?.(),
-        App.api.loadSquadManagementData?.(),
-        App.governance?.loadData?.(),
-        App.auth?.loadPublicNews?.(),
-        App.auth?.loadMyDecisions?.(),
-        App.auth?.loadMyTransferProposals?.(),
-        App.auth?.loadMyTransferSaleListings?.(),
-        App.auth?.loadMyQoL?.(),
-        App.auth?.loadMySponsorships?.(),
-      ]);
+      const groups = App.api.getSecondaryHydrationGroups(data);
+      for (const group of groups) {
+        await Promise.allSettled(group.map((task) => task?.()));
+      }
 
       if (App.state.apiLoaded) {
         App.main?.renderCurrentView?.();

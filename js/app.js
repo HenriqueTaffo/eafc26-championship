@@ -29,8 +29,12 @@ App.react = App.react || {
 App.dom = App.dom || {
   fragmentFromHtml(html = "") {
     const documentRef = window.document;
+    const rawHtml = String(html);
+    const normalizedHtml = App.utils?.polishUiText
+      ? App.utils.polishUiText(rawHtml)
+      : rawHtml;
     const parsed = new window.DOMParser().parseFromString(
-      `<body>${String(html)}</body>`,
+      `<body>${normalizedHtml}</body>`,
       "text/html",
     );
     const fragment = documentRef.createDocumentFragment();

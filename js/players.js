@@ -125,7 +125,7 @@ App.players = {
     if (!positiveEvents.length && eventRollup > 0) {
       pushEntry({
         label: "Eventos positivos",
-        detail: `${Number(budget.eventCount || 0)} ocorrência(s) com impacto financeiro`,
+        detail: `${Number(budget.eventCount || 0)} ocorrÃªncia(s) com impacto financeiro`,
         amount: eventRollup,
         dateLabel: "Atualizado pela liga",
         rank: 20,
@@ -133,16 +133,16 @@ App.players = {
     }
 
     pushEntry({
-      label: "Patrocínios",
-      detail: "Bônus comerciais já processados",
+      label: "PatrocÃ­nios",
+      detail: "BÃ´nus comerciais jÃ¡ processados",
       amount: breakdown.sponsorshipRewards,
       dateLabel: "Contratos ativos",
       rank: 30,
     });
 
     pushEntry({
-      label: "Premiação por vitórias",
-      detail: `${Number(budget.wins || 0)} vitória(s) aprovada(s)`,
+      label: "PremiaÃ§Ã£o por vitÃ³rias",
+      detail: `${Number(budget.wins || 0)} vitÃ³ria(s) aprovada(s)`,
       amount: breakdown.winBonus,
       dateLabel: "Resultados aprovados",
       rank: 40,
@@ -150,14 +150,14 @@ App.players = {
 
     pushEntry({
       label: "Receita semanal",
-      detail: "Distribuição fixa por semana ativa",
+      detail: "DistribuiÃ§Ã£o fixa por semana ativa",
       amount: breakdown.weeklyIncome,
       dateLabel: "Temporada",
       rank: 42,
     });
 
     pushEntry({
-      label: "Bônus de campanha",
+      label: "BÃ´nus de campanha",
       detail: `${Number(budget.points || 0)} ponto(s) em ${Number(budget.matchesPlayed || 0)} jogo(s)`,
       amount: breakdown.formBonus,
       dateLabel: "Blocos de 5 jogos",
@@ -166,7 +166,7 @@ App.players = {
 
     pushEntry({
       label: "Ajuste de copas",
-      detail: "Rebalanceamento de premiações de avanço",
+      detail: "Rebalanceamento de premiaÃ§Ãµes de avanÃ§o",
       amount: breakdown.cupRebalanceBonus,
       dateLabel: "Copas",
       rank: 46,
@@ -176,13 +176,13 @@ App.players = {
       label: "Bilheteria por mando",
       detail: `${Number(budget.homeMatches || 0)} jogo(s) como mandante`,
       amount: breakdown.homeBonus,
-      dateLabel: "Calendário oficial",
+      dateLabel: "CalendÃ¡rio oficial",
       rank: 50,
     });
 
     pushEntry({
-      label: "Orçamento inicial",
-      detail: "Crédito base da temporada",
+      label: "OrÃ§amento inicial",
+      detail: "CrÃ©dito base da temporada",
       amount: breakdown.base,
       dateLabel: "Temporada",
       rank: 60,
@@ -202,13 +202,13 @@ App.players = {
       Number(breakdown.totalAccumulated || 0) - Number(breakdown.base || 0),
     );
     const latestExtra = entries.find(
-      (entry) => entry.label !== "Orçamento inicial",
+      (entry) => entry.label !== "OrÃ§amento inicial",
     );
     const baseEntry = entries.find(
-      (entry) => entry.label === "Orçamento inicial",
+      (entry) => entry.label === "OrÃ§amento inicial",
     );
     const visibleEntries = entries
-      .filter((entry) => entry.label !== "Orçamento inicial")
+      .filter((entry) => entry.label !== "OrÃ§amento inicial")
       .slice(0, 5);
     const hiddenEntries = Math.max(
       0,
@@ -232,7 +232,7 @@ App.players = {
               <strong>${App.utils.formatCurrency(extraRevenue)}</strong>
             </div>
             <div>
-              <span>Último crédito</span>
+              <span>Ãšltimo crÃ©dito</span>
               <strong>${latestExtra ? App.utils.formatCurrency(latestExtra.amount) : "-"}</strong>
             </div>
           </div>
@@ -298,9 +298,9 @@ App.players = {
       if (!event) return false;
 
       // Regra central:
-      // O painel dos técnicos só pode mostrar jogos realmente pendentes.
-      // Jogos de copa já finalizados/classificados não devem voltar para "Próximo compromisso",
-      // mesmo quando o texto da fase no banco e no calendário tiver pequenas diferenças.
+      // O painel dos tÃ©cnicos sÃ³ pode mostrar jogos realmente pendentes.
+      // Jogos de copa jÃ¡ finalizados/classificados nÃ£o devem voltar para "PrÃ³ximo compromisso",
+      // mesmo quando o texto da fase no banco e no calendÃ¡rio tiver pequenas diferenÃ§as.
       return App.calendar.getStatusClass(event) === "pending";
     });
   },
@@ -312,7 +312,7 @@ App.players = {
     humanTeams.forEach((team) => {
       goalsMap[App.utils.normalizeTeamName(team)] = {
         name: team,
-        detail: App.utils.getTeamByName(team)?.owner || "Técnico",
+        detail: App.utils.getTeamByName(team)?.owner || "TÃ©cnico",
         count: 0,
       };
     });
@@ -341,7 +341,7 @@ App.players = {
       .slice(0, limit)
       .map((item) => ({
         name: item.player,
-        detail: `${item.buyer} • ${item.fromClub || "Clube não informado"}`,
+        detail: `${item.buyer} â€¢ ${item.fromClub || "Clube nÃ£o informado"}`,
         count: App.utils.formatCurrency(item.totalCost),
       }));
   },
@@ -437,38 +437,379 @@ App.players = {
     return `${Math.round(Number(value || 0) * 100)}%`;
   },
 
+  getMedicalEventValue(event = {}, keys = []) {
+    for (const key of keys) {
+      if (event[key] !== undefined && event[key] !== null && event[key] !== "") {
+        return event[key];
+      }
+    }
+    return null;
+  },
+
+  getMedicalSeverityLabel(value = "") {
+    const normalized = App.utils.normalizeText(value);
+    if (normalized.includes("grave")) return "Grave";
+    if (normalized.includes("moder")) return "Moderada";
+    if (normalized.includes("leve")) return "Leve";
+    return value ? String(value) : "Clinica";
+  },
+
+  getMedicalAvailabilityMeta(meta = {}) {
+    const status = App.utils.normalizeText(meta.clearanceStatus || "");
+    if (status === "restricted_match") {
+      return {
+        label: meta.minutesCap ? `${meta.minutesCap} min` : "Uso controlado",
+        detail: "Retorno progressivo",
+        tone: "watch",
+        canStart: true,
+        isRestricted: true,
+      };
+    }
+    if (status === "available") {
+      return {
+        label: "100%",
+        detail: "Apto",
+        tone: "success",
+        canStart: true,
+        isRestricted: false,
+      };
+    }
+    if (status === "restricted_training") {
+      return {
+        label: "Treino controlado",
+        detail: "Nao escalar",
+        tone: "warning",
+        canStart: false,
+        isRestricted: true,
+      };
+    }
+    if (status === "rehab") {
+      return {
+        label: "Reabilitacao",
+        detail: "Fora",
+        tone: "danger",
+        canStart: false,
+        isRestricted: false,
+      };
+    }
+    return {
+      label: "Baixa medica",
+      detail: "Fora",
+      tone: "danger",
+      canStart: false,
+      isRestricted: false,
+    };
+  },
+
+  getMedicalStaffSummary(plan = {}) {
+    const profile = plan.staffProfile || {};
+    const labelMap = {
+      fisioterapia: "Fisio",
+      medicina_esportiva: "Medicina",
+      ciencia_do_esporte: "Ciência",
+      recuperacao: "Recuperação",
+    };
+
+    return Object.entries(labelMap)
+      .map(([key, label]) => {
+        const level = Number(profile[key] || 0);
+        return level > 0 ? `${label} ${level}/5` : "";
+      })
+      .filter(Boolean)
+      .join(" · ");
+  },
+
+  getMedicalRemainingDays(event = {}) {
+    const expiresAtRaw = App.players.getMedicalEventValue(event, [
+      "ExpiraEm",
+      "expires_at",
+    ]);
+    const expiresAt = expiresAtRaw ? new Date(expiresAtRaw) : null;
+    if (expiresAt && !Number.isNaN(expiresAt.getTime())) {
+      return Math.max(0, Math.ceil((expiresAt - new Date()) / 86400000));
+    }
+    return Math.max(
+      0,
+      Number(
+        App.players.getMedicalEventValue(event, [
+          "PartidasRestantes",
+          "DuracaoValor",
+          "duration_value",
+          "matches_remaining",
+        ]) || 0,
+      ),
+    );
+  },
+
+  getMedicalCaseMeta(event = {}, plan = {}) {
+    const remainingDays = App.players.getMedicalRemainingDays(event);
+    const caseType =
+      App.players.getMedicalEventValue(event, [
+        "TipoLesao",
+        "medicalCaseType",
+        "medical_case_type",
+      ]) || "Lesão";
+    const severity =
+      App.players.getMedicalEventValue(event, [
+        "GravidadeLesao",
+        "medicalCaseSeverity",
+        "medical_case_severity",
+      ]) ||
+      (remainingDays >= 11 ? "grave" : remainingDays >= 6 ? "moderada" : "leve");
+    const clearanceStatus =
+      App.players.getMedicalEventValue(event, [
+        "StatusClinico",
+        "medicalClearanceStatus",
+        "medical_clearance_status",
+      ]) ||
+      (remainingDays <= 1
+        ? "restricted_match"
+        : remainingDays <= 3
+          ? "restricted_training"
+          : remainingDays <= 6
+            ? "rehab"
+            : "out");
+    const relapseRisk = Math.max(
+      0.08,
+      Math.min(
+        0.95,
+        Number(
+          App.players.getMedicalEventValue(event, [
+            "RiscoRecaida",
+            "medicalRelapseRisk",
+            "medical_relapse_risk",
+          ]) ||
+            (severity === "grave"
+              ? 0.42
+              : severity === "moderada"
+                ? 0.26
+                : 0.14),
+        ),
+      ),
+    );
+    const workloadScore = Math.max(
+      0,
+      Math.min(
+        100,
+        Number(
+          App.players.getMedicalEventValue(event, [
+            "CargaMedica",
+            "medicalWorkloadScore",
+            "medical_workload_score",
+          ]) || 48,
+        ),
+      ),
+    );
+    const nextReviewRaw = App.players.getMedicalEventValue(event, [
+      "ProximaRevisaoMedica",
+      "medicalNextReviewAt",
+      "medical_next_review_at",
+    ]);
+    const nextReviewAt = nextReviewRaw ? new Date(nextReviewRaw) : null;
+    const baseDuration = Math.max(
+      remainingDays,
+      Number(event.DuracaoValor || 0),
+      Number(event.PartidasRestantes || 0),
+      1,
+    );
+    const prevention = Number(plan.preventionPct || 0);
+    const recovery = Number(plan.recoveryPct || 0);
+    const diagnostics = Number(plan.diagnosticsPct || 0);
+    const science = Number(plan.sciencePct || 0);
+    const stage = clearanceStatus;
+    const stageMeta = {
+      out: {
+        label: "Baixa clínica",
+        subtitle: "Retorno distante",
+        recommendation:
+          "Segure carga física, preserve o atleta e deixe o staff preparar a próxima revisão clínica.",
+        tone: "danger",
+        minutesCap: 0,
+      },
+      rehab: {
+        label: "Recuperação ativa",
+        subtitle: "Reabilitação guiada",
+        recommendation:
+          "Controle treino, mantenha fisioterapia e reavalie antes de qualquer carga competitiva.",
+        tone: "warning",
+        minutesCap: 0,
+      },
+      restricted_training: {
+        label: "Transição clínica",
+        subtitle: "Treino com restrição",
+        recommendation:
+          "Use apenas em treino leve e prepare um retorno progressivo com revisão nas próximas 24h.",
+        tone: "watch",
+        minutesCap: 20,
+      },
+      restricted_match: {
+        label: "Liberação progressiva",
+        subtitle: "Apto com restrição",
+        recommendation:
+          "Pode voltar gradualmente. Prefira minutos controlados no primeiro jogo.",
+        tone: "success",
+        minutesCap: 45,
+      },
+      available: {
+        label: "100% apto",
+        subtitle: "Sem restrição",
+        recommendation: "Caso clínico encerrado. O atleta voltou ao fluxo completo.",
+        tone: "success",
+        minutesCap: 90,
+      },
+    }[stage] || {
+      label: "Caso em observação",
+      subtitle: "Monitoramento do staff",
+      recommendation: "Acompanhe o caso e ajuste a carga até a próxima revisão.",
+      tone: "warning",
+      minutesCap: 0,
+    };
+    const riskMeta =
+      relapseRisk >= 0.35
+        ? { label: "Risco alto", tone: "danger" }
+        : relapseRisk >= 0.2
+          ? { label: "Risco médio", tone: "warning" }
+          : { label: "Risco baixo", tone: "success" };
+    const progress = Math.max(
+      6,
+      Math.min(96, Math.round((1 - remainingDays / baseDuration) * 100)),
+    );
+    const minutesCap = Math.max(
+      0,
+      Number(
+        App.players.getMedicalEventValue(event, [
+          "MinutosControlados",
+          "medicalMinutesCap",
+          "medical_minutes_cap",
+        ]) || stageMeta.minutesCap,
+      ),
+    );
+    const nextReviewLabel =
+      nextReviewAt && !Number.isNaN(nextReviewAt.getTime())
+        ? App.utils.formatDateTime(nextReviewAt)
+        : "Acompanhar no próximo ciclo";
+    const severityLabel = App.players.getMedicalSeverityLabel(severity);
+    const availability = App.players.getMedicalAvailabilityMeta({
+      clearanceStatus,
+      minutesCap,
+    });
+
+    return {
+      caseType,
+      severity,
+      severityLabel,
+      clearanceStatus,
+      remainingDays,
+      baseDuration,
+      progress,
+      relapseRisk,
+      workloadScore,
+      nextReviewLabel,
+      riskLabel: riskMeta.label,
+      riskTone: riskMeta.tone,
+      stageLabel: stageMeta.label,
+      stageSubtitle: stageMeta.subtitle,
+      tone: stageMeta.tone,
+      recommendation: stageMeta.recommendation,
+      minutesCap,
+      diagnosticsPct: diagnostics,
+      sciencePct: science,
+      supportPct: prevention + recovery,
+      availability,
+      allowManagedReturn:
+        clearanceStatus === "restricted_training" ||
+        clearanceStatus === "restricted_match",
+    };
+  },
+
+  getMedicalStatusSnapshot(owner) {
+    const plan = App.players.getMedicalPlanForCoach(owner);
+    const injuries = App.players.getActiveInjuriesForCoach(owner);
+    const tonePriority = { danger: 0, warning: 1, watch: 2, success: 3 };
+
+    return injuries.reduce((map, event) => {
+      const playerName = String(event.JogadorAfetado || "").trim();
+      if (!playerName) return map;
+      const meta = App.players.getMedicalCaseMeta(event, plan);
+      const key = App.utils.normalizeText(playerName);
+      const current = map.get(key);
+      if (!current) {
+        map.set(key, { event, meta });
+        return map;
+      }
+      const currentPriority = tonePriority[current.meta.riskTone] ?? 99;
+      const nextPriority = tonePriority[meta.riskTone] ?? 99;
+      if (
+        nextPriority < currentPriority ||
+        (nextPriority === currentPriority &&
+          Number(meta.remainingDays || 0) > Number(current.meta.remainingDays || 0))
+      ) {
+        map.set(key, { event, meta });
+      }
+      return map;
+    }, new Map());
+  },
+
   renderCoachMedicalCenter(owner, injuries = []) {
     const plan = App.players.getMedicalPlanForCoach(owner);
     const options = App.players.getMedicalPlanOptions();
     const activePlanKey = plan.planKey || "base_dm";
     const treatmentDays = Number(plan.treatmentDaysBonus || 1);
+    const injuryCases = injuries.map((event) => ({
+      event,
+      meta: App.players.getMedicalCaseMeta(event, plan),
+    }));
+    const highRiskCount = injuryCases.filter(
+      (item) => item.meta.riskTone === "danger",
+    ).length;
+    const transitionCount = injuryCases.filter(
+      (item) => item.meta.minutesCap > 0,
+    ).length;
+    const averageReturn = injuryCases.length
+      ? Math.max(
+          1,
+          Math.round(
+            injuryCases.reduce((sum, item) => sum + item.meta.remainingDays, 0) /
+              injuryCases.length,
+          ),
+        )
+      : 0;
 
     return `
       <article class="coach-panel-card coach-medical-card" data-medical-owner="${App.utils.escapeHtml(owner)}">
         <div class="home-panel-header">
           <div>
             <h2>Centro medico</h2>
-            <p class="coach-card-subtitle">Prevencao, tratamento e recuperacao por dias corridos de calendario.</p>
+            <p class="coach-card-subtitle">Prevencao, tratamento e retorno progressivo por dias corridos de calendario.</p>
           </div>
-          <span class="coach-section-kicker">${injuries.length} lesao(oes)</span>
+          <span class="coach-section-kicker">${injuries.length} caso(s)</span>
         </div>
 
-        <div class="medical-plan-hero">
+        <div class="medical-plan-hero medical-plan-hero--advanced">
           <div>
-            <span>Estrutura atual</span>
+            <span>Estrutura ativa</span>
             <strong>${App.utils.escapeDisplay(plan.name || "DM base")}</strong>
             <small>${App.utils.escapeDisplay(plan.description || "Departamento medico padrao do clube.")}</small>
           </div>
           <div>
-            <span>Custo semanal</span>
+            <span>Resposta do staff</span>
             <strong>${App.utils.formatCurrency(plan.weeklyCost || 0)}</strong>
-            <small>tratamento reduz ate ${treatmentDays} dia(s)</small>
+            <small>${App.utils.escapeDisplay(App.players.getMedicalStaffSummary(plan) || `tratamento intensivo reduz ate ${treatmentDays} dia(s) corrido(s)`)}</small>
           </div>
+        </div>
+
+        <div class="medical-summary-strip">
+          <span><b>Fora agora</b><strong>${injuries.length}</strong></span>
+          <span><b>Risco alto</b><strong>${highRiskCount}</strong></span>
+          <span><b>Retorno medio</b><strong>${averageReturn ? `${averageReturn} dia(s)` : "estavel"}</strong></span>
+          <span><b>Liberacao parcial</b><strong>${transitionCount}</strong></span>
         </div>
 
         <div class="medical-metric-grid">
           <span><b>Prevencao</b><strong>${App.players.formatMedicalPercent(plan.preventionPct)}</strong></span>
           <span><b>Recuperacao</b><strong>${App.players.formatMedicalPercent(plan.recoveryPct)}</strong></span>
+          <span><b>Diagnostico</b><strong>${App.players.formatMedicalPercent(plan.diagnosticsPct)}</strong></span>
+          <span><b>Ciencia</b><strong>${App.players.formatMedicalPercent(plan.sciencePct)}</strong></span>
           <span><b>Implantacao</b><strong>${App.utils.formatCurrency(plan.setupCost || 0)}</strong></span>
         </div>
 
@@ -484,35 +825,75 @@ App.players = {
                   ${isActive ? "disabled" : ""}
                 >
                   <strong>${App.utils.escapeDisplay(item.name)}</strong>
-                  <small>${App.utils.formatCurrency(item.weeklyCost || 0)}/sem · ${App.players.formatMedicalPercent(item.recoveryPct)} recuperacao</small>
+                  <small>${App.utils.formatCurrency(item.weeklyCost || 0)}/sem | ${App.players.formatMedicalPercent(item.recoveryPct)} recuperacao | ${App.players.formatMedicalPercent(item.diagnosticsPct)} diagnostico</small>
                 </button>
               `;
             })
             .join("")}
         </div>
 
-        <div class="coach-injury-list medical-injury-list">
+        <div class="medical-case-stack">
           ${
-            injuries.length
-              ? injuries
-                  .map(
-                    (event) => `
-              <div class="injury-chip medical-injury-chip">
-                ${App.transfers.renderPlayerIdentity(event.JogadorAfetado, event.Titulo || "Lesao ativa", "injury-player-identity")}
-                <b>${App.events.getEventDurationLabel(event)}</b>
-                <button
-                  type="button"
-                  data-medical-treatment
-                  data-event-id="${App.utils.escapeHtml(event.Id || event.id || "")}"
-                  data-event-key="${App.utils.escapeHtml(event.ChaveUnica || "")}"
-                  data-event-owner="${App.utils.escapeHtml(event.Jogador || owner)}"
-                  data-event-player="${App.utils.escapeHtml(event.JogadorAfetado || "")}"
-                >Tratamento intensivo</button>
-              </div>
-            `,
-                  )
+            injuryCases.length
+              ? injuryCases
+                  .map(({ event, meta }) => `
+              <article class="medical-case-card tone-${meta.tone}">
+                <div class="medical-case-head">
+                  <div>
+                    ${App.transfers.renderPlayerIdentity(event.JogadorAfetado, event.Titulo || "Lesao ativa", "injury-player-identity")}
+                    <small>${App.utils.escapeDisplay(meta.caseType)} | ${App.utils.escapeDisplay(meta.stageSubtitle)} | ${App.utils.escapeDisplay(meta.riskLabel)}</small>
+                  </div>
+                  <div class="medical-case-pill-stack">
+                    <b class="medical-case-pill tone-${meta.tone}">${App.utils.escapeDisplay(meta.stageLabel)}</b>
+                    <b class="medical-case-pill tone-${meta.riskTone}">${App.utils.escapeDisplay(meta.riskLabel)}</b>
+                    <b class="medical-case-pill tone-watch">${App.utils.escapeDisplay(meta.severityLabel)}</b>
+                  </div>
+                </div>
+
+                <div class="medical-case-meta">
+                  <span><b>Prazo</b><strong>${App.events.getEventDurationLabel(event)}</strong></span>
+                  <span><b>Retorno alvo</b><strong>${meta.remainingDays} dia(s)</strong></span>
+                  <span><b>Minutos sugeridos</b><strong>${meta.minutesCap ? `${meta.minutesCap} min` : "Sem uso"}</strong></span>
+                  <span><b>Recaida</b><strong>${Math.round(meta.relapseRisk * 100)}%</strong></span>
+                  <span><b>Carga</b><strong>${meta.workloadScore}/100</strong></span>
+                  <span><b>Revisao</b><strong>${App.utils.escapeDisplay(meta.nextReviewLabel)}</strong></span>
+                </div>
+
+                <div class="medical-case-progress" aria-hidden="true">
+                  <span style="width:${meta.progress}%"></span>
+                </div>
+
+                <div class="medical-case-foot">
+                  <small>${App.utils.escapeDisplay(meta.recommendation)}</small>
+                  <button
+                    type="button"
+                    data-medical-treatment
+                    data-medical-action-type="intensive"
+                    data-event-id="${App.utils.escapeHtml(event.Id || event.id || "") }"
+                    data-event-key="${App.utils.escapeHtml(event.ChaveUnica || "") }"
+                    data-event-owner="${App.utils.escapeHtml(event.Jogador || owner)}"
+                    data-event-player="${App.utils.escapeHtml(event.JogadorAfetado || "") }"
+                  >Tratamento intensivo</button>
+                  ${
+                    meta.allowManagedReturn
+                      ? `
+                        <button
+                          type="button"
+                          data-medical-treatment
+                          data-medical-action-type="managed_return"
+                          data-event-id="${App.utils.escapeHtml(event.Id || event.id || "") }"
+                          data-event-key="${App.utils.escapeHtml(event.ChaveUnica || "") }"
+                          data-event-owner="${App.utils.escapeHtml(event.Jogador || owner)}"
+                          data-event-player="${App.utils.escapeHtml(event.JogadorAfetado || "") }"
+                        >Retorno controlado</button>
+                      `
+                      : ""
+                  }
+                </div>
+              </article>
+            `)
                   .join("")
-              : `<p class="calendar-muted">Nenhum jogador lesionado no momento.</p>`
+              : `<div class="coach-empty-state medical-empty-state"><span>DM</span><div><strong>Sem lesionados</strong><p>O elenco esta liberado. Mantenha a estrutura ativa para reduzir risco de recaida e fadiga.</p></div></div>`
           }
         </div>
       </article>
@@ -609,9 +990,9 @@ App.players = {
     if (!alerts.length) {
       return `
         <div class="coach-empty-state">
-          <span>✅</span>
+          <span>âœ…</span>
           <strong>Sala tranquila</strong>
-          <p>Nenhum alerta urgente neste momento. O técnico pode focar no próximo jogo.</p>
+          <p>Nenhum alerta urgente neste momento. O tÃ©cnico pode focar no prÃ³ximo jogo.</p>
         </div>
       `;
     }
@@ -620,7 +1001,7 @@ App.players = {
       <div class="coach-alert-deck">
         ${alerts
           .map((alert, index) => {
-            const icon = index === 0 ? "🚨" : "📌";
+            const icon = index === 0 ? "ðŸš¨" : "ðŸ“Œ";
             return `
             <div class="coach-alert-card">
               <span>${icon}</span>
@@ -639,9 +1020,9 @@ App.players = {
     if (!transfers.length) {
       return `
         <div class="coach-empty-state">
-          <span>🧾</span>
+          <span>ðŸ§¾</span>
           <strong>Nenhuma compra aprovada</strong>
-          <p>Nenhuma contratação aprovada para este técnico até agora.</p>
+          <p>Nenhuma contrataÃ§Ã£o aprovada para este tÃ©cnico atÃ© agora.</p>
         </div>
       `;
     }
@@ -662,9 +1043,9 @@ App.players = {
     return `
       <div class="coach-market-header">
         <div>
-          <span>Últimas compras</span>
+          <span>Ãšltimas compras</span>
           <strong>${visibleTransfers.length} de ${transfers.length}</strong>
-          <small>contratações aprovadas</small>
+          <small>contrataÃ§Ãµes aprovadas</small>
         </div>
         <div>
           <span>Maior compra geral</span>
@@ -673,7 +1054,7 @@ App.players = {
         <div>
           <span>Gasto em compras</span>
           <strong>${App.utils.formatCurrency(total)}</strong>
-          <small>total aprovado no histórico</small>
+          <small>total aprovado no histÃ³rico</small>
         </div>
       </div>
 
@@ -682,7 +1063,7 @@ App.players = {
           .map(
             (item) => `
           <div class="coach-transfer-item">
-            ${App.transfers.renderPlayerIdentity(item.player, item.fromClub || "Clube não informado", "coach-transfer-player-identity", { club: item.fromClub })}
+            ${App.transfers.renderPlayerIdentity(item.player, item.fromClub || "Clube nÃ£o informado", "coach-transfer-player-identity", { club: item.fromClub })}
             <span class="coach-transfer-value">
               <small>Custo final</small>
               <b>${App.utils.formatCurrency(item.totalCost)}</b>
@@ -699,9 +1080,9 @@ App.players = {
     if (!events.length) {
       return `
         <div class="coach-empty-state">
-          <span>🎲</span>
+          <span>ðŸŽ²</span>
           <strong>Nada no radar</strong>
-          <p>Nenhum evento recente registrado para este técnico.</p>
+          <p>Nenhum evento recente registrado para este tÃ©cnico.</p>
         </div>
       `;
     }
@@ -716,7 +1097,7 @@ App.players = {
                   title: event.Titulo || "Evento",
                   description: event.Descricao || "",
                   categoryLabel: event.Tipo || "Evento",
-                  icon: "🎲",
+                  icon: "ðŸŽ²",
                 };
             const impact = App.events.getEventImpactLabel
               ? App.events.getEventImpactLabel(event)
@@ -735,14 +1116,14 @@ App.players = {
               impactValue > 0
                 ? "Entrada no caixa"
                 : impactValue < 0
-                  ? "Saída do caixa"
+                  ? "SaÃ­da do caixa"
                   : "Efeito";
             return `
             <div class="coach-event-item ${impactClass}">
               <span class="coach-event-icon">${presentation.icon}</span>
               <div>
                 <strong>${App.utils.escapeHtml(presentation.title)}</strong>
-                <small>${App.utils.escapeHtml(presentation.categoryLabel)}${duration ? ` · ${App.utils.escapeHtml(duration)}` : ""}</small>
+                <small>${App.utils.escapeHtml(presentation.categoryLabel)}${duration ? ` Â· ${App.utils.escapeHtml(duration)}` : ""}</small>
               </div>
               <span class="coach-event-impact ${impactClass}">
                 <small>${impactLabel}</small>
@@ -763,7 +1144,7 @@ App.players = {
       <article class="coach-panel-card coach-targets-card" data-private-target-owner="${App.utils.escapeHtml(owner)}">
         <div class="home-panel-header">
           <h2>Alvos privados</h2>
-          <span class="coach-section-kicker">Só você vê</span>
+          <span class="coach-section-kicker">SÃ³ vocÃª vÃª</span>
         </div>
         <form class="coach-target-form" data-private-target-form>
           <label>
@@ -820,7 +1201,7 @@ App.players = {
                 ${App.transfers.renderPlayerPhoto(marketPlayer, rating, "player-avatar")}
                 <div class="coach-target-copy">
                   <strong>${App.utils.escapeHtml(target.player)}</strong>
-                  <small>${App.utils.escapeHtml([target.priority, target.club, target.value ? App.utils.formatCurrency(target.value) : ""].filter(Boolean).join(" · "))}</small>
+                  <small>${App.utils.escapeHtml([target.priority, target.club, target.value ? App.utils.formatCurrency(target.value) : ""].filter(Boolean).join(" Â· "))}</small>
                   ${target.note ? `<span>${App.utils.escapeHtml(target.note)}</span>` : ""}
                 </div>
                 <div class="coach-target-actions">
@@ -831,9 +1212,9 @@ App.players = {
                     aria-label="${isFavorite ? "Remover dos favoritos" : "Favoritar alvo"}"
                     data-favorite-target="${App.utils.escapeHtml(favoriteKey)}"
                     data-favorite-title="${App.utils.escapeHtml(target.player)}"
-                    data-favorite-detail="${App.utils.escapeHtml([target.priority, target.club].filter(Boolean).join(" · "))}"
+                    data-favorite-detail="${App.utils.escapeHtml([target.priority, target.club].filter(Boolean).join(" Â· "))}"
                   >
-                    <span aria-hidden="true">${isFavorite ? "✓" : "+"}</span>
+                    <span aria-hidden="true">${isFavorite ? "âœ“" : "+"}</span>
                     <b>${isFavorite ? "Salvo" : "Favoritar"}</b>
                   </button>
                   <button type="button" class="icon-action-button remove-action-button" title="Remover alvo" aria-label="Remover alvo" data-remove-private-target="${App.utils.escapeHtml(target.id)}"></button>
@@ -845,7 +1226,7 @@ App.players = {
               : `
             <div class="coach-empty-state compact">
               <strong>Nenhum alvo pinado</strong>
-              <p>Use este bloco para guardar nomes sem expor sua lista para os outros técnicos.</p>
+              <p>Use este bloco para guardar nomes sem expor sua lista para os outros tÃ©cnicos.</p>
             </div>
           `
           }
@@ -897,7 +1278,7 @@ App.players = {
                 .map((player) => {
                   const name = player.player || player.playerName || "";
                   const baseValue = Number(player.baseValue || 0);
-                  return `<option value="${App.utils.escapeHtml(name)}" data-base-value="${baseValue}">${App.utils.escapeHtml(name)}${player.listed ? " · listado" : ""}</option>`;
+                  return `<option value="${App.utils.escapeHtml(name)}" data-base-value="${baseValue}">${App.utils.escapeHtml(name)}${player.listed ? " Â· listado" : ""}</option>`;
                 })
                 .join("")}
             </select>
@@ -942,9 +1323,9 @@ App.players = {
                 ${App.transfers.renderPlayerPhoto(marketPlayer, rating, "player-avatar")}
                 <div class="coach-target-copy">
                   <strong>${App.utils.escapeHtml(name)}</strong>
-                  <small>${App.utils.escapeHtml([fromClub, item.overall ? `OVR ${item.overall}` : "", askingPrice ? App.utils.formatCurrency(askingPrice) : ""].filter(Boolean).join(" · "))}</small>
-                  <span>${App.utils.escapeHtml(item.note || "Disponível para propostas externas.")}</span>
-                  <span>${offerCount ? `${offerCount} proposta(s) direcionada(s)${lastOfferAt ? ` · última ${App.utils.formatDateTime(lastOfferAt)}` : ""}` : `Base ${App.utils.formatCurrency(baseValue)} · aguardando sondagem`}</span>
+                  <small>${App.utils.escapeHtml([fromClub, item.overall ? `OVR ${item.overall}` : "", askingPrice ? App.utils.formatCurrency(askingPrice) : ""].filter(Boolean).join(" Â· "))}</small>
+                  <span>${App.utils.escapeHtml(item.note || "DisponÃ­vel para propostas externas.")}</span>
+                  <span>${offerCount ? `${offerCount} proposta(s) direcionada(s)${lastOfferAt ? ` Â· Ãºltima ${App.utils.formatDateTime(lastOfferAt)}` : ""}` : `Base ${App.utils.formatCurrency(baseValue)} Â· aguardando sondagem`}</span>
                 </div>
                 <div class="coach-target-actions">
                   <button type="button" class="icon-action-button remove-action-button" title="Remover da lista" aria-label="Remover da lista" data-remove-sale-listing="${App.utils.escapeHtml(item.id)}"></button>
@@ -955,7 +1336,7 @@ App.players = {
                   .join("")
               : `
             <div class="coach-empty-state compact">
-              <strong>Ninguém listado</strong>
+              <strong>NinguÃ©m listado</strong>
               <p>Liste jogadores fora do plano para aumentar a chance de receber ofertas externas por eles.</p>
             </div>
           `
@@ -987,7 +1368,7 @@ App.players = {
     const players = await App.api
       .loadMarketPlayers(query, true, 8)
       .catch((error) => {
-        console.warn("Busca de alvos privados indisponível:", error);
+        console.warn("Busca de alvos privados indisponÃ­vel:", error);
         return [];
       });
 
@@ -1024,7 +1405,7 @@ App.players = {
           ${App.transfers.renderPlayerPhoto(player, eaRating)}
           <span class="market-player-main">
             <strong>${App.utils.escapeHtml(player.name || "-")}</strong>
-            <small>${App.utils.escapeHtml([player.position, player.age ? `${player.age} anos` : "", player.league, player.club].filter(Boolean).join(" · "))}</small>
+            <small>${App.utils.escapeHtml([player.position, player.age ? `${player.age} anos` : "", player.league, player.club].filter(Boolean).join(" Â· "))}</small>
           </span>
           <span class="market-player-side">
             ${overall ? `<span class="market-player-overall">OVR ${overall}</span>` : ""}
@@ -1080,19 +1461,164 @@ App.players = {
       budget.remainingBudget ?? App.config.transferBudget,
     );
 
-    if (next) alerts.push(`Próximo jogo pendente: ${next.home} x ${next.away}`);
+    if (next) alerts.push(`PrÃ³ximo jogo pendente: ${next.home} x ${next.away}`);
     if (canViewPrivate && injuries.length)
       alerts.push(`${injuries.length} jogador(es) afetado(s) por evento.`);
     if (canViewPrivate && transfersToday >= limit)
-      alerts.push("Limite diário de transferências atingido.");
+      alerts.push("Limite diÃ¡rio de transferÃªncias atingido.");
     else if (canViewPrivate && transfersToday >= Math.max(1, limit - 1))
-      alerts.push("Limite diário de transferências quase atingido.");
+      alerts.push("Limite diÃ¡rio de transferÃªncias quase atingido.");
     if (canViewPrivate && remaining < 10000000)
-      alerts.push("Saldo de transferências baixo.");
+      alerts.push("Saldo de transferÃªncias baixo.");
     if (standing?.position <= 2) alerts.push("Zona de acesso direto.");
     else if (standing?.position <= 6) alerts.push("Zona de playoffs.");
 
     return alerts;
+  },
+
+
+  renderCoachControlTower(
+    activeTeam,
+    next,
+    injuries = [],
+    budget = {},
+    transfersToday = 0,
+    transferLimit = 0,
+    alerts = [],
+  ) {
+    const canViewPrivate = App.auth?.canViewManagerPrivate
+      ? App.auth.canViewManagerPrivate(activeTeam.owner)
+      : false;
+    const pendingDecisions = canViewPrivate
+      ? App.auth.myDecisions.filter((item) => item.status === "pending").length
+      : 0;
+    const transferActionCount = canViewPrivate
+      ? App.auth.myTransferProposals.filter(
+          (item) =>
+            App.auth.isOpenTransferProposal(item) &&
+            (item.proposal_role !== "sent" || App.auth.isExternalTransferContractEmail(item)),
+        ).length
+      : 0;
+    const sponsorOffers = canViewPrivate
+      ? App.auth.getSponsorshipInboxOffers(activeTeam.owner).length
+      : 0;
+    const highRiskCount = injuries.filter(
+      (event) =>
+        App.players.getMedicalCaseMeta(
+          event,
+          App.players.getMedicalPlanForCoach(activeTeam.owner),
+        ).riskTone === "danger",
+    ).length;
+    const agenda = [];
+
+    if (next) {
+      agenda.push({
+        tone: "watch",
+        label: "Jogo",
+        title: `${next.home} x ${next.away}`,
+        detail: `${next.competition} | ${App.utils.formatDate(next.date)}`,
+      });
+    }
+    if (pendingDecisions) {
+      agenda.push({
+        tone: "danger",
+        label: "Diretoria",
+        title: `${pendingDecisions} decisao(oes) aguardando resposta`,
+        detail: "Abra o escritorio para evitar fila atrasada no inbox.",
+      });
+    }
+    if (transferActionCount) {
+      agenda.push({
+        tone: "warning",
+        label: "Mercado",
+        title: `${transferActionCount} negociacao(oes) pedem retorno`,
+        detail: "Revise proposta, contraoferta ou assinatura antes de perder timing.",
+      });
+    }
+    if (sponsorOffers) {
+      agenda.push({
+        tone: "success",
+        label: "Comercial",
+        title: `${sponsorOffers} oferta(s) de patrocinio na mesa`,
+        detail: "Compare contratos no escritorio antes de trocar uma marca ativa.",
+      });
+    }
+    if (highRiskCount) {
+      agenda.push({
+        tone: "danger",
+        label: "DM",
+        title: `${highRiskCount} caso(s) com risco alto`,
+        detail: "Considere preservar elenco e evitar retorno precoce.",
+      });
+    }
+    if (budget.marketEmbargo) {
+      agenda.push({
+        tone: "danger",
+        label: "Regra",
+        title: "Mercado bloqueado por fair play",
+        detail: "Regularize a folha antes de abrir novas assinaturas.",
+      });
+    }
+    if (transfersToday >= transferLimit && transferLimit > 0) {
+      agenda.push({
+        tone: "warning",
+        label: "Janela",
+        title: "Limite diario de transferencias atingido",
+        detail: "Espere o proximo ciclo para disparar nova proposta.",
+      });
+    }
+    if (!agenda.length) {
+      agenda.push({
+        tone: "success",
+        label: "Sala",
+        title: "Fluxo do dia sob controle",
+        detail: "Sem urgencias abertas. O tecnico pode focar em preparacao e observacao de mercado.",
+      });
+    }
+
+    return `
+      <article class="coach-panel-card coach-central-card">
+        <div class="home-panel-header">
+          <div>
+            <h2>Central do dia</h2>
+            <p class="coach-card-subtitle">Fila executiva com o que exige resposta do tecnico neste momento.</p>
+          </div>
+          <span class="coach-section-kicker">${agenda.length} foco(s)</span>
+        </div>
+
+        <div class="coach-central-grid">
+          <article><span>Diretoria</span><strong>${pendingDecisions}</strong><small>decisao(oes) pendente(s)</small></article>
+          <article><span>Mercado</span><strong>${transferActionCount}</strong><small>acao(oes) no escritorio</small></article>
+          <article><span>DM</span><strong>${injuries.length}</strong><small>caso(s) monitorado(s)</small></article>
+          <article><span>Janela</span><strong>${transferLimit ? `${transfersToday}/${transferLimit}` : transfersToday}</strong><small>${budget.marketEmbargo ? "bloqueada" : "uso diario"}</small></article>
+        </div>
+
+        <div class="coach-central-agenda">
+          ${agenda
+            .slice(0, 5)
+            .map(
+              (item) => `
+            <div class="coach-agenda-item tone-${item.tone}">
+              <span>${App.utils.escapeDisplay(item.label)}</span>
+              <strong>${App.utils.escapeDisplay(item.title)}</strong>
+              <small>${App.utils.escapeDisplay(item.detail)}</small>
+            </div>
+          `,
+            )
+            .join("")}
+        </div>
+
+        ${
+          alerts.length
+            ? `
+          <div class="coach-central-footnote">
+            ${alerts.slice(0, 2).map((alert) => `<span>${App.utils.escapeDisplay(alert)}</span>`).join("")}
+          </div>
+        `
+            : ""
+        }
+      </article>
+    `;
   },
 
   renderLeaderboard(container, data, label) {
@@ -1168,26 +1694,26 @@ App.players = {
         status: topSix ? "ok" : "risk",
         detail: topSix
           ? "Dentro do G6."
-          : `Atual: ${standing?.position || "-"}º. Diretoria quer G6.`,
+          : `Atual: ${standing?.position || "-"}Âº. Diretoria quer G6.`,
       },
       {
         label: "Regularidade",
         status: hasMoreWinsThanLosses ? "ok" : "warn",
         detail: hasMoreWinsThanLosses
-          ? "Vitórias segurando a campanha."
-          : "Diretoria quer reação nos próximos jogos.",
+          ? "VitÃ³rias segurando a campanha."
+          : "Diretoria quer reaÃ§Ã£o nos prÃ³ximos jogos.",
       },
       {
         label: "Fair play financeiro",
         status: cashDiscipline ? "ok" : "risk",
         detail: cashDiscipline
           ? "Gasto sob controle."
-          : "Orçamento pressionado, negativo ou bloqueado.",
+          : "OrÃ§amento pressionado, negativo ou bloqueado.",
       },
       {
         label: "Profundidade do elenco",
         status: squadDepth ? "ok" : "warn",
-        detail: `${transfers.length} contratação(ões) válidas.`,
+        detail: `${transfers.length} contrataÃ§Ã£o(Ãµes) vÃ¡lidas.`,
       },
     ];
   },
@@ -1209,10 +1735,10 @@ App.players = {
 
     const label =
       score >= 75
-        ? "Vestiário em alta"
+        ? "VestiÃ¡rio em alta"
         : score >= 50
-          ? "Ambiente estável"
-          : "Pressão no elenco";
+          ? "Ambiente estÃ¡vel"
+          : "PressÃ£o no elenco";
     return { score, label };
   },
 
@@ -1233,15 +1759,15 @@ App.players = {
 
     if (debt || budget.salaryDebtActive) {
       flags.push(
-        `Dívida salarial ativa: ${App.utils.formatCurrency(Number(debt?.debtAmount || budget.salaryDebtAmount || Math.abs(remaining)))}.`,
+        `DÃ­vida salarial ativa: ${App.utils.formatCurrency(Number(debt?.debtAmount || budget.salaryDebtAmount || Math.abs(remaining)))}.`,
       );
     }
     if (budget.marketEmbargo || remaining < 0)
-      flags.push("Mercado bloqueado até o saldo voltar ao positivo.");
+      flags.push("Mercado bloqueado atÃ© o saldo voltar ao positivo.");
     if (remaining < 0)
-      flags.push("Saldo negativo: receitas vencidas quitam a dívida primeiro.");
+      flags.push("Saldo negativo: receitas vencidas quitam a dÃ­vida primeiro.");
     if (totalBudget > 0 && spent / totalBudget >= 0.9)
-      flags.push("Gasto acima de 90% do orçamento.");
+      flags.push("Gasto acima de 90% do orÃ§amento.");
     if (payrollPressure >= 0.18)
       flags.push(
         `Folha pesada: ${App.utils.formatCurrency(payrollWeekly)} por semana.`,
@@ -1288,17 +1814,17 @@ App.players = {
         label: "Alvo de mercado",
         status: hasValueBuy || hasBigBuy ? "ok" : "warn",
         detail: hasBigBuy
-          ? "Contratação de impacto já entrou no elenco."
+          ? "ContrataÃ§Ã£o de impacto jÃ¡ entrou no elenco."
           : hasValueBuy
-            ? "Boa compra custo-benefício registrada."
-            : "Mapeie um titular acessível antes do próximo deadline.",
+            ? "Boa compra custo-benefÃ­cio registrada."
+            : "Mapeie um titular acessÃ­vel antes do prÃ³ximo deadline.",
       },
       {
-        label: "Próximo jogo",
+        label: "PrÃ³ximo jogo",
         status: next ? "warn" : "ok",
         detail: next
           ? `${next.competition} contra ${App.utils.sameTeamName(next.home, activeTeam.team) ? next.away : next.home}.`
-          : "Sem compromisso pendente no calendário.",
+          : "Sem compromisso pendente no calendÃ¡rio.",
       },
       {
         label: "Controle de caixa",
@@ -1308,13 +1834,13 @@ App.players = {
           payrollWeekly * 4 < totalBudget * 0.18
             ? "ok"
             : "risk",
-        detail: `${App.utils.formatCurrency(remaining)} livres · folha ${App.utils.formatCurrency(payrollWeekly)}/sem.`,
+        detail: `${App.utils.formatCurrency(remaining)} livres Â· folha ${App.utils.formatCurrency(payrollWeekly)}/sem.`,
       },
       {
         label: "Momento competitivo",
         status:
           wins >= 2 || Number(standing?.points || 0) >= 10 ? "ok" : "warn",
-        detail: `${wins} vitória(s) nos últimos ${lastFive.length || 0} jogos rastreados.`,
+        detail: `${wins} vitÃ³ria(s) nos Ãºltimos ${lastFive.length || 0} jogos rastreados.`,
       },
     ];
   },
@@ -1338,7 +1864,7 @@ App.players = {
         <article class="coach-panel-card coach-private-board-card">
           <div class="home-panel-header">
             <div>
-              <span class="modal-kicker">Só você vê</span>
+              <span class="modal-kicker">SÃ³ vocÃª vÃª</span>
               <h2>Metas secretas</h2>
             </div>
             <span class="coach-section-kicker">${objectives.filter((item) => item.status === "ok").length}/${objectives.length}</span>
@@ -1383,7 +1909,7 @@ App.players = {
         .loadMarketPlayersForNames(favoriteNames, 2)
         .then(() => App.main?.renderCurrentView?.())
         .catch((error) =>
-          console.warn("Fotos dos favoritos indisponíveis:", error),
+          console.warn("Fotos dos favoritos indisponÃ­veis:", error),
         );
     }
 
@@ -1401,7 +1927,7 @@ App.players = {
                     const title = item.title || "Favorito";
                     const detail = item.detail || item.item_type || "";
                     const detailParts = String(detail)
-                      .split("·")
+                      .split("Â·")
                       .map((part) => part.trim())
                       .filter(Boolean);
                     const club =
@@ -1523,7 +2049,7 @@ App.players = {
           </div>
           <div class="fairplay-list">
             ${fairPlay.map((item) => `<span>${App.utils.escapeHtml(item)}</span>`).join("")}
-            ${runwayWeeks !== null ? `<span>Fôlego estimado de caixa: ${runwayWeeks} semana(s) de folha.</span>` : ""}
+            ${runwayWeeks !== null ? `<span>FÃ´lego estimado de caixa: ${runwayWeeks} semana(s) de folha.</span>` : ""}
           </div>
         </article>
       </div>
@@ -1560,16 +2086,24 @@ App.players = {
     const events = App.players.getCoachEvents(activeTeam.owner);
     const injuries = App.players.getActiveInjuriesForCoach(activeTeam.owner);
     const color = App.data.ownerColors[activeTeam.owner] || "#2563eb";
+    const alerts = App.players.getCoachAlerts(
+      activeTeam,
+      standing,
+      budget,
+      next,
+      todayCount,
+      canViewPrivate,
+    );
 
     const nextMatchCard = `
       <article class="coach-panel-card coach-next-match">
-        <div class="home-panel-header"><h2>Próximo compromisso</h2></div>
+        <div class="home-panel-header"><h2>Proximo compromisso</h2></div>
         ${
           next
             ? `
           <div class="coach-match-preview">
             ${App.clubs.getMatchupHtml(next.home, next.away, "card-match")}
-            <p>${next.competition} · ${next.phase} · ${App.utils.formatDate(next.date)}</p>
+            <p>${next.competition} | ${next.phase} | ${App.utils.formatDate(next.date)}</p>
             ${App.calendar.canSubmitResult(next) ? `<button class="mini-action-button" type="button" data-open-result-modal="${next.id}">Enviar resultado</button>` : `<span class="status-pill pending">${App.calendar.formatMatchResult(next)}</span>`}
           </div>
         `
@@ -1578,6 +2112,17 @@ App.players = {
       </article>
     `;
 
+    const controlTowerCard = canViewPrivate
+      ? App.players.renderCoachControlTower(
+          activeTeam,
+          next,
+          injuries,
+          budget,
+          todayCount,
+          transferLimit,
+          alerts,
+        )
+      : "";
     const medicalCard = App.players.renderCoachMedicalCenter(
       activeTeam.owner,
       injuries,
@@ -1585,9 +2130,6 @@ App.players = {
 
     const decisionCard = App.auth?.renderCoachDecisionCard
       ? App.auth.renderCoachDecisionCard(activeTeam.owner)
-      : "";
-    const proposalCard = App.auth?.renderCoachTransferProposalCard
-      ? App.auth.renderCoachTransferProposalCard(activeTeam.owner)
       : "";
     const sponsorshipCard = App.auth?.renderCoachSponsorshipCard
       ? App.auth.renderCoachSponsorshipCard(activeTeam.owner)
@@ -1637,9 +2179,9 @@ App.players = {
           <div class="coach-hero-main">
             <div class="coach-club-mark">${App.clubs.getTeamBadgeHtml(activeTeam.team, "coach-crest")}</div>
             <div>
-              <span class="modal-kicker">Escritório do técnico</span>
+              <span class="modal-kicker">Escritorio do tecnico</span>
               <h2>${activeTeam.owner}</h2>
-              <p>Técnico do ${activeTeam.team}</p>
+              <p>Tecnico do ${activeTeam.team}</p>
               <div class="coach-form-line">
                 <span>Forma recente</span>
                 ${App.players.renderFormDots(recentForm)}
@@ -1647,7 +2189,7 @@ App.players = {
             </div>
           </div>
           <div class="coach-hero-rank">
-            <strong>${standing?.position || "-"}º</strong>
+            <strong>${standing?.position || "-"}o</strong>
             <span>${standing?.points || 0} pts</span>
           </div>
         </article>
@@ -1658,8 +2200,8 @@ App.players = {
             canViewPrivate
               ? `
             <article><span>Saldo mercado</span><strong>${App.utils.formatCurrency(breakdown.available)}</strong><small>${budget.marketEmbargo ? "Mercado bloqueado" : `Gasto ${App.utils.formatCurrency(breakdown.spent)}`}</small></article>
-            <article><span>Transfers hoje</span><strong>${todayCount}/${transferLimit}</strong><small>${transfers.length} totais válidas</small></article>
-            <article><span>Folha semanal</span><strong>${App.utils.formatCurrency(payrollWeekly)}</strong><small>Estimativa por elenco contratado</small></article>
+            <article><span>Transfers hoje</span><strong>${todayCount}/${transferLimit}</strong><small>${transfers.length} totais validas</small></article>
+            <article><span>Folha semanal</span><strong>${App.utils.formatCurrency(payrollWeekly)}</strong><small>base salarial do elenco atual</small></article>
             ${budget.marketEmbargo || salaryDebt ? `<article><span>Fair play</span><strong>Embargo</strong><small>${App.utils.formatCurrency(Number(salaryDebt?.debtAmount || budget.salaryDebtAmount || Math.abs(Number(budget.remainingBudget || 0))))} em aberto</small></article>` : ""}
           `
               : ""
@@ -1668,14 +2210,14 @@ App.players = {
 
         <section class="coach-layout-v54">
           <div class="coach-top-row-v54 ${canViewPrivate ? "" : "public-only"}">
+            ${canViewPrivate ? controlTowerCard : ""}
             ${nextMatchCard}
             ${canViewPrivate ? medicalCard : ""}
           </div>
 
           ${decisionCard ? `<div class="coach-full-row-v54">${decisionCard}</div>` : ""}
-          ${proposalCard ? `<div class="coach-full-row-v54">${proposalCard}</div>` : ""}
-          ${saleListCard ? `<div class="coach-full-row-v54">${saleListCard}</div>` : ""}
           ${sponsorshipCard ? `<div class="coach-full-row-v54">${sponsorshipCard}</div>` : ""}
+          ${saleListCard ? `<div class="coach-full-row-v54">${saleListCard}</div>` : ""}
           ${statementCard}
           ${privateBoardCard}
           ${strategyCards}
@@ -1683,16 +2225,16 @@ App.players = {
           <div class="coach-flow-v55">
             <article class="coach-panel-card coach-market-card">
               <div class="home-panel-header">
-                <h2>Contratações aprovadas</h2>
-                <span class="coach-section-kicker">${transfers.length} no histórico</span>
+                <h2>Contratacoes aprovadas</h2>
+                <span class="coach-section-kicker">${transfers.length} no historico</span>
               </div>
               ${App.players.renderCoachTransferDeck(transfers)}
             </article>
 
             <article class="coach-panel-card coach-event-radar-card">
               <div class="home-panel-header">
-                <h2>Extrato e ocorrências</h2>
-                <span class="coach-section-kicker">${events.length} lançamento(s)</span>
+                <h2>Extrato e ocorrencias</h2>
+                <span class="coach-section-kicker">${events.length} lancamento(s)</span>
               </div>
               ${App.players.renderCoachEventDeck(events)}
             </article>
@@ -1711,8 +2253,8 @@ App.players = {
     return `
       <section class="coach-comparison coach-comparison-v47">
         <div class="home-panel-header">
-          <h2>Termômetro da Liga</h2>
-          ${leader ? `<span class="coach-section-kicker">Líder: ${App.utils.escapeHtml(leader.team.owner)} · ${leader.standing?.points || 0} pts</span>` : ""}
+          <h2>TermÃ´metro da Liga</h2>
+          ${leader ? `<span class="coach-section-kicker">LÃ­der: ${App.utils.escapeHtml(leader.team.owner)} Â· ${leader.standing?.points || 0} pts</span>` : ""}
         </div>
         <div class="coach-podium-grid">
           ${ranking
@@ -1849,26 +2391,41 @@ App.players = {
       button.dataset.bound = "true";
       button.addEventListener("click", async () => {
         const player = button.dataset.eventPlayer || "jogador";
+        const actionType = button.dataset.medicalActionType || "intensive";
+        const isManagedReturn = actionType === "managed_return";
         const confirmed = App.ui?.confirmAction
           ? await App.ui.confirmAction({
               kicker: "Tratamento medico",
-              title: "Aplicar tratamento intensivo?",
-              message: `${player} tera o prazo de lesao recalculado pelo DM ativo.`,
-              detail:
-                "O tratamento gera custo medico, reduz dias corridos restantes e atualiza o calendario da lesao.",
-              tone: "market",
+              title: isManagedReturn
+                ? "Liberar retorno controlado?"
+                : "Aplicar tratamento intensivo?",
+              message: isManagedReturn
+                ? `${player} sera movido para retorno progressivo com carga e minutos controlados.`
+                : `${player} tera o prazo de lesao recalculado pelo DM ativo.`,
+              detail: isManagedReturn
+                ? "O caso segue monitorado pelo staff e a proxima revisao fica registrada no escritorio."
+                : "O tratamento gera custo medico, reduz dias corridos restantes e atualiza o calendario da lesao.",
+              tone: isManagedReturn ? "info" : "market",
               cancelLabel: "Cancelar",
-              confirmLabel: "Aplicar tratamento",
+              confirmLabel: isManagedReturn
+                ? "Liberar retorno"
+                : "Aplicar tratamento",
             })
-          : confirm("Aplicar tratamento intensivo?");
+          : confirm(
+              isManagedReturn
+                ? "Liberar retorno controlado?"
+                : "Aplicar tratamento intensivo?",
+            );
         if (!confirmed) return;
 
         try {
           button.disabled = true;
           App.main?.showLoader?.({
-            variant: "market",
-            title: "Tratando lesao",
-            message: "Aplicando atendimento intensivo e atualizando calendario.",
+            variant: isManagedReturn ? "info" : "market",
+            title: isManagedReturn ? "Liberando retorno" : "Tratando lesao",
+            message: isManagedReturn
+              ? "Aplicando restricao progressiva e atualizando o caso clinico."
+              : "Aplicando atendimento intensivo e atualizando calendario.",
           });
           const result = await App.api.postToApi({
             action: "applyMedicalTreatment",
@@ -1876,11 +2433,15 @@ App.players = {
             eventKey: button.dataset.eventKey || "",
             eventOwner: button.dataset.eventOwner || "",
             playerName: button.dataset.eventPlayer || "",
-            actionType: "intensive",
+            actionType,
           });
           if (!result.ok)
             throw new Error(
-              result.message || result.error || "Nao consegui tratar a lesao.",
+              result.message ||
+                result.error ||
+                (isManagedReturn
+                  ? "Nao consegui liberar o retorno controlado."
+                  : "Nao consegui tratar a lesao."),
             );
           await App.api.loadApiData({
             force: true,
@@ -1891,9 +2452,15 @@ App.players = {
           App.players.render();
           if (App.ui?.openActionModal) {
             await App.ui.openActionModal({
-              kicker: "Tratamento aplicado",
-              title: "Prazo atualizado",
-              message: result.message || "Lesao atualizada pelo calendario.",
+              kicker: isManagedReturn
+                ? "Retorno controlado"
+                : "Tratamento aplicado",
+              title: isManagedReturn ? "Caso atualizado" : "Prazo atualizado",
+              message:
+                result.message ||
+                (isManagedReturn
+                  ? "O atleta agora aparece com restricao progressiva no elenco."
+                  : "Lesao atualizada pelo calendario."),
               tone: "success",
               actions: [
                 {
@@ -1909,7 +2476,9 @@ App.players = {
           if (App.ui?.openActionModal) {
             await App.ui.openActionModal({
               kicker: "Tratamento medico",
-              title: "Nao consegui aplicar",
+              title: isManagedReturn
+                ? "Nao consegui liberar"
+                : "Nao consegui aplicar",
               message: error.message || "Tente novamente depois de sincronizar.",
               tone: "danger",
               actions: [
@@ -2032,7 +2601,7 @@ App.players = {
             App.players.savePrivateTransferTargets(owner, targets);
           } catch (error) {
             console.warn(
-              "Não consegui sincronizar alvo privado, mantive no cache local:",
+              "NÃ£o consegui sincronizar alvo privado, mantive no cache local:",
               error,
             );
           }
@@ -2062,7 +2631,7 @@ App.players = {
               App.players.savePrivateTransferTargets(owner, targets);
             } catch (error) {
               console.warn(
-                "Não consegui sincronizar remoção do alvo privado:",
+                "NÃ£o consegui sincronizar remoÃ§Ã£o do alvo privado:",
                 error,
               );
             }
@@ -2088,7 +2657,7 @@ App.players = {
               payload: { source: "private-target" },
             });
         } catch (error) {
-          console.warn("Favorito privado indisponível:", error);
+          console.warn("Favorito privado indisponÃ­vel:", error);
         }
         App.players.render();
         App.auth?.renderAll?.();
@@ -2107,7 +2676,7 @@ App.players = {
               button.dataset.removeFavoriteKey,
             );
           } catch (error) {
-            console.warn("Não consegui remover favorito:", error);
+            console.warn("NÃ£o consegui remover favorito:", error);
           }
           App.players.render();
           App.auth?.renderAll?.();

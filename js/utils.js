@@ -1,8 +1,39 @@
 import App from "./app.js";
 
 App.utils = {
+  repairMojibake(value) {
+    if (value === null || value === undefined) return "";
+
+    const decodeLatin1Utf8 = (input) => {
+      if (!input) return input;
+      try {
+        const Decoder = globalThis.TextDecoder;
+        if (typeof Decoder !== "function") return input;
+        const bytes = Uint8Array.from(
+          Array.from(input, (char) => char.charCodeAt(0) & 0xff),
+        );
+        return new Decoder("utf-8", { fatal: true }).decode(bytes);
+      } catch (_) {
+        return input;
+      }
+    };
+
+    let current = String(value);
+    const suspiciousPattern = /(Ã.|Â.|â.|ðŸ|�)/;
+
+    for (let pass = 0; pass < 2; pass += 1) {
+      if (!suspiciousPattern.test(current)) break;
+      const decoded = decodeLatin1Utf8(current);
+      if (!decoded || decoded === current) break;
+      current = decoded;
+    }
+
+    return current.replace(/\uFFFD/g, "");
+  },
+
   normalizeText(value) {
-    return String(value || "")
+    return App.utils
+      .repairMojibake(value)
       .trim()
       .toLowerCase()
       .normalize("NFD")
@@ -15,12 +46,12 @@ App.utils = {
       "southampton fc": "southampton",
       "blackburn": "blackburn rovers",
       "blackburn rovers fc": "blackburn rovers",
-      "coventry": "coventry city",
+      coventry: "coventry city",
       "coventry city fc": "coventry city",
-      "birmingham": "birmingham city",
+      birmingham: "birmingham city",
       "birmingham city fc": "birmingham city",
       "middlesbrough fc": "middlesbrough",
-      "qpr": "queens park rangers",
+      qpr: "queens park rangers",
       "queens park rangers fc": "queens park rangers",
       "west brom": "west bromwich albion",
       "west bromwich": "west bromwich albion",
@@ -34,7 +65,7 @@ App.utils = {
       "stoke city fc": "stoke city",
       "watford fc": "watford",
       "portsmouth fc": "portsmouth",
-      "wrexham afc": "wrexham"
+      "wrexham afc": "wrexham",
     };
     return aliases[normalized] || normalized;
   },
@@ -43,8 +74,12 @@ App.utils = {
     const hasUppercase = /[A-ZÀ-Ý]/.test(match);
     const hasLowercase = /[a-zà-ÿ]/.test(match);
 
-    if (hasUppercase && !hasLowercase) return replacement.toLocaleUpperCase("pt-BR");
-    if (!hasUppercase && hasLowercase) return replacement.toLocaleLowerCase("pt-BR");
+    if (hasUppercase && !hasLowercase) {
+      return replacement.toLocaleUpperCase("pt-BR");
+    }
+    if (!hasUppercase && hasLowercase) {
+      return replacement.toLocaleLowerCase("pt-BR");
+    }
     if (/^[A-ZÀ-Ý]/.test(match)) {
       return `${replacement.charAt(0).toLocaleUpperCase("pt-BR")}${replacement.slice(1)}`;
     }
@@ -54,6 +89,32 @@ App.utils = {
 
   polishUiText(value) {
     if (value === null || value === undefined) return "";
+
+    const directReplacements = [
+      [/ÃƒÆ’Ã‚Â¡/g, "á"],
+      [/ÃƒÆ’Ã‚Â£/g, "ã"],
+      [/ÃƒÆ’Ã‚Â³/g, "ó"],
+      [/ÃƒÆ’Ã‚Â©/g, "é"],
+      [/ÃƒÆ’Ã‚Â§/g, "ç"],
+      [/ÃƒÆ’Ã‚Âª/g, "ê"],
+      [/ÃƒÆ’Ã‚Â­/g, "í"],
+      [/ÃƒÆ’Ã‚Âº/g, "ú"],
+      [/ÃƒÆ’Ã‚Â´/g, "ô"],
+      [/ÃƒÆ’Ã‚Â¢/g, "â"],
+      [/Ãƒâ€šÃ‚Â·/g, "·"],
+      [/Ò¡/g, "á"],
+      [/Ò£/g, "ã"],
+      [/Ò³/g, "ó"],
+      [/Ò©/g, "é"],
+      [/Ò§/g, "ç"],
+      [/Òª/g, "ê"],
+      [/Ò­/g, "í"],
+      [/Òº/g, "ú"],
+      [/Ò´/g, "ô"],
+      [/Ò¢/g, "â"],
+      [/Ò‰/g, "É"],
+      [/Ò‡/g, "Ç"],
+    ];
 
     const replacements = [
       [/\bColecao campea\b/gi, "Coleção campeã"],
@@ -157,13 +218,36 @@ App.utils = {
       [/\bVoce\b/g, "Você"],
       [/\bvoce\b/gi, "você"],
       [/\bate\b/gi, "até"],
-      [/\bAte\b/g, "Até"]
+      [/\bAte\b/g, "Até"],
+      [/\bmedico\b/gi, "médico"],
+      [/\bMedico\b/g, "Médico"],
+      [/\blesao\b/gi, "lesão"],
+      [/\bLesao\b/g, "Lesão"],
+      [/\bproximo\b/gi, "próximo"],
+      [/\bProximo\b/g, "Próximo"],
+      [/\bultimo\b/gi, "último"],
+      [/\bUltimo\b/g, "Último"],
+      [/\bescritorio\b/gi, "escritório"],
+      [/\bEscritorio\b/g, "Escritório"],
+      [/\binteligencia\b/gi, "inteligência"],
+      [/\bInteligencia\b/g, "Inteligência"],
+      [/\bnavegacao\b/gi, "navegação"],
+      [/\bNavegacao\b/g, "Navegação"],
+      [/\bpublico\b/gi, "público"],
+      [/\bPublico\b/g, "Público"],
     ];
+
+    const normalized = directReplacements.reduce(
+      (text, [pattern, replacement]) => text.replace(pattern, replacement),
+      App.utils.repairMojibake(value),
+    );
 
     return replacements.reduce(
       (text, [pattern, replacement]) =>
-        text.replace(pattern, match => App.utils.matchDisplayCase(match, replacement)),
-      String(value)
+        text.replace(pattern, (match) =>
+          App.utils.matchDisplayCase(match, replacement),
+        ),
+      normalized,
     );
   },
 
@@ -173,23 +257,33 @@ App.utils = {
 
   resolveTeamName(value) {
     const normalized = App.utils.normalizeTeamName(value);
-    const found = App.data.teams.find(team => App.utils.normalizeTeamName(team.team) === normalized);
+    const found = App.data.teams.find(
+      (team) => App.utils.normalizeTeamName(team.team) === normalized,
+    );
     return found ? found.team : String(value || "").trim();
   },
 
   getTeamByName(teamName) {
-    return App.data.teams.find(team => App.utils.sameTeamName(team.team, teamName));
+    return App.data.teams.find((team) =>
+      App.utils.sameTeamName(team.team, teamName),
+    );
   },
 
   getHumanBuyers() {
-    return [...new Set(App.data.teams.filter(team => team.status === "Nosso").map(team => team.owner))];
+    return [
+      ...new Set(
+        App.data.teams
+          .filter((team) => team.status === "Nosso")
+          .map((team) => team.owner),
+      ),
+    ];
   },
 
   formatCurrency(value) {
     return new Intl.NumberFormat("pt-BR", {
       style: "currency",
       currency: "EUR",
-      maximumFractionDigits: 0
+      maximumFractionDigits: 0,
     }).format(Number(value || 0));
   },
 
@@ -215,7 +309,7 @@ App.utils = {
       weekday: "short",
       day: "2-digit",
       month: "2-digit",
-      year: "numeric"
+      year: "numeric",
     }).format(date);
   },
 
@@ -228,20 +322,27 @@ App.utils = {
       month: "2-digit",
       year: "numeric",
       hour: "2-digit",
-      minute: "2-digit"
+      minute: "2-digit",
     }).format(date);
   },
 
   getChampionshipDate(roundNumber) {
     const config = App.config.calendarConfig;
-    const weekIndex = Math.ceil(roundNumber / config.championshipRoundsPerWeek) - 1;
+    const weekIndex =
+      Math.ceil(roundNumber / config.championshipRoundsPerWeek) - 1;
     const slotIndex = (roundNumber - 1) % config.championshipRoundsPerWeek;
-    return App.utils.addDays(App.utils.getBaseStartDate(), (weekIndex * 7) + config.championshipDayOffsets[slotIndex]);
+    return App.utils.addDays(
+      App.utils.getBaseStartDate(),
+      weekIndex * 7 + config.championshipDayOffsets[slotIndex],
+    );
   },
 
   getCupDate(week) {
     const config = App.config.calendarConfig;
-    return App.utils.addDays(App.utils.getBaseStartDate(), ((week - 1) * 7) + config.cupDayOffset);
+    return App.utils.addDays(
+      App.utils.getBaseStartDate(),
+      (week - 1) * 7 + config.cupDayOffset,
+    );
   },
 
   setMessage(element, text, type = "") {
@@ -260,5 +361,5 @@ App.utils = {
 
   escapeDisplay(value) {
     return App.utils.escapeHtml(App.utils.polishUiText(value));
-  }
+  },
 };

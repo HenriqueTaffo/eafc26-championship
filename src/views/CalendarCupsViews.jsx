@@ -1,91 +1,9 @@
 import { useState } from "react";
 import App from "../../js/app.js";
+import { Matchup, TeamBadge, TeamIdentity } from "./SharedClubComponents.jsx";
 import { useAppRuntime } from "./ViewSummaries.jsx";
 
 const WEEKDAYS = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"];
-
-function TeamBadge({ teamName, className = "" }) {
-  const [logoFailed, setLogoFailed] = useState(false);
-  const [logoLoaded, setLogoLoaded] = useState(false);
-  const club = App.clubs.getClubByTeamName(teamName);
-  const primary = club.CorPrimaria || "#64748b";
-  const secondary = club.CorSecundaria || "#ffffff";
-  const logo = String(club.LogoUrl || "").trim();
-  const hasLogo =
-    logo &&
-    !App.clubs.isPlaceholder(teamName) &&
-    !App.clubs.isDuplicateLogoUrl(teamName, logo) &&
-    !App.clubs.isLogoUnavailable(logo) &&
-    !logoFailed;
-  const style = {
-    "--club-primary": primary,
-    "--club-secondary": secondary,
-  };
-
-  if (!hasLogo) {
-    return (
-      <span
-        className={["club-badge", "fallback", className].join(" ")}
-        style={style}
-      >
-        <span>{App.clubs.getInitials(teamName)}</span>
-      </span>
-    );
-  }
-
-  return (
-    <span
-      className={[
-        "club-badge",
-        "has-logo",
-        logoLoaded ? "logo-loaded" : "",
-        className,
-      ].join(" ")}
-      style={style}
-    >
-      <span className="logo-fallback">{App.clubs.getInitials(teamName)}</span>
-      <img
-        src={logo}
-        alt={teamName}
-        loading="lazy"
-        referrerPolicy="no-referrer"
-        onLoad={(event) => {
-          App.clubs.handleLogoLoad(event.currentTarget);
-          setLogoLoaded(true);
-        }}
-        onError={(event) => {
-          App.clubs.handleLogoError(event.currentTarget);
-          setLogoFailed(true);
-        }}
-      />
-    </span>
-  );
-}
-
-function Matchup({ home, away, className = "" }) {
-  return (
-    <span className={["matchup", className].filter(Boolean).join(" ")}>
-      <span className="matchup-side home">
-        <span className="matchup-name">{home}</span>
-        <TeamBadge teamName={home} className="small" />
-      </span>
-      <strong className="matchup-x">x</strong>
-      <span className="matchup-side away">
-        <TeamBadge teamName={away} className="small" />
-        <span className="matchup-name">{away}</span>
-      </span>
-    </span>
-  );
-}
-
-function TeamIdentity({ teamName, className = "" }) {
-  return (
-    <span className={["team-identity", className].filter(Boolean).join(" ")}>
-      <TeamBadge teamName={teamName} />
-      <span className="team-identity-name">{teamName}</span>
-    </span>
-  );
-}
 
 function OwnerPills({ owners }) {
   if (!owners.length) {
@@ -238,6 +156,68 @@ function CalendarMonthAgenda({ events }) {
   );
 }
 
+function CalendarMonthHighlights({ monthEvents, eventsByDate }) {
+  if (!monthEvents.length) return null;
+
+  const pendingEvents = monthEvents.filter(
+    (event) => App.calendar.getStatusClass(event) === "pending",
+  );
+  const nextPending =
+    [...pendingEvents].sort(
+      (a, b) =>
+        App.calendar.normalizeCalendarDate(a.date) -
+          App.calendar.normalizeCalendarDate(b.date) ||
+        Number(a.week || 0) - Number(b.week || 0),
+    )[0] || null;
+  const busiestDay = [...eventsByDate.entries()]
+    .map(([dateKey, dayEvents]) => ({ dateKey, dayEvents }))
+    .sort(
+      (a, b) =>
+        b.dayEvents.length - a.dayEvents.length ||
+        a.dateKey.localeCompare(b.dateKey),
+    )[0];
+  const humanCount = monthEvents.filter((event) =>
+    App.calendar.involvesOurTeam(event),
+  ).length;
+
+  return (
+    <section className="calendar-month-highlights" aria-label="Resumo do mês">
+      <article>
+        <span>Próximo jogo</span>
+        <strong>
+          {nextPending ? `${nextPending.home} x ${nextPending.away}` : "Mês concluído"}
+        </strong>
+        <small>
+          {nextPending
+            ? `${nextPending.phase} · Semana ${nextPending.week}`
+            : "Todos os jogos do filtro já foram realizados."}
+        </small>
+      </article>
+      <article>
+        <span>Dia mais cheio</span>
+        <strong>
+          {busiestDay
+            ? App.utils.formatDate(busiestDay.dateKey).replace(/^.*?,\s*/, "")
+            : "Sem agenda"}
+        </strong>
+        <small>
+          {busiestDay
+            ? `${busiestDay.dayEvents.length} jogo(s) na mesma data`
+            : "Nenhum confronto no mês atual."}
+        </small>
+      </article>
+      <article>
+        <span>Jogos do técnico</span>
+        <strong>{humanCount}</strong>
+        <small>
+          {pendingEvents.length} pendente(s) ·{" "}
+          {monthEvents.length - pendingEvents.length} concluído(s)
+        </small>
+      </article>
+    </section>
+  );
+}
+
 function CalendarWeekBoardContent({ events }) {
   const weeks = [
     ...events
@@ -294,6 +274,7 @@ function CalendarWeekBoardContent({ events }) {
 }
 
 function CalendarDayCell({ date, dayEvents }) {
+  const [expanded, setExpanded] = useState(false);
   if (!date) {
     return (
       <span
@@ -305,6 +286,7 @@ function CalendarDayCell({ date, dayEvents }) {
 
   const dateKey = App.calendar.getCalendarDateKey(date);
   const parts = App.calendar.formatCalendarDayParts(date);
+  const todayKey = App.calendar.getCalendarDateKey(new Date());
   const pendingCount = dayEvents.filter(
     (event) => App.calendar.getStatusClass(event) === "pending",
   ).length;
@@ -316,9 +298,12 @@ function CalendarDayCell({ date, dayEvents }) {
     dayEvents.length ? "has-events" : "",
     pendingCount ? "has-pending" : "",
     humanCount ? "has-human-match" : "",
+    dateKey === todayKey ? "is-today" : "",
   ]
     .filter(Boolean)
     .join(" ");
+  const visibleEvents = expanded ? dayEvents : dayEvents.slice(0, 2);
+  const hiddenCount = Math.max(0, dayEvents.length - 2);
 
   return (
     <article className={dayClass}>
@@ -333,9 +318,18 @@ function CalendarDayCell({ date, dayEvents }) {
       </div>
       {dayEvents.length ? (
         <div className="calendar-day-events">
-          {dayEvents.map((event) => (
+          {visibleEvents.map((event) => (
             <CalendarEventCard event={event} key={event.id} />
           ))}
+          {dayEvents.length > 2 ? (
+            <button
+              type="button"
+              className="calendar-day-more-button"
+              onClick={() => setExpanded((current) => !current)}
+            >
+              {expanded ? "Recolher dia" : `+${hiddenCount} jogo(s)`}
+            </button>
+          ) : null}
         </div>
       ) : (
         <span className="calendar-day-empty">Sem jogos</span>
@@ -369,6 +363,10 @@ function CalendarMonth({ monthKey, eventsByDate, events }) {
           <span>{humanCount} com técnico</span>
         </div>
       </header>
+      <CalendarMonthHighlights
+        monthEvents={monthEvents}
+        eventsByDate={eventsByDate}
+      />
       <CalendarMonthAgenda events={monthEvents} />
       <div className="calendar-weekday-row" aria-hidden="true">
         {WEEKDAYS.map((day) => (

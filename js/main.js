@@ -352,6 +352,7 @@ App.main = {
       .forEach((item) => item.classList.remove("active"));
     button.classList.add("active");
     view.classList.add("active");
+    App.react?.notify?.();
     App.main.renderCurrentView();
   },
 

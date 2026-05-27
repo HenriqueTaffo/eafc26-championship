@@ -469,6 +469,19 @@ function getRosterStats(roster = [], lineupPlayers = []) {
   };
 }
 
+function getPlayerMedicalStatus(player, medicalStatusMap = new Map()) {
+  if (!player?.name) return null;
+  const snapshot = medicalStatusMap.get(App.utils.normalizeText(player.name));
+  if (!snapshot) return null;
+  const availability =
+    snapshot.meta?.availability ||
+    App.players.getMedicalAvailabilityMeta(snapshot.meta || {});
+  return {
+    ...snapshot,
+    availability,
+  };
+}
+
 function PlayerAvatar({ player, className = "" }) {
   return (
     <span className={`squad-avatar ${className}`.trim()}>
@@ -545,6 +558,7 @@ function FormationPicker({ formation, onChange, open, onToggle, onClose }) {
 function PitchSlot({
   slot,
   player,
+  medicalStatus,
   selected,
   compatible,
   dropActive,
@@ -557,6 +571,7 @@ function PitchSlot({
   onDragLeaveSlot,
   onDragEnd,
 }) {
+  const availability = medicalStatus?.availability || null;
   return (
     <button
       type="button"
@@ -564,6 +579,8 @@ function PitchSlot({
         "squad-slot",
         selected ? "is-selected" : "",
         player ? "is-filled" : "",
+        medicalStatus ? `has-medical-${availability?.tone || "watch"}` : "",
+        medicalStatus && !availability?.canStart ? "is-unavailable" : "",
         compatible ? "is-compatible" : "",
         dropActive ? "is-drop-target" : "",
         dragging ? "is-dragging" : "",
@@ -607,6 +624,14 @@ function PitchSlot({
             <strong>{player.name}</strong>
             <em>{player.position || slot.label}</em>
           </span>
+          {medicalStatus ? (
+            <span
+              className={`squad-medical-badge tone-${availability?.tone || "watch"}`}
+              title={`${medicalStatus.meta.stageLabel} | ${medicalStatus.meta.nextReviewLabel}`}
+            >
+              {availability?.label || "DM"}
+            </span>
+          ) : null}
           <span
             className="squad-slot-remove"
             aria-label={`Remover ${player.name}`}
@@ -634,12 +659,14 @@ function PitchSlot({
 
 function SquadRosterRow({
   player,
+  medicalStatus,
   assigned,
   selected,
   onPick,
   onDragStart,
   onDragEnd,
 }) {
+  const availability = medicalStatus?.availability || null;
   return (
     <button
       type="button"
@@ -647,6 +674,7 @@ function SquadRosterRow({
         "squad-roster-row",
         assigned ? "is-assigned" : "",
         selected ? "is-selected-player" : "",
+        medicalStatus ? `has-medical-${availability?.tone || "watch"}` : "",
       ]
         .filter(Boolean)
         .join(" ")}
@@ -663,11 +691,20 @@ function SquadRosterRow({
     >
       <span className="squad-drag-grip" aria-hidden="true"></span>
       <PlayerAvatar player={player} />
-      <span className="squad-roster-main">
+<span className="squad-roster-main">
         <strong>{player.name}</strong>
         <small>
           {player.position || "-"} · {player.nation || "EA FC 26"}
         </small>
+        {medicalStatus ? (
+          <span className="squad-roster-tags">
+            <b className={`squad-inline-pill tone-${availability?.tone || "watch"}`}>
+              {availability?.label || "DM"}
+            </b>
+            <span>{medicalStatus.meta.stageLabel}</span>
+            <span>{medicalStatus.meta.nextReviewLabel}</span>
+          </span>
+        ) : null}
       </span>
       <span className="squad-roster-meta">
         <b>{player.overall}</b>
@@ -754,6 +791,10 @@ function SquadManagementView() {
     () => new Map(roster.map((player) => [Number(player.id), player])),
     [roster],
   );
+  const medicalStatusMap = useMemo(
+    () => App.players.getMedicalStatusSnapshot(activeManagerName),
+    [activeManagerName, runtimeVersion],
+  );
   const draggingPlayer = dragState?.playerId
     ? playerById.get(Number(dragState.playerId))
     : null;
@@ -762,6 +803,17 @@ function SquadManagementView() {
     .map((slot) => playerById.get(Number(lineup[slot.id])))
     .filter(Boolean);
   const stats = getRosterStats(roster, lineupPlayers);
+  const unavailableCount = roster.filter((player) => {
+    const medicalStatus = getPlayerMedicalStatus(player, medicalStatusMap);
+    return medicalStatus && !medicalStatus.availability?.canStart;
+  }).length;
+  const restrictedCount = roster.filter((player) => {
+    const medicalStatus = getPlayerMedicalStatus(player, medicalStatusMap);
+    return (
+      medicalStatus?.availability?.canStart &&
+      medicalStatus.availability?.isRestricted
+    );
+  }).length;
   const forecast = (data.finance || []).find(
     (item) =>
       App.utils.normalizeText(item.manager_name || item.managerName) ===
@@ -813,6 +865,13 @@ function SquadManagementView() {
   function assignPlayerToSlot(player, targetSlot, fromSlot = "") {
     const playerId = Number(player?.id);
     if (!playerId || !targetSlot) return;
+    const medicalStatus = getPlayerMedicalStatus(player, medicalStatusMap);
+    if (medicalStatus && !medicalStatus.availability?.canStart) {
+      setMessage(
+        `${player.name} segue em ${medicalStatus.meta.stageLabel.toLowerCase()}. Libere no DM antes de escalar.`,
+      );
+      return;
+    }
     setLineup((current) => {
       const replacedPlayerId = current[targetSlot];
       const next = Object.entries(current).reduce((acc, [slotId, assignedId]) => {
@@ -995,14 +1054,38 @@ function SquadManagementView() {
           <small>{stats.lineupAvg ? `media OVR ${stats.lineupAvg}` : "sem titulares"}</small>
         </article>
         <article>
-          <span>Risco financeiro</span>
+          <span>Disponibilidade</span>
+          <strong>{unavailableCount ? `${unavailableCount} fora` : "Elenco apto"}</strong>
+          <small>
+            {restrictedCount
+              ? `${restrictedCount} com retorno controlado`
+              : forecast?.runway_weeks
+                ? `${forecast.runway_weeks} semanas de caixa`
+                : "sem restricao clinica ativa"}
+          </small>
+        </article>
+      </section>
+
+      <section className="squad-availability-strip">
+        <span>
+          <b>DM ativo</b>
+          <strong>{unavailableCount}</strong>
+          <small>fora da escala</small>
+        </span>
+        <span>
+          <b>Retorno controlado</b>
+          <strong>{restrictedCount}</strong>
+          <small>minutos monitorados</small>
+        </span>
+        <span>
+          <b>Caixa</b>
           <strong>{forecast?.risk || "Saudavel"}</strong>
           <small>
             {forecast?.runway_weeks
-              ? `${forecast.runway_weeks} semanas de caixa`
+              ? `${forecast.runway_weeks} semanas de folha`
               : "sem pressao imediata"}
           </small>
-        </article>
+        </span>
       </section>
 
       <section className="squad-builder-grid">
@@ -1046,11 +1129,16 @@ function SquadManagementView() {
             </div>
             {slots.map((slot) => {
               const player = playerById.get(Number(lineup[slot.id]));
+              const medicalStatus = getPlayerMedicalStatus(
+                player,
+                medicalStatusMap,
+              );
               return (
                 <PitchSlot
                   key={slot.id}
                   slot={slot}
                   player={player}
+                  medicalStatus={medicalStatus}
                   selected={selectedSlot === slot.id}
                   compatible={
                     draggingPlayer
@@ -1095,6 +1183,7 @@ function SquadManagementView() {
               <SquadRosterRow
                 key={player.id}
                 player={player}
+                medicalStatus={getPlayerMedicalStatus(player, medicalStatusMap)}
                 assigned={assignedIds.has(Number(player.id))}
                 selected={Number(selectedPlayerId) === Number(player.id)}
                 onPick={() => assignPlayer(player)}
