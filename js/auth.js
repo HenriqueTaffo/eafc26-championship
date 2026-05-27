@@ -20,6 +20,7 @@ App.auth = {
   autoDecisionRunning: false,
   autoCpuOfferRunning: false,
   loginTransitionSession: null,
+  loginTransitionSnapshotHtml: "",
 
   init() {
     try {
@@ -624,9 +625,19 @@ App.auth = {
       ? "GovernanÃƒÂ§a da Liga"
       : session.clubName || "Clube vinculado";
 
+    const transitionGhost = App.auth.loginTransitionSnapshotHtml
+      ? `
+      <div class="manager-login-transition-ghost" aria-hidden="true">
+        ${App.auth.loginTransitionSnapshotHtml}
+      </div>
+    `
+      : "";
+
     App.dom.setHtml(
       panel,
       `
+      <div class="manager-login-transition-shell">
+        ${transitionGhost}
       <section class="manager-login-success-card manager-login-shell" aria-live="polite">
         <div class="manager-login-success-stage">
           <span class="manager-login-mascot-stage manager-login-avatar-large manager-login-brand-mark manager-login-success-mark" aria-hidden="true">
@@ -646,11 +657,15 @@ App.auth = {
           </div>
         </div>
       </section>
+      </div>
       `,
     );
   },
 
   startLoginSuccessTransition(session = {}) {
+    const panel = document.getElementById("managerLoginPanel");
+    App.auth.loginTransitionSnapshotHtml =
+      panel?.querySelector(".manager-login-shell")?.outerHTML || "";
     App.auth.loginTransitionSession = session;
     App.auth.syncAuthGate();
     App.auth.renderLoginSuccessPanel(session);
@@ -664,6 +679,7 @@ App.auth = {
       await new Promise((resolve) => setTimeout(resolve, minDuration - elapsed));
     }
     App.auth.loginTransitionSession = null;
+    App.auth.loginTransitionSnapshotHtml = "";
     App.auth.syncAuthGate();
   },
 
@@ -787,6 +803,7 @@ App.auth = {
       App.main?.renderCurrentView?.();
     } catch (error) {
       App.auth.loginTransitionSession = null;
+      App.auth.loginTransitionSnapshotHtml = "";
       App.auth.syncAuthGate();
       App.auth.renderAll();
       throw error;
@@ -838,6 +855,7 @@ App.auth = {
 
     App.auth.currentSession = null;
     App.auth.loginTransitionSession = null;
+    App.auth.loginTransitionSnapshotHtml = "";
     App.auth.myDecisions = [];
     App.auth.myTransferProposals = [];
     App.auth.myTransferTargets = [];
@@ -1193,9 +1211,9 @@ App.auth = {
       App.auth.myFavorites = Array.isArray(result?.favorites)
         ? result.favorites
         : [];
-      App.auth.myNotifications = Array.isArray(result?.notifications)
-        ? result.notifications
-        : [];
+      App.auth.myNotifications = App.auth.dedupeNotifications(
+        result?.notifications,
+      );
       if (Array.isArray(result?.financeForecast))
         App.state.apiFinanceForecast = result.financeForecast;
       if (result?.financeRules) App.state.apiFinanceRules = result.financeRules;
@@ -1208,6 +1226,27 @@ App.auth = {
       App.auth.myNotifications = [];
       return null;
     }
+  },
+
+  dedupeNotifications(notifications = []) {
+    const rows = Array.isArray(notifications) ? notifications : [];
+    const seen = new Set();
+
+    return rows.filter((item) => {
+      const semanticKey = App.utils.normalizeText(
+        [item?.title || "", item?.body || "", item?.tone || ""].join("|"),
+      );
+      const fallbackKey = App.utils.normalizeText(
+        item?.unique_key || item?.id || "",
+      );
+      const dedupeKey = semanticKey || fallbackKey;
+
+      if (!dedupeKey) return true;
+      if (seen.has(dedupeKey)) return false;
+
+      seen.add(dedupeKey);
+      return true;
+    });
   },
 
   getFavoriteKey(type, key) {
@@ -1315,9 +1354,9 @@ App.auth = {
       App.auth.myFavorites = Array.isArray(result?.favorites)
         ? result.favorites
         : [];
-      App.auth.myNotifications = Array.isArray(result?.notifications)
-        ? result.notifications
-        : [];
+      App.auth.myNotifications = App.auth.dedupeNotifications(
+        result?.notifications,
+      );
       App.auth.saveLocalFavorites(App.auth.myFavorites);
       return result;
     } catch (error) {
@@ -1352,9 +1391,9 @@ App.auth = {
       App.auth.myFavorites = Array.isArray(result?.favorites)
         ? result.favorites
         : [];
-      App.auth.myNotifications = Array.isArray(result?.notifications)
-        ? result.notifications
-        : [];
+      App.auth.myNotifications = App.auth.dedupeNotifications(
+        result?.notifications,
+      );
       App.auth.saveLocalFavorites(App.auth.myFavorites);
       return result;
     } catch (error) {
@@ -1384,9 +1423,9 @@ App.auth = {
       App.auth.myFavorites = Array.isArray(result?.favorites)
         ? result.favorites
         : [];
-      App.auth.myNotifications = Array.isArray(result?.notifications)
-        ? result.notifications
-        : [];
+      App.auth.myNotifications = App.auth.dedupeNotifications(
+        result?.notifications,
+      );
     }
     App.auth.renderAll();
     return result;
@@ -4296,7 +4335,7 @@ App.auth = {
     const target = document.getElementById("managerNotificationCenter");
     if (!target) return;
 
-    const notifications = App.auth.myNotifications || [];
+    const notifications = App.auth.dedupeNotifications(App.auth.myNotifications);
     const unread = notifications.filter((item) => !item.is_read);
     const favorites = App.auth.myFavorites || [];
 
