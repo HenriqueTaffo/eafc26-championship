@@ -359,6 +359,7 @@ Object.assign(App.transfers, {
     );
     const isRejected = normalizedStatus === "rejected";
     const isBuyerReview = normalizedStatus === "buyer_review";
+    const isSignaturePending = normalizedStatus === "signature_pending";
     const buyer = item.buyer || preview?.buyer || "Comprador";
     const seller = item.seller || preview?.seller || "";
     const fromClub = item.fromClub || item.club || preview?.fromClub || "";
@@ -537,6 +538,7 @@ Object.assign(App.transfers, {
         (item) =>
           item.status !== "sent" &&
           item.status !== "buyer_review" &&
+          item.status !== "signature_pending" &&
           (!ownerKey || App.utils.normalizeText(item.buyer) === ownerKey),
       )
       .map((item) => ({
@@ -736,6 +738,7 @@ Object.assign(App.transfers, {
     if (!entry || !App.ui?.openActionModal) return;
     const status = App.utils.normalizeText(entry.status || "");
     const isBuyerReview = status === "buyer_review";
+    const isSignaturePending = status === "signature_pending";
     const isRejected = status === "rejected";
     const stages = Array.isArray(entry.stages)
       ? entry.stages
@@ -747,7 +750,7 @@ Object.assign(App.transfers, {
         ? "Proposta enviada"
         : isRejected
           ? "Mesa encerrada"
-          : isBuyerReview
+          : isBuyerReview || isSignaturePending
             ? "E-mail recebido"
             : "Resposta recebida",
       title: isInternal
@@ -756,18 +759,22 @@ Object.assign(App.transfers, {
           ? "Clube vendedor recusou"
           : isBuyerReview
             ? "Resposta no escritorio"
+            : isSignaturePending
+              ? "Contrato em assinatura"
             : "Negociacao registrada",
       message: isInternal
         ? `${entry.player} agora depende da resposta do vendedor no inbox.`
         : isBuyerReview
           ? `${entry.player} virou um e-mail de contrato no escritorio. Assine, renegocie ou encerre por la.`
+          : isSignaturePending
+            ? `${entry.player} foi aceito pelo vendedor e aguarda assinatura no escritorio da liga.`
           : isRejected
             ? `${entry.player} nao virou contratacao nesta mesa.`
             : `${entry.player} passou por resposta do vendedor, contrato e registro da liga.`,
       detail: stages
         .map((stage, index) => `${index + 1}. ${stage.title}: ${stage.detail}`)
         .join("\n"),
-      tone: isRejected ? "danger" : isBuyerReview ? "market" : "success",
+      tone: isRejected ? "danger" : isBuyerReview || isSignaturePending ? "market" : "success",
       actions: [
         {
           id: "confirm",
@@ -778,7 +785,7 @@ Object.assign(App.transfers, {
       ],
     });
 
-    if (!isInternal && isBuyerReview && result?.action === "confirm") {
+    if (!isInternal && (isBuyerReview || isSignaturePending) && result?.action === "confirm") {
       App.main?.switchToView?.("playersView");
       requestAnimationFrame(() => {
         document

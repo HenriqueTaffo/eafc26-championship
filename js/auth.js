@@ -103,7 +103,7 @@ App.auth = {
   },
 
   isOpenTransferProposal(item = {}) {
-    return ["pending", "buyer_review"].includes(
+    return ["pending", "buyer_review", "signature_pending"].includes(
       App.utils.normalizeText(item.status || "pending"),
     );
   },
@@ -111,6 +111,7 @@ App.auth = {
   getTransferProposalStatusLabel(item = {}) {
     const status = App.utils.normalizeText(item.status || "pending");
     if (status === "accepted") return "Aceita";
+    if (status === "signature_pending") return "Aguardando assinatura";
     if (status === "rejected") return "Recusada";
     if (status === "buyer_review") return "Responder";
     return "Pendente";
@@ -118,8 +119,14 @@ App.auth = {
 
   getTransferProposalStatusHint(item = {}) {
     const status = App.utils.normalizeText(item.status || "pending");
+    const signatureDeadline = item.signature_expires_at || item.signature_expires;
     if (status === "accepted") {
       return "Contrato validado. A movimentação foi registrada na liga.";
+    }
+    if (status === "signature_pending") {
+      return signatureDeadline
+        ? `Assinatura em andamento. Prazo: ${App.utils.formatDateTime(signatureDeadline)}`
+        : "Assinatura em andamento no escritório da liga.";
     }
     if (status === "rejected") {
       return "Negociação encerrada sem assinatura.";
@@ -1488,10 +1495,14 @@ App.auth = {
         decision === "counter"
           ? "Contraoferta enviada"
           : decision === "accepted"
-            ? "Contrato fechado"
+            ? result.status === "signature_pending"
+              ? "Contrato em assinatura"
+              : "Contrato fechado"
             : "Negociacao encerrada",
       message:
-        "Atualizando propostas, mercado, orcamentos e painel dos tecnicos...",
+        decision === "accepted" && result.status === "signature_pending"
+          ? "Transferencia aceita, aguarde assinatura da liga para registro."
+          : "Atualizando propostas, mercado, orcamentos e painel dos tecnicos...",
     });
 
     if (decision === "accepted" || result.status === "accepted") {
@@ -3349,6 +3360,7 @@ App.auth = {
   renderTransferProposalContractEmail(item) {
     const status = App.utils.normalizeText(item.status || "pending");
     const statusLabel = App.auth.getTransferProposalStatusLabel(item);
+    const isSignaturePending = status === "signature_pending";
     const proposedValue = Number(item.proposed_value || 0);
     const referenceValue = Number(item.reference_value || 0);
     const buyerOffer = Number(item.buyer_offer_value || 0);
@@ -3364,8 +3376,9 @@ App.auth = {
     const expiresLabel = item.expires_at
       ? App.utils.formatDateTime(item.expires_at)
       : "Sem prazo definido";
-    const actionKicker =
-      status === "buyer_review"
+    const actionKicker = isSignaturePending
+      ? "Aguardando assinatura no escritorio"
+      : status === "buyer_review"
         ? isCounter
           ? "Contraproposta recebida"
           : "Base financeira aceita"
@@ -3421,47 +3434,52 @@ App.auth = {
         </div>
         ${App.auth.getTransferProposalTimeline(item, { maxItems: 4 })}
 
-        <div class="decision-options email-response-actions transfer-contract-actions">
-          <button
-            type="button"
-            data-transfer-proposal-answer
-            data-proposal-type="external_market"
-            data-proposal-id="${App.utils.escapeHtml(item.id)}"
-            data-decision="accepted"
-            data-proposal-source-label="${sourceLabelEscaped}"
-            data-proposal-player="${playerLabel}"
-            data-proposal-counter-value="${proposedValue}"
-          >
-            <strong>Assinar contrato</strong>
-            <small>Registra ${App.utils.formatCurrency(cashValue)} no caixa.</small>
-          </button>
-          <button
-            type="button"
-            data-transfer-proposal-answer
-            data-proposal-type="external_market"
-            data-proposal-id="${App.utils.escapeHtml(item.id)}"
-            data-decision="counter"
-            data-proposal-source-label="${sourceLabelEscaped}"
-            data-proposal-player="${playerLabel}"
-            data-proposal-counter-value="${proposedValue || buyerOffer}"
-          >
-            <strong>Renegociar</strong>
-            <small>Envia novo valor ao vendedor.</small>
-          </button>
-          <button
-            type="button"
-            data-transfer-proposal-answer
-            data-proposal-type="external_market"
-            data-proposal-id="${App.utils.escapeHtml(item.id)}"
-            data-decision="rejected"
-            data-proposal-source-label="${sourceLabelEscaped}"
-            data-proposal-player="${playerLabel}"
-            data-proposal-counter-value="${proposedValue}"
-          >
-            <strong>Encerrar mesa</strong>
-            <small>Arquiva sem contrato.</small>
-          </button>
-        </div>
+        ${isSignaturePending
+          ? `<div class="decision-options email-response-actions transfer-contract-actions">
+              <span class="proposal-status-hint">A proposta entrou em etapa de assinatura e será concluída automaticamente no prazo da liga.</span>
+            </div>`
+          : `<div class="decision-options email-response-actions transfer-contract-actions">
+              <button
+                type="button"
+                data-transfer-proposal-answer
+                data-proposal-type="external_market"
+                data-proposal-id="${App.utils.escapeHtml(item.id)}"
+                data-decision="accepted"
+                data-proposal-source-label="${sourceLabelEscaped}"
+                data-proposal-player="${playerLabel}"
+                data-proposal-counter-value="${proposedValue}"
+              >
+                <strong>Assinar contrato</strong>
+                <small>Registra ${App.utils.formatCurrency(cashValue)} no caixa.</small>
+              </button>
+              <button
+                type="button"
+                data-transfer-proposal-answer
+                data-proposal-type="external_market"
+                data-proposal-id="${App.utils.escapeHtml(item.id)}"
+                data-decision="counter"
+                data-proposal-source-label="${sourceLabelEscaped}"
+                data-proposal-player="${playerLabel}"
+                data-proposal-counter-value="${proposedValue || buyerOffer}"
+              >
+                <strong>Renegociar</strong>
+                <small>Envia novo valor ao vendedor.</small>
+              </button>
+              <button
+                type="button"
+                data-transfer-proposal-answer
+                data-proposal-type="external_market"
+                data-proposal-id="${App.utils.escapeHtml(item.id)}"
+                data-decision="rejected"
+                data-proposal-source-label="${sourceLabelEscaped}"
+                data-proposal-player="${playerLabel}"
+                data-proposal-counter-value="${proposedValue}"
+              >
+                <strong>Encerrar mesa</strong>
+                <small>Arquiva sem contrato.</small>
+              </button>
+            </div>`
+        }
       </article>
     `;
   },
