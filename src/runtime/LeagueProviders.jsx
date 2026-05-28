@@ -84,7 +84,7 @@ function getRealtimeCopy(table = "") {
   if (normalized === "sponsorship_contracts") {
     return {
       title: "Comercial sincronizado",
-      description: "Patrocinios e contratos acabaram de ser revistos.",
+      description: "Patroc?nios e contratos acabaram de ser revistos.",
       tone: "success",
     };
   }

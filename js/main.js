@@ -263,11 +263,15 @@ App.main = {
 
   syncRestrictedNavigation() {
     const canUseCommissionerViews = App.auth?.isCommissioner?.() === true;
-    const restrictedViews = ["commissionerView", "submitView"];
+    const restrictedViews = [
+      "commissionerView",
+      "submitView",
+      "experienceView",
+    ];
 
     document
       .querySelectorAll(
-        '.tab-button[data-view="commissionerView"], .tab-button[data-view="submitView"]',
+        '.tab-button[data-view="commissionerView"], .tab-button[data-view="submitView"], .tab-button[data-view="experienceView"]',
       )
       .forEach((button) => {
         const isRestricted = restrictedViews.includes(button.dataset.view);
@@ -305,7 +309,9 @@ App.main = {
   },
 
   canAccessView(viewId) {
-    if (["commissionerView", "submitView"].includes(viewId)) {
+    if (
+      ["commissionerView", "submitView", "experienceView"].includes(viewId)
+    ) {
       return App.auth?.isCommissioner?.() === true;
     }
     return true;

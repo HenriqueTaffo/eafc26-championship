@@ -1,4 +1,4 @@
-import App from "./app.js";
+﻿import App from "./app.js";
 
 App.auth = {
   storageKey: "mistura_manager_session_v2",
@@ -65,8 +65,8 @@ App.auth = {
       App.main?.hideLoader?.(true);
       App.main?.markSynced?.(
         isTransitioning
-          ? "Login confirmado. Abrindo escritÃƒÂ³rio..."
-          : "FaÃƒÂ§a login para abrir a liga",
+          ? "Login confirmado. Abrindo escrit\u00f3rio..."
+          : "Fa\u00e7a login para abrir a liga",
       );
       return;
     }
@@ -74,7 +74,7 @@ App.auth = {
     const activeView = document.querySelector(".view.active")?.id;
     if (
       !isCommissioner &&
-      ["commissionerView", "submitView"].includes(activeView)
+      ["commissionerView", "submitView", "experienceView"].includes(activeView)
     ) {
       App.main?.switchToView?.("playersView");
     }
@@ -155,7 +155,7 @@ App.auth = {
     if (status === "signature_pending") {
       return signatureDeadline
         ? `Assinatura em andamento. Prazo: ${App.utils.formatDateTime(signatureDeadline)}`
-        : "Assinatura em andamento no escritÃƒÂ³rio da liga.";
+        : "Assinatura em andamento no escrit\u00f3rio da liga.";
     }
     if (status === "rejected") {
       return "NegociaÃƒÂ§ÃƒÂ£o encerrada sem assinatura.";
@@ -170,7 +170,7 @@ App.auth = {
       return "Movimentacao estornada pela liga.";
     }
     if (status === "buyer_review") {
-      return "Aguardando decisÃƒÂ£o final do vendedor e sua assinatura no escritÃƒÂ³rio.";
+      return "Aguardando decis\u00e3o final do vendedor e sua assinatura no escrit\u00f3rio.";
     }
     return "Aguardando resposta inicial do contraparte.";
   },
@@ -459,7 +459,7 @@ App.auth = {
     const isReplacement = Boolean(current);
     const commercialReason = isReplacement
       ? netGain > 0
-        ? `Melhora lÃƒÂ­quida estimada de ${App.utils.formatCurrency(netGain)} sobre ${current.sponsor_name || current.sponsorName || "a marca atual"}.`
+        ? `Melhora l\u00edquida estimada de ${App.utils.formatCurrency(netGain)} sobre ${current.sponsor_name || current.sponsorName || "a marca atual"}.`
         : rewardValue > currentReward
           ? `Parcela maior, mas exige compensar multa e perda potencial de ${App.utils.formatCurrency(Math.abs(netGain))}.`
           : `Oferta agressiva da marca, mas abaixo do contrato atual por ${App.utils.formatCurrency(Math.abs(netGain))}.`
@@ -1841,7 +1841,7 @@ App.auth = {
         `
         <section class="decision-private-card decision-locked email-office-card">
           <div>
-            <span>E-mail do tÃƒÂ©cnico</span>
+            <span>E-mail do t\u00e9cnico</span>
             <strong>Caixa de entrada privada</strong>
             <p>Mensagens da diretoria, mercado e bastidores ficam disponÃƒÂ­veis apÃƒÂ³s o login do tÃƒÂ©cnico.</p>
           </div>
@@ -1865,7 +1865,7 @@ App.auth = {
       <section class="decision-private-card email-office-card">
         <div class="decision-header email-office-header">
           <div>
-            <span>E-mail do tÃƒÂ©cnico</span>
+            <span>E-mail do t\u00e9cnico</span>
             <strong>${pending.length ? `${pending.length} mensagens nÃƒÂ£o respondidas` : "Inbox em dia"}</strong>
             <p>${App.utils.escapeHtml(session.managerName)}, mensagens privadas da diretoria e bastidores aparecem aqui.</p>
           </div>
@@ -2814,19 +2814,29 @@ App.auth = {
     )
       return "";
 
-    const data = App.auth.mySponsorships || {};
-    const active = Array.isArray(data.active) ? data.active : [];
+    const data = App.auth.mySponsorships;
+    const hasLoadedPortfolio = Boolean(data);
+    const active = Array.isArray(data?.active) ? data.active : [];
     const offers = App.auth.getSponsorshipInboxOffers(ownerName);
-    const rewards = Array.isArray(data.recentRewards) ? data.recentRewards : [];
+    const rewards = Array.isArray(data?.recentRewards)
+      ? data.recentRewards
+      : [];
     const visibleRewards = rewards.slice(0, 5);
     const hiddenRewards = Math.max(0, rewards.length - visibleRewards.length);
-    const maxActive = Number(data.maxActiveContracts || 2);
+    const activeCount = Math.max(
+      active.length,
+      Number(data?.activeCount || 0),
+    );
+    const maxActive = Math.max(
+      activeCount,
+      Number(data?.maxActiveContracts ?? 3) || 3,
+    );
     const slotsLeft = Math.max(
       0,
-      Number(data.activeSlotsLeft ?? maxActive - active.length),
+      Number(data?.activeSlotsLeft ?? maxActive - activeCount),
     );
     const offersByCategory = offers.reduce((groups, offer) => {
-      const category = offer.category || "PatrocÃƒÂ­nio";
+      const category = offer.category || "Patrocínio";
       groups[category] = groups[category] || [];
       groups[category].push(offer);
       return groups;
@@ -2837,11 +2847,20 @@ App.auth = {
       <article class="coach-panel-card sponsorship-card sponsorship-contracts-card">
         <div class="home-panel-header">
           <div>
-            <h2>PatrocÃƒÂ­nios assinados</h2>
+            <h2>Patrocínios assinados</h2>
             <p class="coach-card-subtitle">Carteira comercial do clube: contratos ativos, parcelas, luvas e pagamentos recebidos.</p>
           </div>
-          <span class="coach-section-kicker">${active.length}/${maxActive} ativo(s)</span>
+          <span class="coach-section-kicker">${activeCount}/${maxActive} ativo(s)</span>
         </div>
+
+        ${
+          !hasLoadedPortfolio
+            ? `<div class="sponsor-market-note sponsor-contracts-note">
+                <strong>Carregando carteira comercial</strong>
+                <span>Buscando contratos ativos, pagamentos e propostas do clube.</span>
+              </div>`
+            : ""
+        }
 
         ${
           active.length
@@ -2850,7 +2869,7 @@ App.auth = {
             ${active
               .map((item) => {
                 const cadence = App.auth.getSponsorshipCadence(item);
-                const claimLabel = cadence ? "parcelas" : "bÃƒÂ´nus";
+                const claimLabel = cadence ? "parcelas" : "bônus";
                 const paidTotal = Number(
                   item.paid_total || item.paidTotal || 0,
                 );
@@ -2892,7 +2911,7 @@ App.auth = {
                     ? "Parcela mensal"
                     : cadence === "weekly"
                       ? "Parcela semanal"
-                      : "BÃƒÂ´nus por meta";
+                      : "Bônus por meta";
                 const frequencyLabel =
                   App.auth.getSponsorshipFrequencyLabel(item);
                 const dealStyle =
@@ -2908,7 +2927,7 @@ App.auth = {
                 <div class="sponsor-brand-shell">
                   ${App.auth.renderSponsorBrandMark(sponsorName)}
                   <div class="sponsor-brand-copy">
-                    <span>${App.utils.escapeDisplay(item.category || "PatrocÃƒÂ­nio")}</span>
+                    <span>${App.utils.escapeDisplay(item.category || "Patrocínio")}</span>
                     <strong>${App.utils.escapeDisplay(item.title)}</strong>
                     <em>${App.utils.escapeDisplay(sponsorName)}</em>
                   </div>
@@ -2921,7 +2940,7 @@ App.auth = {
                 <div class="sponsor-contract-hero">
                   <span>${primaryLabel}</span>
                   <strong>${App.utils.formatCurrency(rewardValue)} <small>${App.utils.escapeDisplay(frequencyLabel)}</small></strong>
-                  <p>${cadence ? `PrÃƒÂ³ximo pagamento: ${App.utils.escapeDisplay(nextPaymentLabel)}` : App.utils.escapeDisplay(nextPaymentLabel)}</p>
+                  <p>${cadence ? `Próximo pagamento: ${App.utils.escapeDisplay(nextPaymentLabel)}` : App.utils.escapeDisplay(nextPaymentLabel)}</p>
                 </div>
 
                 <div class="sponsor-terms-row">
@@ -2952,7 +2971,7 @@ App.auth = {
 
                 <p class="sponsor-condition-line">
                   ${App.utils.escapeDisplay(App.auth.getSponsorshipConditionLabel(item))}
-                  ${Number(item.termination_fee || 0) > 0 ? ` Ã‚Â· multa atual ${App.utils.formatCurrency(item.termination_fee)}` : ""}
+                  ${Number(item.termination_fee || 0) > 0 ? ` · multa atual ${App.utils.formatCurrency(item.termination_fee)}` : ""}
                 </p>
                 </div>
               `;
@@ -2960,14 +2979,16 @@ App.auth = {
               .join("")}
           </div>
         `
-            : `<p class="calendar-muted">Nenhum patrocinador ativo. As novas propostas aparecem no E-mail do tÃƒÂ©cnico como disputas comerciais entre marcas.</p>`
+            : hasLoadedPortfolio
+              ? `<p class="calendar-muted">Nenhum patrocinador ativo. As novas propostas aparecem no E-mail do técnico como disputas comerciais entre marcas.</p>`
+              : ""
         }
 
         ${
           renderOfferInboxInsideSponsorshipCard && offers.length
             ? `
           <div class="sponsor-market-note">
-            <strong>${active.length}/${maxActive} contratos ativos Ã‚Â· ${slotsLeft} vaga(s) livre(s)</strong>
+            <strong>${activeCount}/${maxActive} contratos ativos · ${slotsLeft} vaga(s) livre(s)</strong>
             <span>${offers.length} e-mail(s) comercial(is) em aberto. Responder uma proposta aceita o contrato; marcas da mesma categoria substituem o acordo atual com multa.</span>
           </div>
           <div class="sponsor-category-list">
@@ -3026,7 +3047,7 @@ App.auth = {
                       );
                       const firstPaymentLabel =
                         firstPaymentAt && cadence
-                          ? ` Ã‚Â· comeÃƒÂ§a em ${App.utils.formatDate(firstPaymentAt)}`
+                          ? ` · começa em ${App.utils.formatDate(firstPaymentAt)}`
                           : "";
 
                       return `
@@ -3049,11 +3070,11 @@ App.auth = {
                         </div>
                         <p class="sponsor-offer-story">${App.utils.escapeDisplay(offer.description)}</p>
                         <div class="sponsor-contract-hero sponsor-offer-hero">
-                          <span>Total possÃƒÂ­vel</span>
+                          <span>Total possível</span>
                           <strong>${App.utils.formatCurrency(totalValue)} <small>${Number(offer.maxClaims || 0)} pagamento(s)</small></strong>
                           <p>
                             ${App.utils.escapeDisplay(offer.conditionLabel || "Meta cumprida")}
-                            ${offer.isReplacement ? ` Ã‚Â· substitui ${App.utils.escapeDisplay(offer.currentSponsorName || "contrato atual")}` : ""}
+                            ${offer.isReplacement ? ` · substitui ${App.utils.escapeDisplay(offer.currentSponsorName || "contrato atual")}` : ""}
                             ${App.utils.escapeDisplay(firstPaymentLabel)}
                           </p>
                         </div>
@@ -3064,14 +3085,14 @@ App.auth = {
                             <small>${signingBonus > 0 ? "entrada imediata" : "sem entrada inicial"}</small>
                           </span>
                           <span>
-                            <b>${cadence ? "Parcela" : "BÃƒÂ´nus"}</b>
+                            <b>${cadence ? "Parcela" : "Bônus"}</b>
                             <strong>${App.utils.formatCurrency(rewardValue)}</strong>
                             <small>${App.utils.escapeDisplay(frequencyLabel)}</small>
                           </span>
                           <span>
                             <b>${offer.isReplacement ? "Multa" : "Vaga"}</b>
                             <strong>${offer.isReplacement ? App.utils.formatCurrency(offer.terminationFee || 0) : "Livre"}</strong>
-                            <small>${offer.isReplacement ? "rescisÃƒÂ£o atual" : "sem troca de marca"}</small>
+                            <small>${offer.isReplacement ? "rescisão atual" : "sem troca de marca"}</small>
                           </span>
                         </div>
                         <button type="button" data-sponsor-offer="${App.utils.escapeHtml(offer.id)}" data-sponsor-fee="${Number(offer.terminationFee || 0)}" data-sponsor-replacement="${offer.isReplacement ? "true" : "false"}" data-sponsor-signing="${Number(offer.signingBonus || 0)}" data-sponsor-reward="${Number(offer.rewardValue || 0)}" data-sponsor-cadence="${App.utils.escapeHtml(cadence || "goal")}">
@@ -3088,10 +3109,12 @@ App.auth = {
               .join("")}
           </div>
         `
-            : `<div class="sponsor-market-note sponsor-contracts-note">
+            : hasLoadedPortfolio
+              ? `<div class="sponsor-market-note sponsor-contracts-note">
               <strong>${slotsLeft} vaga(s) livre(s) na carteira</strong>
               <span>${offers.length ? `${offers.length} proposta(s) comercial(is) aguardam resposta no E-mail.` : "Sem proposta comercial pendente no E-mail."}</span>
             </div>`
+              : ""
         }
 
         ${
@@ -3099,20 +3122,20 @@ App.auth = {
             ? `
           <div class="sponsor-reward-list">
             <div class="sponsor-reward-header">
-              <strong>Ã¯Â¿Â½altimos pagamentos</strong>
+              <strong>Últimos pagamentos</strong>
               <span>${visibleRewards.length}/${rewards.length}</span>
             </div>
             ${visibleRewards
               .map(
                 (item) => `
               <div class="sponsor-reward-item">
-                <span>${App.utils.escapeDisplay(App.auth.getSponsorshipRewardKind(item))} Ã‚Â· ${App.utils.escapeDisplay(item.sponsor_name)}</span>
+                <span>${App.utils.escapeDisplay(App.auth.getSponsorshipRewardKind(item))} · ${App.utils.escapeDisplay(item.sponsor_name)}</span>
                 <b>${App.utils.formatCurrency(item.reward_value)}</b>
               </div>
             `,
               )
               .join("")}
-            ${hiddenRewards > 0 ? `<p class="sponsor-reward-more">+${hiddenRewards} pagamento(s) jÃƒÂ¡ consolidados no extrato.</p>` : ""}
+            ${hiddenRewards > 0 ? `<p class="sponsor-reward-more">+${hiddenRewards} pagamento(s) já consolidados no extrato.</p>` : ""}
           </div>
         `
             : ""
@@ -3120,7 +3143,6 @@ App.auth = {
       </article>
     `;
   },
-
   getSponsorshipConditionLabel(item = {}) {
     const fromContract = item.condition_label || item.conditionLabel;
     if (fromContract) return fromContract;
@@ -4021,7 +4043,7 @@ App.auth = {
             </div>`
           : isSignaturePending
           ? `<div class="decision-options email-response-actions transfer-contract-actions">
-              <span class="proposal-status-hint">A proposta entrou em etapa de assinatura e serÃƒÂ¡ concluÃƒÂ­da automaticamente no prazo da liga.</span>
+              <span class="proposal-status-hint">A proposta entrou em etapa de assinatura e ser\u00e1 conclu\u00edda automaticamente no prazo da liga.</span>
             </div>`
           : `<div class="decision-options email-response-actions transfer-contract-actions">
               <button
@@ -4564,3 +4586,4 @@ App.auth = {
 };
 
 document.addEventListener("DOMContentLoaded", () => App.auth.init());
+

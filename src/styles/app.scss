@@ -76,9 +76,11 @@ body *:not(svg):not(path) {
 
 body:not(.is-commissioner) .tab-button[data-view="commissionerView"],
 body:not(.is-commissioner) .tab-button[data-view="submitView"],
+body:not(.is-commissioner) .tab-button[data-view="experienceView"],
 body:not(.is-commissioner) .workspace-nav-group[data-role="commissioner"],
 body:not(.is-commissioner) #commissionerView,
-body:not(.is-commissioner) #submitView {
+body:not(.is-commissioner) #submitView,
+body:not(.is-commissioner) #experienceView {
   display: none !important;
 }
 

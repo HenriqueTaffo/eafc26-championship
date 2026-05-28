@@ -146,12 +146,6 @@ const WORKSPACE_NAV_GROUPS = [
         icon: Users,
       },
       {
-        view: "experienceView",
-        label: "Inteligência",
-        detail: "Risco, prioridades e leitura do momento",
-        icon: Brain,
-      },
-      {
         view: "transfersView",
         label: "Transferências",
         detail: "Mesa ativa, scouting e negociações",
@@ -176,6 +170,12 @@ const WORKSPACE_NAV_GROUPS = [
         label: "Enviar dados",
         detail: "Resultados, CPU e rotinas da rodada",
         icon: UploadCloud,
+      },
+      {
+        view: "experienceView",
+        label: "Inteligência",
+        detail: "Risco, prioridades e leitura do momento",
+        icon: Brain,
       },
     ],
   },

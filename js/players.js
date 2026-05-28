@@ -125,7 +125,7 @@ App.players = {
     if (!positiveEvents.length && eventRollup > 0) {
       pushEntry({
         label: "Eventos positivos",
-        detail: `${Number(budget.eventCount || 0)} ocorrÃªncia(s) com impacto financeiro`,
+        detail: `${Number(budget.eventCount || 0)} ocorr\u00eancia(s) com impacto financeiro`,
         amount: eventRollup,
         dateLabel: "Atualizado pela liga",
         rank: 20,
@@ -133,8 +133,8 @@ App.players = {
     }
 
     pushEntry({
-      label: "PatrocÃ­nios",
-      detail: "BÃ´nus comerciais jÃ¡ processados",
+      label: "Patroc\u00ednios",
+      detail: "B\u00f4nus comerciais j\u00e1 processados",
       amount: breakdown.sponsorshipRewards,
       dateLabel: "Contratos ativos",
       rank: 30,
@@ -1835,7 +1835,7 @@ App.players = {
           ? "ContrataÃ§Ã£o de impacto jÃ¡ entrou no elenco."
           : hasValueBuy
             ? "Boa compra custo-benefÃ­cio registrada."
-            : "Mapeie um titular acessÃ­vel antes do prÃ³ximo deadline.",
+            : "Mapeie um titular acess\u00edvel antes do pr\u00f3ximo deadline.",
       },
       {
         label: "PrÃ³ximo jogo",
