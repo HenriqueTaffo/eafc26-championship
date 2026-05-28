@@ -2429,15 +2429,15 @@ Object.assign(App.transfers, {
         <div class="home-panel-header">
           <div>
             <h2>Olheiro</h2>
-            <p class="coach-card-subtitle">Sugestoes automáticas com carencias e ajuste do tecnico.</p>
+            <p class="coach-card-subtitle">Sugestões automáticas com carências e ajuste do técnico.</p>
           </div>
           ${renderWorkspacePill(String(recommendations.length), recommendations.length ? "ready" : "cold")}
         </div>
 
         <div class="scout-priority-panel">
           <div class="scout-priority-meta">
-            <strong>Carencias ativas</strong>
-            <p>${topNeeds || "Sem carencia destacada."}</p>
+            <strong>Carências ativas</strong>
+            <p>${topNeeds || "Sem carência destacada."}</p>
             <small>
               Caixa: ${App.utils.formatCurrency(Number(budget?.remaining || 0))} ·
               Folha: ${budget?.payrollWeekly ? `${App.utils.formatCurrency(budget.payrollWeekly)}/sem` : "sem folha ainda"}.
@@ -2445,30 +2445,37 @@ Object.assign(App.transfers, {
           </div>
           <div class="scout-priority-sliders">
             ${priorities
-              .map(
-                (item) => `
+              .map((item) => {
+                const autoWeight = Number(item.autoWeight || 0);
+                const manualWeight = Number(item.manualWeight || 0);
+                const totalWeight = autoWeight + manualWeight;
+                return `
                   <label class="scout-priority-row">
                     <span class="scout-priority-title">
                       <strong>${App.utils.escapeHtml(item.label || item.group)}</strong>
-                      <small>automatica ${formatScoutingNumber(item.autoWeight || 0)}</small>
+                      <small>peso automático ${formatScoutingNumber(autoWeight)}</small>
+                    </span>
+                    <span class="scout-priority-summary">
+                      <small>Total</small>
+                      <b>${formatScoutingNumber(totalWeight)}</b>
                     </span>
                     <div class="scout-priority-control">
-                      <span>Ajuste tecnico</span>
+                      <span>Ajuste do técnico</span>
                       <input
                         type="range"
                         min="0"
                         max="5"
                         step="1"
-                        value="${item.manualWeight || 0}"
+                        value="${manualWeight}"
                         data-scout-weight="${App.utils.escapeHtml(item.group)}"
                       />
                       <span data-scout-weight-value="${App.utils.escapeHtml(item.group)}">
-                        ${item.manualWeight || 0}
+                        ${manualWeight}
                       </span>
                     </div>
                   </label>
-                `,
-              )
+                `;
+              })
               .join("")}
           </div>
         </div>
@@ -2485,7 +2492,7 @@ Object.assign(App.transfers, {
                     const shortlist = item.shortlist;
                     const reason =
                       item.signals.slice(0, 2).join(" · ") ||
-                      "Compatibilidade tecnica e financeira equilibrada.";
+                      "Compatibilidade técnica e financeira equilibrada.";
                     return `
                       <article class="scout-recommendation-item">
                         <div class="scout-recommendation-copy">
@@ -2497,7 +2504,7 @@ Object.assign(App.transfers, {
                           ${App.utils.escapeHtml(reason)}
                         </p>
                         <small>
-                          Salario:
+                          Salário:
                           ${item.candidate.weeklySalary ? `${App.utils.formatCurrency(item.candidate.weeklySalary)}/sem` : "pendente"}
                         </small>
                         <div class="scout-recommendation-actions transfer-inline-actions">
@@ -2513,8 +2520,8 @@ Object.assign(App.transfers, {
                   })
                   .join("")
               : renderWorkspaceEmpty(
-                  "Sem recomendacao",
-                  "Sem sugestoes no momento. Ajuste prioridades e aguarde novas leituras do mercado.",
+                  "Sem recomendação",
+                  "Sem sugestões no momento. Ajuste prioridades e aguarde novas leituras do mercado.",
                 )
           }
         </div>
@@ -2843,13 +2850,21 @@ Object.assign(App.transfers, {
           <div class="home-panel-header">
             <div>
               <h2>Comparador</h2>
-              <p class="coach-card-subtitle">Selecione ate tres nomes para comparar valor, folha, encaixe e concorrencia.</p>
+              <p class="coach-card-subtitle">Selecione até três nomes para comparar valor, folha, encaixe e concorrência.</p>
             </div>
           </div>
-          ${renderWorkspaceEmpty(
-            "Comparador vazio",
-            "Adicione nomes do mercado ou da shortlist para colocar lado a lado.",
-          )}
+          <div class="transfer-compare-placeholder">
+            <article>
+              <span>Comparador vazio</span>
+              <strong>Adicione nomes do mercado</strong>
+              <small>Carregue alvos do mercado ou da shortlist para colocar lado a lado.</small>
+            </article>
+            <article>
+              <span>O que entra na leitura</span>
+              <strong>Valor, folha e encaixe</strong>
+              <small>O bloco cruza impacto financeiro, posição e concorrência estimada.</small>
+            </article>
+          </div>
         `,
       );
       return;
@@ -2888,8 +2903,8 @@ Object.assign(App.transfers, {
                     <div><span>Valor</span><strong>${candidate.marketValue ? App.utils.formatCurrency(candidate.marketValue) : "-"}</strong></div>
                     <div><span>Folha</span><strong>${candidate.weeklySalary ? `${App.utils.formatCurrency(candidate.weeklySalary)}/sem` : "Pendente"}</strong></div>
                     <div><span>Encaixe</span><strong>${App.utils.escapeHtml(fit.label)}</strong></div>
-                    <div><span>Concorrencia</span><strong>${App.utils.escapeHtml(competition.label)}</strong></div>
-                    <div><span>Posicao</span><strong>${App.utils.escapeHtml(candidate.position || "-")}</strong></div>
+                    <div><span>Concorrência</span><strong>${App.utils.escapeHtml(competition.label)}</strong></div>
+                    <div><span>Posição</span><strong>${App.utils.escapeHtml(candidate.position || "-")}</strong></div>
                   </div>
                   <p class="transfer-compare-detail">${App.utils.escapeHtml(`${fit.detail} ${competition.detail}`.trim())}</p>
                   <div class="transfer-inline-actions">
@@ -2916,7 +2931,7 @@ Object.assign(App.transfers, {
         target,
         renderWorkspaceEmpty(
           "Hub privado",
-          "Faca login como tecnico para abrir propostas recebidas, enviadas e vitrine.",
+          "Faça login como técnico para abrir propostas recebidas, enviadas e vitrine.",
         ),
       );
       return;
@@ -2947,114 +2962,121 @@ Object.assign(App.transfers, {
     const listings = Array.isArray(App.auth?.myTransferSaleListings?.listings)
       ? App.auth.myTransferSaleListings.listings
       : [];
+    const openDeals = receivedPending.length + sentPending.length;
+    const openDealsLabel =
+      openDeals === 1 ? "1 negociação aberta" : `${openDeals} negociações abertas`;
 
     App.dom.setHtml(
       target,
       `
         <div class="home-panel-header">
           <div>
-            <h2>Hub de negociacao</h2>
-            <p class="coach-card-subtitle">Tudo que esta vivo em transferencias: caixa de entrada, propostas enviadas, respostas e vitrine.</p>
+            <h2>Hub de negociação</h2>
+            <p class="coach-card-subtitle">Tudo o que está vivo em transferências: caixa de entrada, propostas enviadas, respostas e vitrine.</p>
           </div>
-          <span>${receivedPending.length + sentPending.length} aberto(s)</span>
+          <span>${openDealsLabel}</span>
         </div>
 
         <div class="transfer-hub-grid">
-          <article class="transfer-hub-card">
-            <div class="transfer-hub-card-head">
-              <strong>Recebidas</strong>
-              ${renderWorkspacePill(String(receivedPending.length), receivedPending.length ? "hot" : "cold")}
-            </div>
-            <div class="transfer-hub-card-body">
-              ${
-                receivedPending.length
-                  ? receivedPending
-                      .slice(0, 4)
-                      .map((item) => App.auth.renderTransferProposalCard(item))
-                      .join("")
-                  : `<div class="transfer-shortlist-empty">Nenhuma oferta pendente para responder.</div>`
-              }
-            </div>
-          </article>
+          <div class="transfer-hub-column">
+            <article class="transfer-hub-card">
+              <div class="transfer-hub-card-head">
+                <strong>Recebidas</strong>
+                ${renderWorkspacePill(String(receivedPending.length), receivedPending.length ? "hot" : "cold")}
+              </div>
+              <div class="transfer-hub-card-body">
+                ${
+                  receivedPending.length
+                    ? receivedPending
+                        .slice(0, 4)
+                        .map((item) => App.auth.renderTransferProposalCard(item))
+                        .join("")
+                    : `<div class="transfer-shortlist-empty">Nenhuma oferta pendente para responder.</div>`
+                }
+              </div>
+            </article>
 
-          <article class="transfer-hub-card">
-            <div class="transfer-hub-card-head">
-              <strong>Enviadas</strong>
-              ${renderWorkspacePill(String(sentPending.length), sentPending.length ? "watch" : "cold")}
-            </div>
-            <div class="transfer-hub-card-body transfer-summary-stack">
-              ${
-                sentPending.length
-                  ? sentPending
-                      .slice(0, 6)
-                      .map((item) =>
-                        App.auth.renderTransferProposalSummary(item, {
-                          compact:
-                            App.auth?.isExternalTransferContractEmail?.(item) ===
-                            true,
-                        }),
-                      )
-                      .join("")
-                  : `<div class="transfer-shortlist-empty">Nenhuma proposta em aberto do seu lado.</div>`
-              }
-            </div>
-          </article>
+            <article class="transfer-hub-card">
+              <div class="transfer-hub-card-head">
+                <strong>Resolvidas</strong>
+                ${renderWorkspacePill(String(resolvedTotal), resolvedTotal ? "live" : "cold")}
+              </div>
+              <div class="transfer-hub-card-body transfer-timeline-list">
+                ${
+                  resolvedTotal
+                    ? [
+                        ...completedTimelines.map((item) =>
+                          App.transfers.renderNegotiationTimelineSummary(item),
+                        ),
+                        ...resolved.map(
+                          (item) => `
+                            <div class="transfer-timeline-item compact">
+                              <span>${App.utils.escapeHtml(item.answered_at ? App.utils.formatDateTime(item.answered_at) : item.created_at ? App.utils.formatDateTime(item.created_at) : "Sem data")}</span>
+                              <strong>${App.utils.escapeHtml(item.player)}</strong>
+                              <p>${App.utils.escapeHtml(item.response_message || `${item.status} - ${App.utils.formatCurrency(Number(item.proposed_value || 0))}`)}</p>
+                            </div>
+                          `,
+                        ),
+                      ].join("")
+                    : `<div class="transfer-shortlist-empty">Ainda não houve respostas fechadas neste login.</div>`
+                }
+              </div>
+            </article>
+          </div>
 
-          <article class="transfer-hub-card">
-            <div class="transfer-hub-card-head">
-              <strong>Resolvidas</strong>
-              ${renderWorkspacePill(String(resolvedTotal), resolvedTotal ? "live" : "cold")}
-            </div>
-            <div class="transfer-hub-card-body transfer-timeline-list">
-              ${
-                resolvedTotal
-                  ? [
-                      ...completedTimelines.map((item) =>
-                        App.transfers.renderNegotiationTimelineSummary(item),
-                      ),
-                      ...resolved.map(
-                        (item) => `
-                          <div class="transfer-timeline-item compact">
-                            <span>${App.utils.escapeHtml(item.answered_at ? App.utils.formatDateTime(item.answered_at) : item.created_at ? App.utils.formatDateTime(item.created_at) : "Sem data")}</span>
-                            <strong>${App.utils.escapeHtml(item.player)}</strong>
-                            <p>${App.utils.escapeHtml(item.response_message || `${item.status} - ${App.utils.formatCurrency(Number(item.proposed_value || 0))}`)}</p>
-                          </div>
-                        `,
-                      ),
-                    ].join("")
-                  : `<div class="transfer-shortlist-empty">Ainda nao houve respostas fechadas neste login.</div>`
-              }
-            </div>
-          </article>
+          <div class="transfer-hub-column">
+            <article class="transfer-hub-card">
+              <div class="transfer-hub-card-head">
+                <strong>Enviadas</strong>
+                ${renderWorkspacePill(String(sentPending.length), sentPending.length ? "watch" : "cold")}
+              </div>
+              <div class="transfer-hub-card-body transfer-summary-stack">
+                ${
+                  sentPending.length
+                    ? sentPending
+                        .slice(0, 6)
+                        .map((item) =>
+                          App.auth.renderTransferProposalSummary(item, {
+                            compact:
+                              App.auth?.isExternalTransferContractEmail?.(item) ===
+                              true,
+                          }),
+                        )
+                        .join("")
+                    : `<div class="transfer-shortlist-empty">Nenhuma proposta em aberto do seu lado.</div>`
+                }
+              </div>
+            </article>
 
-          <article class="transfer-hub-card">
-            <div class="transfer-hub-card-head">
-              <strong>Lista de venda</strong>
-              ${renderWorkspacePill(String(listings.length), listings.length ? "ready" : "cold")}
-            </div>
-            <div class="transfer-hub-card-body transfer-summary-stack">
-              ${
-                listings.length
-                  ? listings
-                      .slice(0, 6)
-                      .map(
-                        (item) => {
-                          const offerCount = Number(item.offerCount || item.offer_count || 0);
-                          const asking = Number(item.askingPrice || item.asking_price || 0);
-                          return `
-                          <article class="proposal-summary-item">
-                            <span>${offerCount ? `${offerCount} oferta(s)` : "Na vitrine"}</span>
-                            <strong>${App.utils.escapeHtml(item.player || item.playerName || "-")}</strong>
-                            <small>${App.utils.escapeHtml([item.fromClub || item.from_club || "", asking ? App.utils.formatCurrency(asking) : "", item.note || ""].filter(Boolean).join(" - "))}</small>
-                          </article>
-                        `;
-                        },
-                      )
-                      .join("")
-                  : `<div class="transfer-shortlist-empty">Nenhum jogador listado para venda.</div>`
-              }
-            </div>
-          </article>
+            <article class="transfer-hub-card">
+              <div class="transfer-hub-card-head">
+                <strong>Lista de venda</strong>
+                ${renderWorkspacePill(String(listings.length), listings.length ? "ready" : "cold")}
+              </div>
+              <div class="transfer-hub-card-body transfer-summary-stack">
+                ${
+                  listings.length
+                    ? listings
+                        .slice(0, 6)
+                        .map(
+                          (item) => {
+                            const offerCount = Number(item.offerCount || item.offer_count || 0);
+                            const asking = Number(item.askingPrice || item.asking_price || 0);
+                            return `
+                            <article class="proposal-summary-item">
+                              <span>${offerCount ? `${offerCount} oferta(s)` : "Na vitrine"}</span>
+                              <strong>${App.utils.escapeHtml(item.player || item.playerName || "-")}</strong>
+                              <small>${App.utils.escapeHtml([item.fromClub || item.from_club || "", asking ? App.utils.formatCurrency(asking) : "", item.note || ""].filter(Boolean).join(" - "))}</small>
+                            </article>
+                          `;
+                          },
+                        )
+                        .join("")
+                    : `<div class="transfer-shortlist-empty">Nenhum jogador listado para venda.</div>`
+                }
+              </div>
+            </article>
+          </div>
         </div>
       `,
     );

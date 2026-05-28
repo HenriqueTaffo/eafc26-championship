@@ -1,3 +1,4 @@
+import { BadgeCheck, Crown, Shield, Users2 } from "lucide-react";
 import { useSyncExternalStore } from "react";
 import App from "../../js/app.js";
 
@@ -91,13 +92,13 @@ export function StandingsSummary() {
           <>
             <MetricCard
               className="leader-metric"
-              icon="♜"
+              icon={<Crown size={22} strokeWidth={2.2} />}
               label="Líder"
               value={leader?.team || "-"}
               detail={leader ? `${leader.points} pts` : ""}
             />
             <MetricCard
-              icon="●"
+              icon={<Shield size={22} strokeWidth={2.2} />}
               label="Melhor técnico"
               value={
                 bestCoach ? `${bestCoach.owner} (${bestCoach.position}º)` : "-"
@@ -105,13 +106,13 @@ export function StandingsSummary() {
               detail={bestCoach ? `${bestCoach.points} pts` : ""}
             />
             <MetricCard
-              icon="✓"
+              icon={<BadgeCheck size={22} strokeWidth={2.2} />}
               label="Jogos aprovados"
               value={played}
               detail="Esta temporada"
             />
             <MetricCard
-              icon="♟"
+              icon={<Users2 size={22} strokeWidth={2.2} />}
               label="Times"
               value={standings.length}
               detail="Na competição"
@@ -334,7 +335,7 @@ export function SquadSummary() {
             />
             <SummaryCard label="Jogadores" value={rosterRows.length || "-"} />
             <SummaryCard
-              label="OVR medio"
+              label="OVR médio"
               value={avgOverall || "-"}
               detail={isCommissioner ? "elencos EA FC 26" : "elenco EA FC 26"}
             />
@@ -343,7 +344,7 @@ export function SquadSummary() {
               value={totalWeekly ? App.utils.formatCurrency(totalWeekly) : "-"}
               detail={scopeDetail}
             />
-            <SummaryCard label="Escalacoes salvas" value={savedLineups} />
+            <SummaryCard label="Escalações salvas" value={savedLineups} />
           </>
         );
       }}

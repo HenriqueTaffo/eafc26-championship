@@ -643,7 +643,7 @@ function CupsView() {
           </div>
         </section>
         <section className="cup-prize-card">
-          <div>
+          <div className="cup-prize-copy">
             <span className="modal-kicker">Premiação das copas</span>
             <h2>Bônus por avanço de fase</h2>
             <p>
@@ -653,19 +653,24 @@ function CupsView() {
           </div>
           <div className="cup-prize-grid">
             <span>
-              Fase inicial <strong>+€ 1M</strong>
+              <small>Fase inicial</small>
+              <strong>+€ 1M</strong>
             </span>
             <span>
-              Oitavas <strong>+€ 3M</strong>
+              <small>Oitavas</small>
+              <strong>+€ 3M</strong>
             </span>
             <span>
-              Quartas <strong>+€ 5M</strong>
+              <small>Quartas</small>
+              <strong>+€ 5M</strong>
             </span>
             <span>
-              Semifinal <strong>+€ 8M</strong>
+              <small>Semifinal</small>
+              <strong>+€ 8M</strong>
             </span>
             <span>
-              Campeão <strong>+€ 12M</strong>
+              <small>Campeão</small>
+              <strong>+€ 12M</strong>
             </span>
           </div>
         </section>

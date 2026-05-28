@@ -4338,6 +4338,8 @@ App.auth = {
     const notifications = App.auth.dedupeNotifications(App.auth.myNotifications);
     const unread = notifications.filter((item) => !item.is_read);
     const favorites = App.auth.myFavorites || [];
+    const unreadLabel =
+      unread.length === 1 ? "1 aviso novo" : `${unread.length} avisos novos`;
 
     App.dom.setHtml(
       target,
@@ -4346,41 +4348,61 @@ App.auth = {
         <div class="manager-qol-header">
           <div>
             <span>Central privada</span>
-            <strong>${unread.length} aviso(s) novo(s)</strong>
+            <strong>${unreadLabel}</strong>
           </div>
           ${unread.length ? `<button type="button" class="ghost-button" data-mark-notifications-read>Marcar lidos</button>` : ""}
         </div>
         <div class="manager-qol-grid">
-          <div>
-            <strong>Notificações</strong>
+          <div class="manager-qol-column">
+            <div class="manager-qol-column-head">
+              <strong>Notificações</strong>
+              <b>${notifications.length}</b>
+            </div>
             ${
               notifications.length
                 ? notifications
-                    .slice(0, 4)
+                    .slice(0, 3)
                     .map(
                       (item) => `
               <span class="manager-qol-pill ${App.utils.escapeHtml(item.tone || "info")} ${item.is_read ? "is-read" : ""}">
-                ${App.utils.escapeDisplay(item.title)} · ${App.utils.escapeDisplay(item.body || "")}
+                <strong>${App.utils.escapeDisplay(item.title)}</strong>
+                <small>${App.utils.escapeDisplay(item.body || "Sem detalhe adicional.")}</small>
               </span>
             `,
                     )
                     .join("")
-                : `<span class="calendar-muted">Nenhum aviso privado agora.</span>`
+                : `
+                  <div class="manager-qol-empty">
+                    <strong>Nada urgente agora</strong>
+                    <p>Sua caixa privada está limpa neste momento.</p>
+                  </div>
+                `
             }
           </div>
-          <div>
-            <strong>Favoritos</strong>
+          <div class="manager-qol-column">
+            <div class="manager-qol-column-head">
+              <strong>Favoritos</strong>
+              <b>${favorites.length}</b>
+            </div>
             ${
               favorites.length
                 ? favorites
-                    .slice(0, 5)
+                    .slice(0, 4)
                     .map(
                       (item) => `
-              <span class="manager-qol-pill info">${App.utils.escapeDisplay(item.title)} · ${App.utils.escapeDisplay(item.detail || item.item_type || "")}</span>
+              <span class="manager-qol-pill info">
+                <strong>${App.utils.escapeDisplay(item.title)}</strong>
+                <small>${App.utils.escapeDisplay(item.detail || item.item_type || "Atalho privado")}</small>
+              </span>
             `,
                     )
                     .join("")
-                : `<span class="calendar-muted">Favorite alvos e atalhos no escritório do técnico.</span>`
+                : `
+                  <div class="manager-qol-empty">
+                    <strong>Sem atalhos salvos</strong>
+                    <p>Use a estrela no escritório para fixar alvos e rotinas.</p>
+                  </div>
+                `
             }
           </div>
         </div>
@@ -4394,7 +4416,7 @@ App.auth = {
         await App.auth
           .markNotificationsRead()
           .catch((error) =>
-            console.warn("NÃƒÂ£o consegui marcar notificaÃƒÂ§ÃƒÂµes:", error),
+            console.warn("Não consegui marcar notificações:", error),
           );
       });
   },

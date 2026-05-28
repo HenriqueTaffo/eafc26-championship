@@ -1080,9 +1080,9 @@ App.players = {
     if (!events.length) {
       return `
         <div class="coach-empty-state">
-          <span>ðŸŽ²</span>
+          <span>•</span>
           <strong>Nada no radar</strong>
-          <p>Nenhum evento recente registrado para este tÃ©cnico.</p>
+          <p>Nenhum evento recente registrado para este técnico.</p>
         </div>
       `;
     }
@@ -1097,7 +1097,7 @@ App.players = {
                   title: event.Titulo || "Evento",
                   description: event.Descricao || "",
                   categoryLabel: event.Tipo || "Evento",
-                  icon: "ðŸŽ²",
+                  icon: "•",
                 };
             const impact = App.events.getEventImpactLabel
               ? App.events.getEventImpactLabel(event)
@@ -1116,14 +1116,14 @@ App.players = {
               impactValue > 0
                 ? "Entrada no caixa"
                 : impactValue < 0
-                  ? "SaÃ­da do caixa"
+                  ? "Saída do caixa"
                   : "Efeito";
             return `
             <div class="coach-event-item ${impactClass}">
               <span class="coach-event-icon">${presentation.icon}</span>
               <div>
                 <strong>${App.utils.escapeHtml(presentation.title)}</strong>
-                <small>${App.utils.escapeHtml(presentation.categoryLabel)}${duration ? ` Â· ${App.utils.escapeHtml(duration)}` : ""}</small>
+                <small>${App.utils.escapeHtml(presentation.categoryLabel)}${duration ? ` · ${App.utils.escapeHtml(duration)}` : ""}</small>
               </div>
               <span class="coach-event-impact ${impactClass}">
                 <small>${impactLabel}</small>
@@ -2271,8 +2271,8 @@ App.players = {
     return `
       <section class="coach-comparison coach-comparison-v47">
         <div class="home-panel-header">
-          <h2>TermÃ´metro da Liga</h2>
-          ${leader ? `<span class="coach-section-kicker">LÃ­der: ${App.utils.escapeHtml(leader.team.owner)} Â· ${leader.standing?.points || 0} pts</span>` : ""}
+          <h2>Termômetro da liga</h2>
+          ${leader ? `<span class="coach-section-kicker">Líder: ${App.utils.escapeHtml(leader.team.owner)} · ${leader.standing?.points || 0} pts</span>` : ""}
         </div>
         <div class="coach-podium-grid">
           ${ranking
