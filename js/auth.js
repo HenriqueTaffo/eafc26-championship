@@ -1682,7 +1682,7 @@ App.auth = {
       message:
         decision === "accepted" && result.status === "signature_pending"
           ? "Transferencia aceita, aguarde assinatura da liga para registro."
-          : "Atualizando propostas, mercado, orcamentos e painel dos tecnicos...",
+          : "Atualizando propostas, mercado, orçamentos e painel dos técnicos...",
     });
 
     if (decision === "accepted" || result.status === "accepted") {
@@ -2194,12 +2194,12 @@ App.auth = {
         </div>
         <div class="email-message-subject sponsor-email-subject">
           <div>
-            <strong>${App.utils.escapeDisplay(meta.caseType || "Caso clinico")}</strong>
-            <small>${App.utils.escapeDisplay(meta.severityLabel || meta.severity || "Clinica")} | ${App.utils.escapeDisplay(meta.riskLabel || "Monitoramento")} | ${App.utils.escapeDisplay(availability.detail || "Reavaliacao")}</small>
+            <strong>${App.utils.escapeDisplay(meta.caseType || "Caso clínico")}</strong>
+            <small>${App.utils.escapeDisplay(meta.severityLabel || meta.severity || "Clínica")} | ${App.utils.escapeDisplay(meta.riskLabel || "Monitoramento")} | ${App.utils.escapeDisplay(availability.detail || "Reavaliação")}</small>
           </div>
           <span class="sponsor-cadence-badge is-goal">${App.utils.escapeDisplay(availability.label || "Fora")}</span>
         </div>
-        <p>${App.utils.escapeDisplay(meta.recommendation || "O staff atualizou o caso e aguarda sua decisao operacional.")}</p>
+        <p>${App.utils.escapeDisplay(meta.recommendation || "O staff atualizou o caso e aguarda sua decisão operacional.")}</p>
         <div class="sponsor-email-value-row">
           <span>
             <b>Retorno alvo</b>
@@ -2219,8 +2219,8 @@ App.auth = {
         </div>
         <div class="email-message-preview sponsor-competition-preview">
           <span>Status: ${App.utils.escapeDisplay(meta.stageSubtitle || "Em observacao")}</span>
-          <span>Suporte: ${App.players.formatMedicalPercent(meta.supportPct || 0)} prevencao + recuperacao</span>
-          <span>Diagnostico ${App.players.formatMedicalPercent(meta.diagnosticsPct || 0)} | ciencia ${App.players.formatMedicalPercent(meta.sciencePct || 0)}</span>
+          <span>Suporte: ${App.players.formatMedicalPercent(meta.supportPct || 0)} prevenção + recuperação</span>
+          <span>Diagnóstico ${App.players.formatMedicalPercent(meta.diagnosticsPct || 0)} | ciência ${App.players.formatMedicalPercent(meta.sciencePct || 0)}</span>
         </div>
         <div class="decision-options email-response-actions">
           <button
@@ -2259,7 +2259,7 @@ App.auth = {
             data-email-key="${App.utils.escapeHtml(key)}"
           >
             <strong>Arquivar alerta</strong>
-            <small>Mantem o caso no DM e limpa a fila do escritorio.</small>
+            <small>Mantém o caso no DM e limpa a fila do escritório.</small>
           </button>
         </div>
       </article>
@@ -2294,8 +2294,8 @@ App.auth = {
           ? isClosed
             ? `Mesa encerrada como ${statusLabel.toLowerCase()}.`
             : status === "signature_pending"
-              ? `${sourceLabel} confirmou os termos. A assinatura esta em andamento.`
-              : `${sourceLabel} respondeu a mesa. Revise antes de assinar.`
+              ? `${sourceLabel} confirmou os termos. A assinatura está em andamento.`
+              : `${sourceLabel} respondeu à mesa. Revise antes de assinar.`
           : isOpen
             ? `${sourceLabel} movimentou uma proposta de ${App.utils.formatCurrency(previewValue)}.`
             : `${sourceLabel} encerrou com status ${statusLabel.toLowerCase()} em ${App.utils.formatCurrency(previewValue)}.`,
@@ -2355,9 +2355,9 @@ App.auth = {
         key,
         type: "medical",
         folder: "DM",
-        sender: "Centro medico",
-        subject: `Boletim clinico: ${playerName}`,
-        preview: `${meta.stageLabel}. ${availability.detail || "Reavaliacao"} com risco ${Math.round(Number(meta.relapseRisk || 0) * 100)}%.`,
+        sender: "Centro médico",
+        subject: `Boletim clínico: ${playerName}`,
+        preview: `${meta.stageLabel}. ${availability.detail || "Reavaliação"} com risco ${Math.round(Number(meta.relapseRisk || 0) * 100)}%.`,
         badge: `${meta.riskLabel} | ${availability.label || "Fora"}`,
         tone:
           meta.riskTone === "danger" || !availability.canStart
@@ -2515,7 +2515,7 @@ App.auth = {
       <div class="email-office-command-row email-office-tabs">
         <span>Abertos ${stats.open}</span>
         <span>Encerrados ${stats.closed}</span>
-        <span>Nao lidos ${stats.unread}</span>
+        <span>Não lidos ${stats.unread}</span>
         <span>Prioridade ${stats.priority}</span>
         <span>DM ${stats.medical}</span>
         <span>Comercial ${stats.commercial}</span>
@@ -2537,9 +2537,9 @@ App.auth = {
         <label class="email-toolbar-field">
           <span>Fila</span>
           <select data-email-filter-view>
-            <option value="action" ${selectedView === "action" ? "selected" : ""}>Acoes do dia</option>
+            <option value="action" ${selectedView === "action" ? "selected" : ""}>Ações do dia</option>
             <option value="all" ${selectedView === "all" ? "selected" : ""}>Tudo</option>
-            <option value="unread" ${selectedView === "unread" ? "selected" : ""}>Nao lidos</option>
+            <option value="unread" ${selectedView === "unread" ? "selected" : ""}>Não lidos</option>
             <option value="priority" ${selectedView === "priority" ? "selected" : ""}>Prioridade alta</option>
             <option value="closed" ${selectedView === "closed" ? "selected" : ""}>Encerrados</option>
           </select>
@@ -2581,10 +2581,10 @@ App.auth = {
       <div class="email-bulk-toolbar">
         <label>
           <input type="checkbox" data-email-select-all />
-          <span>Selecionar visiveis</span>
+          <span>Selecionar visíveis</span>
         </label>
         <button type="button" data-email-bulk-action="read">Marcar lido</button>
-        <button type="button" data-email-bulk-action="unread">Marcar nao lido</button>
+        <button type="button" data-email-bulk-action="unread">Marcar não lido</button>
         <button type="button" data-email-bulk-action="archive">Arquivar selecionados</button>
       </div>
 
@@ -2595,7 +2595,7 @@ App.auth = {
           <div class="email-mailbox-section-header">
             <div>
               <strong>Caixa ativa</strong>
-              <span>Mensagens que ainda pedem leitura, decisao ou resposta do tecnico.</span>
+              <span>Mensagens que ainda pedem leitura, decisão ou resposta do técnico.</span>
             </div>
             <b>${openItems.length}</b>
           </div>
@@ -2611,7 +2611,7 @@ App.auth = {
             <strong>Nenhum e-mail nessa visao</strong>
             <p>${
               normalizedQuery || selectedFolder !== "all" || selectedView !== "action"
-                ? "Ajuste os filtros para voltar a ver a fila completa do escritorio."
+                ? "Ajuste os filtros para voltar a ver a fila completa do escritório."
                 : "Quando uma nova mensagem chegar, ela aparece aqui para leitura, resposta ou arquivamento."
             }</p>
           </div>
@@ -2625,8 +2625,8 @@ App.auth = {
         <details class="email-mailbox-section is-closed" ${selectedView === "closed" ? "open" : ""}>
           <summary class="email-mailbox-section-header">
             <div>
-              <strong>Historico fechado</strong>
-              <span>Assuntos concluido, expirados ou guardados para consulta rapida.</span>
+              <strong>Histórico fechado</strong>
+              <span>Assuntos concluídos, expirados ou guardados para consulta rápida.</span>
             </div>
             <b>${closedItems.length}</b>
           </summary>
@@ -2676,7 +2676,7 @@ App.auth = {
             <span>@</span>
             <div>
               <strong>Caixa postal protegida</strong>
-              <p>Voce esta logado como ${App.utils.escapeHtml(session.managerName)}. Para abrir as mensagens de ${App.utils.escapeHtml(owner)}, entre com o PIN desse tecnico.</p>
+              <p>Você está logado como ${App.utils.escapeHtml(session.managerName)}. Para abrir as mensagens de ${App.utils.escapeHtml(owner)}, entre com o PIN desse técnico.</p>
             </div>
           </div>
         </article>
@@ -2718,17 +2718,17 @@ App.auth = {
       <article class="coach-panel-card coach-decision-card email-office-card">
         <div class="home-panel-header email-office-header">
           <div>
-            <h2>Escritorio</h2>
-            <p class="coach-card-subtitle">Mesa privada do tecnico com diretoria, mercado, comercial e historico de decisoes em uma unica caixa.</p>
+            <h2>Escritório</h2>
+            <p class="coach-card-subtitle">Mesa privada do técnico com diretoria, mercado, comercial e histórico de decisões em uma única caixa.</p>
           </div>
-          <span class="coach-section-kicker">${actionCount} acao(oes)</span>
+          <span class="coach-section-kicker">${App.utils.formatCountLabel(actionCount, "ação", "ações")}</span>
         </div>
 
         <div class="email-office-headline">
           <article>
             <span>Inbox ativa</span>
             <strong>${inboxItems.length}</strong>
-            <small>${unreadCount} nao lida(s)</small>
+            <small>${App.utils.formatCountLabel(unreadCount, "não lida", "não lidas")}</small>
           </article>
           <article>
             <span>Mercado</span>
@@ -2738,7 +2738,7 @@ App.auth = {
           <article>
             <span>DM</span>
             <strong>${medicalCount}</strong>
-            <small>caso(s) clinico(s)</small>
+            <small>${App.utils.formatCountLabel(medicalCount, "caso clínico", "casos clínicos")}</small>
           </article>
           <article>
             <span>Comercial</span>
@@ -3583,7 +3583,7 @@ App.auth = {
         const markButton = thread.querySelector('[data-email-action="read"]');
         if (markButton) {
           markButton.dataset.emailAction = "unread";
-          markButton.textContent = "Marcar nao lido";
+          markButton.textContent = "Marcar não lido";
         }
       },
       true,
@@ -3958,7 +3958,7 @@ App.auth = {
     const actionKicker = isClosed
       ? statusLabel
       : isSignaturePending
-        ? "Aguardando assinatura no escritorio"
+        ? "Aguardando assinatura no escritório"
         : status === "buyer_review"
         ? isCounter
           ? "Contraproposta recebida"
@@ -3976,7 +3976,7 @@ App.auth = {
           <div>
             <small>Assunto: confirmacao de proposta</small>
             <h3>${playerLabel}</h3>
-            <p>${sourceLabelEscaped} respondeu a mesa aberta por ${App.utils.escapeDisplay(item.buyer || "seu clube")}. Revise os termos antes de assinar.</p>
+            <p>${sourceLabelEscaped} respondeu à mesa aberta por ${App.utils.escapeDisplay(item.buyer || "seu clube")}. Revise os termos antes de assinar.</p>
           </div>
           <span>${App.utils.escapeDisplay(actionKicker)}</span>
         </div>
@@ -4010,7 +4010,7 @@ App.auth = {
 
         <div class="transfer-contract-clause">
           <span>Clausula de mesa</span>
-          <p>${App.utils.escapeDisplay(item.response_message || "O clube vendedor respondeu e aguarda sua decisao.")}</p>
+          <p>${App.utils.escapeDisplay(item.response_message || "O clube vendedor respondeu e aguarda sua decisão.")}</p>
           <small>Prazo interno: ${App.utils.escapeDisplay(expiresLabel)}</small>
         </div>
         ${App.auth.getTransferProposalTimeline(item, { maxItems: 4 })}

@@ -3197,12 +3197,19 @@ App.transfers = {
     App.transfers.marketSearchPending = App.transfers.marketSearchPending || {};
     const request = (async () => {
       try {
-        const players = await App.api.loadMarketPlayers(
+        const players = await App.api.loadMarketPlayers(query, showContracted, 18);
+        const fallbackRows = await App.api.searchRegionalFallbackPlayers(
           query,
-          showContracted,
           18,
+          {
+            showContracted,
+          },
         );
-        if (players.length) return remember(players);
+        const merged = App.api.mergeMarketSearchRows(players, fallbackRows, 18);
+        if (merged.length) {
+          App.api.mergeMarketPlayers(merged);
+          return remember(merged);
+        }
       } catch (error) {
         console.warn(
           "Busca RPC de mercado indisponivel, tentando leitura direta:",
@@ -3211,12 +3218,22 @@ App.transfers = {
       }
 
       const rows = await App.api.fetchMarketPlayersDirect(query, 14);
-      const fallback = App.api.applyMarketPlayerOverrides(
-        Array.isArray(rows) ? rows : [],
-        { showContracted },
+      const fallback = await App.api.searchRegionalFallbackPlayers(
+        query,
+        18,
+        {
+          showContracted,
+        },
+      ).catch(() => []);
+      const merged = App.api.mergeMarketSearchRows(
+        App.api.applyMarketPlayerOverrides(Array.isArray(rows) ? rows : [], {
+          showContracted,
+        }),
+        fallback,
+        18,
       );
-      App.api.mergeMarketPlayers(fallback);
-      return remember(fallback);
+      App.api.mergeMarketPlayers(merged);
+      return remember(merged);
     })().finally(() => {
       delete App.transfers.marketSearchPending?.[cacheKey];
     });

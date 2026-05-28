@@ -1,7 +1,19 @@
 import { useEffect, useMemo, useState } from "react";
+import {
+  DndContext,
+  DragOverlay,
+  PointerSensor,
+  TouchSensor,
+  useDraggable,
+  useDroppable,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
 import App from "../../js/app.js";
+import { useLeagueUiStore } from "../state/useLeagueUiStore.js";
 import { useAppRuntime } from "./ViewSummaries.jsx";
 
+const EMPTY_PREFS = Object.freeze({});
 const goalkeeper = () => [["GK", "GK", 50, 84]];
 
 const backThree = () => [
@@ -338,6 +350,23 @@ const POSITION_FILTERS = [
 
 const TRANSFER_ROSTER_ID_OFFSET = 1000000000;
 
+function combineNodeRefs(...refs) {
+  return (node) => {
+    refs.forEach((ref) => {
+      if (typeof ref === "function") ref(node);
+    });
+  };
+}
+
+function getDragTransformStyle(transform) {
+  if (!transform) return null;
+  return {
+    transform: `translate3d(${Math.round(transform.x)}px, ${Math.round(
+      transform.y,
+    )}px, 0) scale(${transform.scaleX || 1}, ${transform.scaleY || 1})`,
+  };
+}
+
 function getSlots(formation) {
   return (FORMATIONS[formation] || FORMATIONS["4-2-3-1"]).map(
     ([id, label, x, y]) => ({ id, label, displayLabel: id, x, y }),
@@ -561,19 +590,36 @@ function PitchSlot({
   medicalStatus,
   selected,
   compatible,
-  dropActive,
-  dragging,
   onSelect,
   onClear,
-  onDragStart,
-  onDropPlayer,
-  onDragOverSlot,
-  onDragLeaveSlot,
-  onDragEnd,
+  draggingPlayerId,
 }) {
   const availability = medicalStatus?.availability || null;
+  const droppable = useDroppable({
+    id: `slot:${slot.id}`,
+    data: {
+      kind: "slot",
+      slotId: slot.id,
+    },
+  });
+  const draggable = player
+    ? useDraggable({
+        id: `player:${player.id}:${slot.id}`,
+        data: {
+          kind: "player",
+          playerId: Number(player.id),
+          fromSlot: slot.id,
+        },
+      })
+    : null;
+  const setNodeRef = draggable
+    ? combineNodeRefs(droppable.setNodeRef, draggable.setNodeRef)
+    : droppable.setNodeRef;
+  const dragStyle = draggable ? getDragTransformStyle(draggable.transform) : null;
+  const dragging = Number(player?.id) === Number(draggingPlayerId);
   return (
     <button
+      ref={setNodeRef}
       type="button"
       className={[
         "squad-slot",
@@ -582,31 +628,19 @@ function PitchSlot({
         medicalStatus ? `has-medical-${availability?.tone || "watch"}` : "",
         medicalStatus && !availability?.canStart ? "is-unavailable" : "",
         compatible ? "is-compatible" : "",
-        dropActive ? "is-drop-target" : "",
+        droppable.isOver ? "is-drop-target" : "",
         dragging ? "is-dragging" : "",
       ]
         .filter(Boolean)
         .join(" ")}
-      draggable={Boolean(player)}
-      style={{ "--slot-x": `${slot.x}%`, "--slot-y": `${slot.y}%` }}
+      style={{
+        "--slot-x": `${slot.x}%`,
+        "--slot-y": `${slot.y}%`,
+        ...(dragStyle || {}),
+      }}
       onClick={onSelect}
-      onDragStart={(event) => {
-        if (!player) return;
-        event.dataTransfer.effectAllowed = "move";
-        event.dataTransfer.setData("text/plain", String(player.id));
-        onDragStart(player, slot.id);
-      }}
-      onDragOver={(event) => {
-        event.preventDefault();
-        event.dataTransfer.dropEffect = "move";
-        onDragOverSlot(slot.id);
-      }}
-      onDragLeave={() => onDragLeaveSlot(slot.id)}
-      onDrop={(event) => {
-        event.preventDefault();
-        onDropPlayer(event.dataTransfer.getData("text/plain"), slot.id);
-      }}
-      onDragEnd={onDragEnd}
+      {...(draggable ? draggable.listeners : {})}
+      {...(draggable ? draggable.attributes : {})}
       aria-label={
         player
           ? `${player.name}, ${slot.displayLabel}, overall ${player.overall}`
@@ -663,38 +697,46 @@ function SquadRosterRow({
   assigned,
   selected,
   onPick,
-  onDragStart,
-  onDragEnd,
+  draggingPlayerId,
 }) {
   const availability = medicalStatus?.availability || null;
+  const draggable = useDraggable({
+    id: `player:${player.id}:roster`,
+    data: {
+      kind: "player",
+      playerId: Number(player.id),
+      fromSlot: "",
+    },
+  });
+  const dragStyle = getDragTransformStyle(draggable.transform);
+  const dragging = Number(player.id) === Number(draggingPlayerId);
+
   return (
     <button
+      ref={draggable.setNodeRef}
       type="button"
       className={[
         "squad-roster-row",
         assigned ? "is-assigned" : "",
         selected ? "is-selected-player" : "",
         medicalStatus ? `has-medical-${availability?.tone || "watch"}` : "",
+        dragging ? "is-dragging" : "",
       ]
         .filter(Boolean)
         .join(" ")}
-      draggable
+      style={dragStyle || undefined}
       aria-pressed={selected}
       onClick={onPick}
-      onDragStart={(event) => {
-        event.dataTransfer.effectAllowed = "move";
-        event.dataTransfer.setData("text/plain", String(player.id));
-        onDragStart(player, "");
-      }}
-      onDragEnd={onDragEnd}
-      title={`${player.name} · ${player.position || "-"} · OVR ${player.overall} · ${player.salarySourceName || "Fonte salarial publica"}`}
+      {...draggable.listeners}
+      {...draggable.attributes}
+      title={`${player.name} - ${player.position || "-"} - OVR ${player.overall} - ${player.salarySourceName || "Fonte salarial publica"}`}
     >
       <span className="squad-drag-grip" aria-hidden="true"></span>
       <PlayerAvatar player={player} />
-<span className="squad-roster-main">
+      <span className="squad-roster-main">
         <strong>{player.name}</strong>
         <small>
-          {player.position || "-"} · {player.nation || "EA FC 26"}
+          {player.position || "-"} - {player.nation || "EA FC 26"}
         </small>
         {medicalStatus ? (
           <span className="squad-roster-tags">
@@ -723,18 +765,38 @@ function SquadRosterRow({
 
 function SquadManagementView() {
   const runtimeVersion = useAppRuntime();
+  const squadPrefs = useLeagueUiStore(
+    (state) => state.workspacePrefs.squad ?? EMPTY_PREFS,
+  );
+  const patchSquadPrefs = useLeagueUiStore((state) => state.patchWorkspacePrefs);
   const [selectedManager, setSelectedManager] = useState("");
-  const [formation, setFormation] = useState("4-2-3-1");
+  const [formation, setFormation] = useState(
+    squadPrefs.formation || "4-2-3-1",
+  );
   const [lineup, setLineup] = useState({});
   const [selectedSlot, setSelectedSlot] = useState("ST");
   const [selectedPlayerId, setSelectedPlayerId] = useState(null);
-  const [search, setSearch] = useState("");
-  const [positionFilter, setPositionFilter] = useState("all");
+  const [search, setSearch] = useState(squadPrefs.search || "");
+  const [positionFilter, setPositionFilter] = useState(
+    squadPrefs.positionFilter || "all",
+  );
   const [formationMenuOpen, setFormationMenuOpen] = useState(false);
   const [dragState, setDragState] = useState(null);
-  const [dragOverSlot, setDragOverSlot] = useState("");
   const [message, setMessage] = useState("");
   const [saving, setSaving] = useState(false);
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 6,
+      },
+    }),
+    useSensor(TouchSensor, {
+      activationConstraint: {
+        delay: 120,
+        tolerance: 8,
+      },
+    }),
+  );
 
   const isActive =
     typeof document !== "undefined" &&
@@ -754,10 +816,22 @@ function SquadManagementView() {
 
   useEffect(() => {
     if (!defaultManager) return;
-    if (!selectedManager || (!canSwitchManagers && selectedManager !== defaultManager)) {
-      setSelectedManager(defaultManager);
+    if (
+      !selectedManager ||
+      (!canSwitchManagers && selectedManager !== defaultManager)
+    ) {
+      setSelectedManager(
+        canSwitchManagers
+          ? squadPrefs.managerName || defaultManager
+          : defaultManager,
+      );
     }
-  }, [canSwitchManagers, defaultManager, selectedManager]);
+  }, [
+    canSwitchManagers,
+    defaultManager,
+    selectedManager,
+    squadPrefs.managerName,
+  ]);
 
   const activeManager = useMemo(
     () =>
@@ -785,6 +859,22 @@ function SquadManagementView() {
     setSelectedPlayerId(null);
     setMessage("");
   }, [activeManagerName, savedLineup.formation, savedLineupKey]);
+
+  useEffect(() => {
+    patchSquadPrefs("squad", {
+      formation,
+      search,
+      positionFilter,
+      managerName: canSwitchManagers ? selectedManager : "",
+    });
+  }, [
+    canSwitchManagers,
+    formation,
+    patchSquadPrefs,
+    positionFilter,
+    search,
+    selectedManager,
+  ]);
 
   const slots = getSlots(formation);
   const playerById = useMemo(
@@ -915,7 +1005,6 @@ function SquadManagementView() {
 
   function finishPlayerDrag() {
     setDragState(null);
-    setDragOverSlot("");
   }
 
   function dropPlayerOnSlot(playerId, targetSlot) {
@@ -926,6 +1015,22 @@ function SquadManagementView() {
       return;
     }
     assignPlayerToSlot(draggedPlayer, targetSlot, dragState?.fromSlot || "");
+    finishPlayerDrag();
+  }
+
+  function handleDragStart(event) {
+    const payload = event.active?.data?.current || {};
+    const draggedPlayer = playerById.get(Number(payload.playerId));
+    if (!draggedPlayer) return;
+    startPlayerDrag(draggedPlayer, payload.fromSlot || "");
+  }
+
+  function handleDragEnd(event) {
+    const targetSlot = event.over?.data?.current?.slotId || "";
+    if (targetSlot) {
+      dropPlayerOnSlot(event.active?.data?.current?.playerId, targetSlot);
+      return;
+    }
     finishPlayerDrag();
   }
 
@@ -1088,8 +1193,14 @@ function SquadManagementView() {
         </span>
       </section>
 
-      <section className="squad-builder-grid">
-        <article className="squad-pitch-card">
+      <DndContext
+        sensors={sensors}
+        onDragStart={handleDragStart}
+        onDragEnd={handleDragEnd}
+        onDragCancel={finishPlayerDrag}
+      >
+        <section className="squad-builder-grid">
+          <article className="squad-pitch-card">
           <div className="squad-pitch-toolbar">
             <div>
               <span>Squad builder</span>
@@ -1146,8 +1257,7 @@ function SquadManagementView() {
                       : selectedSlot === slot.id &&
                         filteredRoster.some((item) => isCompatible(slot.label, item.position))
                   }
-                  dropActive={dragOverSlot === slot.id}
-                  dragging={Number(player?.id) === Number(dragState?.playerId)}
+                  draggingPlayerId={dragState?.playerId}
                   onSelect={() => setSelectedSlot(slot.id)}
                   onClear={() =>
                     setLineup((current) => {
@@ -1156,13 +1266,6 @@ function SquadManagementView() {
                       return next;
                     })
                   }
-                  onDragStart={startPlayerDrag}
-                  onDropPlayer={dropPlayerOnSlot}
-                  onDragOverSlot={setDragOverSlot}
-                  onDragLeaveSlot={(slotId) => {
-                    if (dragOverSlot === slotId) setDragOverSlot("");
-                  }}
-                  onDragEnd={finishPlayerDrag}
                 />
               );
             })}
@@ -1171,31 +1274,46 @@ function SquadManagementView() {
             <span>{message}</span>
             <strong>{App.utils.formatCurrency(stats.lineupWeekly)}/sem titulares</strong>
           </div>
-        </article>
+          </article>
 
-        <aside className="squad-roster-panel">
-          <div className="home-panel-header">
-            <h2>Elenco disponivel</h2>
-            <span>{filteredRoster.length}</span>
-          </div>
-          <div className="squad-roster-list">
-            {filteredRoster.map((player) => (
-              <SquadRosterRow
-                key={player.id}
-                player={player}
-                medicalStatus={getPlayerMedicalStatus(player, medicalStatusMap)}
-                assigned={assignedIds.has(Number(player.id))}
-                selected={Number(selectedPlayerId) === Number(player.id)}
-                onPick={() => assignPlayer(player)}
-                onDragStart={startPlayerDrag}
-                onDragEnd={finishPlayerDrag}
-              />
-            ))}
-          </div>
-        </aside>
-      </section>
+          <aside className="squad-roster-panel">
+            <div className="home-panel-header">
+              <h2>Elenco disponivel</h2>
+              <span>{filteredRoster.length}</span>
+            </div>
+            <div className="squad-roster-list">
+              {filteredRoster.map((player) => (
+                <SquadRosterRow
+                  key={player.id}
+                  player={player}
+                  medicalStatus={getPlayerMedicalStatus(player, medicalStatusMap)}
+                  assigned={assignedIds.has(Number(player.id))}
+                  selected={Number(selectedPlayerId) === Number(player.id)}
+                  draggingPlayerId={dragState?.playerId}
+                  onPick={() => assignPlayer(player)}
+                />
+              ))}
+            </div>
+          </aside>
+        </section>
+        <DragOverlay dropAnimation={null}>
+          {draggingPlayer ? (
+            <div className="squad-drag-overlay">
+              <PlayerAvatar player={draggingPlayer} />
+              <span>
+                <strong>{draggingPlayer.name}</strong>
+                <small>
+                  {draggingPlayer.position || "-"} · OVR {draggingPlayer.overall}
+                </small>
+              </span>
+            </div>
+          ) : null}
+        </DragOverlay>
+      </DndContext>
     </section>
   );
 }
 
 export { SquadManagementView };
+
+

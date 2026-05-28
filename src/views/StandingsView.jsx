@@ -209,28 +209,28 @@ function AttentionPanel() {
       <article className="attention-card">
         <div className="home-panel-header">
           <div>
-            <span className="modal-kicker">Atenção agora</span>
-            <h2>O que pede ação</h2>
+            <span className="modal-kicker">Aten??o agora</span>
+            <h2>O que pede a??o</h2>
           </div>
         </div>
         {items.length ? (
           <div className="attention-grid">
-            {items.map((item) => (
+            {items.map((item, index) => (
               <ViewButton
                 className="attention-item"
                 target={item.target}
-                key={`${item.type}-${item.title}-${item.target}`}
+                key={`${item.type}-${item.title}-${item.target}-${index}`}
               >
                 <span>{item.type}</span>
                 <strong>{item.title}</strong>
                 <small>{item.detail}</small>
-                <b>{item.action} ›</b>
+                <b>{item.action} ?</b>
               </ViewButton>
             ))}
           </div>
         ) : (
           <div className="next-game-empty">
-            Nada urgente agora. A liga está respirando.
+            Nada urgente agora. A liga est? respirando.
           </div>
         )}
       </article>

@@ -779,38 +779,38 @@ App.players = {
       <article class="coach-panel-card coach-medical-card" data-medical-owner="${App.utils.escapeHtml(owner)}">
         <div class="home-panel-header">
           <div>
-            <h2>Centro medico</h2>
-            <p class="coach-card-subtitle">Prevencao, tratamento e retorno progressivo por dias corridos de calendario.</p>
+            <h2>Centro médico</h2>
+            <p class="coach-card-subtitle">Prevenção, tratamento e retorno progressivo por dias corridos de calendário.</p>
           </div>
-          <span class="coach-section-kicker">${injuries.length} caso(s)</span>
+          <span class="coach-section-kicker">${App.utils.formatCountLabel(injuries.length, "caso", "casos")}</span>
         </div>
 
         <div class="medical-plan-hero medical-plan-hero--advanced">
           <div>
             <span>Estrutura ativa</span>
             <strong>${App.utils.escapeDisplay(plan.name || "DM base")}</strong>
-            <small>${App.utils.escapeDisplay(plan.description || "Departamento medico padrao do clube.")}</small>
+            <small>${App.utils.escapeDisplay(plan.description || "Departamento médico padrão do clube.")}</small>
           </div>
           <div>
             <span>Resposta do staff</span>
             <strong>${App.utils.formatCurrency(plan.weeklyCost || 0)}</strong>
-            <small>${App.utils.escapeDisplay(App.players.getMedicalStaffSummary(plan) || `tratamento intensivo reduz ate ${treatmentDays} dia(s) corrido(s)`)}</small>
+            <small>${App.utils.escapeDisplay(App.players.getMedicalStaffSummary(plan) || `tratamento intensivo reduz até ${treatmentDays} dia(s) corrido(s)`)}</small>
           </div>
         </div>
 
         <div class="medical-summary-strip">
           <span><b>Fora agora</b><strong>${injuries.length}</strong></span>
           <span><b>Risco alto</b><strong>${highRiskCount}</strong></span>
-          <span><b>Retorno medio</b><strong>${averageReturn ? `${averageReturn} dia(s)` : "estavel"}</strong></span>
-          <span><b>Liberacao parcial</b><strong>${transitionCount}</strong></span>
+          <span><b>Retorno médio</b><strong>${averageReturn ? `${averageReturn} dia(s)` : "estável"}</strong></span>
+          <span><b>Liberação parcial</b><strong>${transitionCount}</strong></span>
         </div>
 
         <div class="medical-metric-grid">
-          <span><b>Prevencao</b><strong>${App.players.formatMedicalPercent(plan.preventionPct)}</strong></span>
-          <span><b>Recuperacao</b><strong>${App.players.formatMedicalPercent(plan.recoveryPct)}</strong></span>
-          <span><b>Diagnostico</b><strong>${App.players.formatMedicalPercent(plan.diagnosticsPct)}</strong></span>
-          <span><b>Ciencia</b><strong>${App.players.formatMedicalPercent(plan.sciencePct)}</strong></span>
-          <span><b>Implantacao</b><strong>${App.utils.formatCurrency(plan.setupCost || 0)}</strong></span>
+          <span><b>Prevenção</b><strong>${App.players.formatMedicalPercent(plan.preventionPct)}</strong></span>
+          <span><b>Recuperação</b><strong>${App.players.formatMedicalPercent(plan.recoveryPct)}</strong></span>
+          <span><b>Diagnóstico</b><strong>${App.players.formatMedicalPercent(plan.diagnosticsPct)}</strong></span>
+          <span><b>Ciência</b><strong>${App.players.formatMedicalPercent(plan.sciencePct)}</strong></span>
+          <span><b>Implantação</b><strong>${App.utils.formatCurrency(plan.setupCost || 0)}</strong></span>
         </div>
 
         <div class="medical-plan-options">
@@ -825,7 +825,7 @@ App.players = {
                   ${isActive ? "disabled" : ""}
                 >
                   <strong>${App.utils.escapeDisplay(item.name)}</strong>
-                  <small>${App.utils.formatCurrency(item.weeklyCost || 0)}/sem | ${App.players.formatMedicalPercent(item.recoveryPct)} recuperacao | ${App.players.formatMedicalPercent(item.diagnosticsPct)} diagnostico</small>
+                  <small>${App.utils.formatCurrency(item.weeklyCost || 0)}/sem | ${App.players.formatMedicalPercent(item.recoveryPct)} recuperação | ${App.players.formatMedicalPercent(item.diagnosticsPct)} diagnóstico</small>
                 </button>
               `;
             })
@@ -1527,10 +1527,10 @@ App.players = {
         label: "Diretoria",
         title: formatCount(
           pendingDecisions,
-          "decisao aguardando resposta",
-          "decisoes aguardando resposta",
+          "decisão aguardando resposta",
+          "decisões aguardando resposta",
         ),
-        detail: "Abra o escritorio para evitar fila atrasada no inbox.",
+        detail: "Abra o escritório para evitar fila atrasada no inbox.",
       });
     }
     if (transferActionCount) {
@@ -1551,10 +1551,10 @@ App.players = {
         label: "Comercial",
         title: formatCount(
           sponsorOffers,
-          "oferta de patrocinio na mesa",
-          "ofertas de patrocinio na mesa",
+          "oferta de patrocínio na mesa",
+          "ofertas de patrocínio na mesa",
         ),
-        detail: "Compare contratos no escritorio antes de trocar uma marca ativa.",
+        detail: "Compare contratos no escritório antes de trocar uma marca ativa.",
       });
     }
     if (highRiskCount) {
@@ -1581,8 +1581,8 @@ App.players = {
       agenda.push({
         tone: "warning",
         label: "Janela",
-        title: "Limite diario de transferencias atingido",
-        detail: "Espere o proximo ciclo para disparar nova proposta.",
+        title: "Limite diário de transferências atingido",
+        detail: "Espere o próximo ciclo para disparar nova proposta.",
       });
     }
     if (!agenda.length) {
@@ -1590,7 +1590,7 @@ App.players = {
         tone: "success",
         label: "Sala",
         title: "Fluxo do dia sob controle",
-        detail: "Sem urgencias abertas. O tecnico pode focar em preparacao e observacao de mercado.",
+        detail: "Sem urgências abertas. O técnico pode focar em preparação e observação de mercado.",
       });
     }
 
@@ -1599,16 +1599,16 @@ App.players = {
         <div class="home-panel-header">
           <div>
             <h2>Central do dia</h2>
-            <p class="coach-card-subtitle">Fila executiva com o que exige resposta do tecnico neste momento.</p>
+            <p class="coach-card-subtitle">Fila executiva com o que exige resposta do técnico neste momento.</p>
           </div>
           <span class="coach-section-kicker">${formatCount(agenda.length, "foco", "focos")}</span>
         </div>
 
         <div class="coach-central-grid">
-          <article><span>Diretoria</span><strong>${pendingDecisions}</strong><small>${App.utils.pluralize(pendingDecisions, "decisao pendente", "decisoes pendentes")}</small></article>
-          <article><span>Mercado</span><strong>${transferActionCount}</strong><small>${App.utils.pluralize(transferActionCount, "acao no escritorio", "acoes no escritorio")}</small></article>
+          <article><span>Diretoria</span><strong>${pendingDecisions}</strong><small>${App.utils.pluralize(pendingDecisions, "decisão pendente", "decisões pendentes")}</small></article>
+          <article><span>Mercado</span><strong>${transferActionCount}</strong><small>${App.utils.pluralize(transferActionCount, "ação no escritório", "ações no escritório")}</small></article>
           <article><span>DM</span><strong>${injuries.length}</strong><small>${App.utils.pluralize(injuries.length, "caso monitorado", "casos monitorados")}</small></article>
-          <article><span>Janela</span><strong>${transferLimit ? `${transfersToday}/${transferLimit}` : transfersToday}</strong><small>${budget.marketEmbargo ? "bloqueada" : "uso diario"}</small></article>
+          <article><span>Janela</span><strong>${transferLimit ? `${transfersToday}/${transferLimit}` : transfersToday}</strong><small>${budget.marketEmbargo ? "bloqueada" : "uso diário"}</small></article>
         </div>
 
         <div class="coach-central-agenda">
@@ -2197,9 +2197,9 @@ App.players = {
           <div class="coach-hero-main">
             <div class="coach-club-mark">${App.clubs.getTeamBadgeHtml(activeTeam.team, "coach-crest")}</div>
             <div>
-              <span class="modal-kicker">Escritorio do tecnico</span>
+              <span class="modal-kicker">Escritório do técnico</span>
               <h2>${activeTeam.owner}</h2>
-              <p>Tecnico do ${activeTeam.team}</p>
+              <p>Técnico do ${activeTeam.team}</p>
               <div class="coach-form-line">
                 <span>Forma recente</span>
                 ${App.players.renderFormDots(recentForm)}
@@ -2330,7 +2330,7 @@ App.players = {
               detail: [
                 `Implantacao: ${App.utils.formatCurrency(option.setupCost || 0)}`,
                 `Custo semanal: ${App.utils.formatCurrency(option.weeklyCost || 0)}`,
-                `Prevencao: ${App.players.formatMedicalPercent(option.preventionPct)}`,
+                `Prevenção: ${App.players.formatMedicalPercent(option.preventionPct)}`,
                 `Recuperacao: ${App.players.formatMedicalPercent(option.recoveryPct)}`,
               ].join("\n"),
               tone: "market",
@@ -2421,8 +2421,8 @@ App.players = {
                 ? `${player} sera movido para retorno progressivo com carga e minutos controlados.`
                 : `${player} tera o prazo de lesao recalculado pelo DM ativo.`,
               detail: isManagedReturn
-                ? "O caso segue monitorado pelo staff e a proxima revisao fica registrada no escritorio."
-                : "O tratamento gera custo medico, reduz dias corridos restantes e atualiza o calendario da lesao.",
+                ? "O caso segue monitorado pelo staff e a próxima revisão fica registrada no escritório."
+                : "O tratamento gera custo médico, reduz dias corridos restantes e atualiza o calendário da lesão.",
               tone: isManagedReturn ? "info" : "market",
               cancelLabel: "Cancelar",
               confirmLabel: isManagedReturn
@@ -2440,10 +2440,10 @@ App.players = {
           button.disabled = true;
           App.main?.showLoader?.({
             variant: isManagedReturn ? "info" : "market",
-            title: isManagedReturn ? "Liberando retorno" : "Tratando lesao",
+            title: isManagedReturn ? "Liberando retorno" : "Tratando lesão",
             message: isManagedReturn
-              ? "Aplicando restricao progressiva e atualizando o caso clinico."
-              : "Aplicando atendimento intensivo e atualizando calendario.",
+              ? "Aplicando restrição progressiva e atualizando o caso clínico."
+              : "Aplicando atendimento intensivo e atualizando calendário.",
           });
           const result = await App.api.postToApi({
             action: "applyMedicalTreatment",

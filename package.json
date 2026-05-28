@@ -14,6 +14,7 @@
     "sync:futbin-ratings:dry": "node scripts/import-futbin-ratings.js --dry-run",
     "sync:fifaratings-market": "node scripts/import-fifaratings-market.js",
     "sync:fifaratings-market:dry": "node scripts/import-fifaratings-market.js --dry-run",
+    "sync:argentina-market": "node scripts/generate-argentina-market-fallback.js",
     "sync:transfermarkt-values": "node scripts/sync-transfermarkt-market-values.js",
     "sync:transfermarkt-values:dry": "node scripts/sync-transfermarkt-market-values.js --dry-run",
     "sync:market-avatar-cache": "node scripts/generate-market-avatar-cache.js",
