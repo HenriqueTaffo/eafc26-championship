@@ -74,6 +74,8 @@ module.exports = defineConfig({
               normalizedId.includes("/node_modules/cmdk/") ||
               normalizedId.includes("/node_modules/react-hook-form/") ||
               normalizedId.includes("/node_modules/@hookform/") ||
+              normalizedId.includes("/node_modules/xstate/") ||
+              normalizedId.includes("/node_modules/@xstate/") ||
               normalizedId.includes("/node_modules/zod/") ||
               normalizedId.includes("/node_modules/fuse.js/") ||
               normalizedId.includes("/node_modules/rrule/") ||

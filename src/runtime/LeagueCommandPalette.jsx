@@ -199,8 +199,8 @@ export function LeagueCommandPalette() {
     }
   };
 
-  const getBestCommandForQuery = () => {
-    const normalized = normalizeSearch(query).trim();
+  const getBestCommandForQuery = (inputValue = query) => {
+    const normalized = normalizeSearch(inputValue).trim();
     if (!normalized) return commands[0];
     const tokens = normalized.split(/\s+/).filter(Boolean);
     return (
@@ -252,7 +252,7 @@ export function LeagueCommandPalette() {
                 onKeyDown={(event) => {
                   if (event.key !== "Enter") return;
                   event.preventDefault();
-                  runCommand(getBestCommandForQuery());
+                  runCommand(getBestCommandForQuery(event.currentTarget.value));
                 }}
                 placeholder="Buscar tela, jogador, partida, transferencia ou acao..."
               />

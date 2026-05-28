@@ -18,9 +18,16 @@ import { useVirtualizer } from "@tanstack/react-virtual";
 import { zodResolver } from "@hookform/resolvers/zod";
 import Fuse from "fuse.js";
 import { useForm } from "react-hook-form";
+import { useMachine } from "@xstate/react";
 import { z } from "zod";
 import App from "../../js/app.js";
 import { useLeagueUiStore } from "../state/useLeagueUiStore.js";
+import {
+  resolveTransferWorkflowState,
+  transferWorkflowMachine,
+  workflowEventPaths,
+  workflowLabels,
+} from "../state/transferWorkflowMachine.js";
 import { useAppRuntime } from "./ViewSummaries.jsx";
 
 const numberFilter = z.preprocess(
@@ -734,6 +741,69 @@ function TransferKanbanBoard() {
   );
 }
 
+function TransferWorkflowInspector() {
+  const [snapshot, send] = useMachine(transferWorkflowMachine);
+  const form = document.getElementById("transferForm");
+  const candidate = App.transfers?.getCurrentCandidate?.(form);
+  const shortlist = candidate?.player
+    ? App.transfers?.findShortlistTarget?.(candidate)
+    : null;
+  const proposals = Array.isArray(App.auth?.myTransferProposals)
+    ? App.auth.myTransferProposals
+    : [];
+  const targetState = resolveTransferWorkflowState({
+    candidate,
+    shortlist,
+    proposals,
+    locked: App.transfers?.isTransferWindowLocked?.(),
+  });
+
+  useEffect(() => {
+    send({ type: "RESET" });
+    const events = workflowEventPaths[targetState] || [];
+    events.forEach((eventType) => send({ type: eventType }));
+  }, [send, targetState]);
+
+  const activeState = String(snapshot.value || "idle");
+  const labels = [
+    "idle",
+    "scouting",
+    "shortlisted",
+    "proposal",
+    "sellerReview",
+    "buyerReview",
+    "signature",
+    "completed",
+  ];
+
+  return (
+    <article className="advanced-tool-card workflow-inspector-card">
+      <div className="advanced-tool-head">
+        <div>
+          <span className="modal-kicker">XState</span>
+          <h2>Fluxo da negociacao</h2>
+        </div>
+        <small>{workflowLabels[activeState] || activeState}</small>
+      </div>
+      <div className="workflow-steps">
+        {labels.map((state) => (
+          <span
+            key={state}
+            className={state === activeState ? "is-active" : ""}
+          >
+            {workflowLabels[state]}
+          </span>
+        ))}
+      </div>
+      <p>
+        {candidate?.player
+          ? `${candidate.player} esta em ${workflowLabels[activeState] || activeState}.`
+          : "Escolha um alvo no mercado ou no assistente para ativar a leitura."}
+      </p>
+    </article>
+  );
+}
+
 function AdvancedTransferTools() {
   const active = useTransferActive();
   if (!active) return null;
@@ -749,6 +819,7 @@ function AdvancedTransferTools() {
         </p>
       </div>
       <TransferProposalAssistant />
+      <TransferWorkflowInspector />
       <TransferMarketTable />
       <TransferKanbanBoard />
     </section>

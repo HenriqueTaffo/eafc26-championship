@@ -163,6 +163,10 @@
   grid-row: span 2;
 }
 
+.workflow-inspector-card {
+  grid-column: 1;
+}
+
 .advanced-tool-head {
   display: flex;
   align-items: flex-start;
@@ -460,6 +464,34 @@
   margin-top: 10px;
 }
 
+.workflow-steps {
+  display: grid;
+  gap: 6px;
+}
+
+.workflow-steps span {
+  border: 1px solid var(--workspace-line, rgba(183, 197, 205, 0.13));
+  border-radius: 8px;
+  padding: 7px 8px;
+  background: rgba(4, 7, 9, 0.36);
+  color: var(--workspace-muted, #91a0a7);
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.workflow-steps span.is-active {
+  border-color: rgba(45, 212, 191, 0.42);
+  background: rgba(45, 212, 191, 0.1);
+  color: var(--workspace-text, #eef4f2);
+}
+
+.workflow-inspector-card p {
+  margin: 10px 0 0;
+  color: var(--workspace-muted, #91a0a7);
+  font-size: 0.78rem;
+  line-height: 1.45;
+}
+
 @media (max-width: 1180px) {
   .advanced-transfer-tools,
   .advanced-market-table-card,
@@ -470,6 +502,10 @@
 
   .transfer-assistant-card {
     grid-row: auto;
+  }
+
+  .workflow-inspector-card {
+    grid-column: auto;
   }
 
   .advanced-market-filters {
