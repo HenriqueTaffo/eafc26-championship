@@ -349,6 +349,13 @@ App.api = {
 
   async loadMarketPlayers(query = "", showContracted = false, limit = 12) {
     const normalizedQuery = App.utils.normalizeText(query || "");
+    if (normalizedQuery.length < 2) {
+      return Array.isArray(App.state.apiMarketPlayers)
+        ? App.api.applyMarketPlayerOverrides(App.state.apiMarketPlayers, {
+            showContracted: Boolean(showContracted),
+          }).slice(0, Math.max(1, Number(limit || 12)))
+        : [];
+    }
     const normalizedLimit = Number(limit || 12);
     const cachePayload = {
       p_query: normalizedQuery,
@@ -433,8 +440,17 @@ App.api = {
       "id,name,club,league,country,position,age,market_value_eur,transfermarkt_url,source,last_synced_at";
     const normalizedLimit = Math.max(1, Math.min(Number(limit || 12), 200));
     const queryText = String(query || "").trim();
+    const normalizedQuery = App.utils.normalizeText(queryText);
+    if (normalizedQuery.length < 2) return [];
     const filters = queryText
-      ? `&or=(name.ilike.*${encodeURIComponent(queryText)}*,club.ilike.*${encodeURIComponent(queryText)}*,position.ilike.*${encodeURIComponent(queryText)}*)`
+      ? `&or=(${[
+          `name.ilike.*${queryText}*`,
+          `normalized_name.ilike.*${normalizedQuery || queryText}*`,
+          `club.ilike.*${queryText}*`,
+          `position.ilike.*${queryText}*`,
+        ]
+          .map((item) => encodeURIComponent(item))
+          .join(",")})`
       : "";
 
     const request = async (select) =>
@@ -567,13 +583,36 @@ App.api = {
   },
 
   getRatingSourcePriority(item = {}) {
-    const source = App.utils.normalizeText(
+    const sourceName = App.utils.normalizeText(
       item.source_name || item.source || "",
     );
-    if (source.includes("futbin")) return 50;
-    if (source.includes("ea sports") || source.includes("official")) return 40;
-    if (source.includes("sofifa")) return 30;
-    if (source.includes("fifa ratings")) return 20;
+    const sourceUrl = App.utils.normalizeText(item.source_url || "");
+
+    if (sourceUrl.includes("ea.com")) return 60;
+    if (sourceName.includes("futbin") || sourceUrl.includes("futbin.com")) {
+      return 50;
+    }
+    if (
+      sourceName.includes("official") &&
+      sourceUrl.includes("sofifa.com")
+    ) {
+      return 45;
+    }
+    if (
+      (sourceName.includes("ea sports") || sourceName.includes("official")) &&
+      !sourceUrl.includes("fifaratings.com")
+    ) {
+      return 40;
+    }
+    if (sourceName.includes("sofifa") || sourceUrl.includes("sofifa.com")) {
+      return 35;
+    }
+    if (
+      sourceName.includes("fifa ratings") ||
+      sourceUrl.includes("fifaratings.com")
+    ) {
+      return 20;
+    }
     return 10;
   },
 

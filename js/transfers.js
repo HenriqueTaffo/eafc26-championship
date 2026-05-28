@@ -923,26 +923,70 @@ App.transfers = {
     return App.transfers.applyManualRatingFallback(selected, player?.name);
   },
 
+  getRatingSourceMeta(item = {}) {
+    const sourceName = App.utils.normalizeText(item.source_name || "");
+    const sourceUrl = App.utils.normalizeText(item.source_url || "");
+
+    if (sourceUrl.includes("ea.com")) {
+      return {
+        priority: 60,
+        label: "EA FC oficial",
+      };
+    }
+    if (sourceName.includes("futbin") || sourceUrl.includes("futbin.com")) {
+      return {
+        priority: 50,
+        label: "FUTBIN",
+      };
+    }
+    if (
+      sourceName.includes("official") &&
+      sourceUrl.includes("sofifa.com")
+    ) {
+      return {
+        priority: 45,
+        label: "EA FC + SoFIFA",
+      };
+    }
+    if (
+      (sourceName.includes("ea sports") || sourceName.includes("official")) &&
+      !sourceUrl.includes("fifaratings.com")
+    ) {
+      return {
+        priority: 40,
+        label: "EA FC",
+      };
+    }
+    if (sourceName.includes("sofifa") || sourceUrl.includes("sofifa.com")) {
+      return {
+        priority: 35,
+        label: "SoFIFA",
+      };
+    }
+    if (
+      sourceName.includes("fifa ratings") ||
+      sourceUrl.includes("fifaratings.com")
+    ) {
+      return {
+        priority: 20,
+        label: "FIFA Ratings",
+      };
+    }
+    return {
+      priority: 10,
+      label: item.source_name || "Rating",
+    };
+  },
+
   getRatingSourcePriority(item = {}) {
     if (App.api?.getRatingSourcePriority) {
       return App.api.getRatingSourcePriority(item);
     }
-    const source = App.utils.normalizeText(item.source_name || "");
-    if (source.includes("futbin")) return 50;
-    if (source.includes("ea sports") || source.includes("official")) return 40;
-    if (source.includes("sofifa")) return 30;
-    if (source.includes("fifa ratings")) return 20;
-    return 10;
+    return App.transfers.getRatingSourceMeta(item).priority;
   },
 
   getRatingSourceLabel(item = {}) {
-    const source = App.utils.normalizeText(item.source_name || "");
-    if (source.includes("futbin")) return "FUTBIN";
-    if (source.includes("ea sports") || source.includes("official"))
-      return "EA FC";
-    if (source.includes("sofifa")) return "SoFIFA";
-    if (source.includes("fifa ratings")) return "FIFA Ratings";
-    return item.source_name || "Rating";
+    return App.transfers.getRatingSourceMeta(item).label;
   },
 
   sortRatingCandidates(candidates = [], nameKey = "", clubKey = "") {
@@ -2080,7 +2124,7 @@ App.transfers = {
       };
     }
 
-    if (options.allowEstimate === false) {
+    if (options.allowEstimate !== true) {
       return {
         ok: false,
         overall: 0,
@@ -3747,6 +3791,126 @@ App.transfers = {
     ].slice(0, 4);
   },
 
+  sortMarketSearchAliases(query = "") {
+    const scoreAlias = (value = "") => {
+      const key = App.transfers.normalizePlayerRatingKey(value);
+      const tokens = key.split(" ").filter(Boolean);
+      return tokens.length * 100 + key.length;
+    };
+
+    return [...App.transfers.getMarketSearchAliases(query)].sort(
+      (left, right) =>
+        scoreAlias(right) - scoreAlias(left) ||
+        String(right || "").localeCompare(String(left || "")),
+    );
+  },
+
+  getMarketPlayerSourcePriority(item = {}) {
+    const source = App.utils.normalizeText(
+      item.source || item.syntheticSource || "",
+    );
+    const marketValue = Number(item.market_value_eur || item.marketValue || 0);
+    const hasTransfermarktUrl = Boolean(String(item.transfermarkt_url || "").trim());
+
+    if (item.isRatingOnly || source.includes("ea_rating")) return 5;
+    if (source.includes("transfermarkt_profile_sync")) return 100;
+    if (source.includes("dcaribou_transfermarkt_datasets")) {
+      return marketValue > 0 ? 70 : 40;
+    }
+    if (hasTransfermarktUrl && marketValue > 0) return 65;
+    if (source.includes("transferencias_existentes")) return 20;
+    if (marketValue > 0) return 50;
+    return 10;
+  },
+
+  hasReliableMarketCoverage(query = "", players = []) {
+    const aliasKeys = App.transfers
+      .sortMarketSearchAliases(query)
+      .map(App.transfers.normalizePlayerRatingKey);
+
+    return (players || []).some((player) => {
+      if (player.isRatingOnly) return false;
+      if (App.transfers.getMarketPlayerSourcePriority(player) < 65) return false;
+      const playerKey = App.transfers.normalizePlayerRatingKey(player.name || "");
+      if (!playerKey) return false;
+      return aliasKeys.some(
+        (aliasKey) =>
+          aliasKey &&
+          App.transfers.isTrustedPlayerNameMatch(aliasKey, playerKey),
+      );
+    });
+  },
+
+  alignMarketPlayerCurrentClub(item = {}) {
+    if (!item || item.isRatingOnly) return item;
+    if (App.transfers.getMarketPlayerSourcePriority(item) >= 90) return item;
+
+    const rating = App.transfers.findEaRatingForMarketPlayer(item);
+    const publicRef = App.transfers.findPublicSalaryReference(
+      item.name || item.player || "",
+      item.club || item.fromClub || "",
+    );
+    const ratingClub = String(rating?.club || "").trim();
+    const salaryClub = String(
+      publicRef?.clubName || publicRef?.club_name || "",
+    ).trim();
+    const ratingClubKey = App.utils.normalizeText(ratingClub);
+    const salaryClubKey = App.utils.normalizeText(salaryClub);
+    const preferredClub =
+      ratingClubKey && ratingClubKey === salaryClubKey
+        ? ratingClub
+        : ratingClub || salaryClub;
+
+    if (!preferredClub) return item;
+    if (
+      App.utils.normalizeText(item.club || "") ===
+      App.utils.normalizeText(preferredClub)
+    ) {
+      return item;
+    }
+
+    return {
+      ...item,
+      club: preferredClub,
+    };
+  },
+
+  consolidateMarketSearchPlayers(query = "", players = []) {
+    const groups = new Map();
+
+    [...(players || [])].forEach((player) => {
+      const key = App.transfers.normalizePlayerRatingKey(player.name || "");
+      if (!key) return;
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key).push(player);
+    });
+
+    const preferred = [];
+    groups.forEach((group) => {
+      const realRows = group.filter((item) => !item.isRatingOnly);
+      if (!realRows.length) {
+        preferred.push(...group);
+        return;
+      }
+
+      const bestReal =
+        [...realRows].sort(
+          (left, right) =>
+            App.transfers.getMarketPlayerSourcePriority(right) -
+              App.transfers.getMarketPlayerSourcePriority(left) ||
+            Number(right.market_value_eur || right.marketValue || 0) -
+              Number(left.market_value_eur || left.marketValue || 0) ||
+            String(right.transfermarkt_url || "").length -
+              String(left.transfermarkt_url || "").length ||
+            String(left.club || "").localeCompare(String(right.club || "")),
+        )[0] || realRows[0];
+
+      preferred.push(App.transfers.alignMarketPlayerCurrentClub(bestReal));
+    });
+
+    return App.transfers.rankMarketSearchPlayers(query, preferred);
+  },
+
   getMarketSearchRelevance(query = "", player = {}) {
     const normalizedQuery = App.transfers.normalizePlayerRatingKey(query);
     if (!normalizedQuery) return 0;
@@ -3898,39 +4062,47 @@ App.transfers = {
 
     App.transfers.marketSearchPending = App.transfers.marketSearchPending || {};
     const request = (async () => {
-      const aliases = App.transfers.getMarketSearchAliases(query);
+      const aliases = App.transfers.sortMarketSearchAliases(query);
       const loadSyntheticRatings = async () => {
         const ratingGroups = await Promise.all(
           aliases.map((alias) =>
             App.transfers.searchEaRatingsCached(alias, 6).catch(() => []),
           ),
         );
+        const ratingRows = ratingGroups.flat();
+        if (ratingRows.length && App.api?.mergeEaRatings) {
+          App.api.mergeEaRatings(ratingRows);
+        }
         return App.transfers.buildSyntheticMarketPlayersFromRatings(
           query,
-          ratingGroups.flat(),
+          ratingRows,
           8,
         );
       };
       try {
-        const playerGroups = await Promise.all(
-          aliases.map((alias) =>
-            App.api.loadMarketPlayers(alias, showContracted, 18).catch(() => []),
-          ),
-        );
-        const fallbackGroups = await Promise.all(
-          aliases.map((alias) =>
-            App.api.searchRegionalFallbackPlayers(alias, 18, {
+        const playerRows = [];
+        for (const alias of aliases) {
+          const rows = await App.api
+            .loadMarketPlayers(alias, showContracted, 18)
+            .catch(() => []);
+          if (rows.length) playerRows.push(...rows);
+          if (App.transfers.hasReliableMarketCoverage(query, playerRows)) break;
+        }
+        const fallbackRows = App.transfers.hasReliableMarketCoverage(
+          query,
+          playerRows,
+        )
+          ? []
+          : await App.api.searchRegionalFallbackPlayers(query, 18, {
               showContracted,
-            }).catch(() => []),
-          ),
-        );
+            }).catch(() => []);
         const merged = App.api.mergeMarketSearchRows(
-          playerGroups.flat(),
-          fallbackGroups.flat(),
+          playerRows,
+          fallbackRows,
           24,
         );
         const syntheticRatings = await loadSyntheticRatings();
-        const ranked = App.transfers.rankMarketSearchPlayers(
+        const ranked = App.transfers.consolidateMarketSearchPlayers(
           query,
           App.api.mergeMarketSearchRows(merged, syntheticRatings, 24),
         );
@@ -3945,25 +4117,26 @@ App.transfers = {
         );
       }
 
-      const groups = await Promise.all(
-        aliases.map((alias) =>
-          App.api.fetchMarketPlayersDirect(alias, 14).catch(() => []),
-        ),
-      );
-      const fallback = await Promise.all(
-        aliases.map((alias) =>
-          App.api.searchRegionalFallbackPlayers(alias, 18, {
+      const groups = [];
+      for (const alias of aliases) {
+        const rows = await App.api.fetchMarketPlayersDirect(alias, 14).catch(
+          () => [],
+        );
+        if (rows.length) groups.push(...rows);
+        if (App.transfers.hasReliableMarketCoverage(query, groups)) break;
+      }
+      const fallback = App.transfers.hasReliableMarketCoverage(query, groups)
+        ? []
+        : await App.api.searchRegionalFallbackPlayers(query, 18, {
             showContracted,
-          }).catch(() => []),
-        ),
-      );
+          }).catch(() => []);
       const merged = App.api.mergeMarketSearchRows(
-        App.api.applyMarketPlayerOverrides(groups.flat(), { showContracted }),
-        fallback.flat(),
+        App.api.applyMarketPlayerOverrides(groups, { showContracted }),
+        fallback,
         24,
       );
       const syntheticRatings = await loadSyntheticRatings();
-      const ranked = App.transfers.rankMarketSearchPlayers(
+      const ranked = App.transfers.consolidateMarketSearchPlayers(
         query,
         App.api.mergeMarketSearchRows(merged, syntheticRatings, 24),
       );
@@ -4012,13 +4185,16 @@ App.transfers = {
     return request;
   },
 
-  selectMarketPlayer(playerId) {
+  selectMarketPlayer(playerOrId) {
     const form = document.getElementById("transferForm");
     if (!form) return;
 
-    const player = App.transfers
-      .getMarketPlayers()
-      .find((item) => String(item.id) === String(playerId));
+    const player =
+      playerOrId && typeof playerOrId === "object"
+        ? playerOrId
+        : App.transfers
+            .getMarketPlayers()
+            .find((item) => String(item.id) === String(playerOrId));
     if (!player || App.transfers.isMarketPlayerContracted(player)) return;
 
     if (form.elements.player) form.elements.player.value = player.name || "";
@@ -4305,9 +4481,15 @@ App.transfers = {
           .join(""),
       );
 
+      const playerById = new Map(
+        players.map((player) => [String(player.id), player]),
+      );
       target.querySelectorAll("[data-market-player]").forEach((button) => {
         button.addEventListener("click", () =>
-          App.transfers.selectMarketPlayer(button.dataset.marketPlayer),
+          App.transfers.selectMarketPlayer(
+            playerById.get(String(button.dataset.marketPlayer)) ||
+              button.dataset.marketPlayer,
+          ),
         );
       });
       target.dataset.marketRenderReady = "true";

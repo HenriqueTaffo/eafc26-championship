@@ -21,7 +21,9 @@ const DEFAULT_JSON_PATH = path.join(
   ".temp",
   "capology-salary-sync.json",
 );
-const FETCH_CONCURRENCY = 12;
+const DEFAULT_FETCH_CONCURRENCY = 4;
+const DEFAULT_RETRY_COUNT = 3;
+const DEFAULT_RETRY_DELAY_MS = 1500;
 const DEFAULT_USER_AGENT =
   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36";
 const SUPABASE_CLI_COMMAND =
@@ -34,8 +36,12 @@ function parseArgs(argv = process.argv.slice(2)) {
     allClubs: false,
     applyRest: false,
     clubFilters: [],
+    concurrency: DEFAULT_FETCH_CONCURRENCY,
     dryRun: false,
     limit: 0,
+    offset: 0,
+    retryCount: DEFAULT_RETRY_COUNT,
+    retryDelayMs: DEFAULT_RETRY_DELAY_MS,
     sqlOut: DEFAULT_SQL_PATH,
     jsonOut: DEFAULT_JSON_PATH,
   };
@@ -63,6 +69,28 @@ function parseArgs(argv = process.argv.slice(2)) {
     }
     if (arg.startsWith("--limit=")) {
       options.limit = Number(arg.split("=", 2)[1] || 0) || 0;
+      return;
+    }
+    if (arg.startsWith("--offset=")) {
+      options.offset = Number(arg.split("=", 2)[1] || 0) || 0;
+      return;
+    }
+    if (arg.startsWith("--concurrency=")) {
+      options.concurrency =
+        Number(arg.split("=", 2)[1] || DEFAULT_FETCH_CONCURRENCY) ||
+        DEFAULT_FETCH_CONCURRENCY;
+      return;
+    }
+    if (arg.startsWith("--retry-count=")) {
+      options.retryCount =
+        Number(arg.split("=", 2)[1] || DEFAULT_RETRY_COUNT) ||
+        DEFAULT_RETRY_COUNT;
+      return;
+    }
+    if (arg.startsWith("--retry-delay-ms=")) {
+      options.retryDelayMs =
+        Number(arg.split("=", 2)[1] || DEFAULT_RETRY_DELAY_MS) ||
+        DEFAULT_RETRY_DELAY_MS;
       return;
     }
     if (arg.startsWith("--sql-out=")) {
@@ -104,6 +132,10 @@ function escapeSqlString(value = "") {
   return String(value || "").replace(/'/g, "''");
 }
 
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 function getConfigValue(source, key) {
   const match = String(source || "").match(new RegExp(`${key}:\\s*"([^"]+)"`));
   return match ? match[1] : "";
@@ -121,10 +153,36 @@ async function fetchText(url) {
   });
 
   if (!response.ok) {
-    throw new Error(`Capology respondeu ${response.status} para ${url}`);
+    const error = new Error(`Capology respondeu ${response.status} para ${url}`);
+    error.status = response.status;
+    throw error;
   }
 
   return response.text();
+}
+
+async function fetchTextWithRetry(url, options = {}) {
+  let attempt = 0;
+  let lastError = null;
+
+  while (attempt <= Number(options.retryCount || 0)) {
+    try {
+      return await fetchText(url);
+    } catch (error) {
+      lastError = error;
+      const isRetryable = [403, 408, 429, 500, 502, 503, 504].includes(
+        Number(error?.status || 0),
+      );
+      if (!isRetryable || attempt >= Number(options.retryCount || 0)) break;
+      const waitMs =
+        Number(options.retryDelayMs || DEFAULT_RETRY_DELAY_MS) *
+        Math.max(1, attempt + 1);
+      await sleep(waitMs);
+      attempt += 1;
+    }
+  }
+
+  throw lastError;
 }
 
 async function fetchClubDirectory() {
@@ -250,8 +308,8 @@ function mapSalaryRow(club, row = {}) {
   };
 }
 
-async function fetchClubSalaryReferences(club) {
-  const html = await fetchText(club.salaryPageUrl);
+async function fetchClubSalaryReferences(club, options = {}) {
+  const html = await fetchTextWithRetry(club.salaryPageUrl, options);
   const rows = extractDataArrayFromHtml(html, club);
   const refs = rows
     .map((row) => mapSalaryRow(club, row))
@@ -813,13 +871,24 @@ async function main() {
   const options = parseArgs();
   const clubDirectory = await fetchClubDirectory();
   const filters = options.clubFilters.map(normalizeKey).filter(Boolean);
+  const availableClubKeys = new Set(clubDirectory.map((club) => normalizeKey(club.label)));
+  const exactFilters = new Set(
+    filters.filter((filter) => availableClubKeys.has(filter)),
+  );
   const targetClubs = clubDirectory
     .filter((club) => {
       if (options.allClubs) return true;
       const key = normalizeKey(club.label);
-      return filters.some((filter) => key.includes(filter));
+      return filters.some((filter) =>
+        exactFilters.has(filter) ? key === filter : key.includes(filter),
+      );
     })
-    .slice(0, options.limit > 0 ? options.limit : undefined);
+    .slice(
+      Math.max(0, Number(options.offset || 0)),
+      options.limit > 0
+        ? Math.max(0, Number(options.offset || 0)) + Number(options.limit)
+        : undefined,
+    );
 
   if (!targetClubs.length) {
     throw new Error("Nenhum clube encontrado para sincronizar.");
@@ -827,10 +896,10 @@ async function main() {
 
   const results = await mapWithConcurrency(
     targetClubs,
-    FETCH_CONCURRENCY,
+    Math.max(1, Number(options.concurrency || DEFAULT_FETCH_CONCURRENCY)),
     async (club) => {
       try {
-        const result = await fetchClubSalaryReferences(club);
+        const result = await fetchClubSalaryReferences(club, options);
         console.error(
           `[capology] ${club.label}: ${result.refs.length} referencias`,
         );
@@ -852,6 +921,13 @@ async function main() {
     ok: true,
     fetchedClubs: targetClubs.length,
     failedClubs: failed.length,
+    concurrency: Math.max(
+      1,
+      Number(options.concurrency || DEFAULT_FETCH_CONCURRENCY),
+    ),
+    limit: Number(options.limit || 0),
+    offset: Number(options.offset || 0),
+    nextOffset: Number(options.offset || 0) + targetClubs.length,
     references: refs.length,
     sample: refs.slice(0, 10),
     failed: failed.slice(0, 20).map((entry) => ({

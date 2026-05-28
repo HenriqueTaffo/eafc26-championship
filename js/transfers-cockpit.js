@@ -3254,9 +3254,15 @@ Object.assign(App.transfers, {
           .join(""),
       );
 
+      const playerById = new Map(
+        players.map((player) => [String(player.id), player]),
+      );
       target.querySelectorAll("[data-market-player-select]").forEach((button) => {
         button.addEventListener("click", () =>
-          App.transfers.selectMarketPlayer(button.dataset.marketPlayerSelect),
+          App.transfers.selectMarketPlayer(
+            playerById.get(String(button.dataset.marketPlayerSelect)) ||
+              button.dataset.marketPlayerSelect,
+          ),
         );
       });
       target.dataset.marketRenderReady = "true";
@@ -3319,10 +3325,13 @@ Object.assign(App.transfers, {
     }
   },
 
-  selectMarketPlayer(playerId) {
-    const player = App.transfers
-      .getMarketPlayers()
-      .find((item) => String(item.id) === String(playerId));
+  selectMarketPlayer(playerOrId) {
+    const player =
+      playerOrId && typeof playerOrId === "object"
+        ? playerOrId
+        : App.transfers
+            .getMarketPlayers()
+            .find((item) => String(item.id) === String(playerOrId));
     if (!player || App.transfers.isMarketPlayerContracted(player)) return;
     App.transfers.loadCandidateIntoForm(
       App.transfers.buildCandidateFromMarketPlayer(player),
