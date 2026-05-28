@@ -1,0 +1,522 @@
+.command-palette-trigger {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  z-index: 70;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 36px;
+  border: 1px solid rgba(45, 212, 191, 0.26);
+  border-radius: 8px;
+  padding: 0 10px;
+  background: rgba(8, 12, 14, 0.92);
+  color: #eef4f2;
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.28);
+  font: 800 0.76rem/1 var(--app-ui-font-family, system-ui);
+}
+
+.command-palette-trigger kbd {
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 6px;
+  padding: 3px 5px;
+  background: rgba(255, 255, 255, 0.06);
+  color: #91a0a7;
+  font-size: 0.66rem;
+}
+
+.league-command-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  background: rgba(0, 0, 0, 0.52);
+  backdrop-filter: blur(6px);
+}
+
+.league-command-dialog {
+  position: fixed;
+  top: 10vh;
+  left: 50%;
+  z-index: 91;
+  width: min(720px, calc(100vw - 24px));
+  overflow: hidden;
+  border: 1px solid rgba(183, 197, 205, 0.16);
+  border-radius: 8px;
+  background: rgba(8, 12, 14, 0.98);
+  color: #eef4f2;
+  box-shadow: 0 28px 90px rgba(0, 0, 0, 0.52);
+  transform: translateX(-50%);
+}
+
+.league-command-dialog [cmdk-input] {
+  width: 100%;
+  min-height: 52px;
+  border: 0;
+  border-bottom: 1px solid rgba(183, 197, 205, 0.14);
+  padding: 0 16px;
+  background: transparent;
+  color: #eef4f2;
+  font: 700 0.95rem/1 var(--app-ui-font-family, system-ui);
+  outline: 0;
+}
+
+.league-command-dialog [cmdk-list] {
+  max-height: min(560px, 68vh);
+  overflow: auto;
+  padding: 8px;
+}
+
+.league-command-dialog [cmdk-group-heading] {
+  padding: 9px 10px 6px;
+  color: #2dd4bf;
+  font-size: 0.64rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.league-command-dialog [cmdk-item] {
+  display: grid;
+  grid-template-columns: 86px minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+  min-height: 54px;
+  border-radius: 8px;
+  padding: 9px 10px;
+  color: #eef4f2;
+  cursor: pointer;
+}
+
+.league-command-dialog [cmdk-item][data-selected="true"] {
+  background: rgba(45, 212, 191, 0.12);
+}
+
+.league-command-dialog [cmdk-item] > span {
+  color: #91a0a7;
+  font-size: 0.68rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.league-command-dialog [cmdk-item] strong,
+.league-command-dialog [cmdk-item] small {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.league-command-dialog [cmdk-item] small {
+  margin-top: 3px;
+  color: #91a0a7;
+  font-size: 0.72rem;
+}
+
+.league-command-dialog [cmdk-empty] {
+  padding: 28px 12px;
+  color: #91a0a7;
+  text-align: center;
+}
+
+.advanced-transfer-tools {
+  display: grid;
+  grid-template-columns: minmax(280px, 0.42fr) minmax(0, 1fr);
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.advanced-transfer-title {
+  grid-column: 1 / -1;
+  border: 1px solid var(--workspace-line, rgba(183, 197, 205, 0.13));
+  border-radius: 8px;
+  padding: 12px;
+  background: rgba(12, 15, 17, 0.78);
+}
+
+.advanced-transfer-title h2,
+.advanced-transfer-title p,
+.advanced-tool-head h2 {
+  margin: 0;
+}
+
+.advanced-transfer-title p {
+  max-width: 84ch;
+  margin-top: 4px;
+  color: var(--workspace-muted, #91a0a7);
+  font-size: 0.86rem;
+}
+
+.advanced-tool-card {
+  min-width: 0;
+  border: 1px solid var(--workspace-line, rgba(183, 197, 205, 0.13));
+  border-radius: 8px;
+  padding: 12px;
+  background: var(--workspace-panel, rgba(12, 15, 17, 0.86));
+  box-shadow: none;
+}
+
+.advanced-market-table-card,
+.transfer-kanban-card {
+  grid-column: 2;
+}
+
+.transfer-assistant-card {
+  grid-row: span 2;
+}
+
+.advanced-tool-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.advanced-tool-head small {
+  color: var(--workspace-muted, #91a0a7);
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.advanced-form-grid,
+.advanced-market-filters {
+  display: grid;
+  gap: 8px;
+}
+
+.advanced-form-grid {
+  grid-template-columns: 1fr;
+}
+
+.advanced-market-filters {
+  grid-template-columns:
+    minmax(220px, 1.4fr) minmax(120px, 0.7fr) minmax(150px, 0.8fr)
+    minmax(86px, 0.45fr) minmax(112px, 0.55fr) auto;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.advanced-form-grid label,
+.advanced-market-filters label {
+  display: grid;
+  gap: 5px;
+  color: var(--workspace-muted, #91a0a7);
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.advanced-form-grid input,
+.advanced-form-grid select,
+.advanced-market-filters input,
+.advanced-market-filters select {
+  min-width: 0;
+  min-height: 36px;
+  border: 1px solid var(--workspace-line, rgba(183, 197, 205, 0.13));
+  border-radius: 8px;
+  padding: 0 9px;
+  background: rgba(3, 6, 8, 0.54);
+  color: var(--workspace-text, #eef4f2);
+}
+
+.advanced-check {
+  display: flex !important;
+  grid-auto-flow: column;
+  align-items: center;
+  gap: 6px !important;
+  min-height: 36px;
+}
+
+.advanced-check input {
+  min-height: 16px;
+  width: 16px;
+}
+
+.assistant-errors {
+  min-height: 18px;
+  margin: 7px 0;
+  color: #fca5a5;
+  font-size: 0.72rem;
+}
+
+.advanced-market-table {
+  overflow: hidden;
+  border: 1px solid var(--workspace-line, rgba(183, 197, 205, 0.13));
+  border-radius: 8px;
+}
+
+.advanced-market-header,
+.advanced-market-row {
+  display: grid;
+  grid-template-columns:
+    minmax(180px, 1.4fr) minmax(54px, 0.32fr) minmax(58px, 0.3fr)
+    minmax(94px, 0.55fr) minmax(98px, 0.56fr) minmax(140px, 0.8fr)
+    minmax(170px, 0.88fr);
+  gap: 8px;
+  align-items: center;
+}
+
+.advanced-market-header {
+  border-bottom: 1px solid var(--workspace-line, rgba(183, 197, 205, 0.13));
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.advanced-market-header button {
+  min-height: 34px;
+  border: 0;
+  padding: 0 8px;
+  background: transparent;
+  color: var(--workspace-muted, #91a0a7);
+  font-size: 0.68rem;
+  font-weight: 900;
+  text-align: left;
+}
+
+.advanced-market-viewport {
+  position: relative;
+  height: 420px;
+  overflow: auto;
+}
+
+.advanced-market-spacer {
+  position: relative;
+}
+
+.advanced-market-row {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  border-bottom: 1px solid rgba(183, 197, 205, 0.08);
+  padding: 7px 8px;
+  background: rgba(4, 7, 9, 0.34);
+}
+
+.advanced-market-row.is-contracted {
+  opacity: 0.48;
+}
+
+.market-table-player {
+  display: grid;
+  min-width: 0;
+}
+
+.market-table-player strong,
+.market-table-player small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.market-table-player small {
+  color: var(--workspace-muted, #91a0a7);
+  font-size: 0.7rem;
+}
+
+.fit-pill {
+  display: inline-flex;
+  max-width: 100%;
+  border: 1px solid rgba(45, 212, 191, 0.24);
+  border-radius: 999px;
+  padding: 4px 7px;
+  color: #a7f3d0;
+  font-size: 0.66rem;
+  font-weight: 800;
+}
+
+.fit-pill.tone-hot {
+  border-color: rgba(248, 113, 113, 0.32);
+  color: #fecaca;
+}
+
+.fit-pill.tone-ready,
+.fit-pill.tone-live {
+  border-color: rgba(45, 212, 191, 0.35);
+  color: #99f6e4;
+}
+
+.market-table-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.market-table-actions button {
+  min-height: 28px;
+  padding: 0 8px;
+  font-size: 0.66rem;
+}
+
+.advanced-empty {
+  padding: 18px;
+  color: var(--workspace-muted, #91a0a7);
+  text-align: center;
+}
+
+.transfer-kanban-board {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(170px, 1fr));
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+}
+
+.kanban-column {
+  display: grid;
+  align-content: start;
+  gap: 8px;
+  min-height: 250px;
+  border: 1px solid var(--workspace-line, rgba(183, 197, 205, 0.13));
+  border-radius: 8px;
+  padding: 9px;
+  background: rgba(4, 7, 9, 0.36);
+}
+
+.kanban-column.is-over {
+  border-color: rgba(45, 212, 191, 0.48);
+  background: rgba(45, 212, 191, 0.08);
+}
+
+.kanban-column header {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  color: var(--workspace-text, #eef4f2);
+  font-weight: 900;
+}
+
+.kanban-column p {
+  min-height: 30px;
+  margin: 0;
+  color: var(--workspace-muted, #91a0a7);
+  font-size: 0.68rem;
+  line-height: 1.35;
+}
+
+.kanban-column > div {
+  display: grid;
+  gap: 7px;
+}
+
+.kanban-column em {
+  color: var(--workspace-muted, #91a0a7);
+  font-size: 0.7rem;
+  font-style: normal;
+}
+
+.kanban-target-card {
+  display: grid;
+  gap: 3px;
+  border: 1px solid rgba(183, 197, 205, 0.13);
+  border-radius: 8px;
+  padding: 8px;
+  background: rgba(12, 15, 17, 0.94);
+  box-shadow: none;
+  cursor: grab;
+}
+
+.kanban-target-card.is-dragging {
+  opacity: 0.42;
+}
+
+.kanban-target-card.is-overlay {
+  width: 210px;
+  box-shadow: 0 18px 42px rgba(0, 0, 0, 0.38);
+}
+
+.kanban-target-card small,
+.kanban-target-card span {
+  color: var(--workspace-muted, #91a0a7);
+  font-size: 0.68rem;
+}
+
+.automation-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 8px;
+}
+
+.automation-grid > div {
+  display: grid;
+  gap: 4px;
+  border: 1px solid var(--workspace-line, rgba(183, 197, 205, 0.13));
+  border-radius: 8px;
+  padding: 10px;
+  background: rgba(4, 7, 9, 0.42);
+}
+
+.automation-grid span,
+.automation-grid small {
+  color: var(--workspace-muted, #91a0a7);
+  font-size: 0.7rem;
+}
+
+.automation-grid strong {
+  font-size: 1.05rem;
+}
+
+.automation-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+@media (max-width: 1180px) {
+  .advanced-transfer-tools,
+  .advanced-market-table-card,
+  .transfer-kanban-card {
+    grid-template-columns: 1fr;
+    grid-column: auto;
+  }
+
+  .transfer-assistant-card {
+    grid-row: auto;
+  }
+
+  .advanced-market-filters {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .advanced-market-header,
+  .advanced-market-row {
+    grid-template-columns:
+      minmax(180px, 1.4fr) 52px 58px minmax(90px, 0.7fr)
+      minmax(130px, 0.8fr) minmax(160px, 0.9fr);
+  }
+
+  .advanced-market-header button:nth-child(5),
+  .advanced-market-row > div:nth-child(5) {
+    display: none;
+  }
+}
+
+@media (max-width: 680px) {
+  .command-palette-trigger {
+    right: 10px;
+    bottom: 10px;
+  }
+
+  .command-palette-trigger span {
+    display: none;
+  }
+
+  .league-command-dialog [cmdk-item] {
+    grid-template-columns: 64px minmax(0, 1fr);
+  }
+
+  .advanced-market-filters {
+    grid-template-columns: 1fr;
+  }
+
+  .advanced-market-table {
+    overflow-x: auto;
+  }
+
+  .advanced-market-header,
+  .advanced-market-row {
+    min-width: 760px;
+  }
+
+  .transfer-kanban-board {
+    grid-template-columns: repeat(5, 220px);
+  }
+}

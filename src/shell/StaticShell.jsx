@@ -91,6 +91,11 @@ const TransfersRuntime = lazy(() =>
     default: module.TransfersRuntime,
   })),
 );
+const AdvancedTransferTools = lazy(() =>
+  import("../views/AdvancedTransferTools.jsx").then((module) => ({
+    default: module.AdvancedTransferTools,
+  })),
+);
 
 const BRAND_ASSET_VERSION = "20260525-4linhas-brand-v1";
 const BRAND_NAME = "4 Linhas";
@@ -879,6 +884,13 @@ function TransfersView() {
           detail="Sincronizando negociações, scouting e diagnóstico financeiro."
         >
           <TransfersRuntime />
+        </DeferredViewSection>
+        <DeferredViewSection
+          viewId="transfersView"
+          title="Carregando mercado inteligente"
+          detail="Preparando filtros virtuais, kanban e assistente de proposta."
+        >
+          <AdvancedTransferTools />
         </DeferredViewSection>
         <section className="summary" id="transferSummary">
           <TransfersSummary />

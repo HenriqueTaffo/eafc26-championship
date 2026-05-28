@@ -1,3 +1,6 @@
+import { useEffect, useMemo, useState } from "react";
+import { formatInTimeZone } from "date-fns-tz";
+import { RRule } from "rrule";
 import {
   Area,
   AreaChart,
@@ -449,6 +452,85 @@ function ParityBoard({ profiles }) {
   );
 }
 
+function AutomationPanel() {
+  const [pwaReady, setPwaReady] = useState(false);
+  const timeZone = "America/Sao_Paulo";
+  const transferDeadline = App.config?.transferWindowOpenUntil
+    ? new Date(App.config.transferWindowOpenUntil)
+    : null;
+  const automationRows = useMemo(() => {
+    const now = new Date();
+    const payrollRule = new RRule({
+      freq: RRule.WEEKLY,
+      interval: 1,
+      count: 4,
+      dtstart: now,
+    });
+    return payrollRule.all().map((date, index) => ({
+      label: index === 0 ? "Proxima folha" : `Folha +${index}`,
+      value: formatInTimeZone(date, timeZone, "dd/MM HH:mm"),
+    }));
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    const check = async () => {
+      const ready = Boolean(
+        navigator.serviceWorker?.controller ||
+          (await navigator.serviceWorker?.getRegistration?.()),
+      );
+      if (!cancelled) setPwaReady(ready);
+    };
+    if ("serviceWorker" in navigator) check();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  return (
+    <article className="experience-card automation-panel experience-wide">
+      <div className="home-panel-header">
+        <div>
+          <span className="modal-kicker">Automacao e PWA</span>
+          <h2>Rotinas que a liga deve observar</h2>
+        </div>
+        <small>{pwaReady ? "PWA ativo" : "PWA preparando cache"}</small>
+      </div>
+      <div className="automation-grid">
+        <div>
+          <span>Realtime</span>
+          <strong>{App.state?.apiLoaded ? "Online" : "Aguardando dados"}</strong>
+          <small>Matches, mercado, eventos, propostas e notificacoes.</small>
+        </div>
+        <div>
+          <span>Janela</span>
+          <strong>
+            {transferDeadline
+              ? formatInTimeZone(transferDeadline, timeZone, "dd/MM HH:mm")
+              : "Sem prazo"}
+          </strong>
+          <small>Referencia unica para travas e alertas de mercado.</small>
+        </div>
+        {automationRows.slice(0, 2).map((row) => (
+          <div key={row.label}>
+            <span>{row.label}</span>
+            <strong>{row.value}</strong>
+            <small>Recorrencia semanal calculada com regra automatica.</small>
+          </div>
+        ))}
+      </div>
+      <div className="automation-actions">
+        <ViewButton className="secondary-button" target="calendarView">
+          Abrir agenda
+        </ViewButton>
+        <ViewButton className="primary-button" target="transfersView">
+          Abrir mercado
+        </ViewButton>
+      </div>
+    </article>
+  );
+}
+
 function ExperienceGrid() {
   useAppRuntime();
   let profiles = [];
@@ -481,6 +563,9 @@ function ExperienceGrid() {
       </SafePanel>
       <SafePanel title="Mapa de mercado">
         {() => <MarketMap profiles={profiles} />}
+      </SafePanel>
+      <SafePanel title="Automacao">
+        {() => <AutomationPanel />}
       </SafePanel>
       <SafePanel title="Sa?de competitiva">
         {() => <ParityBoard profiles={profiles} />}

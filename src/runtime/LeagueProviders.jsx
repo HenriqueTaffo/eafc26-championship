@@ -5,6 +5,7 @@ import * as Toast from "@radix-ui/react-toast";
 import clsx from "clsx";
 import App from "../../js/app.js";
 import { useLeagueUiStore } from "../state/useLeagueUiStore.js";
+import { LeagueCommandPalette } from "./LeagueCommandPalette.jsx";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -270,6 +271,7 @@ export function LeagueProviders({ children }) {
     <QueryClientProvider client={providerValue}>
       <LeagueRealtimeBridge />
       <ToastViewport />
+      <LeagueCommandPalette />
       {children}
     </QueryClientProvider>
   );
