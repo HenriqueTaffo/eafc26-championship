@@ -108,7 +108,12 @@ function buildMarketRow(player = {}, buyer = "") {
     club: player.club || candidate.club || "-",
     league: player.league || "",
     position: candidate.position || player.position || "-",
-    overall: Number(candidate.overall || player.overall || 0),
+    overall: Number(
+      candidate.overall ||
+        App.transfers?.getResolvedOverall?.(player) ||
+        player.overall ||
+        0,
+    ),
     marketValue: Number(candidate.marketValue || player.market_value_eur || 0),
     weeklySalary: Number(salaryReference.weeklySalary || candidate.weeklySalary || 0),
     contracted: Boolean(App.transfers?.isMarketPlayerContracted?.(player)),
@@ -164,7 +169,7 @@ function TransferProposalAssistant() {
     if (fields.player) fields.player.value = values.player;
     if (fields.fromClub) fields.fromClub.value = values.fromClub;
     if (fields.overall) fields.overall.value = values.overall;
-    if (fields.marketValue) fields.marketValue.value = values.marketValue;
+    if (fields.marketValue) fields.marketValue.value = values.marketValue || "";
     if (fields.offerValue && values.offerValue) {
       if (typeof App.transfers?.setTransferOfferInputValue === "function") {
         App.transfers.setTransferOfferInputValue(target, Number(values.offerValue));
@@ -411,7 +416,10 @@ function TransferMarketTable() {
       {
         accessorKey: "marketValue",
         header: "Valor",
-        cell: ({ row }) => formatMoney(row.original.marketValue),
+        cell: ({ row }) =>
+          row.original.marketValue
+            ? formatMoney(row.original.marketValue)
+            : "TM pendente",
       },
       {
         accessorKey: "weeklySalary",

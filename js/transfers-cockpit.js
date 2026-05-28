@@ -944,6 +944,34 @@ Object.assign(App.transfers, {
       App.transfers.getRatingForPlayerName(target.player, {
         club: target.club,
       }) || {};
+    const marketValue = Number(
+      target.value ||
+        marketPlayer.market_value_eur ||
+        App.transfers.getMarketPlayerValue(marketPlayer) ||
+        0,
+    );
+    const overall = App.transfers.getResolvedOverall({
+      ...marketPlayer,
+      ...rating,
+      player: target.player,
+      name: target.player,
+      fromClub: target.club || marketPlayer.club || rating.club || "",
+      club: target.club || marketPlayer.club || rating.club || "",
+      marketValue,
+    });
+    const salaryReference = App.transfers.getSalaryReferenceFromItem({
+      ...marketPlayer,
+      ...rating,
+      player: target.player,
+      name: target.player,
+      fromClub: target.club || marketPlayer.club || rating.club || "",
+      club: target.club || marketPlayer.club || rating.club || "",
+      overall,
+      marketValue,
+      weeklySalary: target.weeklySalary,
+      salarySourceName: target.salarySourceName,
+      salarySourceUrl: target.salarySourceUrl,
+    });
 
     return sanitizeCandidate({
       player: target.player,
@@ -951,40 +979,11 @@ Object.assign(App.transfers, {
       fromClub: target.club || marketPlayer.club || rating.club || "",
       position: rating.position || marketPlayer.position || "",
       league: marketPlayer.league || "",
-      overall: Number(rating.overall || marketPlayer.overall || 0),
-      marketValue: Number(
-        target.value ||
-          marketPlayer.market_value_eur ||
-          App.transfers.getMarketPlayerValue(marketPlayer) ||
-          0,
-      ),
-      weeklySalary: Number(
-        App.transfers.getVerifiedWeeklySalary({
-          ...marketPlayer,
-          ...rating,
-          player: target.player,
-          fromClub: target.club,
-          weeklySalary: target.weeklySalary,
-        }) || 0,
-      ),
-      salarySourceName:
-        target.salarySourceName ||
-        App.transfers.getSalaryReferenceFromItem({
-          ...marketPlayer,
-          ...rating,
-          player: target.player,
-          fromClub: target.club,
-        }).salarySourceName ||
-        "",
-      salarySourceUrl:
-        target.salarySourceUrl ||
-        App.transfers.getSalaryReferenceFromItem({
-          ...marketPlayer,
-          ...rating,
-          player: target.player,
-          fromClub: target.club,
-        }).salarySourceUrl ||
-        "",
+      overall,
+      marketValue,
+      weeklySalary: Number(salaryReference.weeklySalary || 0),
+      salarySourceName: salaryReference.salarySourceName || "",
+      salarySourceUrl: salaryReference.salarySourceUrl || "",
       age: Number(marketPlayer.age || 0),
       source: "shortlist",
       note: target.note || "",
@@ -994,9 +993,15 @@ Object.assign(App.transfers, {
   buildCandidateFromMarketPlayer(player = {}) {
     const rating = App.transfers.findEaRatingForMarketPlayer(player) || {};
     const marketValue = App.transfers.getMarketPlayerValue(player);
+    const overall = App.transfers.getResolvedOverall({
+      ...player,
+      ...rating,
+      marketValue,
+    });
     const salaryReference = App.transfers.getSalaryReferenceFromItem({
       ...player,
-      overall: Number(rating.overall || player.overall || 0),
+      ...rating,
+      overall,
       marketValue,
     });
 
@@ -1006,7 +1011,7 @@ Object.assign(App.transfers, {
       fromClub: player.club || "",
       position: rating.position || player.position || "",
       league: player.league || "",
-      overall: Number(rating.overall || player.overall || 0),
+      overall,
       marketValue,
       weeklySalary: Number(salaryReference.weeklySalary || 0),
       salarySourceName: salaryReference.salarySourceName || "",
@@ -1029,6 +1034,24 @@ Object.assign(App.transfers, {
       App.transfers.getRatingForPlayerName(playerName, {
         club: fromClub,
       }) || App.transfers.findEaRatingForMarketPlayer(marketPlayer) || {};
+    const selectedContext = App.transfers.getSelectedTransferContext(form) || {};
+    const marketValue = Number(
+      form.elements.marketValue?.value ||
+        App.transfers.getMarketPlayerValue(marketPlayer) ||
+        selectedContext.marketValue ||
+        0,
+    );
+    const overall = App.transfers.getResolvedOverall({
+      ...selectedContext,
+      ...marketPlayer,
+      ...rating,
+      player: playerName,
+      name: playerName,
+      fromClub: fromClub || marketPlayer.club || rating.club || "",
+      club: fromClub || marketPlayer.club || rating.club || "",
+      overall: Number(form.elements.overall?.value || 0),
+      marketValue,
+    });
 
     return sanitizeCandidate({
       player: playerName,
@@ -1038,12 +1061,8 @@ Object.assign(App.transfers, {
       seller: preview?.seller || form.elements.seller?.value || "",
       position: rating.position || marketPlayer.position || "",
       league: marketPlayer.league || "",
-      overall: Number(form.elements.overall?.value || rating.overall || 0),
-      marketValue: Number(
-        form.elements.marketValue?.value ||
-          App.transfers.getMarketPlayerValue(marketPlayer) ||
-          0,
-      ),
+      overall,
+      marketValue,
       offerValue: Number(
         form.elements.offerValue?.value || preview?.finalValue || 0,
       ),
@@ -1329,7 +1348,7 @@ Object.assign(App.transfers, {
         key: "salary",
         title: "Folha indefinida",
         detail:
-          "Nao foi possivel validar salario semanal publico ou regulatorio.",
+          "Nao encontrei salario semanal em fonte publica. Sincronize Capology ou SalarySport antes de enviar.",
       });
     }
 
@@ -1583,7 +1602,7 @@ Object.assign(App.transfers, {
       : [
           {
             label: "Referência",
-            value: App.utils.formatCurrency(preview.marketValue),
+            value: App.transfers.formatMarketValueDisplay(preview.marketValue),
           },
           {
             label: "Oferta enviada",
@@ -1601,7 +1620,9 @@ Object.assign(App.transfers, {
           },
           {
             label: "Pedido provável",
-            value: App.utils.formatCurrency(preview.sellerExpectationValue),
+            value: preview.marketValue
+              ? App.utils.formatCurrency(preview.sellerExpectationValue)
+              : "N/A",
             tone: externalVerdict?.tone || "",
             detail: externalVerdict?.label || "Em análise",
           },
@@ -1735,6 +1756,13 @@ Object.assign(App.transfers, {
     const squadData = App.state.apiSquadManagement || {};
     const roster = Array.isArray(squadData.rosters?.[buyer])
       ? squadData.rosters[buyer]
+          .map((item) =>
+            App.transfers.hydrateRosterPlayer?.(item, {
+              owner: buyer,
+              club: item.clubName || item.club || buyer,
+            }) || item,
+          )
+          .filter(Boolean)
       : [];
     const lineup = squadData.lineups?.[buyer]?.lineup || {};
     const finance = (Array.isArray(squadData.finance) ? squadData.finance : []).find(
@@ -1749,15 +1777,19 @@ Object.assign(App.transfers, {
 
     const fallbackRoster = App.transfers.getOwnedTransfersByBuyer(buyer).map(
       (item, index) => {
+        const hydrated = App.transfers.hydrateRosterPlayer?.(item, {
+          owner: buyer,
+          club: item.fromClub,
+        });
         const rating = App.transfers.getRatingForPlayerName(item.player, {
           club: item.fromClub,
         });
         return {
           id: index + 1,
           name: item.player,
-          position: rating?.position || "",
-          overall: Number(item.overall || rating?.overall || 0),
-          weeklySalary: Number(item.weeklySalary || 0),
+          position: hydrated?.position || rating?.position || "",
+          overall: Number(hydrated?.overall || item.overall || rating?.overall || 0),
+          weeklySalary: Number(hydrated?.weeklySalary || 0),
         };
       },
     );
@@ -2497,7 +2529,7 @@ Object.assign(App.transfers, {
                       <article class="scout-recommendation-item">
                         <div class="scout-recommendation-copy">
                           <strong>${App.utils.escapeHtml(item.candidate.player)}</strong>
-                          <small>${App.utils.escapeHtml(`${item.weight.positional || ""} · OVR ${item.candidate.overall || 0} · ${App.utils.formatCurrency(item.candidate.marketValue)}`)}</small>
+                          <small>${App.utils.escapeHtml(`${item.weight.positional || ""} · OVR ${item.candidate.overall || 0} · ${App.transfers.formatMarketValueDisplay(item.candidate.marketValue)}`)}</small>
                         </div>
                         <p>
                           <span>${renderWorkspacePill(formatScoutingNumber(score), score >= 85 ? "hot" : score >= 70 ? "ready" : score >= 55 ? "watch" : "cold")}</span>
@@ -3149,16 +3181,13 @@ Object.assign(App.transfers, {
     const renderRequest = (async () => {
       const players = await App.transfers.searchMarketPlayers(query);
       if (App.transfers.marketSearchRequestId !== requestId) return;
-
-      const ratingRows = await Promise.all(
-        players
-          .slice(0, 6)
-          .map((player) =>
-            App.transfers.searchEaRatingsCached(player.name || "", 2),
-          ),
-      );
-      if (App.transfers.marketSearchRequestId !== requestId) return;
-      App.api.mergeEaRatings?.(ratingRows.flat());
+      if (players.length && App.api?.loadRatingsForPlayerNames) {
+        await App.api.loadRatingsForPlayerNames(
+          players.map((player) => player.name || ""),
+          2,
+        );
+        if (App.transfers.marketSearchRequestId !== requestId) return;
+      }
 
       if (!players.length) {
         App.dom.setHtml(
@@ -3208,7 +3237,7 @@ Object.assign(App.transfers, {
                 </span>
                 <span class="market-player-side">
                   ${candidate.overall ? `<span class="market-player-overall">OVR ${candidate.overall}</span>` : ""}
-                  <span class="market-player-value">${App.utils.formatCurrency(candidate.marketValue)}</span>
+                  <span class="market-player-value">${App.utils.escapeHtml(App.transfers.formatMarketValueDisplay(candidate.marketValue))}</span>
                   ${salaryReference.ok ? `<span class="market-player-status">${App.utils.escapeHtml(App.transfers.getSalaryReferenceLabel(salaryReference))} ${App.utils.formatCurrency(salaryReference.weeklySalary)}/sem</span>` : `<span class="market-player-status">Folha pendente</span>`}
                   <span class="market-player-status">${App.utils.escapeHtml(fit.label)}</span>
                   ${shortlist ? `<span class="market-player-status">Shortlist: ${App.utils.escapeHtml(normalizeStage(shortlist.priority))}</span>` : ""}
@@ -3262,11 +3291,11 @@ Object.assign(App.transfers, {
     if (form.elements.fromClub) {
       form.elements.fromClub.value = clean.fromClub || clean.club || "";
     }
-    if (form.elements.overall && clean.overall) {
-      form.elements.overall.value = Number(clean.overall);
-    }
-    if (form.elements.marketValue && clean.marketValue) {
-      form.elements.marketValue.value = Math.round(Number(clean.marketValue));
+    App.transfers.applyOverallToForm(form, clean.overall);
+    if (form.elements.marketValue) {
+      form.elements.marketValue.value = clean.marketValue
+        ? Math.round(Number(clean.marketValue))
+        : "";
     }
     if (form.elements.offerValue && clean.source !== "internal") {
       App.transfers.setTransferOfferInputValue(
@@ -3274,15 +3303,9 @@ Object.assign(App.transfers, {
         Number(clean.offerValue || clean.finalValue || clean.marketValue || 0),
       );
     }
-    if (form.elements.weeklySalary && clean.weeklySalary) {
-      form.elements.weeklySalary.value = Math.round(Number(clean.weeklySalary));
-    }
-    if (form.elements.salarySourceName) {
-      form.elements.salarySourceName.value = clean.salarySourceName || "";
-    }
-    if (form.elements.salarySourceUrl) {
-      form.elements.salarySourceUrl.value = clean.salarySourceUrl || "";
-    }
+    App.transfers.clearSalaryReferenceFromForm(form);
+    App.transfers.applySalaryReferenceToForm(form, clean);
+    App.transfers.setSelectedTransferContext(form, clean);
 
     const search = document.getElementById("marketPlayerSearch");
     if (search) {

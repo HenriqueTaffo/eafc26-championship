@@ -1265,7 +1265,23 @@ App.players = {
         playerName,
         fromClub,
         position: item.position || marketPlayer?.position || "",
-        overall: Number(item.overall || marketPlayer?.overall || 0),
+        overall: App.transfers.getResolvedOverall({
+          ...item,
+          ...marketPlayer,
+          player: playerName,
+          name: playerName,
+          fromClub,
+          club: fromClub || marketPlayer?.club || "",
+          marketValue: Number(
+            item.baseValue ||
+              item.base_value ||
+              item.totalCost ||
+              item.marketValue ||
+              item.market_value_eur ||
+              marketPlayer?.market_value_eur ||
+              0,
+          ),
+        }),
         baseValue: Number(
           item.baseValue ||
             item.base_value ||
@@ -1409,14 +1425,13 @@ App.players = {
       return;
     }
 
-    const ratingRows = await Promise.all(
-      players
-        .slice(0, 8)
-        .map((player) =>
-          App.transfers.searchEaRatingsCached(player.name || "", 2),
-        ),
-    );
-    App.api.mergeEaRatings?.(ratingRows.flat());
+    if (App.api?.loadRatingsForPlayerNames) {
+      await App.api.loadRatingsForPlayerNames(
+        players.map((player) => player.name || ""),
+        2,
+        24,
+      );
+    }
 
     App.dom.setHtml(
       target,
@@ -1426,7 +1441,11 @@ App.players = {
           .map((player) => {
             const eaRating = App.transfers.findEaRatingForMarketPlayer(player);
             const marketValue = App.transfers.getMarketPlayerValue(player);
-            const overall = Number(eaRating?.overall || player.overall || 0);
+            const overall = App.transfers.getResolvedOverall({
+              ...player,
+              ...eaRating,
+              marketValue,
+            });
             return `
         <button class="market-player-option private-target-option" type="button" data-private-target-player="${App.utils.escapeHtml(player.id || player.name)}">
           ${App.transfers.renderPlayerPhoto(player, eaRating)}
@@ -1436,7 +1455,7 @@ App.players = {
           </span>
           <span class="market-player-side">
             ${overall ? `<span class="market-player-overall">OVR ${overall}</span>` : ""}
-            <span class="market-player-value">${App.utils.formatCurrency(marketValue)}</span>
+            <span class="market-player-value">${App.utils.escapeHtml(App.transfers.formatMarketValueDisplay(marketValue))}</span>
           </span>
         </button>
       `;

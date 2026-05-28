@@ -360,6 +360,43 @@ App.main = {
     view.classList.add("active");
     App.react?.notify?.();
     App.main.renderCurrentView();
+    App.main.preloadViewData(targetViewId);
+  },
+
+  preloadViewData(viewId) {
+    if (!App.state.apiLoaded) return;
+
+    const tasks = [];
+    if (["playersView", "transfersView", "squadView"].includes(viewId)) {
+      if (App.api?.loadMarketPlayers) tasks.push(App.api.loadMarketPlayers());
+      if (App.api?.loadSalaryReferences) tasks.push(App.api.loadSalaryReferences());
+    }
+    if (viewId === "playersView" && App.api?.loadMedicalCenterData) {
+      tasks.push(App.api.loadMedicalCenterData());
+    }
+    if (viewId === "squadView" && App.api?.loadSquadManagementData) {
+      tasks.push(App.api.loadSquadManagementData({ force: true }));
+    }
+    if (
+      ["transfersView", "experienceView"].includes(viewId) &&
+      App.api?.loadExperienceData
+    ) {
+      tasks.push(App.api.loadExperienceData());
+    }
+    if (
+      ["transfersView", "experienceView"].includes(viewId) &&
+      App.api?.loadManagerOnboarding
+    ) {
+      tasks.push(App.api.loadManagerOnboarding());
+    }
+
+    if (!tasks.length) return;
+
+    Promise.allSettled(tasks).then(() => {
+      if (!document.getElementById(viewId)?.classList.contains("active")) return;
+      App.react?.notify?.();
+      App.main.renderCurrentView();
+    });
   },
 
   getGlobalSearchItems() {

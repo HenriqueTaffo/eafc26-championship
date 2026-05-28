@@ -553,7 +553,9 @@ App.transfers = {
   },
 
   getPlayerSearchAliases(playerName) {
-    const normalized = App.utils.normalizeText(playerName);
+    const cleanName = App.transfers.sanitizePlayerSearchText(playerName);
+    const normalized = App.utils.normalizeText(cleanName);
+    const ratingKey = App.transfers.normalizePlayerRatingKey(cleanName);
     const aliases = {
       "vinicius junior": ["Vini Jr.", "Vinicius Jose de Oliveira Junior"],
       "vinicius jr": ["Vini Jr.", "Vinicius Jose de Oliveira Junior"],
@@ -567,6 +569,7 @@ App.transfers = {
       "heung-min son": ["Heung Min Son"],
       "heung min son": ["Heung-Min Son"],
       "david de gea": ["David De Gea Quintana"],
+      kante: ["N'Golo Kante", "N’Golo Kante", "Ngolo Kante"],
       "n'golo kante": ["N'Golo Kante", "N’Golo Kante", "Ngolo Kante"],
       "n golo kante": ["N'Golo Kante", "N’Golo Kante", "Ngolo Kante"],
       "ngolo kante": ["N'Golo Kante", "N’Golo Kante"],
@@ -593,12 +596,24 @@ App.transfers = {
       "nicolas pépé": ["Nicolas Pepe"],
     };
 
-    return [playerName, ...(aliases[normalized] || [])].filter(Boolean);
+    return [cleanName, ...(aliases[normalized] || aliases[ratingKey] || [])].filter(
+      Boolean,
+    );
+  },
+
+  sanitizePlayerSearchText(value = "") {
+    return String(value || "")
+      .replace(/&#8217;|&#x2019;|&#39;|&apos;/gi, "'")
+      .replace(/&amp;/gi, "&")
+      .replace(/&quot;/gi, '"')
+      .replace(/[’‘`´]/g, "'")
+      .replace(/\s+/g, " ")
+      .trim();
   },
 
   normalizePlayerRatingKey(value) {
     return App.utils
-      .normalizeText(value)
+      .normalizeText(App.transfers.sanitizePlayerSearchText(value))
       .replace(/[^a-z0-9]+/g, " ")
       .trim();
   },
@@ -629,7 +644,39 @@ App.transfers = {
     const key = App.transfers.normalizePlayerRatingKey(player?.name);
     const override = App.transfers.manualMarketValues[key];
     if (override !== undefined) return Number(override);
-    return Number(player?.market_value_eur || player?.marketValue || 0);
+    const directValue = Number(player?.market_value_eur || player?.marketValue || 0);
+    if (directValue > 0 && App.transfers.hasVerifiedTransfermarktValue(player)) {
+      return directValue;
+    }
+    return 0;
+  },
+
+  hasVerifiedTransfermarktValue(player = {}) {
+    const key = App.transfers.normalizePlayerRatingKey(player?.name);
+    if (App.transfers.manualMarketValues[key] !== undefined) return true;
+    const directValue = Number(player?.market_value_eur || player?.marketValue || 0);
+    if (directValue <= 0) return false;
+    const transfermarktUrl = String(
+      player?.transfermarkt_url || player?.transfermarktUrl || "",
+    ).trim();
+    const source = App.utils.normalizeText(
+      player?.source ||
+        player?.source_name ||
+        player?.sourceName ||
+        player?.marketValueSource ||
+        "",
+    );
+
+    return (
+      transfermarktUrl.includes("transfermarkt") ||
+      source.includes("transfermarkt")
+    );
+  },
+
+  formatMarketValueDisplay(value = 0, fallback = "TM pendente") {
+    return Number(value || 0) > 0
+      ? App.utils.formatCurrency(Number(value || 0))
+      : fallback;
   },
 
   getTransfermarktPlayerId(value) {
@@ -1528,9 +1575,20 @@ App.transfers = {
     return allTransfers.map((transfer, index) => {
       const isCpuSale = App.transfers.isCpuSaleTransfer(transfer);
       const baseValue = App.transfers.getMovementValue(transfer);
+      const resolvedOverall = App.transfers.getTransferOverall(transfer);
+      const salaryReference = App.transfers.getSalaryReferenceFromItem({
+        ...transfer,
+        overall: resolvedOverall,
+        marketValue:
+          transfer.marketValue ||
+          transfer.market_value_eur ||
+          transfer.ValorTransfermarkt ||
+          baseValue ||
+          0,
+      });
       const feeRate = isCpuSale
         ? 0
-        : App.transfers.getTransferRate(Number(transfer.overall));
+        : App.transfers.getTransferRate(resolvedOverall);
       const totalCost =
         transfer.cashValue ||
         Math.max(
@@ -1562,6 +1620,11 @@ App.transfers = {
       return {
         ...transfer,
         index,
+        overall: resolvedOverall,
+        weeklySalary: Number(salaryReference.weeklySalary || 0),
+        salarySourceName: salaryReference.salarySourceName || "",
+        salarySourceUrl: salaryReference.salarySourceUrl || "",
+        salaryReferenceType: salaryReference.referenceType || "",
         feeRate,
         totalCost,
         grossTotalCost,
@@ -1703,10 +1766,17 @@ App.transfers = {
   },
 
   getTransferOverall(item) {
-    const transferOverall = Number(item?.overall || 0);
-    if (transferOverall > 0) return transferOverall;
-    const rating = App.transfers.getRatingForPlayerName(item?.player);
-    return Number(rating?.overall || 0);
+    return App.transfers.getResolvedOverall({
+      ...item,
+      name: item?.player || item?.name || "",
+      club: item?.fromClub || item?.club || "",
+      marketValue:
+        item?.marketValue ||
+        item?.market_value_eur ||
+        item?.ValorTransfermarkt ||
+        item?.totalCost ||
+        0,
+    });
   },
 
   getImpactTransferSpotlights(limit = 3) {
@@ -1860,10 +1930,265 @@ App.transfers = {
       reference.salaryReferenceType ||
       reference.salary_reference_type ||
       "";
+    const sourceName = App.utils.normalizeText(
+      reference.salarySourceName || reference.sourceName || "",
+    );
+    const sourceUrl = App.transfers.normalizeSalaryUrl(
+      reference.salarySourceUrl || reference.sourceUrl || "",
+    );
     if (type === "regulatory_estimate") return "Estimativa regulatoria";
     if (type === "public_capology") return "Capology";
     if (type === "public_salarysport") return "SalarySport";
+    if (sourceUrl.includes("capology.com") || sourceName.includes("capology")) {
+      return "Capology";
+    }
+    if (
+      sourceUrl.includes("salarysport.com") ||
+      sourceName.includes("salarysport")
+    ) {
+      return "SalarySport";
+    }
     return "Fonte salarial";
+  },
+
+  isRegulatorySalaryReference(item = {}) {
+    const type = App.utils.normalizeText(
+      item.referenceType ||
+        item.salaryReferenceType ||
+        item.salary_reference_type ||
+        "",
+    );
+    const sourceName = App.utils.normalizeText(
+      item.salarySourceName || item.sourceName || item.FonteSalario || "",
+    );
+    const sourceUrl = App.transfers.normalizeSalaryUrl(
+      item.salarySourceUrl || item.sourceUrl || item.UrlFonteSalario || "",
+    );
+
+    return (
+      type === "regulatory_estimate" ||
+      sourceName.includes("estimativa regulatoria") ||
+      sourceUrl === App.transfers.getRegulatorySalaryModelUrl()
+    );
+  },
+
+  getRegulatoryOverallEstimate(item = {}) {
+    const playerName =
+      item.player || item.Jogador || item.name || item.playerName || "";
+    const marketValue = Math.max(
+      0,
+      Number(
+        item.marketValue ||
+          item.market_value_eur ||
+          item.ValorTransfermarkt ||
+          0,
+      ) || 0,
+    );
+    const age = Number(item.age || 0);
+    const league = App.transfers.normalizeSalaryLookup(item.league || "");
+
+    if (!String(playerName).trim() && marketValue <= 0) return null;
+
+    let overall =
+      marketValue >= 120000000
+        ? 90
+        : marketValue >= 80000000
+          ? 88
+          : marketValue >= 55000000
+            ? 86
+            : marketValue >= 35000000
+              ? 84
+              : marketValue >= 22000000
+                ? 82
+                : marketValue >= 14000000
+                  ? 80
+                  : marketValue >= 9000000
+                    ? 78
+                    : marketValue >= 6000000
+                      ? 76
+                      : marketValue >= 3500000
+                        ? 74
+                        : marketValue >= 2000000
+                          ? 72
+                          : marketValue >= 1000000
+                            ? 70
+                            : marketValue > 0
+                              ? 68
+                              : 0;
+
+    if (
+      [
+        "premier league",
+        "laliga",
+        "serie a",
+        "bundesliga",
+        "ligue 1",
+      ].includes(league)
+    ) {
+      overall += 1;
+    } else if (
+      [
+        "championship",
+        "super lig",
+        "eredivisie",
+        "liga portugal",
+        "scottish premiership",
+        "argentina primera division",
+        "campeonato brasileiro serie a",
+      ].includes(league)
+    ) {
+      overall -= 1;
+    }
+
+    if (age >= 18 && age <= 21 && marketValue >= 12000000) overall += 1;
+    if (age >= 33) overall -= 1;
+    if (age >= 35) overall -= 1;
+
+    overall = Math.max(62, Math.min(91, Math.round(overall)));
+    if (!overall) return null;
+
+    return {
+      ok: true,
+      overall,
+      sourceName: "Estimativa de OVR da liga",
+      referenceType: "regulatory_estimate",
+    };
+  },
+
+  getOverallReferenceFromItem(item = {}, options = {}) {
+    const directOverall = Number(item.overall ?? item.Overall ?? 0);
+    if (directOverall > 0) {
+      return {
+        ok: true,
+        overall: directOverall,
+        sourceName: item.overallSourceName || "Base importada",
+        referenceType: item.overallSourceType || "imported",
+      };
+    }
+
+    const rating = App.transfers.findEaRatingForMarketPlayer({
+      name: item.player || item.Jogador || item.name || item.playerName || "",
+      club: item.fromClub || item.ClubeOrigem || item.club || item.clubName || "",
+    });
+    if (Number(rating?.overall || 0) > 0) {
+      return {
+        ok: true,
+        overall: Number(rating.overall || 0),
+        sourceName: App.transfers.getRatingSourceLabel(rating),
+        sourceUrl: rating.source_url || "",
+        referenceType: "ea_rating",
+      };
+    }
+
+    if (options.allowEstimate === false) {
+      return {
+        ok: false,
+        overall: 0,
+        sourceName: "",
+        sourceUrl: "",
+        referenceType: "",
+      };
+    }
+
+    return (
+      App.transfers.getRegulatoryOverallEstimate(item) || {
+        ok: false,
+        overall: 0,
+        sourceName: "",
+        sourceUrl: "",
+        referenceType: "",
+      }
+    );
+  },
+
+  getResolvedOverall(item = {}, options = {}) {
+    return Number(
+      App.transfers.getOverallReferenceFromItem(item, options).overall || 0,
+    );
+  },
+
+  getRegulatoryMarketValueEstimate(item = {}) {
+    const overall = Number(item.overall || item.Overall || 0);
+    if (overall <= 0) return 0;
+
+    const age = Number(item.age || 0);
+    const league = App.transfers.normalizeSalaryLookup(item.league || "");
+    let marketValue =
+      overall >= 91
+        ? 120000000
+        : overall >= 90
+          ? 100000000
+          : overall >= 89
+            ? 85000000
+            : overall >= 88
+              ? 70000000
+              : overall >= 87
+                ? 58000000
+                : overall >= 86
+                  ? 48000000
+                  : overall >= 85
+                    ? 38000000
+                    : overall >= 84
+                      ? 30000000
+                      : overall >= 83
+                        ? 24000000
+                        : overall >= 82
+                          ? 18000000
+                          : overall >= 81
+                            ? 14000000
+                            : overall >= 80
+                              ? 11000000
+                              : overall >= 79
+                                ? 8500000
+                                : overall >= 78
+                                  ? 6500000
+                                  : overall >= 77
+                                    ? 5000000
+                                    : overall >= 76
+                                      ? 4000000
+                                      : overall >= 75
+                                        ? 3200000
+                                        : overall >= 74
+                                          ? 2500000
+                                          : overall >= 73
+                                            ? 1800000
+                                            : overall >= 72
+                                              ? 1400000
+                                              : overall >= 71
+                                                ? 1100000
+                                                : overall >= 70
+                                                  ? 900000
+                                                  : 600000;
+
+    if (age > 0 && age <= 21) marketValue *= 1.4;
+    else if (age <= 24) marketValue *= 1.18;
+    else if (age >= 35) marketValue *= 0.38;
+    else if (age >= 32) marketValue *= 0.58;
+    else if (age >= 29) marketValue *= 0.82;
+
+    if (
+      [
+        "premier league",
+        "laliga",
+        "serie a",
+        "bundesliga",
+        "ligue 1",
+      ].includes(league)
+    ) {
+      marketValue *= 1.08;
+    } else if (
+      [
+        "super lig",
+        "eredivisie",
+        "liga portugal",
+        "argentina primera division",
+        "campeonato brasileiro serie a",
+      ].includes(league)
+    ) {
+      marketValue *= 0.9;
+    }
+
+    return Math.max(500000, Math.round(marketValue / 250000) * 250000);
   },
 
   getRegulatorySalaryEstimate(item = {}) {
@@ -1876,7 +2201,7 @@ App.transfers = {
     );
     const league = App.transfers.normalizeSalaryLookup(item.league || "");
     const position = String(item.position || "").trim().toUpperCase();
-    const overall = Number(item.overall || item.Overall || 0);
+    const overall = App.transfers.getResolvedOverall(item);
     const marketValue = Math.max(
       0,
       Number(
@@ -2056,16 +2381,32 @@ App.transfers = {
     );
     if (!matches.length) return null;
 
-    const exactClub = matches.find(
-      (item) =>
-        clubKey &&
-        App.transfers.normalizeSalaryLookup(item.clubName || item.club_name) ===
-          clubKey,
+    return (
+      [...matches].sort((left, right) => {
+        const leftClubKey = App.transfers.normalizeSalaryLookup(
+          left.clubName || left.club_name,
+        );
+        const rightClubKey = App.transfers.normalizeSalaryLookup(
+          right.clubName || right.club_name,
+        );
+        const leftExact = clubKey && leftClubKey === clubKey ? 0 : 1;
+        const rightExact = clubKey && rightClubKey === clubKey ? 0 : 1;
+        if (leftExact !== rightExact) return leftExact - rightExact;
+
+        const leftChecked = new Date(
+          left.salaryCheckedAt || left.source_checked_at || 0,
+        ).getTime();
+        const rightChecked = new Date(
+          right.salaryCheckedAt || right.source_checked_at || 0,
+        ).getTime();
+        const leftScore = Number.isNaN(leftChecked) ? 0 : leftChecked;
+        const rightScore = Number.isNaN(rightChecked) ? 0 : rightChecked;
+        return rightScore - leftScore;
+      })[0] || null
     );
-    return exactClub || matches[0] || null;
   },
 
-  getSalaryReferenceFromItem(item = {}) {
+  getStoredPublicSalaryReference(item = {}) {
     const weeklySalary = Number(
       item.weeklySalary ??
         item.salaryWeekly ??
@@ -2083,24 +2424,31 @@ App.transfers = {
       item.UrlFonteSalario ||
       item.salary_source_url ||
       "";
-
-    if (
+    const referenceType =
+      item.referenceType ||
+      item.salaryReferenceType ||
+      item.salary_reference_type ||
+      "";
+    const shouldTrustStoredSalary =
       weeklySalary > 0 &&
       String(salarySourceName).trim() &&
-      App.transfers.isPublicSalaryUrl(salarySourceUrl)
-    ) {
-      return {
-        ok: true,
-        weeklySalary,
-        salarySourceName: String(salarySourceName).trim(),
-        salarySourceUrl: App.transfers.normalizeSalaryUrl(salarySourceUrl),
-        referenceType:
-          item.referenceType ||
-          item.salaryReferenceType ||
-          item.salary_reference_type ||
-          "",
-      };
-    }
+      App.transfers.isPublicSalaryUrl(salarySourceUrl) &&
+      !App.transfers.isRegulatorySalaryReference(item);
+
+    if (!shouldTrustStoredSalary) return null;
+
+    return {
+      ok: true,
+      weeklySalary,
+      salarySourceName: String(salarySourceName).trim(),
+      salarySourceUrl: App.transfers.normalizeSalaryUrl(salarySourceUrl),
+      referenceType,
+    };
+  },
+
+  getSalaryReferenceFromItem(item = {}) {
+    const storedReference = App.transfers.getStoredPublicSalaryReference(item);
+    if (storedReference) return storedReference;
 
     const publicRef = App.transfers.findPublicSalaryReference(
       item.player || item.Jogador || item.name || item.playerName,
@@ -2117,9 +2465,6 @@ App.transfers = {
       };
     }
 
-    const regulatory = App.transfers.getRegulatorySalaryEstimate(item);
-    if (regulatory?.weeklySalary > 0) return regulatory;
-
     return {
       ok: false,
       weeklySalary: 0,
@@ -2133,8 +2478,57 @@ App.transfers = {
     return reference.ok ? Number(reference.weeklySalary || 0) : 0;
   },
 
+  clearSalaryReferenceFromForm(form) {
+    if (!form) return;
+    if (form.elements.weeklySalary) form.elements.weeklySalary.value = "";
+    if (form.elements.salarySourceName) form.elements.salarySourceName.value = "";
+    if (form.elements.salarySourceUrl) form.elements.salarySourceUrl.value = "";
+  },
+
+  applyOverallToForm(form, overall = 0) {
+    if (!form?.elements?.overall) return;
+    form.elements.overall.value = Number(overall || 0) > 0 ? Number(overall) : "";
+  },
+
+  setSelectedTransferContext(form, player = {}) {
+    if (!form) return;
+    try {
+      form.dataset.selectedTransferContext = encodeURIComponent(
+        JSON.stringify(player || {}),
+      );
+    } catch (_) {
+      delete form.dataset.selectedTransferContext;
+    }
+  },
+
+  getSelectedTransferContext(form) {
+    if (!form?.dataset?.selectedTransferContext) return null;
+    try {
+      const parsed = JSON.parse(
+        decodeURIComponent(form.dataset.selectedTransferContext),
+      );
+      const formPlayer = App.utils.normalizeText(form.elements.player?.value || "");
+      const formClub = App.utils.normalizeText(form.elements.fromClub?.value || "");
+      const parsedPlayer = App.utils.normalizeText(
+        parsed.player || parsed.name || "",
+      );
+      const parsedClub = App.utils.normalizeText(
+        parsed.fromClub || parsed.club || "",
+      );
+      if (formPlayer && parsedPlayer && formPlayer !== parsedPlayer) return null;
+      if (formClub && parsedClub && formClub !== parsedClub) return null;
+      return parsed;
+    } catch (_) {
+      return null;
+    }
+  },
+
   applySalaryReferenceToForm(form, reference = {}) {
-    if (!form || !reference || Number(reference.weeklySalary || 0) <= 0) return;
+    if (!form) return;
+    if (!reference || Number(reference.weeklySalary || 0) <= 0) {
+      App.transfers.clearSalaryReferenceFromForm(form);
+      return;
+    }
     if (form.elements.weeklySalary) {
       form.elements.weeklySalary.value = Math.round(
         Number(reference.weeklySalary || 0),
@@ -2151,23 +2545,58 @@ App.transfers = {
   },
 
   async refreshSalaryQuoteForForm(form, basePlayer = {}) {
-    if (!form || !App.api?.getPlayerSalaryQuote) return null;
+    if (!form) return null;
+    if (App.transfers.isInternalTransferForm(form)) return null;
+
+    const selectedContext = App.transfers.getSelectedTransferContext(form) || {};
+    const base = {
+      ...selectedContext,
+      ...basePlayer,
+    };
+    const marketValue = Number(
+      form.elements.marketValue?.value ||
+        base.marketValue ||
+        base.market_value_eur ||
+        0,
+    );
+    const overall = App.transfers.getResolvedOverall({
+      ...base,
+      player: form.elements.player?.value || base.player || base.name || "",
+      name: form.elements.player?.value || base.name || base.player || "",
+      fromClub: form.elements.fromClub?.value || base.fromClub || base.club || "",
+      club: form.elements.fromClub?.value || base.club || base.fromClub || "",
+      overall: Number(form.elements.overall?.value || base.overall || 0),
+      marketValue,
+    });
 
     const payload = {
-      name: form.elements.player?.value || basePlayer.name || "",
-      club: form.elements.fromClub?.value || basePlayer.club || "",
-      league: basePlayer.league || "",
-      position: basePlayer.position || "",
-      age: basePlayer.age || null,
-      overall: Number(form.elements.overall?.value || basePlayer.overall || 0),
-      marketValue: Number(
-        form.elements.marketValue?.value ||
-          basePlayer.marketValue ||
-          basePlayer.market_value_eur ||
-          0,
+      name: App.transfers.sanitizePlayerSearchText(
+        form.elements.player?.value || base.name || base.player || "",
       ),
+      club: form.elements.fromClub?.value || base.club || base.fromClub || "",
+      league: base.league || "",
+      position: base.position || "",
+      age: base.age || null,
+      overall,
+      marketValue,
     };
-    if (!payload.name || !payload.club) return null;
+    if (!payload.name || !payload.club) {
+      App.transfers.clearSalaryReferenceFromForm(form);
+      return null;
+    }
+
+    const localReference = App.transfers.getSalaryReferenceFromItem(payload);
+    if (localReference.ok) {
+      App.transfers.applySalaryReferenceToForm(form, localReference);
+      App.transfers.renderTransferPreview(form);
+      return localReference;
+    }
+
+    if (!App.api?.getPlayerSalaryQuote) {
+      App.transfers.clearSalaryReferenceFromForm(form);
+      App.transfers.renderTransferPreview(form);
+      return null;
+    }
 
     const key = [
       payload.name,
@@ -2180,13 +2609,23 @@ App.transfers = {
     try {
       const quote = await App.api.getPlayerSalaryQuote(payload);
       if (form.dataset.salaryQuotePending !== key) return null;
-      if (quote?.weeklySalary > 0) {
+      const shouldApplyQuote =
+        Number(quote?.weeklySalary || 0) > 0 &&
+        App.transfers.isPublicSalaryUrl(
+          quote?.salarySourceUrl || quote?.sourceUrl || "",
+        ) &&
+        !App.transfers.isRegulatorySalaryReference(quote);
+      if (shouldApplyQuote) {
         App.transfers.applySalaryReferenceToForm(form, quote);
-        App.transfers.renderTransferPreview(form);
+      } else {
+        App.transfers.clearSalaryReferenceFromForm(form);
       }
-      return quote;
+      App.transfers.renderTransferPreview(form);
+      return shouldApplyQuote ? quote : null;
     } catch (error) {
-      console.warn("Cotacao salarial regulatoria indisponivel:", error);
+      console.warn("Cotacao salarial publica indisponivel:", error);
+      App.transfers.clearSalaryReferenceFromForm(form);
+      App.transfers.renderTransferPreview(form);
       return null;
     } finally {
       if (form.dataset.salaryQuotePending === key) {
@@ -2255,52 +2694,109 @@ App.transfers = {
       .sort((a, b) => a.player.localeCompare(b.player));
   },
 
-  normalizeRosterPoolPlayer(item = {}, owner = "") {
-    const name = String(item.player || item.playerName || item.name || "").trim();
+  hydrateRosterPlayer(item = {}, context = {}) {
+    const name = String(item.name || item.player || item.playerName || "").trim();
     if (!name) return null;
-    const fromClub = String(
-      item.fromClub ||
-        item.from_club ||
+
+    const fallbackClub = String(
+      context.club || context.owner || context.managerName || "",
+    ).trim();
+    const clubName = String(
+      item.clubName ||
         item.club ||
-        item.clubName ||
-        owner ||
-        "",
+        item.fromClub ||
+        item.from_club ||
+        fallbackClub,
     ).trim();
     const marketPlayer =
       App.transfers.findMarketPlayerByName(name, {
-        club: fromClub,
+        club: clubName,
       }) || null;
-    const baseValue = Math.max(
+    const rating =
+      App.transfers.getRatingForPlayerName(name, {
+        club: clubName,
+      }) || null;
+    const marketValue = Math.max(
       0,
       Number(
-        item.totalCost ||
-          item.marketValue ||
+        item.marketValue ||
           item.market_value_eur ||
+          item.totalCost ||
           item.baseValue ||
+          item.sourceMarketValue ||
           marketPlayer?.market_value_eur ||
           0,
       ),
     );
+    const resolvedClub = clubName || marketPlayer?.club || "";
+    const overall = App.transfers.getResolvedOverall({
+      ...marketPlayer,
+      ...item,
+      player: name,
+      name,
+      club: resolvedClub,
+      fromClub: resolvedClub,
+      marketValue,
+    });
+    const salaryReference = App.transfers.getSalaryReferenceFromItem({
+      ...marketPlayer,
+      ...item,
+      player: name,
+      name,
+      club: resolvedClub,
+      fromClub: resolvedClub,
+      overall,
+      marketValue,
+    });
+    const storedSalaryReference =
+      App.transfers.getStoredPublicSalaryReference(item);
+
     return {
+      ...item,
+      name,
+      player: item.player || name,
+      playerName: item.playerName || name,
+      clubName: item.clubName || resolvedClub,
+      club: item.club || resolvedClub,
+      fromClub: item.fromClub || item.from_club || resolvedClub,
+      position: item.position || rating?.position || marketPlayer?.position || "",
+      overall,
+      marketValue,
+      weeklySalary: Number(salaryReference.weeklySalary || 0),
+      salarySourceName:
+        salaryReference.salarySourceName ||
+        storedSalaryReference?.salarySourceName ||
+        "",
+      salarySourceUrl:
+        salaryReference.salarySourceUrl ||
+        storedSalaryReference?.salarySourceUrl ||
+        "",
+      salaryReferenceType:
+        salaryReference.referenceType ||
+        storedSalaryReference?.referenceType ||
+        "",
+      avatarUrl:
+        item.avatarUrl || rating?.avatar_url || marketPlayer?.avatar_url || "",
+    };
+  },
+
+  normalizeRosterPoolPlayer(item = {}, owner = "") {
+    const base = App.transfers.hydrateRosterPlayer(item, {
+      owner,
+      club:
+        item.fromClub || item.from_club || item.club || item.clubName || owner,
+    });
+    if (!base) return null;
+    return {
+      ...base,
       id:
         item.id ||
-        `${App.utils.normalizeText(owner)}:${App.utils.normalizeText(name)}`,
-      player: name,
-      playerName: name,
-      name,
+        `${App.utils.normalizeText(owner)}:${App.utils.normalizeText(base.name)}`,
       buyer: owner,
-      fromClub,
-      club: fromClub,
-      position: item.position || marketPlayer?.position || "",
-      overall: Number(item.overall || marketPlayer?.overall || 0),
-      weeklySalary: Number(
-        item.weeklySalary ||
-          item.weekly_salary_eur ||
-          marketPlayer?.weekly_salary_eur ||
-          0,
-      ),
-      totalCost: baseValue,
-      marketValue: baseValue,
+      fromClub: base.fromClub || base.club || owner,
+      club: base.club || base.fromClub || owner,
+      totalCost: Number(base.totalCost || base.marketValue || 0),
+      marketValue: Number(base.marketValue || base.totalCost || 0),
       listed: Boolean(item.listed),
       isStarter: Boolean(item.isStarter || item.is_starting),
     };
@@ -2375,7 +2871,7 @@ App.transfers = {
       !Number.isNaN(overall) &&
       !Number.isNaN(marketValue) &&
       overall > 0 &&
-      marketValue >= 0,
+      (isInternal ? marketValue >= 0 : marketValue > 0),
     );
     const budget = App.transfers
       .getSpendingSummary()
@@ -2606,7 +3102,7 @@ App.transfers = {
 
     if (preview.salaryReferenceMissing) {
       messages.push(
-        "Nao consegui calcular salario de folha. Confira jogador, clube, overall e valor de mercado.",
+        "Salario publico pendente. Confira o nome do jogador e sincronize Capology ou SalarySport antes de enviar.",
       );
     }
 
@@ -2708,7 +3204,7 @@ App.transfers = {
         : [
             {
               label: "Referencia",
-              value: App.utils.formatCurrency(preview.marketValue),
+              value: App.transfers.formatMarketValueDisplay(preview.marketValue),
             },
           ]),
       {
@@ -2726,7 +3222,9 @@ App.transfers = {
         : [
             {
               label: "Pedido provável",
-              value: App.utils.formatCurrency(preview.sellerExpectationValue),
+              value: preview.marketValue
+                ? App.utils.formatCurrency(preview.sellerExpectationValue)
+                : "N/A",
             },
             {
               label: "Tendencia",
@@ -3241,6 +3739,142 @@ App.transfers = {
       : [];
   },
 
+  getMarketSearchAliases(query = "") {
+    return [
+      ...new Set(
+        [query, ...App.transfers.getPlayerSearchAliases(query)].filter(Boolean),
+      ),
+    ].slice(0, 4);
+  },
+
+  getMarketSearchRelevance(query = "", player = {}) {
+    const normalizedQuery = App.transfers.normalizePlayerRatingKey(query);
+    if (!normalizedQuery) return 0;
+
+    const aliasKeys = App.transfers
+      .getMarketSearchAliases(query)
+      .map(App.transfers.normalizePlayerRatingKey);
+    const hasExpandedAlias = aliasKeys.some(
+      (aliasKey) => aliasKey && aliasKey !== normalizedQuery,
+    );
+    const nameKey = App.transfers.normalizePlayerRatingKey(player.name || "");
+    const clubKey = App.transfers.normalizePlayerRatingKey(player.club || "");
+    const leagueKey = App.transfers.normalizePlayerRatingKey(player.league || "");
+    const nameTokens = nameKey.split(" ").filter(Boolean);
+    const clubTokens = clubKey.split(" ").filter(Boolean);
+    const leagueTokens = leagueKey.split(" ").filter(Boolean);
+    const allTokens = [...nameTokens, ...clubTokens, ...leagueTokens];
+
+    if (aliasKeys.includes(nameKey)) return 220;
+    if (aliasKeys.some((aliasKey) => nameTokens.includes(aliasKey))) return 200;
+    if (nameTokens.includes(normalizedQuery)) return 190;
+    if (
+      aliasKeys.some((aliasKey) =>
+        App.transfers.isTrustedPlayerNameMatch(aliasKey, nameKey),
+      )
+    ) {
+      return 180;
+    }
+    if (nameKey.startsWith(`${normalizedQuery} `) || nameKey === normalizedQuery)
+      return 170;
+    if (
+      !hasExpandedAlias &&
+      nameTokens.some((token) => token.startsWith(normalizedQuery))
+    )
+      return 160;
+    if (!hasExpandedAlias && clubTokens.includes(normalizedQuery)) return 130;
+    if (
+      !hasExpandedAlias &&
+      clubTokens.some((token) => token.startsWith(normalizedQuery))
+    )
+      return 120;
+    if (!hasExpandedAlias && leagueTokens.includes(normalizedQuery)) return 110;
+    if (
+      !hasExpandedAlias &&
+      leagueTokens.some((token) => token.startsWith(normalizedQuery))
+    )
+      return 100;
+    if (
+      !hasExpandedAlias &&
+      normalizedQuery.length <= 3 &&
+      allTokens.some((token) => token.includes(normalizedQuery))
+    )
+      return 60;
+    return 0;
+  },
+
+  rankMarketSearchPlayers(query = "", players = []) {
+    return [...(players || [])]
+      .map((player) => ({
+        player,
+        score: App.transfers.getMarketSearchRelevance(query, player),
+      }))
+      .filter((entry) => entry.score > 0)
+      .sort(
+        (a, b) =>
+          b.score - a.score ||
+          Number(b.player.market_value_eur || b.player.marketValue || 0) -
+            Number(a.player.market_value_eur || a.player.marketValue || 0) ||
+          String(a.player.name || "").localeCompare(String(b.player.name || "")),
+      )
+      .map((entry) => entry.player);
+  },
+
+  buildSyntheticMarketPlayersFromRatings(query = "", ratings = [], limit = 8) {
+    const normalizedQuery = App.transfers.normalizePlayerRatingKey(query);
+    const prepared = [...(ratings || [])]
+      .filter(App.transfers.isPlayableRating)
+      .map(
+        (player) =>
+          App.transfers.applyManualRatingFallback(player, query) || player,
+      )
+      .sort(
+        (a, b) =>
+          App.transfers.getRatingSourcePriority(b) -
+            App.transfers.getRatingSourcePriority(a) ||
+          Number(b.overall || 0) - Number(a.overall || 0) ||
+          String(a.name || "").localeCompare(String(b.name || "")),
+      );
+
+    const byIdentity = new Map();
+    prepared.forEach((rating) => {
+      const safeName = App.transfers.sanitizePlayerSearchText(rating.name || "");
+      const player = {
+        id:
+          rating.id ||
+          rating.ea_id ||
+          `ea-rating:${App.transfers.normalizePlayerRatingKey(safeName)}|${App.utils.normalizeText(rating.club || "")}`,
+        syntheticSource: "ea_rating",
+        isRatingOnly: true,
+        name: safeName,
+        normalized_name: App.utils.normalizeText(safeName),
+        club: rating.club || "",
+        original_club: rating.club || "",
+        league: rating.league || "",
+        country: rating.nation || rating.country || "",
+        position: rating.position || "",
+        age: Number(rating.age || 0),
+        overall: Number(rating.overall || 0),
+        market_value_eur: 0,
+        marketValueSource: "ea_rating_only",
+        avatar_url: rating.avatar_url || "",
+        source_name: rating.source_name || "",
+        source_url: rating.source_url || "",
+      };
+      const key = App.api.getMarketPlayerIdentityKey(player);
+      if (!key || byIdentity.has(key)) return;
+      if (
+        normalizedQuery &&
+        App.transfers.getMarketSearchRelevance(query, player) <= 0
+      ) {
+        return;
+      }
+      byIdentity.set(key, player);
+    });
+
+    return [...byIdentity.values()].slice(0, Math.max(1, Number(limit || 8)));
+  },
+
   async searchMarketPlayers(query = "") {
     const showContracted = Boolean(
       document.getElementById("showContractedPlayers")?.checked,
@@ -3264,19 +3898,45 @@ App.transfers = {
 
     App.transfers.marketSearchPending = App.transfers.marketSearchPending || {};
     const request = (async () => {
-      try {
-        const players = await App.api.loadMarketPlayers(query, showContracted, 18);
-        const fallbackRows = await App.api.searchRegionalFallbackPlayers(
-          query,
-          18,
-          {
-            showContracted,
-          },
+      const aliases = App.transfers.getMarketSearchAliases(query);
+      const loadSyntheticRatings = async () => {
+        const ratingGroups = await Promise.all(
+          aliases.map((alias) =>
+            App.transfers.searchEaRatingsCached(alias, 6).catch(() => []),
+          ),
         );
-        const merged = App.api.mergeMarketSearchRows(players, fallbackRows, 18);
-        if (merged.length) {
-          App.api.mergeMarketPlayers(merged);
-          return remember(merged);
+        return App.transfers.buildSyntheticMarketPlayersFromRatings(
+          query,
+          ratingGroups.flat(),
+          8,
+        );
+      };
+      try {
+        const playerGroups = await Promise.all(
+          aliases.map((alias) =>
+            App.api.loadMarketPlayers(alias, showContracted, 18).catch(() => []),
+          ),
+        );
+        const fallbackGroups = await Promise.all(
+          aliases.map((alias) =>
+            App.api.searchRegionalFallbackPlayers(alias, 18, {
+              showContracted,
+            }).catch(() => []),
+          ),
+        );
+        const merged = App.api.mergeMarketSearchRows(
+          playerGroups.flat(),
+          fallbackGroups.flat(),
+          24,
+        );
+        const syntheticRatings = await loadSyntheticRatings();
+        const ranked = App.transfers.rankMarketSearchPlayers(
+          query,
+          App.api.mergeMarketSearchRows(merged, syntheticRatings, 24),
+        );
+        if (ranked.length) {
+          App.api.mergeMarketPlayers(ranked);
+          return remember(ranked.slice(0, 18));
         }
       } catch (error) {
         console.warn(
@@ -3285,23 +3945,30 @@ App.transfers = {
         );
       }
 
-      const rows = await App.api.fetchMarketPlayersDirect(query, 14);
-      const fallback = await App.api.searchRegionalFallbackPlayers(
-        query,
-        18,
-        {
-          showContracted,
-        },
-      ).catch(() => []);
-      const merged = App.api.mergeMarketSearchRows(
-        App.api.applyMarketPlayerOverrides(Array.isArray(rows) ? rows : [], {
-          showContracted,
-        }),
-        fallback,
-        18,
+      const groups = await Promise.all(
+        aliases.map((alias) =>
+          App.api.fetchMarketPlayersDirect(alias, 14).catch(() => []),
+        ),
       );
-      App.api.mergeMarketPlayers(merged);
-      return remember(merged);
+      const fallback = await Promise.all(
+        aliases.map((alias) =>
+          App.api.searchRegionalFallbackPlayers(alias, 18, {
+            showContracted,
+          }).catch(() => []),
+        ),
+      );
+      const merged = App.api.mergeMarketSearchRows(
+        App.api.applyMarketPlayerOverrides(groups.flat(), { showContracted }),
+        fallback.flat(),
+        24,
+      );
+      const syntheticRatings = await loadSyntheticRatings();
+      const ranked = App.transfers.rankMarketSearchPlayers(
+        query,
+        App.api.mergeMarketSearchRows(merged, syntheticRatings, 24),
+      );
+      App.api.mergeMarketPlayers(ranked);
+      return remember(ranked.slice(0, 18));
     })().finally(() => {
       delete App.transfers.marketSearchPending?.[cacheKey];
     });
@@ -3359,20 +4026,30 @@ App.transfers = {
       form.elements.fromClub.value = player.club || "";
     const marketValue = Math.round(App.transfers.getMarketPlayerValue(player));
     if (form.elements.marketValue) {
-      form.elements.marketValue.value = marketValue;
+      form.elements.marketValue.value = marketValue > 0 ? marketValue : "";
     }
     if (form.elements.offerValue) {
-      App.transfers.setTransferOfferInputValue(form, marketValue);
+      App.transfers.setTransferOfferInputValue(form, marketValue > 0 ? marketValue : 0);
     }
-    const eaRating = App.transfers.findEaRatingForMarketPlayer(player);
-    if (eaRating && form.elements.overall)
-      form.elements.overall.value = Number(
-        eaRating.overall || player.overall || "",
-      );
+    const overall = App.transfers.getResolvedOverall({
+      ...player,
+      marketValue,
+    });
+    App.transfers.applyOverallToForm(form, overall);
+    App.transfers.clearSalaryReferenceFromForm(form);
+    App.transfers.setSelectedTransferContext(form, {
+      ...player,
+      player: player.name || "",
+      name: player.name || "",
+      fromClub: player.club || "",
+      club: player.club || "",
+      overall,
+      marketValue,
+    });
 
     const salaryReference = App.transfers.getSalaryReferenceFromItem({
       ...player,
-      overall: Number(form.elements.overall?.value || eaRating?.overall || 0),
+      overall,
       marketValue,
     });
     App.transfers.applySalaryReferenceToForm(form, salaryReference);
@@ -3383,7 +4060,7 @@ App.transfers = {
     App.transfers.renderTransferPreview(form);
     App.transfers.refreshSalaryQuoteForForm(form, {
       ...player,
-      overall: Number(form.elements.overall?.value || eaRating?.overall || 0),
+      overall,
       marketValue,
     });
   },
@@ -3483,17 +4160,33 @@ App.transfers = {
           form.elements.player.value = selected.name || "";
         if (form.elements.fromClub)
           form.elements.fromClub.value = selected.club || "";
-        if (form.elements.overall)
-          form.elements.overall.value = Number(selected.overall || "");
+        const marketValue = Number(form.elements.marketValue?.value || 0);
+        const overall = App.transfers.getResolvedOverall({
+          ...selected,
+          marketValue,
+        });
+        App.transfers.applyOverallToForm(form, overall);
+        App.transfers.clearSalaryReferenceFromForm(form);
+        App.transfers.setSelectedTransferContext(form, {
+          ...selected,
+          player: selected.name || "",
+          name: selected.name || "",
+          fromClub: selected.club || "",
+          club: selected.club || "",
+          overall,
+          marketValue,
+        });
         const salaryReference = App.transfers.getSalaryReferenceFromItem({
           ...selected,
-          marketValue: Number(form.elements.marketValue?.value || 0),
+          overall,
+          marketValue,
         });
         App.transfers.applySalaryReferenceToForm(form, salaryReference);
         App.transfers.renderTransferPreview(form);
         App.transfers.refreshSalaryQuoteForForm(form, {
           ...selected,
-          marketValue: Number(form.elements.marketValue?.value || 0),
+          overall,
+          marketValue,
         });
       });
     });
@@ -3550,16 +4243,13 @@ App.transfers = {
     const renderRequest = (async () => {
       const players = await App.transfers.searchMarketPlayers(query);
       if (App.transfers.marketSearchRequestId !== requestId) return;
-
-      const ratingRows = await Promise.all(
-        players
-          .slice(0, 6)
-          .map((player) =>
-            App.transfers.searchEaRatingsCached(player.name || "", 2),
-          ),
-      );
-      if (App.transfers.marketSearchRequestId !== requestId) return;
-      App.api.mergeEaRatings?.(ratingRows.flat());
+      if (players.length && App.api?.loadRatingsForPlayerNames) {
+        await App.api.loadRatingsForPlayerNames(
+          players.map((player) => player.name || ""),
+          2,
+        );
+        if (App.transfers.marketSearchRequestId !== requestId) return;
+      }
 
       if (!players.length) {
         App.dom.setHtml(
@@ -3582,8 +4272,11 @@ App.transfers = {
           .map((player) => {
             const isContracted = App.transfers.isMarketPlayerContracted(player);
             const eaRating = App.transfers.findEaRatingForMarketPlayer(player);
-            const overall = Number(eaRating?.overall || player.overall || 0);
             const marketValue = App.transfers.getMarketPlayerValue(player);
+            const overall = App.transfers.getResolvedOverall({
+              ...player,
+              marketValue,
+            });
             const salaryReference = App.transfers.getSalaryReferenceFromItem({
               ...player,
               overall,
@@ -3598,7 +4291,7 @@ App.transfers = {
           </span>
           <span class="market-player-side">
             ${overall ? `<span class="market-player-overall">OVR ${overall}</span>` : ""}
-            <span class="market-player-value">${App.utils.formatCurrency(marketValue)}</span>
+            <span class="market-player-value">${App.utils.escapeHtml(App.transfers.formatMarketValueDisplay(marketValue))}</span>
             ${
               salaryReference.ok
                 ? `<span class="market-player-status">${App.utils.escapeHtml(App.transfers.getSalaryReferenceLabel(salaryReference))} ${App.utils.formatCurrency(salaryReference.weeklySalary)}/sem</span>`

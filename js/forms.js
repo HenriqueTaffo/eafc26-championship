@@ -323,7 +323,7 @@ App.forms = {
             : preview.duplicateBlock
               ? `Jogador já contratado por ${preview.duplicate.buyer}.`
               : preview.salaryReferenceMissing
-                ? "Nao consegui calcular salario de folha antes de enviar."
+                ? "Salario publico pendente. Sincronize Capology ou SalarySport antes de enviar."
                 : preview.limitReached
                   ? `${preview.buyer} já atingiu o limite diário.`
                   : "Saldo insuficiente para concluir a contratação.";
@@ -610,6 +610,7 @@ App.forms = {
     const marketSearch = document.getElementById("marketPlayerSearch");
     const showContracted = document.getElementById("showContractedPlayers");
     let marketSearchTimer = null;
+    let salaryRefreshTimer = null;
 
     const requestMarketRender = () => {
       clearTimeout(marketSearchTimer);
@@ -618,6 +619,24 @@ App.forms = {
         360,
       );
     };
+
+    const requestSalaryRefresh = () => {
+      clearTimeout(salaryRefreshTimer);
+      if (App.transfers.isInternalTransferForm?.(transferForm)) return;
+      App.transfers.clearSalaryReferenceFromForm?.(transferForm);
+      App.transfers.renderTransferPreview?.(transferForm);
+      const context = App.transfers.getSelectedTransferContext?.(transferForm) || {};
+      salaryRefreshTimer = setTimeout(() => {
+        App.transfers.refreshSalaryQuoteForForm?.(transferForm, context);
+      }, 260);
+    };
+
+    ["player", "fromClub", "overall", "marketValue"].forEach((name) => {
+      const field = transferForm.elements[name];
+      if (!field) return;
+      field.addEventListener("input", requestSalaryRefresh);
+      field.addEventListener("change", requestSalaryRefresh);
+    });
 
     if (marketSearch) {
       marketSearch.addEventListener("input", requestMarketRender);

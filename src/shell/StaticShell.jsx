@@ -1153,7 +1153,7 @@ function TransfersView() {
                     min="1"
                     step="1"
                     inputMode="numeric"
-                    placeholder="Auto: publico ou regulatorio"
+                    placeholder="Auto: Capology ou SalarySport"
                   />
                 </label>
                 <input type="hidden" name="salarySourceName" value="" />

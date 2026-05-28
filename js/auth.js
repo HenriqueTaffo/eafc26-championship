@@ -4234,6 +4234,51 @@ App.auth = {
     });
   },
 
+  getTransferProposalDisplayMeta(item = {}) {
+    const proposedValue = Number(item.proposed_value || item.cash_offer_value || 0);
+    const referenceValue = Number(item.reference_value || 0);
+    const cashValue = Number(item.cash_offer_value || proposedValue || 0);
+    const marketValue = Math.max(referenceValue, proposedValue, cashValue, 0);
+    const fromClub = item.from_club || item.fromClub || "";
+    const overall = App.transfers.getResolvedOverall({
+      ...item,
+      player: item.player || "",
+      name: item.player || "",
+      club: fromClub,
+      fromClub,
+      marketValue,
+    });
+    const salaryReference = App.transfers.getSalaryReferenceFromItem({
+      ...item,
+      player: item.player || "",
+      name: item.player || "",
+      club: fromClub,
+      fromClub,
+      overall,
+      marketValue,
+      weeklySalary: Number(item.weekly_salary_eur || item.weeklySalary || 0),
+      salarySourceName: item.salary_source_name || item.salarySourceName || "",
+      salarySourceUrl: item.salary_source_url || item.salarySourceUrl || "",
+      salaryReferenceType:
+        item.salary_reference_type || item.salaryReferenceType || "",
+    });
+    const storedSalaryReference =
+      App.transfers.getStoredPublicSalaryReference?.(item) || null;
+
+    return {
+      overall,
+      weeklySalary: Number(salaryReference.weeklySalary || 0),
+      salarySourceName:
+        salaryReference.salarySourceName ||
+        storedSalaryReference?.salarySourceName ||
+        "",
+      salarySourceUrl:
+        salaryReference.salarySourceUrl ||
+        storedSalaryReference?.salarySourceUrl ||
+        "",
+    };
+  },
+
   renderTransferProposalCard(item) {
     const isCpuOffer = App.auth.isCpuProposal(item);
     const sourceLabel = App.auth.getTransferProposalSourceLabel(item);
@@ -4241,6 +4286,7 @@ App.auth = {
     const proposedValue = Number(item.proposed_value || 0);
     const status = App.utils.normalizeText(item.status || "pending");
     const statusLabel = App.auth.getTransferProposalStatusLabel(item);
+    const displayMeta = App.auth.getTransferProposalDisplayMeta(item);
 
     return `
       <article class="decision-card transfer-proposal-item proposal-status-${status}">
@@ -4251,7 +4297,7 @@ App.auth = {
         <h3>${App.utils.escapeHtml(item.player)}</h3>
         <p>${sourceLabelEscaped} ofereceu ${App.utils.formatCurrency(proposedValue)} por este jogador.</p>
         <div class="proposal-meta">
-          <span>OVR ${App.utils.escapeHtml(item.overall || "-")}</span>
+          <span>OVR ${App.utils.escapeHtml(displayMeta.overall || "-")}</span>
           <span>${App.utils.escapeHtml(item.from_club || "NegociaÃƒÂ§ÃƒÂ£o interna")}</span>
         </div>
         <p>${App.auth.getTransferProposalStatusHint(item)}</p>
@@ -4313,7 +4359,8 @@ App.auth = {
     const referenceValue = Number(item.reference_value || 0);
     const buyerOffer = Number(item.buyer_offer_value || 0);
     const cashValue = Number(item.cash_offer_value || proposedValue || 0);
-    const weeklySalary = Number(item.weekly_salary_eur || 0);
+    const displayMeta = App.auth.getTransferProposalDisplayMeta(item);
+    const weeklySalary = Number(displayMeta.weeklySalary || 0);
     const sourceLabel = App.auth.getTransferProposalSourceLabel(item);
     const sourceLabelEscaped = App.utils.escapeDisplay(sourceLabel);
     const playerLabel = App.utils.escapeDisplay(item.player || "Jogador");
@@ -4444,6 +4491,7 @@ App.auth = {
     const isExternal = App.auth.isExternalMarketProposal(item);
     const proposedValue = Number(item.proposed_value || 0);
     const sourceLabel = App.auth.getTransferProposalSourceLabel(item);
+    const displayMeta = App.auth.getTransferProposalDisplayMeta(item);
 
     if (isExternal) {
       const referenceValue = Number(item.reference_value || 0);
@@ -4463,7 +4511,7 @@ App.auth = {
           <div class="proposal-market-meta">
             <b>Oferta ${App.utils.formatCurrency(buyerOffer || cashValue)}</b>
             <b>Pedido ${App.utils.formatCurrency(proposedValue)}</b>
-            <b>Folha ${App.utils.formatCurrency(Number(item.weekly_salary_eur || 0))}/sem</b>
+            <b>Folha ${App.utils.formatCurrency(displayMeta.weeklySalary)}/sem</b>
           </div>
           ${App.auth.getTransferProposalTimeline(item, { compact: true, maxItems: 2 })}
         </article>
@@ -4478,7 +4526,7 @@ App.auth = {
             <b>Ref. ${App.utils.formatCurrency(referenceValue)}</b>
             <b>Pedido ${App.utils.formatCurrency(proposedValue)}</b>
             <b>Caixa ${App.utils.formatCurrency(cashValue)}</b>
-            <b>Folha ${App.utils.formatCurrency(Number(item.weekly_salary_eur || 0))}/sem</b>
+            <b>Folha ${App.utils.formatCurrency(displayMeta.weeklySalary)}/sem</b>
             <b>${App.utils.escapeHtml(tradeLabel)}</b>
           </div>
           ${options.compact ? "" : App.auth.getTransferProposalTimeline(item, { compact: true, maxItems: 2 })}

@@ -407,8 +407,16 @@ function getSyntheticTransferRosterId(transfer = {}) {
 
 function buildRosterWithTransfers(baseRoster = [], managerName = "") {
   const normalizedManager = App.utils.normalizeText(managerName);
+  const normalizedBaseRoster = baseRoster
+    .map((player) =>
+      App.transfers.hydrateRosterPlayer?.(player, {
+        owner: managerName,
+        club: player.clubName || player.club || managerName,
+      }) || player,
+    )
+    .filter(Boolean);
   const seenNames = new Set(
-    baseRoster.map((player) => App.utils.normalizeText(player.name)),
+    normalizedBaseRoster.map((player) => App.utils.normalizeText(player.name)),
   );
   const transferRows = App.transfers
     .getValidTransfers()
@@ -421,9 +429,13 @@ function buildRosterWithTransfers(baseRoster = [], managerName = "") {
       const id = getSyntheticTransferRosterId(item);
       const playerKey = App.utils.normalizeText(item.player);
       if (!id || seenNames.has(playerKey)) return null;
+      const hydrated = App.transfers.hydrateRosterPlayer?.(item, {
+        owner: managerName,
+        club: item.fromClub,
+      });
       const rating = App.transfers.getRatingForPlayerName(item.player, {
         club: item.fromClub,
-        overall: item.overall,
+        overall: hydrated?.overall || item.overall,
       });
       const marketPlayer = App.transfers.findMarketPlayerByName(item.player, {
         club: item.fromClub,
@@ -436,17 +448,21 @@ function buildRosterWithTransfers(baseRoster = [], managerName = "") {
         eaId: `transfer-${item.id}`,
         rank: null,
         name: item.player,
-        position: rating?.position || marketPlayer?.position || "",
-        positionLabel: rating?.position || marketPlayer?.position || "",
-        overall: Number(item.overall || rating?.overall || 0),
-        weeklySalary: Number(item.weeklySalary || 0),
-        salarySourceName:
-          item.salarySourceName || "Referencia salarial aprovada",
-        salarySourceUrl: item.salarySourceUrl || "",
-        salaryReferenceType: item.salaryReferenceType || "transfer_verified",
+        position:
+          hydrated?.position || rating?.position || marketPlayer?.position || "",
+        positionLabel:
+          hydrated?.position || rating?.position || marketPlayer?.position || "",
+        overall: Number(hydrated?.overall || item.overall || rating?.overall || 0),
+        weeklySalary: Number(hydrated?.weeklySalary || 0),
+        salarySourceName: hydrated?.salarySourceName || "",
+        salarySourceUrl: hydrated?.salarySourceUrl || "",
+        salaryReferenceType:
+          hydrated?.salaryReferenceType ||
+          "",
         salaryCheckedAt: item.timestamp || "",
-        sourceWeeklyPayroll: Number(item.weeklySalary || 0),
-        avatarUrl: rating?.avatar_url || marketPlayer?.avatar_url || "",
+        sourceWeeklyPayroll: Number(hydrated?.weeklySalary || 0),
+        avatarUrl:
+          hydrated?.avatarUrl || rating?.avatar_url || marketPlayer?.avatar_url || "",
         shieldUrl: rating?.shield_url || "",
         nation: rating?.nation || marketPlayer?.country || item.fromClub || "Mercado",
         sourceName: "Transferencia aprovada",
@@ -456,7 +472,7 @@ function buildRosterWithTransfers(baseRoster = [], managerName = "") {
     })
     .filter(Boolean);
 
-  return [...baseRoster, ...transferRows].sort(
+  return [...normalizedBaseRoster, ...transferRows].sort(
     (a, b) =>
       Number(b.overall || 0) - Number(a.overall || 0) ||
       String(a.name || "").localeCompare(String(b.name || "")),

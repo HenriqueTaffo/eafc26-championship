@@ -22,6 +22,8 @@
     "sync:market-avatar-cache-db:dry": "node scripts/sync-market-avatars-from-cache.js --dry-run",
     "sync:market-avatars": "node scripts/backfill-player-avatars.js",
     "sync:market-avatars:dry": "node scripts/backfill-player-avatars.js --dry-run",
+    "sync:capology-salaries": "node scripts/sync-capology-salaries.js --all-clubs --sql-out=supabase/.temp/capology-salary-sync.sql --json-out=supabase/.temp/capology-salary-sync.json",
+    "sync:capology-salaries:dry": "node scripts/sync-capology-salaries.js --all-clubs --dry-run",
     "build:css": "vite build",
     "format": "prettier --write \"**/*.{html,css,js,json,md}\"",
     "format:check": "prettier --check \"**/*.{html,css,js,json,md}\"",

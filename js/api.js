@@ -662,14 +662,14 @@ App.api = {
     }
   },
 
-  async loadRatingsForPlayerNames(names = [], limitPerName = 3) {
+  async loadRatingsForPlayerNames(names = [], limitPerName = 3, maxNames = 24) {
     const uniqueNames = [
       ...new Set(
         (names || []).map((name) => String(name || "").trim()).filter(Boolean),
       ),
     ]
       .filter((name) => !App.transfers?.getRatingForPlayerName?.(name)?.overall)
-      .slice(0, 12);
+      .slice(0, Math.max(1, Number(maxNames || 24)));
     if (!uniqueNames.length) return App.state.apiRatings || [];
 
     const groups = await App.api.mapWithConcurrency(uniqueNames, 2, (name) => {
@@ -696,12 +696,12 @@ App.api = {
     return App.state.apiRatings;
   },
 
-  async loadMarketPlayersForNames(names = [], limitPerName = 3) {
+  async loadMarketPlayersForNames(names = [], limitPerName = 3, maxNames = 40) {
     const uniqueNames = [
       ...new Set(
         (names || []).map((name) => String(name || "").trim()).filter(Boolean),
       ),
-    ].slice(0, 40);
+    ].slice(0, Math.max(1, Number(maxNames || 40)));
     if (!uniqueNames.length) return App.state.apiMarketPlayers || [];
 
     const groups = await App.api.mapWithConcurrency(uniqueNames, 6, (name) =>
@@ -1596,6 +1596,17 @@ App.api = {
         lineups: {},
         finance: [],
       };
+      const rosterNames = Object.values(App.state.apiSquadManagement?.rosters || {})
+        .flat()
+        .map((item) => item?.name || item?.player || item?.playerName || "")
+        .map((name) => String(name || "").trim())
+        .filter(Boolean);
+      if (rosterNames.length) {
+        await Promise.allSettled([
+          App.api.loadRatingsForPlayerNames(rosterNames, 2, 96),
+          App.api.loadMarketPlayersForNames(rosterNames, 2, 80),
+        ]);
+      }
       App.state.apiSquadManagementScopeKey = scopeKey;
       App.react?.notify?.();
       return App.state.apiSquadManagement;
