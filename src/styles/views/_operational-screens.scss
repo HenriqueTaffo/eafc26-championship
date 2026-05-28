@@ -1,0 +1,656 @@
+/* Operational screens rework: office, calendar, events, squad, transfers and admin. */
+body.auth-unlocked :where(
+  #playersView,
+  #calendarView,
+  #eventsView,
+  #squadView,
+  #transfersView,
+  #commissionerView,
+  #submitView,
+  #experienceView
+) {
+  --section-gap: 10px;
+}
+
+body.auth-unlocked :where(
+  #playersView,
+  #calendarView,
+  #eventsView,
+  #squadView,
+  #transfersView,
+  #commissionerView,
+  #submitView,
+  #experienceView
+) :where(.modal-kicker, .coach-section-kicker, .transfer-pill) {
+  color: var(--workspace-accent);
+  font-size: 0.64rem;
+  letter-spacing: 0;
+}
+
+body.auth-unlocked :where(
+  #playersView,
+  #calendarView,
+  #eventsView,
+  #squadView,
+  #transfersView,
+  #commissionerView,
+  #submitView,
+  #experienceView
+) :where(
+  .primary-button,
+  .secondary-button,
+  .ghost-button,
+  .mini-action-button,
+  .home-link,
+  .cup-action
+) {
+  border-radius: 8px;
+  box-shadow: none;
+}
+
+body.auth-unlocked :where(
+  #playersView,
+  #calendarView,
+  #eventsView,
+  #squadView,
+  #transfersView,
+  #commissionerView,
+  #submitView,
+  #experienceView
+) :where(.primary-button, .mini-action-button) {
+  border: 1px solid rgba(45, 212, 191, 0.28);
+  background: rgba(45, 212, 191, 0.14);
+  color: var(--workspace-text);
+}
+
+body.auth-unlocked #playersView .coach-dashboard {
+  display: grid;
+  gap: 10px;
+}
+
+body.auth-unlocked #playersView .coach-hero-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  min-height: 0;
+  padding: 11px 12px;
+  background:
+    linear-gradient(90deg, rgba(45, 212, 191, 0.04), transparent 30%),
+    var(--workspace-panel);
+}
+
+body.auth-unlocked #playersView .coach-hero-main {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+}
+
+body.auth-unlocked #playersView .coach-hero-avatar-stack {
+  grid-template-columns: 34px 34px;
+  align-items: center;
+  gap: 6px;
+}
+
+body.auth-unlocked #playersView .coach-manager-avatar,
+body.auth-unlocked #playersView .coach-club-mark .club-badge {
+  width: 34px;
+  height: 34px;
+  flex-basis: 34px;
+  border-radius: 8px;
+}
+
+body.auth-unlocked #playersView .coach-hero-card h2 {
+  margin: 2px 0;
+  font-size: clamp(1.55rem, 2.8vw, 2.7rem);
+  line-height: 1;
+}
+
+body.auth-unlocked #playersView .coach-hero-card p {
+  margin: 0;
+  color: var(--workspace-muted);
+  font-size: 0.82rem;
+}
+
+body.auth-unlocked #playersView .coach-form-line {
+  margin-top: 6px;
+}
+
+body.auth-unlocked #playersView .coach-hero-avatar-tools {
+  display: none;
+}
+
+body.auth-unlocked #playersView .coach-hero-avatar-tools .ghost-button {
+  min-height: 28px;
+  padding: 5px 8px;
+  font-size: 0.72rem;
+}
+
+body.auth-unlocked #playersView .coach-hero-rank {
+  display: grid;
+  justify-items: end;
+  gap: 2px;
+  min-width: 76px;
+}
+
+body.auth-unlocked #playersView .coach-hero-rank strong {
+  font-size: clamp(1.45rem, 2.4vw, 2.25rem);
+  line-height: 1;
+}
+
+body.auth-unlocked #playersView .coach-hero-rank span {
+  color: var(--workspace-warm);
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+body.auth-unlocked #playersView .coach-quick-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 8px;
+}
+
+body.auth-unlocked #playersView .coach-quick-grid article {
+  min-height: 58px;
+  border: 1px solid var(--workspace-line);
+  border-radius: 8px;
+  padding: 9px 10px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.025), transparent),
+    var(--workspace-panel);
+  box-shadow: none;
+}
+
+body.auth-unlocked #playersView .coach-quick-grid article span,
+body.auth-unlocked #playersView .coach-quick-grid article small {
+  color: var(--workspace-muted);
+}
+
+body.auth-unlocked #playersView .coach-quick-grid article strong {
+  font-size: clamp(1.05rem, 1.55vw, 1.45rem);
+}
+
+body.auth-unlocked #playersView .coach-layout-v54 {
+  display: grid;
+  gap: 10px;
+}
+
+body.auth-unlocked #playersView .coach-top-row-v54 {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 10px;
+}
+
+body.auth-unlocked #playersView .coach-top-row-v54 > .coach-panel-card {
+  min-height: 0;
+}
+
+body.auth-unlocked #playersView .coach-central-card {
+  grid-column: span 1;
+}
+
+body.auth-unlocked #playersView .coach-flow-v55,
+body.auth-unlocked #playersView .coach-full-row-v54,
+body.auth-unlocked #playersView .leaderboard-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 360px), 1fr));
+  gap: 10px;
+}
+
+body.auth-unlocked #playersView .coach-panel-card,
+body.auth-unlocked #playersView .leaderboard-card,
+body.auth-unlocked #playersView .coach-comparison-v47 {
+  padding: 12px;
+}
+
+body.auth-unlocked #playersView .coach-central-grid,
+body.auth-unlocked #playersView .email-office-headline,
+body.auth-unlocked #playersView .medical-summary-strip {
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 8px;
+}
+
+body.auth-unlocked #playersView .coach-comparison-v47 {
+  border: 1px solid var(--workspace-line);
+  border-radius: 8px;
+  background: var(--workspace-panel);
+}
+
+body.auth-unlocked #playersView .coach-podium-grid,
+body.auth-unlocked #playersView .leaderboard-grid {
+  gap: 8px;
+}
+
+body.auth-unlocked #playersView .coach-podium-card,
+body.auth-unlocked #playersView .leaderboard-card {
+  border-color: var(--workspace-line);
+  background: var(--workspace-panel);
+  box-shadow: none;
+}
+
+body.auth-unlocked #calendarView > .legend-block {
+  display: none;
+}
+
+body.auth-unlocked #calendarView .controls {
+  display: grid;
+  grid-template-columns: minmax(220px, 1.5fr) repeat(4, minmax(132px, 0.7fr));
+}
+
+body.auth-unlocked #calendarView .calendar-week-board,
+body.auth-unlocked #calendarView .calendar-month-card {
+  padding: 12px;
+}
+
+body.auth-unlocked #calendarView .calendar-week-board {
+  border-color: transparent;
+  background: transparent;
+  box-shadow: none;
+}
+
+body.auth-unlocked #calendarView .calendar-week-header,
+body.auth-unlocked #calendarView .calendar-month-header,
+body.auth-unlocked #calendarView .calendar-desktop-agenda-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+body.auth-unlocked #calendarView .calendar-week-header h2,
+body.auth-unlocked #calendarView .calendar-month-header h2 {
+  margin: 2px 0 0;
+  font-size: clamp(1.05rem, 1.55vw, 1.4rem);
+}
+
+body.auth-unlocked #calendarView .calendar-week-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 280px));
+  align-items: start;
+  justify-content: start;
+  gap: 8px;
+}
+
+body.auth-unlocked #calendarView .calendar-month-highlights,
+body.auth-unlocked #calendarView .calendar-desktop-agenda-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
+  gap: 8px;
+}
+
+body.auth-unlocked #calendarView .calendar-week-card,
+body.auth-unlocked #calendarView .calendar-month-highlights article,
+body.auth-unlocked #calendarView .calendar-agenda-card {
+  border: 1px solid var(--workspace-line);
+  border-radius: 8px;
+  padding: 10px;
+  background: var(--workspace-panel-soft);
+  box-shadow: none;
+}
+
+body.auth-unlocked #calendarView .calendar-month-grid {
+  gap: 6px;
+}
+
+body.auth-unlocked #calendarView .calendar-day-cell {
+  min-height: 92px;
+  border-color: var(--workspace-line);
+  border-radius: 8px;
+  background: rgba(5, 8, 10, 0.56);
+  box-shadow: none;
+}
+
+body.auth-unlocked #calendarView .calendar-day-cell.has-events {
+  min-height: 150px;
+  background: var(--workspace-panel);
+}
+
+body.auth-unlocked #calendarView .calendar-event-card {
+  border-color: var(--workspace-line);
+  border-radius: 7px;
+  padding: 8px;
+  background: rgba(3, 6, 8, 0.58);
+  box-shadow: none;
+}
+
+body.auth-unlocked #eventsView .countdown-card {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+body.auth-unlocked #eventsView .countdown-card strong,
+body.auth-unlocked #transfersView .countdown-card strong {
+  font-size: clamp(1.25rem, 2vw, 1.85rem);
+  line-height: 1;
+}
+
+body.auth-unlocked #eventsView .countdown-card p,
+body.auth-unlocked #transfersView .countdown-card p {
+  max-width: 85ch;
+  margin: 0;
+  color: var(--workspace-muted);
+}
+
+body.auth-unlocked #eventsView .event-board-header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  padding: 12px;
+}
+
+body.auth-unlocked #eventsView .event-mini-stats {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+body.auth-unlocked #eventsView .event-mini-stats span,
+body.auth-unlocked #calendarView .calendar-month-stats span,
+body.auth-unlocked #eventsView .event-badges span {
+  border-color: var(--workspace-line);
+  background: rgba(255, 255, 255, 0.035);
+}
+
+body.auth-unlocked #eventsView .event-focus-strip {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+body.auth-unlocked #eventsView .event-card-grid-v45,
+body.auth-unlocked #eventsView .event-card-grid-v66 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 360px), 1fr));
+}
+
+body.auth-unlocked #eventsView .event-card-v45 {
+  min-height: 0;
+  border-left: 3px solid var(--event-color, var(--workspace-accent));
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.02), transparent),
+    var(--workspace-panel);
+}
+
+body.auth-unlocked #eventsView .event-card-topline {
+  align-items: center;
+}
+
+body.auth-unlocked #eventsView .event-icon {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+}
+
+body.auth-unlocked #eventsView .event-effect-box {
+  border-color: var(--workspace-line);
+  border-radius: 8px;
+  background: rgba(4, 7, 9, 0.48);
+}
+
+body.auth-unlocked #squadView .squad-shell {
+  display: grid;
+  gap: 10px;
+}
+
+body.auth-unlocked #squadView .squad-hero-panel {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  min-height: 0;
+}
+
+body.auth-unlocked #squadView .squad-hero-panel h2 {
+  margin: 2px 0;
+  font-size: clamp(1.35rem, 2.2vw, 2rem);
+}
+
+body.auth-unlocked #squadView .squad-controls.controls {
+  grid-template-columns: minmax(160px, 0.7fr) minmax(240px, 1fr) minmax(150px, 0.7fr);
+}
+
+body.auth-unlocked #squadView .squad-balance-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+body.auth-unlocked #squadView .squad-availability-strip {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+body.auth-unlocked #squadView .squad-builder-grid {
+  grid-template-columns: minmax(0, 1.08fr) minmax(340px, 0.72fr);
+  gap: 10px;
+}
+
+body.auth-unlocked #squadView .squad-pitch-toolbar,
+body.auth-unlocked #squadView .squad-pitch-footer {
+  padding: 10px 12px;
+}
+
+body.auth-unlocked #squadView .squad-roster-row {
+  border-color: var(--workspace-line);
+  border-radius: 8px;
+  background: rgba(8, 12, 17, 0.78);
+}
+
+body.auth-unlocked #transfersView .countdown-card {
+  min-height: 0;
+  padding: 12px;
+}
+
+body.auth-unlocked #transfersView .transfer-budget-board {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 320px));
+  align-items: start;
+  justify-content: start;
+  gap: 8px;
+  background: transparent;
+}
+
+body.auth-unlocked #transfersView .transfer-budget-card {
+  min-height: 0;
+  padding: 11px;
+}
+
+body.auth-unlocked #transfersView .transfer-ops-board {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+body.auth-unlocked #transfersView .transfer-ops-card {
+  min-height: 0;
+  padding: 12px;
+}
+
+body.auth-unlocked #transfersView .transfer-ops-alerts {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr));
+  gap: 8px;
+}
+
+body.auth-unlocked #transfersView .transfer-ops-alert {
+  border-radius: 8px;
+  background: rgba(255, 185, 72, 0.06);
+  box-shadow: none;
+}
+
+body.auth-unlocked #transfersView .transfer-workbench {
+  grid-template-columns: minmax(0, 1fr) minmax(340px, 0.58fr);
+}
+
+body.auth-unlocked #transfersView .transfer-workbench .form-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+body.auth-unlocked #transfersView .transfer-command-stack {
+  gap: 10px;
+}
+
+body.auth-unlocked #transfersView .transfer-deal-card,
+body.auth-unlocked #transfersView .transfer-scout-card,
+body.auth-unlocked #transfersView .transfer-shortlist-card {
+  padding: 12px;
+}
+
+body.auth-unlocked #transfersView .transfer-compare-board,
+body.auth-unlocked #transfersView .transfer-negotiation-hub {
+  padding: 12px;
+}
+
+body.auth-unlocked #experienceView .submit-hero,
+body.auth-unlocked #commissionerView .submit-hero,
+body.auth-unlocked #submitView .submit-hero {
+  min-height: 0;
+  border-color: var(--workspace-line);
+  border-radius: 8px;
+  padding: 16px;
+  background: var(--workspace-panel);
+  box-shadow: none;
+}
+
+body.auth-unlocked #experienceView .experience-grid,
+body.auth-unlocked #commissionerView .commissioner-grid,
+body.auth-unlocked #submitView .submit-form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 380px), 1fr));
+  gap: 10px;
+}
+
+body.auth-unlocked #experienceView .experience-wide {
+  grid-column: span 2;
+}
+
+body.auth-unlocked #experienceView .experience-card,
+body.auth-unlocked #commissionerView .commissioner-card,
+body.auth-unlocked #submitView .submit-card {
+  padding: 14px;
+}
+
+body.auth-unlocked #experienceView .intelligence-pulse-grid,
+body.auth-unlocked #experienceView .intelligence-market-grid,
+body.auth-unlocked #experienceView .intelligence-parity-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 8px;
+}
+
+body.auth-unlocked #experienceView .intelligence-action-row,
+body.auth-unlocked #experienceView .intelligence-market-card,
+body.auth-unlocked #experienceView .intelligence-match-card,
+body.auth-unlocked #commissionerView .commissioner-list > div,
+body.auth-unlocked #submitView .submit-card form {
+  border-color: var(--workspace-line);
+  border-radius: 8px;
+  background: rgba(4, 7, 9, 0.46);
+  box-shadow: none;
+}
+
+@media (max-width: 1180px) {
+  body.auth-unlocked #calendarView .controls,
+  body.auth-unlocked #squadView .squad-controls.controls,
+  body.auth-unlocked #transfersView .transfer-workbench,
+  body.auth-unlocked #transfersView .transfer-workbench .form-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  body.auth-unlocked #squadView .squad-builder-grid,
+  body.auth-unlocked #playersView .coach-top-row-v54 {
+    grid-template-columns: 1fr;
+  }
+
+  body.auth-unlocked #transfersView .transfer-ops-board {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 760px) {
+  body.auth-unlocked #playersView .coach-hero-card,
+  body.auth-unlocked #squadView .squad-hero-panel,
+  body.auth-unlocked #eventsView .countdown-card,
+  body.auth-unlocked #eventsView .event-board-header,
+  body.auth-unlocked #transfersView .countdown-card {
+    grid-template-columns: 1fr;
+  }
+
+  body.auth-unlocked #playersView .coach-hero-rank {
+    justify-items: start;
+  }
+
+  body.auth-unlocked #playersView .coach-hero-card h2 {
+    font-size: clamp(1.8rem, 8vw, 2.5rem);
+  }
+
+  body.auth-unlocked #playersView .coach-hero-card {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 8px;
+    padding: 10px;
+  }
+
+  body.auth-unlocked #playersView .coach-hero-main {
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 8px;
+  }
+
+  body.auth-unlocked #playersView .coach-hero-avatar-tools,
+  body.auth-unlocked #eventsView .countdown-card p,
+  body.auth-unlocked #transfersView .countdown-card p {
+    display: none;
+  }
+
+  body.auth-unlocked #playersView .coach-hero-rank {
+    align-self: center;
+    justify-items: end;
+  }
+
+  body.auth-unlocked #playersView .email-folder-header,
+  body.auth-unlocked #playersView .email-thread,
+  body.auth-unlocked #playersView .email-thread-summary,
+  body.auth-unlocked #playersView .email-thread-body {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  body.auth-unlocked #playersView .coach-event-impact,
+  body.auth-unlocked #playersView .coach-event-impact b {
+    min-width: 0;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  body.auth-unlocked #calendarView .controls,
+  body.auth-unlocked #calendarView .calendar-week-header,
+  body.auth-unlocked #calendarView .calendar-month-header,
+  body.auth-unlocked #eventsView .event-focus-strip,
+  body.auth-unlocked #squadView .squad-controls.controls,
+  body.auth-unlocked #squadView .squad-balance-grid,
+  body.auth-unlocked #squadView .squad-availability-strip,
+  body.auth-unlocked #transfersView .transfer-ops-board,
+  body.auth-unlocked #transfersView .transfer-workbench,
+  body.auth-unlocked #transfersView .transfer-workbench .form-grid,
+  body.auth-unlocked #experienceView .experience-grid,
+  body.auth-unlocked #commissionerView .commissioner-grid,
+  body.auth-unlocked #submitView .submit-form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  body.auth-unlocked #experienceView .experience-wide {
+    grid-column: auto;
+  }
+
+  body.auth-unlocked #calendarView .calendar-month-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  body.auth-unlocked #calendarView .calendar-weekday-row,
+  body.auth-unlocked #calendarView .calendar-day-cell-empty,
+  body.auth-unlocked #calendarView .calendar-day-empty {
+    display: none;
+  }
+
+  body.auth-unlocked #calendarView .calendar-day-cell:not(.has-events) {
+    display: none;
+  }
+}

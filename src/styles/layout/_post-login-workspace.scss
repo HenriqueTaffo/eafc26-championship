@@ -1,0 +1,742 @@
+/* Post-login workspace rework: compact chrome and calmer operational screens. */
+:root {
+  --app-ui-font-family:
+    Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    sans-serif;
+  --workspace-bg: #070909;
+  --workspace-panel: rgba(12, 15, 17, 0.86);
+  --workspace-panel-soft: rgba(17, 22, 25, 0.68);
+  --workspace-line: rgba(183, 197, 205, 0.13);
+  --workspace-line-strong: rgba(137, 167, 176, 0.24);
+  --workspace-text: #eef4f2;
+  --workspace-muted: #91a0a7;
+  --workspace-accent: #2dd4bf;
+  --workspace-warm: #f5c451;
+}
+
+body.auth-unlocked,
+body.auth-unlocked *:not(svg):not(path) {
+  font-family: var(--app-ui-font-family) !important;
+}
+
+body.auth-unlocked {
+  color: var(--workspace-text);
+  background:
+    linear-gradient(180deg, #091110 0%, var(--workspace-bg) 38%, #070707 100%);
+}
+
+body.auth-unlocked .app {
+  width: min(1440px, calc(100% - 24px));
+  padding: 12px 0 38px;
+}
+
+body.auth-unlocked .shell-top-cluster {
+  position: relative;
+  z-index: 30;
+  display: grid;
+  grid-template-columns: minmax(176px, 240px) minmax(0, 1fr);
+  align-items: stretch;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+body.auth-unlocked .league-hero-brand {
+  display: flex !important;
+  align-items: center;
+  min-height: 64px;
+  margin: 0;
+  padding: 9px 12px;
+  border-color: var(--workspace-line);
+  border-radius: 8px;
+  background: var(--workspace-panel);
+  box-shadow: none;
+}
+
+body.auth-unlocked .league-brand-lockup {
+  padding: 0;
+}
+
+body.auth-unlocked .league-brand-wordmark {
+  width: min(100%, 190px);
+  max-height: 38px;
+}
+
+body.auth-unlocked .league-hero-copy {
+  display: none !important;
+}
+
+body.auth-unlocked .manager-login-panel {
+  min-width: 0;
+  margin: 0;
+}
+
+body.auth-unlocked .manager-session-card.manager-login-shell {
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  min-height: 64px;
+  padding: 9px 12px;
+  border-color: var(--workspace-line) !important;
+  border-radius: 8px;
+  background: var(--workspace-panel);
+  box-shadow: none;
+}
+
+body.auth-unlocked .manager-login-shell::before,
+body.auth-unlocked .manager-session-card.manager-login-shell::before {
+  display: none;
+}
+
+body.auth-unlocked .manager-login-identity {
+  gap: 10px;
+}
+
+body.auth-unlocked .manager-login-avatar-shell,
+body.auth-unlocked .manager-custom-avatar {
+  width: 42px;
+  height: 42px;
+  border-radius: 8px;
+}
+
+body.auth-unlocked .manager-session-card span {
+  color: var(--workspace-accent) !important;
+  font-size: 0.64rem;
+  letter-spacing: 0;
+}
+
+body.auth-unlocked .manager-session-card strong {
+  margin: 2px 0 0;
+  color: var(--workspace-text) !important;
+  font-size: 0.98rem !important;
+  line-height: 1.1;
+}
+
+body.auth-unlocked .manager-session-card small {
+  max-width: none;
+  margin-top: 2px;
+  color: var(--workspace-muted) !important;
+  font-size: 0.74rem;
+  line-height: 1.25;
+}
+
+body.auth-unlocked .manager-session-actions {
+  align-items: center;
+  gap: 6px;
+}
+
+body.auth-unlocked .manager-session-actions .ghost-button {
+  min-height: 34px;
+  border-color: var(--workspace-line);
+  border-radius: 8px;
+  padding: 0 10px;
+  background: rgba(255, 255, 255, 0.035);
+  color: var(--workspace-text);
+  box-shadow: none;
+  font-size: 0.72rem;
+}
+
+body.auth-unlocked #managerNotificationCenter {
+  display: none;
+}
+
+body.auth-unlocked .workspace-nav {
+  position: sticky;
+  top: 8px;
+  z-index: 35;
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 8px;
+  min-width: 0;
+  margin: 0;
+  overflow-x: auto;
+  border: 1px solid var(--workspace-line);
+  border-radius: 8px;
+  padding: 6px;
+  background: rgba(9, 12, 14, 0.94);
+  box-shadow: none;
+  scrollbar-width: thin;
+}
+
+body.auth-unlocked .workspace-nav-group {
+  display: flex;
+  flex: 0 0 auto;
+  min-width: 0;
+  gap: 6px;
+  padding: 0;
+  border: 0;
+  background: none;
+  box-shadow: none;
+}
+
+body.auth-unlocked .workspace-nav-group-header {
+  display: none;
+}
+
+body.auth-unlocked .workspace-nav-grid {
+  display: flex;
+  flex: 0 0 auto;
+  gap: 6px;
+}
+
+body.auth-unlocked .workspace-nav-tab {
+  grid-template-columns: 24px max-content;
+  gap: 8px;
+  width: auto;
+  min-width: max-content;
+  min-height: 38px;
+  border-color: transparent;
+  border-radius: 8px;
+  padding: 7px 10px;
+  background: transparent;
+  box-shadow: none;
+}
+
+body.auth-unlocked .workspace-nav-tab:hover,
+body.auth-unlocked .workspace-nav-tab:focus-visible {
+  transform: none;
+  border-color: var(--workspace-line);
+  background: rgba(255, 255, 255, 0.045);
+  box-shadow: none;
+}
+
+body.auth-unlocked .workspace-nav-tab.active {
+  border-color: rgba(45, 212, 191, 0.34);
+  background: rgba(45, 212, 191, 0.1);
+  box-shadow: none;
+}
+
+body.auth-unlocked .workspace-nav-tab-icon {
+  width: 24px;
+  height: 24px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: #b7c7cd;
+}
+
+body.auth-unlocked .workspace-nav-tab.active .workspace-nav-tab-icon {
+  background: transparent;
+  color: var(--workspace-warm);
+}
+
+body.auth-unlocked .workspace-nav-tab-copy {
+  display: block;
+}
+
+body.auth-unlocked .workspace-nav-tab-copy strong {
+  color: var(--workspace-text);
+  font-size: 0.78rem;
+  font-weight: 760;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+body.auth-unlocked .workspace-nav-tab-copy small {
+  display: none;
+}
+
+body.auth-unlocked .app-status-bar {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: minmax(180px, 0.8fr) minmax(0, 1.2fr);
+  align-items: center;
+  gap: 10px;
+  min-height: 48px;
+  margin: 0;
+  border-color: var(--workspace-line);
+  border-radius: 8px;
+  padding: 7px;
+  background: var(--workspace-panel);
+  box-shadow: none;
+}
+
+body.auth-unlocked .status-primary {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
+}
+
+body.auth-unlocked .status-kicker {
+  color: var(--workspace-accent);
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+body.auth-unlocked #syncStatusText {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--workspace-muted);
+  font-size: 0.74rem;
+  font-weight: 650;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+body.auth-unlocked .status-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  min-width: 0;
+}
+
+body.auth-unlocked .global-search {
+  flex: 1 1 320px;
+  min-width: min(100%, 220px);
+}
+
+body.auth-unlocked .global-search input,
+body.auth-unlocked .app-status-bar button {
+  min-height: 34px;
+  border-radius: 8px;
+  font-size: 0.76rem;
+}
+
+body.auth-unlocked .app-status-bar button {
+  flex: 0 0 auto;
+  border-color: var(--workspace-line);
+  background: rgba(255, 255, 255, 0.04);
+  box-shadow: none;
+}
+
+body.auth-unlocked :is(
+  #playersView,
+  #calendarView,
+  #eventsView,
+  #squadView,
+  #transfersView,
+  #commissionerView,
+  #submitView,
+  #experienceView
+).view.active {
+  display: grid;
+  gap: 10px;
+}
+
+body.auth-unlocked :is(
+  #playersView,
+  #calendarView,
+  #eventsView,
+  #squadView,
+  #transfersView,
+  #commissionerView,
+  #submitView,
+  #experienceView
+) > :where(.summary, .controls, .leaderboard-grid, .footer-note) {
+  margin: 0;
+}
+
+body.auth-unlocked :is(
+  #playersView,
+  #calendarView,
+  #eventsView,
+  #squadView,
+  #transfersView,
+  #commissionerView,
+  #submitView,
+  #experienceView
+) > .summary {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 150px), 1fr));
+  gap: 8px;
+}
+
+body.auth-unlocked :is(
+  #playersView,
+  #calendarView,
+  #eventsView,
+  #squadView,
+  #transfersView,
+  #commissionerView,
+  #submitView,
+  #experienceView
+) .summary-card {
+  min-height: 76px;
+  border-color: var(--workspace-line);
+  border-radius: 8px;
+  padding: 10px 11px;
+  background: var(--workspace-panel);
+  box-shadow: none;
+}
+
+body.auth-unlocked :is(
+  #playersView,
+  #calendarView,
+  #eventsView,
+  #squadView,
+  #transfersView,
+  #commissionerView,
+  #submitView,
+  #experienceView
+) .summary-card::before {
+  display: none;
+}
+
+body.auth-unlocked :is(
+  #playersView,
+  #calendarView,
+  #eventsView,
+  #squadView,
+  #transfersView,
+  #commissionerView,
+  #submitView,
+  #experienceView
+) .summary-card::after {
+  display: none;
+}
+
+body.auth-unlocked :is(
+  #playersView,
+  #calendarView,
+  #eventsView,
+  #squadView,
+  #transfersView,
+  #commissionerView,
+  #submitView,
+  #experienceView
+) .summary-card span {
+  color: var(--workspace-muted);
+  font-size: 0.62rem;
+  letter-spacing: 0;
+}
+
+body.auth-unlocked :is(
+  #playersView,
+  #calendarView,
+  #eventsView,
+  #squadView,
+  #transfersView,
+  #commissionerView,
+  #submitView,
+  #experienceView
+) .summary-card strong {
+  margin-top: 5px;
+  color: var(--workspace-text);
+  font-size: clamp(1rem, 1.35vw, 1.28rem);
+  line-height: 1.08;
+}
+
+body.auth-unlocked :is(
+  #playersView,
+  #calendarView,
+  #eventsView,
+  #squadView,
+  #transfersView,
+  #commissionerView,
+  #submitView,
+  #experienceView
+) .summary-card small {
+  margin-top: 4px;
+  color: var(--workspace-muted);
+  font-size: 0.68rem;
+  line-height: 1.25;
+}
+
+body.auth-unlocked :is(
+  #playersView,
+  #calendarView,
+  #eventsView,
+  #squadView,
+  #transfersView,
+  #commissionerView,
+  #submitView,
+  #experienceView
+) .controls {
+  gap: 8px;
+  border-color: var(--workspace-line);
+  border-radius: 8px;
+  padding: 7px;
+  background: var(--workspace-panel);
+  box-shadow: none;
+}
+
+body.auth-unlocked :is(
+  #playersView,
+  #calendarView,
+  #eventsView,
+  #squadView,
+  #transfersView,
+  #commissionerView,
+  #submitView,
+  #experienceView
+) :where(input:not([type="checkbox"]):not([type="radio"]), select, textarea) {
+  min-height: 38px;
+  border-color: var(--workspace-line);
+  border-radius: 8px;
+  background: rgba(4, 7, 9, 0.58);
+  color: var(--workspace-text);
+  box-shadow: none;
+  font-size: 0.82rem;
+}
+
+body.auth-unlocked :is(
+  #playersView,
+  #calendarView,
+  #eventsView,
+  #squadView,
+  #transfersView,
+  #commissionerView,
+  #submitView,
+  #experienceView
+) :where(
+  .coach-panel-card,
+  .coach-hero-card,
+  .coach-central-card,
+  .coach-decision-card,
+  .coach-sale-list-card,
+  .coach-medical-card,
+  .email-office-card,
+  .leaderboard-card,
+  .countdown-card,
+  .form-card,
+  .rule-card,
+  .calendar-week-board,
+  .calendar-month-card,
+  .legend-block,
+  .event-card-v45,
+  .events-command-card,
+  .events-intro-card,
+  .event-board-header,
+  .event-focus-strip article,
+  .transfer-budget-card,
+  .transfer-ops-card,
+  .transfer-workbench,
+  .transfer-command-stack > .coach-panel-card,
+  .transfer-compare-board,
+  .transfer-negotiation-hub,
+  .transfer-hub-card,
+  .transfer-shortlist-item,
+  .transfer-deal-hero,
+  .squad-hero-panel,
+  .squad-pitch-card,
+  .squad-roster-panel,
+  .squad-balance-grid article,
+  .squad-availability-strip span,
+  .experience-card,
+  .commissioner-card,
+  .submit-card,
+  .table-wrapper
+) {
+  border-color: var(--workspace-line);
+  border-radius: 8px;
+  background: var(--workspace-panel);
+  box-shadow: none;
+}
+
+body.auth-unlocked :is(
+  #playersView,
+  #calendarView,
+  #eventsView,
+  #squadView,
+  #transfersView,
+  #commissionerView,
+  #submitView,
+  #experienceView
+) :where(.home-panel-header, .submit-card-header, .event-card-header) {
+  margin-bottom: 8px;
+}
+
+body.auth-unlocked :is(
+  #playersView,
+  #calendarView,
+  #eventsView,
+  #squadView,
+  #transfersView,
+  #commissionerView,
+  #submitView,
+  #experienceView
+) :where(h2, h3, strong) {
+  letter-spacing: 0;
+}
+
+body.auth-unlocked :is(#eventsView, #transfersView) .countdown-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  min-height: 0;
+  padding: 12px 14px;
+}
+
+body.auth-unlocked #eventsView .events-intro-card {
+  display: none;
+}
+
+body.auth-unlocked #eventsView .event-grid {
+  margin: 0;
+}
+
+body.auth-unlocked #eventsView .event-card-grid-v45,
+body.auth-unlocked #eventsView .event-card-grid-v66 {
+  gap: 10px;
+}
+
+body.auth-unlocked #eventsView .event-card-v45 {
+  padding: 12px;
+}
+
+body.auth-unlocked #squadView .squad-shell {
+  gap: 10px;
+}
+
+body.auth-unlocked #squadView .squad-hero-panel {
+  padding: 11px 12px;
+}
+
+body.auth-unlocked #squadView .squad-balance-grid,
+body.auth-unlocked #squadView .squad-availability-strip {
+  gap: 8px;
+}
+
+body.auth-unlocked #squadView .squad-source-stack span {
+  min-height: 26px;
+  border-color: var(--workspace-line);
+  background: rgba(255, 255, 255, 0.035);
+  color: var(--workspace-muted);
+  font-size: 0.68rem;
+}
+
+body.auth-unlocked #transfersView .transfer-budget-board,
+body.auth-unlocked #transfersView .transfer-ops-board,
+body.auth-unlocked #transfersView .transfer-insights {
+  gap: 8px;
+  margin: 0;
+}
+
+body.auth-unlocked #transfersView .transfer-workbench {
+  gap: 10px;
+  margin: 0;
+  padding: 12px;
+}
+
+body.auth-unlocked #transfersView .rule-card {
+  display: none;
+}
+
+body.auth-unlocked #playersView .player-grid,
+body.auth-unlocked #playersView .leaderboard-grid {
+  gap: 10px;
+}
+
+body.auth-unlocked #playersView .coach-dashboard,
+body.auth-unlocked #playersView .coach-layout-v54,
+body.auth-unlocked #playersView .coach-flow-v55,
+body.auth-unlocked #playersView .coach-top-row-v54 {
+  gap: 10px;
+}
+
+@media (max-width: 980px) {
+  body.auth-unlocked .app {
+    width: min(100% - 16px, 760px);
+    padding-top: 8px;
+  }
+
+  body.auth-unlocked .shell-top-cluster {
+    grid-template-columns: 1fr;
+  }
+
+  body.auth-unlocked .league-hero-brand {
+    min-height: 54px;
+  }
+
+  body.auth-unlocked .manager-session-card.manager-login-shell,
+  body.auth-unlocked .app-status-bar {
+    grid-template-columns: 1fr;
+  }
+
+  body.auth-unlocked .manager-session-actions,
+  body.auth-unlocked .status-actions {
+    justify-content: flex-start;
+  }
+
+  body.auth-unlocked .status-actions {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    flex-direction: row;
+  }
+
+  body.auth-unlocked .global-search {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  body.auth-unlocked .app-status-bar button {
+    width: auto;
+  }
+
+  body.auth-unlocked .workspace-nav {
+    top: 6px;
+  }
+
+  body.auth-unlocked .workspace-nav-tab {
+    grid-template-columns: 22px max-content;
+    min-height: 36px;
+    padding: 7px 9px;
+  }
+
+  body.auth-unlocked #squadView .squad-balance-grid,
+  body.auth-unlocked #squadView .squad-availability-strip {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 560px) {
+  body.auth-unlocked .app {
+    width: min(100% - 12px, 460px);
+  }
+
+  body.auth-unlocked .league-hero-brand {
+    display: none !important;
+  }
+
+  body.auth-unlocked .manager-session-card.manager-login-shell {
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    padding: 8px;
+  }
+
+  body.auth-unlocked .manager-login-identity {
+    min-width: 0;
+  }
+
+  body.auth-unlocked .manager-session-card small {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  body.auth-unlocked .manager-session-actions
+    .ghost-button:not([data-auth-action="logout"]) {
+    display: none;
+  }
+
+  body.auth-unlocked .manager-session-actions .ghost-button {
+    min-height: 32px;
+    padding: 0 9px;
+  }
+
+  body.auth-unlocked .workspace-nav {
+    margin-inline: -2px;
+  }
+
+  body.auth-unlocked .workspace-nav-tab-copy strong {
+    font-size: 0.74rem;
+  }
+
+  body.auth-unlocked :is(
+    #playersView,
+    #calendarView,
+    #eventsView,
+    #squadView,
+    #transfersView,
+    #commissionerView,
+    #submitView,
+    #experienceView
+  ) > .summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
