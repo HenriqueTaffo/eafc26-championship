@@ -2407,7 +2407,11 @@ App.transfers = {
   },
 
   findPublicSalaryReference(playerName = "", clubName = "") {
-    const playerKey = App.transfers.normalizeSalaryLookup(playerName);
+    const aliasKeys = App.transfers
+      .getPlayerSearchAliases(playerName)
+      .map((name) => App.transfers.normalizeSalaryLookup(name))
+      .filter(Boolean);
+    const playerKey = aliasKeys[0] || App.transfers.normalizeSalaryLookup(playerName);
     const clubKey = App.transfers.normalizeSalaryLookup(clubName);
     if (!playerKey) return null;
 
@@ -2416,17 +2420,33 @@ App.transfers = {
       : [];
 
     const matches = refs.filter(
-      (item) =>
-        App.utils.normalizeText(item.playerName || item.player_name) ===
-        playerKey ||
-        App.transfers.normalizeSalaryLookup(
+      (item) => {
+        const itemKey = App.transfers.normalizeSalaryLookup(
           item.playerName || item.player_name,
-        ) === playerKey,
+        );
+        if (!itemKey) return false;
+        if (aliasKeys.includes(itemKey) || itemKey === playerKey) return true;
+        return aliasKeys.some(
+          (aliasKey) =>
+            App.transfers.isTrustedPlayerNameMatch(aliasKey, itemKey) ||
+            App.transfers.isTrustedPlayerNameMatch(itemKey, aliasKey),
+        );
+      },
     );
     if (!matches.length) return null;
 
     return (
       [...matches].sort((left, right) => {
+        const leftPlayerKey = App.transfers.normalizeSalaryLookup(
+          left.playerName || left.player_name,
+        );
+        const rightPlayerKey = App.transfers.normalizeSalaryLookup(
+          right.playerName || right.player_name,
+        );
+        const leftNameExact = leftPlayerKey === playerKey ? 0 : 1;
+        const rightNameExact = rightPlayerKey === playerKey ? 0 : 1;
+        if (leftNameExact !== rightNameExact) return leftNameExact - rightNameExact;
+
         const leftClubKey = App.transfers.normalizeSalaryLookup(
           left.clubName || left.club_name,
         );

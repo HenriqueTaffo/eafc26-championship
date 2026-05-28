@@ -4361,6 +4361,10 @@ App.auth = {
     const cashValue = Number(item.cash_offer_value || proposedValue || 0);
     const displayMeta = App.auth.getTransferProposalDisplayMeta(item);
     const weeklySalary = Number(displayMeta.weeklySalary || 0);
+    const weeklySalaryLabel =
+      weeklySalary > 0
+        ? `${App.utils.formatCurrency(weeklySalary)}/sem`
+        : "Pendente /sem";
     const sourceLabel = App.auth.getTransferProposalSourceLabel(item);
     const sourceLabelEscaped = App.utils.escapeDisplay(sourceLabel);
     const playerLabel = App.utils.escapeDisplay(item.player || "Jogador");
@@ -4416,7 +4420,7 @@ App.auth = {
           </div>
           <div>
             <span>Folha semanal</span>
-            <strong>${App.utils.formatCurrency(weeklySalary)}/sem</strong>
+            <strong>${App.utils.escapeDisplay(weeklySalaryLabel)}</strong>
           </div>
           <div>
             <span>Troca de contrato</span>
@@ -4502,6 +4506,10 @@ App.auth = {
         : "Sem jogador na troca";
       const isActionable = status === "buyer_review" || status === "pending";
       const sourceLabelEscaped = App.utils.escapeDisplay(sourceLabel);
+      const weeklySalaryLabel =
+        Number(displayMeta.weeklySalary || 0) > 0
+          ? `${App.utils.formatCurrency(displayMeta.weeklySalary)}/sem`
+          : "Pendente /sem";
       if (options.compact) {
         return `
           <article class="proposal-summary-item external-market-proposal compact-proposal-summary proposal-status-${status}">
@@ -4511,7 +4519,7 @@ App.auth = {
           <div class="proposal-market-meta">
             <b>Oferta ${App.utils.formatCurrency(buyerOffer || cashValue)}</b>
             <b>Pedido ${App.utils.formatCurrency(proposedValue)}</b>
-            <b>Folha ${App.utils.formatCurrency(displayMeta.weeklySalary)}/sem</b>
+            <b>Folha ${App.utils.escapeHtml(weeklySalaryLabel)}</b>
           </div>
           ${App.auth.getTransferProposalTimeline(item, { compact: true, maxItems: 2 })}
         </article>
@@ -4526,7 +4534,7 @@ App.auth = {
             <b>Ref. ${App.utils.formatCurrency(referenceValue)}</b>
             <b>Pedido ${App.utils.formatCurrency(proposedValue)}</b>
             <b>Caixa ${App.utils.formatCurrency(cashValue)}</b>
-            <b>Folha ${App.utils.formatCurrency(displayMeta.weeklySalary)}/sem</b>
+            <b>Folha ${App.utils.escapeHtml(weeklySalaryLabel)}</b>
             <b>${App.utils.escapeHtml(tradeLabel)}</b>
           </div>
           ${options.compact ? "" : App.auth.getTransferProposalTimeline(item, { compact: true, maxItems: 2 })}

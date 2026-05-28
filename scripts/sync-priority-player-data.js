@@ -84,6 +84,15 @@ async function main() {
     "--retry-delay-ms=1500",
     ...clubArgs,
   ]);
+  runNodeScript(path.join(ROOT_DIR, "scripts", "sync-salarysport-salaries.js"), [
+    "--apply-rest",
+    "--concurrency=4",
+    "--retry-count=4",
+    "--retry-delay-ms=1500",
+    "--limit=400",
+    "--min-market-value=2500000",
+    ...clubArgs,
+  ]);
   runNodeScript(path.join(ROOT_DIR, "scripts", "sync-transfermarkt-market-values.js"), [
     "--limit=1200",
     "--delay-ms=900",
