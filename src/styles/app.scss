@@ -7028,7 +7028,622 @@ body.auth-gated {
     grid-template-columns: 30px 34px minmax(0, 1fr);
   }
 
-  .coach-podium-card b {
-    grid-column: 1 / -1;
+.coach-podium-card b {
+  grid-column: 1 / -1;
+  }
+}
+
+.manager-custom-avatar {
+  position: relative;
+  display: grid;
+  width: 52px;
+  height: 52px;
+  place-items: center;
+  overflow: hidden;
+  border: 1px solid rgba(45, 212, 191, 0.24);
+  border-radius: 14px;
+  background:
+    radial-gradient(circle at top left, rgba(45, 212, 191, 0.16), transparent 42%),
+    rgba(2, 6, 23, 0.84);
+  color: #dffcf8;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    0 10px 24px rgba(2, 8, 23, 0.28);
+
+  img,
+  span {
+    position: absolute;
+    inset: 0;
+  }
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  span {
+    display: grid;
+    place-items: center;
+    font-size: 0.92rem;
+    font-weight: 900;
+  }
+}
+
+.manager-custom-avatar.has-image span {
+  display: none;
+}
+
+.manager-login-avatar-shell {
+  width: 58px;
+  height: 58px;
+  border-radius: 16px;
+}
+
+.coach-manager-avatar {
+  width: 88px;
+  height: 88px;
+  border-radius: 22px;
+}
+
+.manager-session-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.manager-session-actions .ghost-button {
+  min-height: 38px;
+  padding: 0 14px;
+}
+
+.manager-login-success-card .manager-login-flip-card {
+  animation: login-success-flip 1.35s cubic-bezier(0.65, 0, 0.18, 1) forwards;
+}
+
+body.auth-login-success .manager-login-transition-ghost {
+  animation: login-ghost-out 1.08s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+body.auth-login-success .manager-login-success-card.manager-login-shell {
+  transform: translateY(18px) scale(0.98);
+  filter: blur(10px);
+  animation: login-success-card-in 1.04s cubic-bezier(0.22, 1, 0.36, 1) 0.16s
+    forwards;
+}
+
+body.auth-login-success .manager-login-success-copy {
+  animation: login-success-copy-in 0.72s cubic-bezier(0.22, 1, 0.36, 1) 0.72s
+    forwards;
+}
+
+@keyframes login-success-flip {
+  0%,
+  48% {
+    transform: rotateY(0deg);
+  }
+
+  100% {
+    transform: rotateY(180deg);
+  }
+}
+
+@keyframes login-ghost-out {
+  0% {
+    opacity: 0.98;
+    transform: scale(1) translateY(0);
+    filter: blur(0);
+  }
+
+  42% {
+    opacity: 0.66;
+    transform: scale(0.992) translateY(-4px);
+    filter: blur(4px);
+  }
+
+  100% {
+    opacity: 0;
+    transform: scale(0.95) translateY(-12px);
+    filter: blur(18px);
+  }
+}
+
+.coach-dashboard {
+  gap: 14px;
+}
+
+.coach-panel-card,
+.transfer-deal-card,
+.transfer-shortlist-card,
+.transfer-compare-board,
+.transfer-negotiation-hub,
+.transfer-scout-card,
+.coach-hero-card,
+.email-office-card {
+  padding: 14px;
+  border-radius: 10px;
+}
+
+.home-panel-header {
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.home-panel-header h2,
+.leaderboard-card h2,
+.transfer-hub-card-head strong,
+.transfer-shortlist-group-head strong {
+  font-size: clamp(1.02rem, 1.35vw, 1.26rem);
+  line-height: 1.1;
+}
+
+.home-panel-header span,
+.coach-section-kicker,
+.transfer-pill {
+  min-height: 28px;
+  padding: 0 10px;
+  font-size: 0.62rem;
+}
+
+.coach-card-subtitle,
+.leaderboard-card > p,
+.transfer-negotiation-hub .coach-card-subtitle {
+  font-size: 0.72rem;
+  line-height: 1.45;
+}
+
+.coach-hero-card {
+  padding: 12px 14px;
+}
+
+.coach-hero-main {
+  align-items: center;
+  gap: 14px;
+}
+
+.coach-hero-avatar-stack {
+  display: grid;
+  gap: 8px;
+  justify-items: center;
+}
+
+.coach-hero-avatar-tools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.coach-hero-avatar-tools .ghost-button {
+  min-height: 34px;
+  padding: 0 12px;
+  font-size: 0.64rem;
+}
+
+.coach-club-mark .coach-crest-muted.club-badge,
+.squad-hero-badge.club-badge,
+.home-standings-table .club-badge,
+#standingsTable .club-badge {
+  background:
+    radial-gradient(circle at top left, rgba(255, 255, 255, 0.12), transparent 34%),
+    rgba(8, 13, 18, 0.92);
+  border-color: rgba(148, 163, 184, 0.16);
+}
+
+.coach-club-mark .coach-crest-muted.club-badge img,
+.squad-hero-badge.club-badge img,
+.home-standings-table .club-badge img,
+#standingsTable .club-badge img {
+  width: 82%;
+  height: 82%;
+}
+
+.coach-central-card,
+.coach-decision-card,
+.coach-sale-list-card,
+.coach-medical-card {
+  gap: 12px;
+}
+
+.coach-central-grid,
+.coach-central-agenda,
+.medical-summary-strip,
+.medical-case-meta,
+.email-office-headline {
+  gap: 8px;
+}
+
+.coach-central-grid article,
+.coach-central-agenda .coach-agenda-item,
+.email-office-headline article,
+.medical-summary-strip span,
+.medical-metric-grid span,
+.transfer-ops-card,
+.transfer-deal-metrics article,
+.transfer-compare-stats div {
+  min-height: 0;
+  padding: 10px 11px;
+  border-radius: 10px;
+}
+
+.coach-central-grid article strong,
+.email-office-headline article strong {
+  font-size: 1.05rem;
+}
+
+.coach-central-footnote {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 2px;
+}
+
+.coach-central-footnote span {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 0 10px;
+  border: 1px solid rgba(148, 163, 184, 0.12);
+  border-radius: 999px;
+  background: rgba(2, 6, 23, 0.34);
+  color: #b8c7d6;
+  font-size: 0.66rem;
+}
+
+.coach-top-row-v54,
+.coach-flow-v55,
+.coach-layout-v54 {
+  gap: 14px;
+}
+
+.email-office-card {
+  gap: 14px;
+}
+
+.email-office-toolbar,
+.email-bulk-toolbar {
+  gap: 10px;
+}
+
+.email-bulk-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.email-bulk-toolbar button,
+.email-thread-row-actions button {
+  min-height: 32px;
+  padding: 0 10px;
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  border-radius: 999px;
+  background: rgba(2, 6, 23, 0.42);
+  color: #dbeafe;
+  font-size: 0.62rem;
+  font-weight: 900;
+}
+
+.email-thread-summary {
+  grid-template-columns: 30px minmax(68px, 0.36fr) minmax(92px, 0.48fr) minmax(0, 1.5fr) auto minmax(170px, 0.8fr);
+  min-height: 58px;
+  padding: 9px 12px;
+}
+
+.email-thread-copy strong {
+  font-size: 0.8rem;
+}
+
+.email-thread-copy small,
+.email-thread-folder,
+.email-thread-sender,
+.email-thread-badge {
+  font-size: 0.66rem;
+}
+
+.email-thread-row-actions {
+  display: grid;
+  grid-auto-flow: column;
+  gap: 6px;
+}
+
+.email-thread.is-deleted {
+  opacity: 0.72;
+}
+
+.email-mailbox-section.is-trash .email-mailbox-section-header b {
+  color: #fecaca;
+  background: rgba(127, 29, 29, 0.24);
+}
+
+.transfer-workbench,
+.transfer-command-stack,
+.transfer-hub-grid,
+.transfer-deal-columns,
+.transfer-shortlist-groups,
+.workspace-nav,
+.workspace-nav-grid {
+  gap: 12px;
+}
+
+.transfer-workbench .form-grid,
+.transfer-workbench .preview-grid,
+.preview-offer-lane,
+.proposal-market-meta,
+.transfer-deal-metrics,
+.transfer-compare-stats {
+  gap: 8px;
+}
+
+.transfer-workbench .transfer-live-preview,
+.transfer-deal-hero,
+.transfer-hub-card,
+.transfer-shortlist-item,
+.transfer-scout-card,
+.scout-priority-panel,
+.scout-recommendation-item,
+.transfer-compare-card,
+.transfer-summary-item {
+  border-radius: 10px;
+}
+
+.transfer-workbench .transfer-live-preview,
+.transfer-deal-hero,
+.transfer-hub-card,
+.transfer-shortlist-item,
+.scout-priority-panel,
+.scout-recommendation-item,
+.transfer-compare-card {
+  padding: 12px;
+}
+
+.preview-header-modern strong,
+.transfer-deal-hero strong {
+  font-size: clamp(1rem, 1.55vw, 1.28rem);
+}
+
+.preview-offer-card,
+.transfer-workbench .preview-metric,
+.transfer-ops-card {
+  min-height: 72px;
+  padding: 10px 11px;
+}
+
+.preview-offer-card strong,
+.transfer-workbench .preview-metric-value strong {
+  font-size: clamp(0.98rem, 1.45vw, 1.2rem);
+}
+
+.transfer-workbench .form-actions .primary-button,
+.proposal-market-actions button {
+  min-height: 44px;
+}
+
+.transfer-hub-card-body {
+  min-height: 0;
+}
+
+.transfer-hub-grid {
+  align-items: start;
+}
+
+.transfer-shortlist-empty,
+.transfer-workspace-empty,
+.market-empty {
+  min-height: 0;
+  padding: 12px;
+  font-size: 0.72rem;
+  line-height: 1.5;
+}
+
+.scout-priority-panel {
+  padding: 12px;
+}
+
+.scout-priority-meta {
+  gap: 10px;
+}
+
+.scout-priority-row {
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 10px;
+}
+
+.scout-priority-row strong,
+.scout-recommendation-copy strong {
+  font-size: 0.82rem;
+}
+
+.scout-priority-row small,
+.scout-recommendation-copy small,
+.scout-recommendation-item p,
+.scout-recommendation-item small {
+  font-size: 0.68rem;
+  line-height: 1.45;
+}
+
+.scout-priority-control {
+  gap: 8px;
+}
+
+.scout-priority-control input[type="range"] {
+  height: 4px;
+}
+
+.scout-recommendation-list {
+  gap: 10px;
+}
+
+.scout-recommendation-item {
+  gap: 8px;
+}
+
+.coach-medical-card .medical-plan-hero,
+.medical-plan-options,
+.medical-metric-grid {
+  gap: 8px;
+}
+
+.coach-medical-card .medical-plan-hero > div,
+.medical-plan-options button {
+  padding: 10px 11px;
+}
+
+.medical-plan-options button {
+  min-height: 0;
+}
+
+.medical-case-card {
+  gap: 10px;
+  padding: 12px;
+  border-radius: 10px;
+}
+
+.medical-case-head,
+.medical-case-foot {
+  gap: 8px;
+}
+
+.medical-case-pill {
+  min-height: 26px;
+  padding: 0 8px;
+  font-size: 0.58rem;
+}
+
+.league-toast-viewport {
+  max-width: min(360px, calc(100vw - 24px));
+  gap: 10px;
+}
+
+.league-toast {
+  padding: 12px 13px 12px 14px;
+  border-radius: 14px;
+}
+
+.league-toast-copy [data-radix-toast-title] {
+  font-size: 0.84rem;
+}
+
+.league-toast-copy [data-radix-toast-description] {
+  font-size: 0.72rem;
+}
+
+.leaderboard-grid {
+  gap: 12px;
+}
+
+.leaderboard-row {
+  display: grid;
+  grid-template-columns: 26px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.1);
+}
+
+.leaderboard-row > div {
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+}
+
+.leaderboard-row strong,
+.leaderboard-row small {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.leaderboard-row strong {
+  font-size: 0.84rem;
+}
+
+.leaderboard-row small {
+  color: #9fb3bf;
+  font-size: 0.66rem;
+}
+
+.leaderboard-row b {
+  font-size: 0.82rem;
+}
+
+.squad-hero-panel {
+  padding: 12px 14px;
+}
+
+.squad-hero-badge.club-badge {
+  width: 64px;
+  height: 64px;
+  flex-basis: 64px;
+  border-radius: 18px;
+}
+
+@media (min-width: 1181px) {
+  .calendar-month-grid {
+    gap: 8px;
+  }
+
+  .calendar-day-cell {
+    min-height: 110px;
+    padding: 8px;
+  }
+
+  .calendar-day-cell.has-events {
+    min-height: 176px;
+  }
+
+  .calendar-day-top {
+    margin-bottom: 6px;
+  }
+
+  .calendar-day-top time span {
+    font-size: 1rem;
+  }
+
+  .calendar-day-top time small,
+  .calendar-day-count,
+  .calendar-event-phase,
+  .calendar-event-meta > span {
+    font-size: 0.54rem;
+  }
+
+  .calendar-day-events {
+    max-height: 126px;
+    overflow: hidden;
+    gap: 6px;
+  }
+
+  .calendar-event-card {
+    gap: 6px;
+    padding: 7px;
+  }
+
+  .calendar-event-card .calendar-grid-match .matchup-name {
+    font-size: 0.58rem;
+  }
+
+  .calendar-event-card .competition-badge,
+  .calendar-event-status-dot {
+    min-height: 18px;
+    padding: 3px 6px;
+  }
+
+  .calendar-event-action .status-pill,
+  .calendar-event-action .mini-action-button {
+    min-height: 28px;
+    font-size: 0.56rem;
+  }
+}
+
+@media (max-width: 980px) {
+  .manager-session-actions,
+  .coach-hero-avatar-tools,
+  .email-bulk-toolbar,
+  .email-thread-row-actions {
+    justify-content: flex-start;
   }
 }

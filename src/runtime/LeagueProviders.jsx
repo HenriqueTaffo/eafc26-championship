@@ -48,7 +48,7 @@ function getRealtimeCopy(table = "") {
   const normalized = String(table || "").toLowerCase();
   if (normalized === "matches") {
     return {
-      title: "Calendario sincronizado",
+      title: "Calendário sincronizado",
       description: "Resultados ou agenda acabaram de mudar.",
       tone: "info",
     };
@@ -56,41 +56,41 @@ function getRealtimeCopy(table = "") {
   if (normalized === "transfers") {
     return {
       title: "Mercado atualizado",
-      description: "A mesa de transferencias recebeu um novo movimento.",
+      description: "A mesa de transferências recebeu um novo movimento.",
       tone: "market",
     };
   }
   if (normalized === "events") {
     return {
       title: "Evento novo na liga",
-      description: "O escritorio recebeu impacto operacional recente.",
+      description: "O escritório recebeu impacto operacional recente.",
       tone: "warning",
     };
   }
   if (normalized === "internal_transfer_proposals") {
     return {
-      title: "Negociacao em andamento",
-      description: "Uma proposta mudou de etapa no escritorio.",
+      title: "Negociação em andamento",
+      description: "Uma proposta mudou de etapa no escritório.",
       tone: "market",
     };
   }
   if (normalized === "manager_notifications") {
     return {
       title: "Inbox privado atualizado",
-      description: "Novos avisos chegaram ao tecnico.",
+      description: "Novos avisos chegaram ao técnico.",
       tone: "info",
     };
   }
   if (normalized === "sponsorship_contracts") {
     return {
       title: "Comercial sincronizado",
-      description: "Patroc?nios e contratos acabaram de ser revistos.",
+      description: "Patrocínios e contratos acabaram de ser revistos.",
       tone: "success",
     };
   }
   return {
     title: "Liga sincronizada",
-    description: "Houve uma atualizacao operacional recente.",
+    description: "Houve uma atualização operacional recente.",
     tone: "info",
   };
 }
@@ -98,6 +98,8 @@ function getRealtimeCopy(table = "") {
 function useRealtimeLeagueBridge() {
   const pushToast = useLeagueUiStore((state) => state.pushToast);
   const timersRef = useRef(new Map());
+  const pendingTablesRef = useRef(new Set());
+  const lastAnnouncedAtRef = useRef(new Map());
 
   useEffect(() => {
     const realtimeClient = getRealtimeClient();
@@ -136,6 +138,41 @@ function useRealtimeLeagueBridge() {
       ]);
     };
 
+    const announceRealtimeBatch = () => {
+      const tables = Array.from(pendingTablesRef.current);
+      pendingTablesRef.current.clear();
+      if (!tables.length) return;
+
+      const toastKey = tables.slice().sort().join("|");
+      const now = Date.now();
+      const lastRun = Number(lastAnnouncedAtRef.current.get(toastKey) || 0);
+      if (now - lastRun < 9000) return;
+      lastAnnouncedAtRef.current.set(toastKey, now);
+
+      if (tables.length === 1) {
+        pushToast({
+          ...getRealtimeCopy(tables[0]),
+          duration: 5600,
+          dedupeWindowMs: 9000,
+        });
+        return;
+      }
+
+      const labels = tables.map((table) => getRealtimeCopy(table).title);
+      pushToast({
+        title: "Atualizações recentes",
+        description: `${labels.slice(0, 3).join(", ")}${labels.length > 3 ? " e outras áreas" : ""} acabaram de receber dados novos.`,
+        tone: tables.includes("transfers") ||
+          tables.includes("internal_transfer_proposals")
+          ? "market"
+          : tables.includes("events")
+            ? "warning"
+            : "success",
+        duration: 6200,
+        dedupeWindowMs: 9000,
+      });
+    };
+
     const channel = REALTIME_TABLES.reduce((builder, table) => {
       return builder.on(
         "postgres_changes",
@@ -145,8 +182,8 @@ function useRealtimeLeagueBridge() {
           table,
         },
         (payload) => {
-          const copy = getRealtimeCopy(table);
-          pushToast(copy);
+          pendingTablesRef.current.add(table);
+          schedule("toast", announceRealtimeBatch, 1600);
           queryClient.setQueryData(
             ["realtime", table],
             `${payload.eventType}:${payload.commit_timestamp || Date.now()}`,
@@ -167,16 +204,7 @@ function useRealtimeLeagueBridge() {
       );
     }, realtimeClient.channel("league-live-sync"));
 
-    channel.subscribe((status) => {
-      if (status === "SUBSCRIBED") {
-        pushToast({
-          title: "Realtime online",
-          description: "Mudancas da liga agora entram sem recarregar a pagina.",
-          tone: "success",
-          duration: 2600,
-        });
-      }
-    });
+    channel.subscribe(() => {});
 
     return () => {
       timersRef.current.forEach((timeoutId) => window.clearTimeout(timeoutId));

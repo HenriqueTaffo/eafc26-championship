@@ -150,6 +150,7 @@ function PlayersGrid() {
       html={html}
       onRendered={(root) => {
         App.players.bindCoachActions();
+        App.auth?.bindManagerAvatarControls?.(root);
         App.auth?.bindPinChangeForm?.();
         App.auth?.bindEmailOfficeControls?.(root);
         App.auth?.bindDecisionAnswerButtons?.(root);
@@ -170,7 +171,7 @@ function Leaderboard({ data, label }) {
       <span>{index + 1}</span>
       <div>
         <strong>{item.name}</strong>
-        <small>{item.detail}</small>
+        <small>{item.detail || "Sem detalhe"}</small>
       </div>
       <b>{item.count}</b>
     </div>

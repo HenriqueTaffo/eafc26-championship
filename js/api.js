@@ -187,6 +187,13 @@ App.api = {
     };
   },
 
+  getRegionalMarketFallbackLoaders() {
+    return [
+      () => import("../src/data/argentina-market-fallback.json"),
+      () => import("../src/data/greece-market-fallback.json"),
+    ];
+  },
+
   async loadRegionalMarketFallbackStore() {
     if (
       Array.isArray(App.api.regionalMarketFallbackRows) &&
@@ -199,13 +206,17 @@ App.api = {
     }
 
     if (!App.api.regionalMarketFallbackPromise) {
-      App.api.regionalMarketFallbackPromise = import(
-        "../src/data/argentina-market-fallback.json"
+      App.api.regionalMarketFallbackPromise = Promise.all(
+        App.api
+          .getRegionalMarketFallbackLoaders()
+          .map((loader) => loader().catch(() => ({ default: [] }))),
       )
-        .then((module) => {
-          const rows = Array.isArray(module.default)
-            ? module.default.map((item) => App.api.polishMarketFallbackRow(item))
-            : [];
+        .then((modules) => {
+          const rows = modules.flatMap((module) =>
+            Array.isArray(module.default)
+              ? module.default.map((item) => App.api.polishMarketFallbackRow(item))
+              : [],
+          );
           App.api.regionalMarketFallbackRows = rows;
           App.api.regionalMarketFallbackFuse = new Fuse(rows, {
             includeScore: true,

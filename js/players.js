@@ -1244,20 +1244,47 @@ App.players = {
     const dbOwnedPlayers = Array.isArray(data.ownedPlayers)
       ? data.ownedPlayers
       : [];
-    const ownedPlayers = dbOwnedPlayers.length
-      ? dbOwnedPlayers
-      : transfers.map((item) => ({
-          player: item.player,
-          playerName: item.player,
-          fromClub: item.fromClub,
-          overall: item.overall,
-          baseValue: item.totalCost || item.marketValue || 0,
-          listed: listings.some(
-            (listing) =>
-              App.utils.normalizeText(listing.player || listing.playerName) ===
-              App.utils.normalizeText(item.player),
-          ),
-        }));
+    const rosterPlayers = App.transfers?.getRosterPlayersByManager
+      ? App.transfers.getRosterPlayersByManager(owner)
+      : [];
+    const ownedPlayersMap = new Map();
+    [...dbOwnedPlayers, ...rosterPlayers, ...transfers].forEach((item) => {
+      const playerName = String(
+        item.player || item.playerName || item.name || "",
+      ).trim();
+      if (!playerName) return;
+      const key = App.utils.normalizeText(playerName);
+      const fromClub = item.fromClub || item.from_club || item.club || "";
+      const marketPlayer =
+        App.transfers.findMarketPlayerByName(playerName, {
+          club: fromClub,
+        }) || null;
+      ownedPlayersMap.set(key, {
+        ...(ownedPlayersMap.get(key) || {}),
+        player: playerName,
+        playerName,
+        fromClub,
+        position: item.position || marketPlayer?.position || "",
+        overall: Number(item.overall || marketPlayer?.overall || 0),
+        baseValue: Number(
+          item.baseValue ||
+            item.base_value ||
+            item.totalCost ||
+            item.marketValue ||
+            item.market_value_eur ||
+            marketPlayer?.market_value_eur ||
+            0,
+        ),
+        listed: listings.some(
+          (listing) =>
+            App.utils.normalizeText(listing.player || listing.playerName) ===
+            key,
+        ),
+      });
+    });
+    const ownedPlayers = [...ownedPlayersMap.values()].sort((a, b) =>
+      String(a.player || "").localeCompare(String(b.player || ""), "pt-BR"),
+    );
     const activeCount = listings.length;
 
     return `
@@ -2190,12 +2217,31 @@ App.players = {
     const saleListCard = canViewPrivate
       ? App.players.renderCoachSaleListCard(activeTeam.owner, transfers)
       : "";
+    const managerAvatar = App.auth?.renderManagerAvatar
+      ? App.auth.renderManagerAvatar(
+          activeTeam.owner,
+          activeTeam.team,
+          "coach-manager-avatar",
+        )
+      : "";
+    const avatarControls = canViewPrivate
+      ? `
+          <div class="coach-hero-avatar-tools">
+            <button type="button" class="ghost-button" data-manager-avatar-trigger="${App.utils.escapeHtml(activeTeam.owner)}">Trocar foto</button>
+            <button type="button" class="ghost-button" data-manager-avatar-remove="${App.utils.escapeHtml(activeTeam.owner)}">Remover</button>
+            <input type="file" accept="image/*" hidden data-manager-avatar-input="${App.utils.escapeHtml(activeTeam.owner)}" />
+          </div>
+        `
+      : "";
 
     return `
       <section class="coach-dashboard" style="--coach-color:${color}">
         <article class="coach-hero-card">
           <div class="coach-hero-main">
-            <div class="coach-club-mark">${App.clubs.getTeamBadgeHtml(activeTeam.team, "coach-crest")}</div>
+            <div class="coach-hero-avatar-stack">
+              ${managerAvatar}
+              <div class="coach-club-mark">${App.clubs.getTeamBadgeHtml(activeTeam.team, "coach-crest coach-crest-muted")}</div>
+            </div>
             <div>
               <span class="modal-kicker">Escritório do técnico</span>
               <h2>${activeTeam.owner}</h2>
@@ -2204,6 +2250,7 @@ App.players = {
                 <span>Forma recente</span>
                 ${App.players.renderFormDots(recentForm)}
               </div>
+              ${avatarControls}
             </div>
           </div>
           <div class="coach-hero-rank">

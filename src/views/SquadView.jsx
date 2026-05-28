@@ -12,6 +12,7 @@ import {
 import App from "../../js/app.js";
 import { useLeagueUiStore } from "../state/useLeagueUiStore.js";
 import { useAppRuntime } from "./ViewSummaries.jsx";
+import { TeamBadge } from "./SharedClubComponents.jsx";
 
 const EMPTY_PREFS = Object.freeze({});
 const goalkeeper = () => [["GK", "GK", 50, 84]];
@@ -1087,7 +1088,10 @@ function SquadManagementView() {
     <section className="squad-shell">
       <section className="squad-hero-panel">
         <div className="squad-club-identity">
-          {activeManager.logoUrl ? <img src={activeManager.logoUrl} alt="" /> : null}
+          <TeamBadge
+            teamName={activeManager.clubName}
+            className="squad-hero-badge"
+          />
           <div>
             <span className="modal-kicker">Gestao de elenco</span>
             <h2>{activeManager.clubName}</h2>

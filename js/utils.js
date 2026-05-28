@@ -380,9 +380,60 @@ App.utils = {
       normalized,
     );
 
+    const finalReplacements = [
+      [/Â·/g, "\u00b7"],
+      [/â€¢/g, "\u00b7"],
+      [/Ãºltima/gi, "\u00faltima"],
+      [/PrÃ³xima/gi, "Pr\u00f3xima"],
+      [/ConcluÃƒÂda/gi, "Conclu\u00edda"],
+      [/Concluida/gi, "Conclu\u00edda"],
+      [/PatrocÃƒÂnios/gi, "Patroc\u00ednios"],
+      [/Patrocinio/gi, "Patroc\u00ednio"],
+      [/Patrocinios/gi, "Patroc\u00ednios"],
+      [/Calendario/gi, "Calend\u00e1rio"],
+      [/Escritorio/gi, "Escrit\u00f3rio"],
+      [/Tecnico/gi, "T\u00e9cnico"],
+      [/tecnico/gi, "t\u00e9cnico"],
+      [/Negociacao/gi, "Negocia\u00e7\u00e3o"],
+      [/negociacao/gi, "negocia\u00e7\u00e3o"],
+      [/Negociacoes/gi, "Negocia\u00e7\u00f5es"],
+      [/negociacoes/gi, "negocia\u00e7\u00f5es"],
+      [/transferencias/gi, "transfer\u00eancias"],
+      [/transferencia/gi, "transfer\u00eancia"],
+      [/medico/gi, "m\u00e9dico"],
+      [/Medico/gi, "M\u00e9dico"],
+      [/clinico/gi, "cl\u00ednico"],
+      [/Clinico/gi, "Cl\u00ednico"],
+      [/vitoria/gi, "vit\u00f3ria"],
+      [/vitorias/gi, "vit\u00f3rias"],
+      [/orcamento/gi, "or\u00e7amento"],
+      [/proximo/gi, "pr\u00f3ximo"],
+      [/reacao/gi, "rea\u00e7\u00e3o"],
+      [/decisao/gi, "decis\u00e3o"],
+      [/inteligencia/gi, "intelig\u00eancia"],
+      [/nao/gi, "n\u00e3o"],
+      [/voce/gi, "voc\u00ea"],
+      [/premiacao/gi, "premia\u00e7\u00e3o"],
+      [/bonus/gi, "b\u00f4nus"],
+      [/medias?/gi, (match) =>
+        match === "Media" || match === "media"
+          ? match.replace(/media/i, "m\u00e9dia")
+          : match],
+    ];
+
+    const polished = finalReplacements.reduce(
+      (text, [pattern, replacement]) =>
+        text.replace(pattern, (match) =>
+          typeof replacement === "function"
+            ? replacement(match)
+            : App.utils.matchDisplayCase(match, replacement),
+        ),
+      replaced,
+    );
+
     return App.utils.normalizeUppercaseAccents(
       App.utils.repairBrokenUtf8Fragments(
-        App.utils.repairBrokenUtf8(replaced),
+        App.utils.repairBrokenUtf8(polished),
       ),
     );
   },

@@ -2255,16 +2255,86 @@ App.transfers = {
       .sort((a, b) => a.player.localeCompare(b.player));
   },
 
+  normalizeRosterPoolPlayer(item = {}, owner = "") {
+    const name = String(item.player || item.playerName || item.name || "").trim();
+    if (!name) return null;
+    const fromClub = String(
+      item.fromClub ||
+        item.from_club ||
+        item.club ||
+        item.clubName ||
+        owner ||
+        "",
+    ).trim();
+    const marketPlayer =
+      App.transfers.findMarketPlayerByName(name, {
+        club: fromClub,
+      }) || null;
+    const baseValue = Math.max(
+      0,
+      Number(
+        item.totalCost ||
+          item.marketValue ||
+          item.market_value_eur ||
+          item.baseValue ||
+          marketPlayer?.market_value_eur ||
+          0,
+      ),
+    );
+    return {
+      id:
+        item.id ||
+        `${App.utils.normalizeText(owner)}:${App.utils.normalizeText(name)}`,
+      player: name,
+      playerName: name,
+      name,
+      buyer: owner,
+      fromClub,
+      club: fromClub,
+      position: item.position || marketPlayer?.position || "",
+      overall: Number(item.overall || marketPlayer?.overall || 0),
+      weeklySalary: Number(
+        item.weeklySalary ||
+          item.weekly_salary_eur ||
+          marketPlayer?.weekly_salary_eur ||
+          0,
+      ),
+      totalCost: baseValue,
+      marketValue: baseValue,
+      listed: Boolean(item.listed),
+      isStarter: Boolean(item.isStarter || item.is_starting),
+    };
+  },
+
+  getRosterPlayersByManager(owner = "") {
+    if (!owner) return [];
+    const snapshot = App.transfers.getBuyerRosterSnapshot?.(owner) || {};
+    const roster = Array.isArray(snapshot.roster) ? snapshot.roster : [];
+    const mappedRoster = roster
+      .map((item) => App.transfers.normalizeRosterPoolPlayer(item, owner))
+      .filter(Boolean);
+    if (mappedRoster.length) {
+      return mappedRoster.sort((a, b) =>
+        String(a.player || "").localeCompare(String(b.player || ""), "pt-BR"),
+      );
+    }
+    return App.transfers
+      .getOwnedTransfersByBuyer(owner)
+      .map((item) => App.transfers.normalizeRosterPoolPlayer(item, owner))
+      .filter(Boolean)
+      .sort((a, b) =>
+        String(a.player || "").localeCompare(String(b.player || ""), "pt-BR"),
+      );
+  },
+
   getInternalTransferPlayerByIndex(seller, index) {
     if (index === "" || index === undefined || index === null) return null;
-    return (
-      App.transfers.getOwnedTransfersByBuyer(seller)[Number(index)] || null
-    );
+    return App.transfers.getRosterPlayersByManager(seller)[Number(index)] || null;
   },
 
   getExchangePlayerByIndex(buyer, index) {
     if (index === "" || index === undefined || index === null) return null;
-    return App.transfers.getOwnedTransfersByBuyer(buyer)[Number(index)] || null;
+    return App.transfers.getRosterPlayersByManager(buyer)[Number(index)] || null;
   },
 
   getExchangeCredit(grossValue, exchangeValue) {
@@ -2787,7 +2857,7 @@ App.transfers = {
     if (!select || !form) return;
 
     const buyer = form.elements.buyer?.value || "";
-    const players = buyer ? App.transfers.getOwnedTransfersByBuyer(buyer) : [];
+    const players = buyer ? App.transfers.getRosterPlayersByManager(buyer) : [];
     const currentValue = select.value;
 
     App.dom.setHtml(
@@ -2820,9 +2890,7 @@ App.transfers = {
     if (!select || !form) return;
 
     const seller = form.elements.seller?.value || "";
-    const players = seller
-      ? App.transfers.getOwnedTransfersByBuyer(seller)
-      : [];
+    const players = seller ? App.transfers.getRosterPlayersByManager(seller) : [];
     const currentValue = select.value;
 
     App.dom.setHtml(

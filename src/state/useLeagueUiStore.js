@@ -24,21 +24,39 @@ export const useLeagueUiStore = create(
       },
 
       pushToast(payload = {}) {
+        const now = Date.now();
+        const dedupeWindowMs = Number(payload.dedupeWindowMs || 6500);
         const nextToast = {
           id: createToastId(),
           title: payload.title || "Atualizacao da liga",
           description: payload.description || "",
           tone: payload.tone || "info",
-          duration: Number(payload.duration || 4200),
-          createdAt: Date.now(),
+          duration: Number(payload.duration || 6200),
+          createdAt: now,
         };
         const recent = get().toasts.find(
           (item) =>
             item.title === nextToast.title &&
             item.description === nextToast.description &&
-            Date.now() - Number(item.createdAt || 0) < 1800,
+            now - Number(item.createdAt || 0) < dedupeWindowMs,
         );
-        if (recent) return recent.id;
+        if (recent) {
+          set((state) => ({
+            toasts: state.toasts.map((item) =>
+              item.id === recent.id
+                ? {
+                    ...item,
+                    duration: Math.max(
+                      Number(item.duration || 0),
+                      Number(nextToast.duration || 0),
+                    ),
+                    createdAt: now,
+                  }
+                : item,
+            ),
+          }));
+          return recent.id;
+        }
 
         set((state) => ({
           toasts: [...state.toasts, nextToast].slice(-5),

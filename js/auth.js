@@ -323,6 +323,10 @@ App.auth = {
           parsed.archived && typeof parsed.archived === "object"
             ? parsed.archived
             : {},
+        deleted:
+          parsed.deleted && typeof parsed.deleted === "object"
+            ? parsed.deleted
+            : {},
         filters: {
           view: String(filters.view || "action"),
           folder: String(filters.folder || "all"),
@@ -333,6 +337,7 @@ App.auth = {
       return {
         read: {},
         archived: {},
+        deleted: {},
         filters: {
           view: "action",
           folder: "all",
@@ -349,6 +354,7 @@ App.auth = {
         JSON.stringify({
           read: state.read || {},
           archived: state.archived || {},
+          deleted: state.deleted || {},
           filters: state.filters || {
             view: "action",
             folder: "all",
@@ -380,6 +386,10 @@ App.auth = {
     return Boolean(App.auth.getEmailOfficeState().archived?.[key]);
   },
 
+  isEmailDeleted(key) {
+    return Boolean(App.auth.getEmailOfficeState().deleted?.[key]);
+  },
+
   setEmailsRead(keys = [], isRead = true) {
     const list = Array.isArray(keys) ? keys : [keys];
     App.auth.updateEmailOfficeState((state) => {
@@ -394,8 +404,22 @@ App.auth = {
     const list = Array.isArray(keys) ? keys : [keys];
     App.auth.updateEmailOfficeState((state) => {
       list.filter(Boolean).forEach((key) => {
-        if (isArchived) state.archived[key] = true;
-        else delete state.archived[key];
+        if (isArchived) {
+          state.archived[key] = true;
+          delete state.deleted[key];
+        } else delete state.archived[key];
+      });
+    });
+  },
+
+  setEmailsDeleted(keys = [], isDeleted = true) {
+    const list = Array.isArray(keys) ? keys : [keys];
+    App.auth.updateEmailOfficeState((state) => {
+      list.filter(Boolean).forEach((key) => {
+        if (isDeleted) {
+          state.deleted[key] = true;
+          delete state.archived[key];
+        } else delete state.deleted[key];
       });
     });
   },
@@ -594,6 +618,198 @@ App.auth = {
     };
   },
 
+  getManagerAvatarStorageKey(managerName = "") {
+    const normalized = App.utils.normalizeText(managerName || "manager");
+    return `mml-manager-avatar-v1:${normalized || "manager"}`;
+  },
+
+  getManagerAvatarUrl(managerName = "") {
+    if (!managerName) return "";
+    try {
+      return (
+        String(
+          localStorage.getItem(
+            App.auth.getManagerAvatarStorageKey(managerName),
+          ) || "",
+        ).trim() || ""
+      );
+    } catch (error) {
+      return "";
+    }
+  },
+
+  setManagerAvatarUrl(managerName = "", dataUrl = "") {
+    if (!managerName || !dataUrl) return "";
+    try {
+      localStorage.setItem(
+        App.auth.getManagerAvatarStorageKey(managerName),
+        String(dataUrl),
+      );
+    } catch (error) {
+      console.warn("Nao consegui salvar a foto do tecnico:", error);
+    }
+    return dataUrl;
+  },
+
+  removeManagerAvatar(managerName = "") {
+    if (!managerName) return;
+    try {
+      localStorage.removeItem(App.auth.getManagerAvatarStorageKey(managerName));
+    } catch (error) {
+      console.warn("Nao consegui remover a foto do tecnico:", error);
+    }
+  },
+
+  readAvatarFileAsDataUrl(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new window.FileReader();
+      reader.onload = () => resolve(String(reader.result || ""));
+      reader.onerror = () =>
+        reject(new Error("Nao consegui ler a imagem selecionada."));
+      reader.readAsDataURL(file);
+    });
+  },
+
+  buildSquareAvatarDataUrl(source = "") {
+    return new Promise((resolve, reject) => {
+      const image = new window.Image();
+      image.onload = () => {
+        try {
+          const size = 256;
+          const canvas = document.createElement("canvas");
+          canvas.width = size;
+          canvas.height = size;
+          const context = canvas.getContext("2d");
+          const width = image.naturalWidth || image.width;
+          const height = image.naturalHeight || image.height;
+          const side = Math.min(width, height);
+          const offsetX = Math.max(0, (width - side) / 2);
+          const offsetY = Math.max(0, (height - side) / 2);
+          context.drawImage(
+            image,
+            offsetX,
+            offsetY,
+            side,
+            side,
+            0,
+            0,
+            size,
+            size,
+          );
+          resolve(canvas.toDataURL("image/jpeg", 0.9));
+        } catch (error) {
+          reject(new Error("Nao consegui preparar a foto do tecnico."));
+        }
+      };
+      image.onerror = () =>
+        reject(new Error("A imagem selecionada nao pode ser usada."));
+      image.src = source;
+    });
+  },
+
+  async saveManagerAvatarFromFile(managerName = "", file) {
+    if (!managerName || !file) return "";
+    if (!/^image\//i.test(String(file.type || ""))) {
+      throw new Error("Escolha uma imagem valida para a foto do tecnico.");
+    }
+    const raw = await App.auth.readAvatarFileAsDataUrl(file);
+    const cropped = await App.auth.buildSquareAvatarDataUrl(raw);
+    return App.auth.setManagerAvatarUrl(managerName, cropped);
+  },
+
+  getManagerAvatarFallbackLabel(managerName = "", clubName = "") {
+    const source = String(managerName || clubName || "").trim();
+    if (!source) return "4";
+    return (
+      source
+        .split(/\s+/)
+        .filter(Boolean)
+        .map((part) => part.charAt(0))
+        .join("")
+        .slice(0, 2)
+        .toUpperCase() || "4"
+    );
+  },
+
+  renderManagerAvatar(managerName = "", clubName = "", className = "") {
+    const avatarUrl = App.auth.getManagerAvatarUrl(managerName);
+    const hasImage = Boolean(avatarUrl);
+    const fallback = App.auth.getManagerAvatarFallbackLabel(
+      managerName,
+      clubName,
+    );
+    const classes = [
+      "manager-custom-avatar",
+      hasImage ? "has-image" : "is-fallback",
+      className,
+    ]
+      .filter(Boolean)
+      .join(" ");
+    return `
+      <span class="${classes}">
+        ${
+          hasImage
+            ? `<img src="${App.utils.escapeHtml(avatarUrl)}" alt="${App.utils.escapeHtml(`Foto de ${managerName || "tecnico"}`)}" loading="lazy" />`
+            : ""
+        }
+        <span>${App.utils.escapeHtml(fallback)}</span>
+      </span>
+    `;
+  },
+
+  bindManagerAvatarControls(root = document) {
+    const scope = root?.querySelectorAll
+      ? root
+      : document;
+
+    scope.querySelectorAll?.("[data-manager-avatar-trigger]").forEach((button) => {
+      if (button.dataset.bound === "true") return;
+      button.dataset.bound = "true";
+      button.addEventListener("click", () => {
+        const owner = button.dataset.managerAvatarTrigger;
+        const escapedOwner =
+          globalThis.CSS?.escape?.(owner) ||
+          String(owner || "").replace(/["\\]/g, "\\$&");
+        const input = document.querySelector(
+          `[data-manager-avatar-input="${escapedOwner}"]`,
+        );
+        input?.click();
+      });
+    });
+
+    scope.querySelectorAll?.("[data-manager-avatar-remove]").forEach((button) => {
+      if (button.dataset.bound === "true") return;
+      button.dataset.bound = "true";
+      button.addEventListener("click", () => {
+        const owner = button.dataset.managerAvatarRemove;
+        if (!owner) return;
+        App.auth.removeManagerAvatar(owner);
+        App.auth.renderAll();
+        App.main?.renderCurrentView?.();
+      });
+    });
+
+    scope.querySelectorAll?.("[data-manager-avatar-input]").forEach((input) => {
+      if (input.dataset.bound === "true") return;
+      input.dataset.bound = "true";
+      input.addEventListener("change", async (event) => {
+        const target = event.currentTarget;
+        const owner = target.dataset.managerAvatarInput;
+        const file = target.files?.[0];
+        if (!owner || !file) return;
+        try {
+          await App.auth.saveManagerAvatarFromFile(owner, file);
+          App.auth.renderAll();
+          App.main?.renderCurrentView?.();
+        } catch (error) {
+          alert(error.message);
+        } finally {
+          target.value = "";
+        }
+      });
+    });
+  },
+
   getLoginSuccessClubHtml(session = {}) {
     if (!session || session.isCommissioner || !session.clubName) {
       return `
@@ -673,7 +889,7 @@ App.auth = {
   },
 
   async finishLoginSuccessTransition(startedAt = Date.now()) {
-    const minDuration = 1650;
+    const minDuration = 2050;
     const elapsed = Date.now() - startedAt;
     if (elapsed < minDuration) {
       await new Promise((resolve) => setTimeout(resolve, minDuration - elapsed));
@@ -699,6 +915,7 @@ App.auth = {
         App.auth.loadMyTransferSaleListings(),
         App.auth.loadMySponsorships(),
         App.api?.loadMedicalCenterData?.(),
+        App.api?.loadSquadManagementData?.({ force: true }),
         App.auth.loadMyQoL(),
         App.auth.loadPublicNews(),
       ]);
@@ -792,6 +1009,7 @@ App.auth = {
         await App.auth.loadMyTransferSaleListings();
         await App.auth.loadMySponsorships();
         await App.api?.loadMedicalCenterData?.();
+        await App.api?.loadSquadManagementData?.({ force: true });
         await App.auth.loadMyQoL();
       }
       await App.governance?.loadData?.();
@@ -1705,6 +1923,7 @@ App.auth = {
       App.auth.loadMyTransferProposals(),
       App.auth.loadMyTransferSaleListings(),
       App.auth.loadMySponsorships(),
+      App.api?.loadSquadManagementData?.({ force: true }),
       App.auth.loadMyQoL(),
       App.auth.loadPublicNews(),
     ]);
@@ -1739,14 +1958,24 @@ App.auth = {
     const loginOptions = [...managers, "Comissário da Liga"];
 
     if (session) {
+      const avatar = App.auth.renderManagerAvatar(
+        session.managerName,
+        session.clubName,
+        "manager-login-avatar-shell",
+      );
+      const avatarControls = session.isCommissioner
+        ? ""
+        : `
+          <button type="button" class="ghost-button" data-manager-avatar-trigger="${App.utils.escapeHtml(session.managerName)}">Foto</button>
+          <button type="button" class="ghost-button" data-manager-avatar-remove="${App.utils.escapeHtml(session.managerName)}">Remover foto</button>
+          <input type="file" accept="image/*" hidden data-manager-avatar-input="${App.utils.escapeHtml(session.managerName)}" />
+        `;
       App.dom.setHtml(
         panel,
         `
         <div class="manager-session-card is-logged manager-login-shell">
           <div class="manager-login-identity">
-            <span class="manager-login-avatar">
-              <img class="brand-icon-img" src="./assets/4linhas-icon-light.png?v=${App.config.assetVersion}" alt="" loading="lazy" />
-            </span>
+            ${avatar}
             <div>
               <span>${session.isCommissioner ? "Comissário" : "Técnico conectado"}</span>
               <strong>${App.utils.escapeDisplay(session.managerName)}</strong>
@@ -1754,6 +1983,7 @@ App.auth = {
             </div>
           </div>
           <div class="manager-session-actions">
+            ${avatarControls}
             <button type="button" class="ghost-button" data-auth-action="logout">Sair</button>
           </div>
         </div>
@@ -1764,6 +1994,7 @@ App.auth = {
       panel
         .querySelector('[data-auth-action="logout"]')
         ?.addEventListener("click", () => App.auth.logout());
+      App.auth.bindManagerAvatarControls(panel);
 
       return;
     }
@@ -2305,6 +2536,7 @@ App.auth = {
         sortValue: App.auth.getTransferProposalSortValue(item),
         archived: App.auth.isEmailArchived(key),
         read: App.auth.isEmailRead(key),
+        deleted: App.auth.isEmailDeleted(key),
         detailHtml: isContract
           ? App.auth.renderTransferProposalContractEmail(item)
           : isOpen
@@ -2339,6 +2571,7 @@ App.auth = {
         sortValue: offer.createdAt || offer.created_at ? new Date(offer.createdAt || offer.created_at).getTime() : 0,
         archived: App.auth.isEmailArchived(key),
         read: App.auth.isEmailRead(key),
+        deleted: App.auth.isEmailDeleted(key),
         detailHtml: App.auth.renderSponsorshipEmailCard(offer, sponsorOfferPool),
       };
     });
@@ -2371,6 +2604,7 @@ App.auth = {
             : Date.now(),
         archived: App.auth.isEmailArchived(key),
         read: App.auth.isEmailRead(key),
+        deleted: App.auth.isEmailDeleted(key),
         detailHtml: App.auth.renderMedicalInboxCard(event, meta, key),
       };
     });
@@ -2391,6 +2625,7 @@ App.auth = {
         sortValue: item.created_at ? new Date(item.created_at).getTime() : 0,
         archived: App.auth.isEmailArchived(key),
         read: App.auth.isEmailRead(key),
+        deleted: App.auth.isEmailDeleted(key),
         detailHtml: App.auth.renderDecisionCard(item),
       };
     });
@@ -2414,9 +2649,19 @@ App.auth = {
   renderEmailThread(item = {}) {
     const readClass = item.read ? "is-read" : "is-unread";
     const archivedClass = item.archived ? "is-archived" : "";
+    const deletedClass = item.deleted ? "is-deleted" : "";
     const state = item.state === "closed" ? "closed" : "open";
+    const rowActions = item.deleted
+      ? `
+            <button type="button" data-email-action="undelete" data-email-key="${App.utils.escapeHtml(item.key)}">Restaurar</button>
+          `
+      : `
+            <button type="button" data-email-action="${item.read ? "unread" : "read"}" data-email-key="${App.utils.escapeHtml(item.key)}">${item.read ? "Marcar não lido" : "Marcar lido"}</button>
+            <button type="button" data-email-action="${item.archived ? "restore" : "archive"}" data-email-key="${App.utils.escapeHtml(item.key)}">${item.archived ? "Restaurar" : "Arquivar"}</button>
+            <button type="button" data-email-action="delete" data-email-key="${App.utils.escapeHtml(item.key)}">Apagar</button>
+          `;
     return `
-      <details class="email-thread ${readClass} ${archivedClass} is-${state} priority-${App.utils.escapeHtml(item.tone || "normal")}" data-email-key="${App.utils.escapeHtml(item.key)}" data-email-state="${state}">
+      <details class="email-thread ${readClass} ${archivedClass} ${deletedClass} is-${state} priority-${App.utils.escapeHtml(item.tone || "normal")}" data-email-key="${App.utils.escapeHtml(item.key)}" data-email-state="${state}">
         <summary class="email-thread-summary">
           <label class="email-thread-check" title="Selecionar e-mail">
             <input type="checkbox" data-email-select value="${App.utils.escapeHtml(item.key)}" />
@@ -2430,8 +2675,7 @@ App.auth = {
           </span>
           <span class="email-thread-badge">${App.utils.escapeDisplay(item.badge || "")}</span>
           <span class="email-thread-row-actions">
-            <button type="button" data-email-action="${item.read ? "unread" : "read"}" data-email-key="${App.utils.escapeHtml(item.key)}">${item.read ? "Marcar nÃƒÂ£o lido" : "Marcar lido"}</button>
-            <button type="button" data-email-action="${item.archived ? "restore" : "archive"}" data-email-key="${App.utils.escapeHtml(item.key)}">${item.archived ? "Restaurar" : "Arquivar"}</button>
+            ${rowActions}
           </span>
         </summary>
         <div class="email-thread-body">
@@ -2442,13 +2686,15 @@ App.auth = {
   },
 
   renderEmailMailbox(items = [], resolved = []) {
-    const state = App.auth.getEmailOfficeState();
     const filters = App.auth.getEmailMailboxFilters();
-    const inboxItems = items.filter((item) => !item.archived);
+    const inboxItems = items.filter((item) => !item.archived && !item.deleted);
+    const archivedItems = items.filter((item) => item.archived && !item.deleted);
+    const trashItems = items.filter((item) => item.deleted);
     const selectedView = String(filters.view || "action");
     const selectedFolder = String(filters.folder || "all");
     const normalizedQuery = App.utils.normalizeText(filters.query || "");
-    const archivedCount = Object.keys(state.archived || {}).length + resolved.length;
+    const archivedCount = archivedItems.length + resolved.length;
+    const deletedCount = trashItems.length;
     const stats = {
       open: inboxItems.filter((item) => item.state !== "closed").length,
       closed: inboxItems.filter((item) => item.state === "closed").length,
@@ -2464,6 +2710,7 @@ App.auth = {
     ];
     const matchesView = (item) => {
       if (selectedView === "all") return true;
+      if (selectedView === "trash") return false;
       if (selectedView === "unread") return !item.read;
       if (selectedView === "priority") return item.tone === "high";
       if (selectedView === "closed") return item.state === "closed";
@@ -2521,6 +2768,7 @@ App.auth = {
         <span>Comercial ${stats.commercial}</span>
         <span>Mercado ${stats.market}</span>
         <span>Arquivados ${archivedCount}</span>
+        <span>Lixeira ${deletedCount}</span>
       </div>
 
       <div class="email-office-toolbar">
@@ -2542,6 +2790,7 @@ App.auth = {
             <option value="unread" ${selectedView === "unread" ? "selected" : ""}>Não lidos</option>
             <option value="priority" ${selectedView === "priority" ? "selected" : ""}>Prioridade alta</option>
             <option value="closed" ${selectedView === "closed" ? "selected" : ""}>Encerrados</option>
+            <option value="trash" ${selectedView === "trash" ? "selected" : ""}>Lixeira</option>
           </select>
         </label>
         <label class="email-toolbar-field">
@@ -2586,6 +2835,7 @@ App.auth = {
         <button type="button" data-email-bulk-action="read">Marcar lido</button>
         <button type="button" data-email-bulk-action="unread">Marcar não lido</button>
         <button type="button" data-email-bulk-action="archive">Arquivar selecionados</button>
+        <button type="button" data-email-bulk-action="delete">Apagar selecionados</button>
       </div>
 
       ${
@@ -2612,7 +2862,7 @@ App.auth = {
             <p>${
               normalizedQuery || selectedFolder !== "all" || selectedView !== "action"
                 ? "Ajuste os filtros para voltar a ver a fila completa do escritório."
-                : "Quando uma nova mensagem chegar, ela aparece aqui para leitura, resposta ou arquivamento."
+                : "Quando uma nova mensagem chegar, ela aparece aqui para leitura, resposta, arquivo ou lixeira."
             }</p>
           </div>
         </div>
@@ -2632,6 +2882,44 @@ App.auth = {
           </summary>
           <div class="email-thread-stack">
             ${renderFolderGroups(closedItems)}
+          </div>
+        </details>
+      `
+          : ""
+      }
+
+      ${
+        archivedItems.length
+          ? `
+        <details class="email-mailbox-section is-closed" ${selectedView === "all" ? "" : ""}>
+          <summary class="email-mailbox-section-header">
+            <div>
+              <strong>Arquivados</strong>
+              <span>Assuntos guardados para consulta rápida.</span>
+            </div>
+            <b>${archivedItems.length}</b>
+          </summary>
+          <div class="email-thread-stack">
+            ${renderFolderGroups(archivedItems)}
+          </div>
+        </details>
+      `
+          : ""
+      }
+
+      ${
+        trashItems.length
+          ? `
+        <details class="email-mailbox-section is-closed is-trash" ${selectedView === "trash" ? "open" : ""}>
+          <summary class="email-mailbox-section-header">
+            <div>
+              <strong>Lixeira</strong>
+              <span>E-mails removidos da fila principal, com opção de restauração.</span>
+            </div>
+            <b>${trashItems.length}</b>
+          </summary>
+          <div class="email-thread-stack">
+            ${renderFolderGroups(trashItems)}
           </div>
         </details>
       `
@@ -2694,7 +2982,9 @@ App.auth = {
       sponsorshipOffers,
       transferEmails,
     );
-    const inboxItems = emailItems.filter((item) => !item.archived);
+    const inboxItems = emailItems.filter(
+      (item) => !item.archived && !item.deleted,
+    );
     const resolved = App.auth.myDecisions
       .filter((item) => item.status !== "pending")
       .slice(0, 4);
@@ -3541,6 +3831,8 @@ App.auth = {
         if (action === "unread") App.auth.setEmailsRead(key, false);
         if (action === "archive") App.auth.setEmailsArchived(key, true);
         if (action === "restore") App.auth.setEmailsArchived(key, false);
+        if (action === "delete") App.auth.setEmailsDeleted(key, true);
+        if (action === "undelete") App.auth.setEmailsDeleted(key, false);
         rerenderOffice();
         return;
       }
@@ -3554,6 +3846,7 @@ App.auth = {
         if (action === "read") App.auth.setEmailsRead(keys, true);
         if (action === "unread") App.auth.setEmailsRead(keys, false);
         if (action === "archive") App.auth.setEmailsArchived(keys, true);
+        if (action === "delete") App.auth.setEmailsDeleted(keys, true);
         rerenderOffice();
       }
     });

@@ -2096,7 +2096,7 @@ Object.assign(App.transfers, {
     );
 
     return App.transfers
-      .getOwnedTransfersByBuyer(buyer)
+      .getRosterPlayersByManager(buyer)
       .map((item, index) => {
         const rating = App.transfers.getRatingForPlayerName(item.player, {
           club: item.fromClub,
