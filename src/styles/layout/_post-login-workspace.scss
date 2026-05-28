@@ -628,6 +628,332 @@ body.auth-unlocked #playersView .coach-top-row-v54 {
   gap: 10px;
 }
 
+body.auth-unlocked #playersView .email-office-headline {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+body.auth-unlocked #playersView .email-office-layout {
+  display: grid;
+  grid-template-columns: minmax(220px, 0.78fr) minmax(0, 1.18fr) minmax(
+      320px,
+      0.94fr
+    );
+  gap: 12px;
+  align-items: start;
+}
+
+body.auth-unlocked #playersView .email-sidebar,
+body.auth-unlocked #playersView .email-list-pane,
+body.auth-unlocked #playersView .email-preview-pane {
+  min-width: 0;
+}
+
+body.auth-unlocked #playersView .email-sidebar,
+body.auth-unlocked #playersView .email-list-pane {
+  display: grid;
+  gap: 10px;
+}
+
+body.auth-unlocked #playersView .email-sidebar-block,
+body.auth-unlocked #playersView .email-preview-card,
+body.auth-unlocked #playersView .email-preview-empty {
+  border: 1px solid var(--workspace-line);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.025);
+}
+
+body.auth-unlocked #playersView .email-sidebar-block {
+  padding: 10px;
+}
+
+body.auth-unlocked #playersView .email-sidebar-heading,
+body.auth-unlocked #playersView .email-list-header,
+body.auth-unlocked #playersView .email-preview-kicker {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+body.auth-unlocked #playersView .email-sidebar-heading strong,
+body.auth-unlocked #playersView .email-list-header strong {
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  color: #f7fafc;
+}
+
+body.auth-unlocked #playersView .email-sidebar-heading span,
+body.auth-unlocked #playersView .email-list-header span,
+body.auth-unlocked #playersView .email-preview-kicker span,
+body.auth-unlocked #playersView .email-preview-kicker b {
+  color: var(--workspace-muted);
+  font-size: 0.66rem;
+}
+
+body.auth-unlocked #playersView .email-mailbox-modes,
+body.auth-unlocked #playersView .email-folder-rail,
+body.auth-unlocked #playersView .email-focus-grid {
+  display: grid;
+  gap: 8px;
+}
+
+body.auth-unlocked #playersView .email-filter-button,
+body.auth-unlocked #playersView .email-folder-button,
+body.auth-unlocked #playersView .email-focus-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 12px;
+  border: 1px solid var(--workspace-line);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.02);
+  color: inherit;
+  text-align: left;
+}
+
+body.auth-unlocked #playersView .email-filter-button strong,
+body.auth-unlocked #playersView .email-folder-button span,
+body.auth-unlocked #playersView .email-focus-card strong {
+  font-size: 0.76rem;
+  color: #f8fafc;
+}
+
+body.auth-unlocked #playersView .email-filter-button span,
+body.auth-unlocked #playersView .email-folder-button b,
+body.auth-unlocked #playersView .email-focus-card span,
+body.auth-unlocked #playersView .email-focus-card small {
+  font-size: 0.66rem;
+  color: var(--workspace-muted);
+}
+
+body.auth-unlocked #playersView .email-filter-button.is-active,
+body.auth-unlocked #playersView .email-folder-button.is-active,
+body.auth-unlocked #playersView .email-focus-card:hover,
+body.auth-unlocked #playersView .email-thread-item.is-selected {
+  border-color: rgba(45, 212, 191, 0.34);
+  background: rgba(14, 37, 42, 0.82);
+}
+
+body.auth-unlocked #playersView .email-office-toolbar {
+  display: grid;
+  gap: 8px;
+  padding: 10px 12px;
+  border: 1px solid var(--workspace-line);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+body.auth-unlocked #playersView .email-toolbar-field {
+  display: grid;
+  gap: 6px;
+}
+
+body.auth-unlocked #playersView .email-toolbar-field span,
+body.auth-unlocked #playersView .email-list-header small {
+  color: var(--workspace-muted);
+  font-size: 0.68rem;
+}
+
+body.auth-unlocked #playersView .email-toolbar-field input {
+  min-height: 38px;
+  border: 1px solid var(--workspace-line);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+body.auth-unlocked #playersView .email-thread-list {
+  display: grid;
+  gap: 8px;
+  max-height: 920px;
+  overflow: auto;
+  padding-right: 2px;
+}
+
+body.auth-unlocked #playersView .email-thread-item {
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr);
+  border: 1px solid var(--workspace-line);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.018);
+  overflow: hidden;
+}
+
+body.auth-unlocked #playersView .email-thread-item.priority-high {
+  box-shadow: inset 3px 0 0 rgba(245, 196, 86, 0.86);
+}
+
+body.auth-unlocked #playersView .email-thread-check {
+  display: grid;
+  place-items: center;
+  margin: 0;
+  background: rgba(255, 255, 255, 0.015);
+  border-right: 1px solid var(--workspace-line);
+}
+
+body.auth-unlocked #playersView .email-thread-button {
+  display: grid;
+  gap: 8px;
+  width: 100%;
+  padding: 11px 12px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+}
+
+body.auth-unlocked #playersView .email-thread-topline,
+body.auth-unlocked #playersView .email-thread-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+body.auth-unlocked #playersView .email-thread-folder {
+  color: #9bd7cb;
+  font-size: 0.66rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+body.auth-unlocked #playersView .email-thread-badge,
+body.auth-unlocked #playersView .email-thread-state {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 0 8px;
+  border: 1px solid var(--workspace-line);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.025);
+  color: var(--workspace-muted);
+  font-size: 0.64rem;
+}
+
+body.auth-unlocked #playersView .email-thread-copy {
+  gap: 3px;
+}
+
+body.auth-unlocked #playersView .email-thread-copy strong {
+  font-size: 0.82rem;
+}
+
+body.auth-unlocked #playersView .email-thread-copy small,
+body.auth-unlocked #playersView .email-thread-sender {
+  color: var(--workspace-muted);
+  font-size: 0.68rem;
+}
+
+body.auth-unlocked #playersView .email-thread-item.is-unread .email-thread-copy strong,
+body.auth-unlocked #playersView .email-thread-item.is-unread .email-thread-sender {
+  color: #f8fafc;
+}
+
+body.auth-unlocked #playersView .email-thread-item.is-read {
+  opacity: 0.8;
+}
+
+body.auth-unlocked #playersView .email-preview-pane {
+  position: sticky;
+  top: 10px;
+}
+
+body.auth-unlocked #playersView .email-preview-card,
+body.auth-unlocked #playersView .email-preview-empty {
+  display: grid;
+  gap: 12px;
+  padding: 12px;
+}
+
+body.auth-unlocked #playersView .email-preview-head {
+  display: grid;
+  gap: 8px;
+}
+
+body.auth-unlocked #playersView .email-preview-head strong {
+  font-size: 1rem;
+  line-height: 1.2;
+}
+
+body.auth-unlocked #playersView .email-preview-head p,
+body.auth-unlocked #playersView .email-preview-empty p {
+  color: var(--workspace-muted);
+  font-size: 0.74rem;
+  line-height: 1.5;
+}
+
+body.auth-unlocked #playersView .email-preview-meta {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+body.auth-unlocked #playersView .email-preview-meta span {
+  display: grid;
+  gap: 4px;
+  padding: 10px;
+  border: 1px solid var(--workspace-line);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+body.auth-unlocked #playersView .email-preview-meta small {
+  color: var(--workspace-muted);
+  font-size: 0.64rem;
+  text-transform: uppercase;
+}
+
+body.auth-unlocked #playersView .email-preview-meta strong {
+  font-size: 0.76rem;
+  color: #f8fafc;
+}
+
+body.auth-unlocked #playersView .email-preview-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+body.auth-unlocked #playersView .email-preview-actions button {
+  min-height: 34px;
+  padding: 0 11px;
+  border: 1px solid var(--workspace-line);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.02);
+  color: #dbe7f3;
+  font-size: 0.68rem;
+  font-weight: 700;
+}
+
+body.auth-unlocked #playersView .email-preview-body {
+  border-top: 1px solid var(--workspace-line);
+  padding: 12px 0 0;
+  background: transparent;
+}
+
+body.auth-unlocked #playersView .email-preview-body > article,
+body.auth-unlocked #playersView .email-preview-body .decision-card {
+  margin: 0;
+}
+
+body.auth-unlocked #playersView .email-preview-empty {
+  min-height: 280px;
+  place-content: center;
+  text-align: center;
+}
+
+body.auth-unlocked #playersView .email-preview-empty span {
+  color: #9bd7cb;
+  font-size: 1.8rem;
+  line-height: 1;
+}
+
+body.auth-unlocked #playersView .email-empty-state {
+  min-height: 220px;
+}
+
 @media (max-width: 980px) {
   body.auth-unlocked .app {
     width: min(100% - 16px, 760px);
@@ -681,6 +1007,21 @@ body.auth-unlocked #playersView .coach-top-row-v54 {
   body.auth-unlocked #squadView .squad-balance-grid,
   body.auth-unlocked #squadView .squad-availability-strip {
     grid-template-columns: 1fr;
+  }
+
+  body.auth-unlocked #playersView .email-office-headline,
+  body.auth-unlocked #playersView .email-preview-meta,
+  body.auth-unlocked #playersView .email-office-layout {
+    grid-template-columns: 1fr;
+  }
+
+  body.auth-unlocked #playersView .email-preview-pane {
+    position: static;
+  }
+
+  body.auth-unlocked #playersView .email-mailbox-modes,
+  body.auth-unlocked #playersView .email-folder-rail {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
@@ -738,5 +1079,24 @@ body.auth-unlocked #playersView .coach-top-row-v54 {
     #experienceView
   ) > .summary {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  body.auth-unlocked #playersView .email-mailbox-modes,
+  body.auth-unlocked #playersView .email-folder-rail,
+  body.auth-unlocked #playersView .email-focus-grid {
+    grid-template-columns: 1fr;
+  }
+
+  body.auth-unlocked #playersView .email-thread-item {
+    grid-template-columns: 32px minmax(0, 1fr);
+  }
+
+  body.auth-unlocked #playersView .email-thread-button {
+    padding: 10px;
+  }
+
+  body.auth-unlocked #playersView .email-thread-topline,
+  body.auth-unlocked #playersView .email-thread-meta {
+    flex-wrap: wrap;
   }
 }

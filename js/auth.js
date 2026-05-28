@@ -331,6 +331,7 @@ App.auth = {
           view: String(filters.view || "action"),
           folder: String(filters.folder || "all"),
           query: String(filters.query || ""),
+          selectedKey: String(filters.selectedKey || ""),
         },
       };
     } catch (error) {
@@ -342,6 +343,7 @@ App.auth = {
           view: "action",
           folder: "all",
           query: "",
+          selectedKey: "",
         },
       };
     }
@@ -429,6 +431,7 @@ App.auth = {
       view: "action",
       folder: "all",
       query: "",
+      selectedKey: "",
     };
   },
 
@@ -2635,7 +2638,6 @@ App.auth = {
       const stateDiff =
         (statePriority[a.state] ?? 0) - (statePriority[b.state] ?? 0);
       if (stateDiff !== 0) return stateDiff;
-      if (a.read !== b.read) return a.read ? 1 : -1;
       const folderPriority = { Mercado: 0, DM: 1, Comercial: 2 };
       const folderDiff =
         (folderPriority[a.folder] ?? 3) - (folderPriority[b.folder] ?? 3);
@@ -2646,42 +2648,100 @@ App.auth = {
     });
   },
 
-  renderEmailThread(item = {}) {
+  renderEmailThread(item = {}, options = {}) {
+    const isSelected = Boolean(options.selected);
     const readClass = item.read ? "is-read" : "is-unread";
     const archivedClass = item.archived ? "is-archived" : "";
     const deletedClass = item.deleted ? "is-deleted" : "";
-    const state = item.state === "closed" ? "closed" : "open";
-    const rowActions = item.deleted
-      ? `
-            <button type="button" data-email-action="undelete" data-email-key="${App.utils.escapeHtml(item.key)}">Restaurar</button>
-          `
-      : `
-            <button type="button" data-email-action="${item.read ? "unread" : "read"}" data-email-key="${App.utils.escapeHtml(item.key)}">${item.read ? "Marcar não lido" : "Marcar lido"}</button>
-            <button type="button" data-email-action="${item.archived ? "restore" : "archive"}" data-email-key="${App.utils.escapeHtml(item.key)}">${item.archived ? "Restaurar" : "Arquivar"}</button>
-            <button type="button" data-email-action="delete" data-email-key="${App.utils.escapeHtml(item.key)}">Apagar</button>
-          `;
+    const state =
+      item.deleted ? "trash" : item.state === "closed" ? "closed" : "open";
+    const stateLabel =
+      state === "trash"
+        ? "Lixeira"
+        : state === "closed"
+          ? "Encerrado"
+          : item.tone === "high"
+            ? "Prioridade alta"
+            : "Aberto";
+
     return `
-      <details class="email-thread ${readClass} ${archivedClass} ${deletedClass} is-${state} priority-${App.utils.escapeHtml(item.tone || "normal")}" data-email-key="${App.utils.escapeHtml(item.key)}" data-email-state="${state}">
-        <summary class="email-thread-summary">
-          <label class="email-thread-check" title="Selecionar e-mail">
-            <input type="checkbox" data-email-select value="${App.utils.escapeHtml(item.key)}" />
-            <span></span>
-          </label>
-          <span class="email-thread-folder">${App.utils.escapeDisplay(item.folder || "Inbox")}</span>
-          <span class="email-thread-sender">${App.utils.escapeDisplay(item.sender || "Remetente")}</span>
+      <article class="email-thread-item ${readClass} ${archivedClass} ${deletedClass} is-${state} ${isSelected ? "is-selected" : ""} priority-${App.utils.escapeHtml(item.tone || "normal")}" data-email-key="${App.utils.escapeHtml(item.key)}" data-email-state="${state}">
+        <label class="email-thread-check" title="Selecionar e-mail">
+          <input type="checkbox" data-email-select value="${App.utils.escapeHtml(item.key)}" />
+          <span></span>
+        </label>
+        <button type="button" class="email-thread-button" data-email-open-thread="${App.utils.escapeHtml(item.key)}">
+          <span class="email-thread-topline">
+            <span class="email-thread-folder">${App.utils.escapeDisplay(item.folder || "Inbox")}</span>
+            ${
+              item.badge
+                ? `<span class="email-thread-badge">${App.utils.escapeDisplay(item.badge)}</span>`
+                : ""
+            }
+          </span>
           <span class="email-thread-copy">
             <strong>${App.utils.escapeDisplay(item.subject || "Sem assunto")}</strong>
             <small>${App.utils.escapeDisplay(item.preview || "")}</small>
           </span>
-          <span class="email-thread-badge">${App.utils.escapeDisplay(item.badge || "")}</span>
-          <span class="email-thread-row-actions">
-            ${rowActions}
+          <span class="email-thread-meta">
+            <span class="email-thread-sender">${App.utils.escapeDisplay(item.sender || "Remetente")}</span>
+            <span class="email-thread-state">${App.utils.escapeDisplay(stateLabel)}</span>
           </span>
-        </summary>
-        <div class="email-thread-body">
+        </button>
+      </article>
+    `;
+  },
+
+  renderEmailPreview(item = {}) {
+    const state =
+      item.deleted ? "trash" : item.state === "closed" ? "closed" : "open";
+    const stateLabel =
+      state === "trash"
+        ? "Na lixeira"
+        : item.archived
+          ? "Arquivado"
+          : state === "closed"
+            ? "Historico"
+            : "Em andamento";
+    const previewActions = item.deleted
+      ? `
+          <button type="button" data-email-action="undelete" data-email-key="${App.utils.escapeHtml(item.key)}">Restaurar</button>
+        `
+      : `
+          <button type="button" data-email-action="${item.read ? "unread" : "read"}" data-email-key="${App.utils.escapeHtml(item.key)}">${item.read ? "Marcar nao lido" : "Marcar lido"}</button>
+          <button type="button" data-email-action="${item.archived ? "restore" : "archive"}" data-email-key="${App.utils.escapeHtml(item.key)}">${item.archived ? "Restaurar" : "Arquivar"}</button>
+          <button type="button" data-email-action="delete" data-email-key="${App.utils.escapeHtml(item.key)}">Apagar</button>
+        `;
+
+    return `
+      <article class="email-preview-card priority-${App.utils.escapeHtml(item.tone || "normal")} state-${App.utils.escapeHtml(state)}">
+        <div class="email-preview-head">
+          <div class="email-preview-kicker">
+            <span>${App.utils.escapeDisplay(item.folder || "Inbox")}</span>
+            ${
+              item.badge
+                ? `<b>${App.utils.escapeDisplay(item.badge)}</b>`
+                : ""
+            }
+          </div>
+          <strong>${App.utils.escapeDisplay(item.subject || "Sem assunto")}</strong>
+          <p>${App.utils.escapeDisplay(item.preview || "Sem resumo disponivel.")}</p>
+        </div>
+
+        <div class="email-preview-meta">
+          <span><small>Remetente</small><strong>${App.utils.escapeDisplay(item.sender || "Remetente")}</strong></span>
+          <span><small>Estado</small><strong>${App.utils.escapeDisplay(stateLabel)}</strong></span>
+          <span><small>Leitura</small><strong>${item.read ? "Lido" : "Nao lido"}</strong></span>
+        </div>
+
+        <div class="email-preview-actions">
+          ${previewActions}
+        </div>
+
+        <div class="email-thread-body email-preview-body">
           ${item.detailHtml || ""}
         </div>
-      </details>
+      </article>
     `;
   },
 
@@ -2690,35 +2750,59 @@ App.auth = {
     const inboxItems = items.filter((item) => !item.archived && !item.deleted);
     const archivedItems = items.filter((item) => item.archived && !item.deleted);
     const trashItems = items.filter((item) => item.deleted);
+    const actionItems = inboxItems.filter(
+      (item) =>
+        item.state !== "closed" &&
+        (!item.read || item.tone === "high" || item.type === "decision"),
+    );
+    const unreadItems = inboxItems.filter((item) => !item.read);
+    const priorityItems = inboxItems.filter((item) => item.tone === "high");
+    const closedItems = inboxItems.filter((item) => item.state === "closed");
+    const viewPools = {
+      action: actionItems,
+      all: inboxItems,
+      unread: unreadItems,
+      priority: priorityItems,
+      closed: closedItems,
+      archived: archivedItems,
+      trash: trashItems,
+    };
     const selectedView = String(filters.view || "action");
     const selectedFolder = String(filters.folder || "all");
     const normalizedQuery = App.utils.normalizeText(filters.query || "");
-    const archivedCount = archivedItems.length + resolved.length;
-    const deletedCount = trashItems.length;
+    const selectedKey = String(filters.selectedKey || "");
     const stats = {
-      open: inboxItems.filter((item) => item.state !== "closed").length,
-      closed: inboxItems.filter((item) => item.state === "closed").length,
-      unread: inboxItems.filter((item) => !item.read).length,
-      priority: inboxItems.filter((item) => item.tone === "high").length,
-      medical: inboxItems.filter((item) => item.folder === "DM").length,
-      commercial: inboxItems.filter((item) => item.folder === "Comercial").length,
-      market: inboxItems.filter((item) => item.folder === "Mercado").length,
+      action: actionItems.length,
+      all: inboxItems.length,
+      unread: unreadItems.length,
+      priority: priorityItems.length,
+      closed: closedItems.length,
+      archived: archivedItems.length,
+      trash: trashItems.length,
     };
+    const viewPool = viewPools[selectedView] || actionItems;
+    const folderCounts = viewPool.reduce((collection, item) => {
+      const folder = item.folder || "Inbox";
+      collection[folder] = (collection[folder] || 0) + 1;
+      return collection;
+    }, {});
     const folderOptions = [
-      "all",
-      ...new Set(inboxItems.map((item) => item.folder || "Inbox")),
+      { value: "all", label: "Todas", count: viewPool.length },
+      ...Object.keys(folderCounts).map((folder) => ({
+        value: folder,
+        label: folder,
+        count: folderCounts[folder],
+      })),
     ];
-    const matchesView = (item) => {
-      if (selectedView === "all") return true;
-      if (selectedView === "trash") return false;
-      if (selectedView === "unread") return !item.read;
-      if (selectedView === "priority") return item.tone === "high";
-      if (selectedView === "closed") return item.state === "closed";
-      return (
-        item.state !== "closed" &&
-        (!item.read || item.tone === "high" || item.type === "decision")
-      );
-    };
+    const viewOptions = [
+      { value: "action", label: "Acoes do dia", count: stats.action },
+      { value: "unread", label: "Nao lidos", count: stats.unread },
+      { value: "priority", label: "Prioridade", count: stats.priority },
+      { value: "all", label: "Tudo", count: stats.all },
+      { value: "closed", label: "Encerrados", count: stats.closed },
+      { value: "archived", label: "Arquivados", count: stats.archived },
+      { value: "trash", label: "Lixeira", count: stats.trash },
+    ];
     const matchesFolder = (item) =>
       selectedFolder === "all" || (item.folder || "Inbox") === selectedFolder;
     const matchesQuery = (item) => {
@@ -2728,203 +2812,182 @@ App.auth = {
       );
       return haystack.includes(normalizedQuery);
     };
-    const visibleItems = inboxItems.filter(
-      (item) => matchesView(item) && matchesFolder(item) && matchesQuery(item),
+    const visibleItems = viewPool.filter(
+      (item) => matchesFolder(item) && matchesQuery(item),
     );
-    const openItems = visibleItems.filter((item) => item.state !== "closed");
-    const closedItems = visibleItems.filter((item) => item.state === "closed");
-    const focusItems = openItems
-      .filter((item) => !item.read || item.tone === "high" || item.type === "decision")
-      .slice(0, 4);
-    const renderFolderGroups = (collection = []) => {
-      const folders = collection.reduce((groups, item) => {
-        const folder = item.folder || "Inbox";
-        groups[folder] = groups[folder] || [];
-        groups[folder].push(item);
-        return groups;
-      }, {});
-      return Object.keys(folders)
-        .map(
-          (folder) => `
-        <section class="email-folder-group">
-          <div class="email-folder-header">
-            <strong>${App.utils.escapeDisplay(folder)}</strong>
-            <span>${folders[folder].length} assunto(s)</span>
-          </div>
-          ${folders[folder].map((item) => App.auth.renderEmailThread(item)).join("")}
-        </section>
-      `,
-        )
-        .join("");
-    };
+    const focusItems = actionItems.slice(0, 3);
+    const activeViewLabel =
+      viewOptions.find((item) => item.value === selectedView)?.label ||
+      "Acoes do dia";
+    const selectedItem =
+      visibleItems.find((item) => item.key === selectedKey) ||
+      visibleItems[0] ||
+      null;
 
     return `
-      <div class="email-office-command-row email-office-tabs">
-        <span>Abertos ${stats.open}</span>
-        <span>Encerrados ${stats.closed}</span>
-        <span>Não lidos ${stats.unread}</span>
-        <span>Prioridade ${stats.priority}</span>
-        <span>DM ${stats.medical}</span>
-        <span>Comercial ${stats.commercial}</span>
-        <span>Mercado ${stats.market}</span>
-        <span>Arquivados ${archivedCount}</span>
-        <span>Lixeira ${deletedCount}</span>
-      </div>
-
-      <div class="email-office-toolbar">
-        <label class="email-toolbar-field email-toolbar-field-search">
-          <span>Buscar</span>
-          <input
-            type="search"
-            value="${App.utils.escapeHtml(filters.query || "")}"
-            placeholder="Assunto, remetente ou pasta"
-            autocomplete="off"
-            data-email-filter-search
-          />
-        </label>
-        <label class="email-toolbar-field">
-          <span>Fila</span>
-          <select data-email-filter-view>
-            <option value="action" ${selectedView === "action" ? "selected" : ""}>Ações do dia</option>
-            <option value="all" ${selectedView === "all" ? "selected" : ""}>Tudo</option>
-            <option value="unread" ${selectedView === "unread" ? "selected" : ""}>Não lidos</option>
-            <option value="priority" ${selectedView === "priority" ? "selected" : ""}>Prioridade alta</option>
-            <option value="closed" ${selectedView === "closed" ? "selected" : ""}>Encerrados</option>
-            <option value="trash" ${selectedView === "trash" ? "selected" : ""}>Lixeira</option>
-          </select>
-        </label>
-        <label class="email-toolbar-field">
-          <span>Pasta</span>
-          <select data-email-filter-folder>
-            ${folderOptions
-              .map((folder) => {
-                const value = String(folder);
-                const label = value === "all" ? "Todas" : value;
-                return `<option value="${App.utils.escapeHtml(value)}" ${selectedFolder === value ? "selected" : ""}>${App.utils.escapeDisplay(label)}</option>`;
-              })
-              .join("")}
-          </select>
-        </label>
-      </div>
-
-      ${
-        focusItems.length
-          ? `
-        <div class="email-focus-grid">
-          ${focusItems
-            .map(
-              (item) => `
-            <button type="button" class="email-focus-card" data-email-open-thread="${App.utils.escapeHtml(item.key)}">
-              <span>${App.utils.escapeDisplay(item.folder || "Inbox")}</span>
-              <strong>${App.utils.escapeDisplay(item.subject || "Sem assunto")}</strong>
-              <small>${App.utils.escapeDisplay(item.preview || "")}</small>
-            </button>
-          `,
-            )
-            .join("")}
-        </div>
-      `
-          : ""
-      }
-
-      <div class="email-bulk-toolbar">
-        <label>
-          <input type="checkbox" data-email-select-all />
-          <span>Selecionar visíveis</span>
-        </label>
-        <button type="button" data-email-bulk-action="read">Marcar lido</button>
-        <button type="button" data-email-bulk-action="unread">Marcar não lido</button>
-        <button type="button" data-email-bulk-action="archive">Arquivar selecionados</button>
-        <button type="button" data-email-bulk-action="delete">Apagar selecionados</button>
-      </div>
-
-      ${
-        openItems.length
-          ? `
-        <section class="email-mailbox-section is-open">
-          <div class="email-mailbox-section-header">
-            <div>
-              <strong>Caixa ativa</strong>
-              <span>Mensagens que ainda pedem leitura, decisão ou resposta do técnico.</span>
+      <div class="email-office-layout">
+        <aside class="email-sidebar">
+          <div class="email-sidebar-block">
+            <div class="email-sidebar-heading">
+              <strong>Fila</strong>
+              <span>${stats.action} foco(s)</span>
             </div>
-            <b>${openItems.length}</b>
+            <div class="email-mailbox-modes">
+              ${viewOptions
+                .map(
+                  (option) => `
+                <button
+                  type="button"
+                  class="email-filter-button ${selectedView === option.value ? "is-active" : ""}"
+                  data-email-filter-view-button="${App.utils.escapeHtml(option.value)}"
+                >
+                  <strong>${App.utils.escapeDisplay(option.label)}</strong>
+                  <span>${option.count}</span>
+                </button>
+              `,
+                )
+                .join("")}
+            </div>
           </div>
-          <div class="email-thread-stack">
-            ${renderFolderGroups(openItems)}
+
+          ${
+            focusItems.length
+              ? `
+            <div class="email-sidebar-block">
+              <div class="email-sidebar-heading">
+                <strong>Prioridade agora</strong>
+                <span>${focusItems.length}</span>
+              </div>
+              <div class="email-focus-grid">
+                ${focusItems
+                  .map(
+                    (item) => `
+                  <button type="button" class="email-focus-card" data-email-open-thread="${App.utils.escapeHtml(item.key)}">
+                    <span>${App.utils.escapeDisplay(item.folder || "Inbox")}</span>
+                    <strong>${App.utils.escapeDisplay(item.subject || "Sem assunto")}</strong>
+                    <small>${App.utils.escapeDisplay(item.sender || "Remetente")}</small>
+                  </button>
+                `,
+                  )
+                  .join("")}
+              </div>
+            </div>
+          `
+              : ""
+          }
+
+          <div class="email-sidebar-block">
+            <div class="email-sidebar-heading">
+              <strong>Pastas</strong>
+              <span>${folderOptions.length - 1}</span>
+            </div>
+            <div class="email-folder-rail">
+              ${folderOptions
+                .map(
+                  (option) => `
+                <button
+                  type="button"
+                  class="email-folder-button ${selectedFolder === option.value ? "is-active" : ""}"
+                  data-email-filter-folder-button="${App.utils.escapeHtml(option.value)}"
+                >
+                  <span>${App.utils.escapeDisplay(option.label)}</span>
+                  <b>${option.count}</b>
+                </button>
+              `,
+                )
+                .join("")}
+            </div>
           </div>
+
+          <div class="email-sidebar-block email-bulk-panel">
+            <div class="email-sidebar-heading">
+              <strong>Lote</strong>
+              <span>visiveis</span>
+            </div>
+            <div class="email-bulk-toolbar">
+              <label>
+                <input type="checkbox" data-email-select-all />
+                <span>Selecionar visiveis</span>
+              </label>
+              <button type="button" data-email-bulk-action="read">Marcar lido</button>
+              <button type="button" data-email-bulk-action="unread">Marcar nao lido</button>
+              <button type="button" data-email-bulk-action="archive">Arquivar</button>
+              <button type="button" data-email-bulk-action="delete">Apagar</button>
+            </div>
+          </div>
+        </aside>
+
+        <section class="email-list-pane">
+          <div class="email-office-toolbar">
+            <label class="email-toolbar-field email-toolbar-field-search">
+              <span>Buscar</span>
+              <input
+                type="search"
+                value="${App.utils.escapeHtml(filters.query || "")}"
+                placeholder="Assunto, remetente ou pasta"
+                autocomplete="off"
+                data-email-filter-search
+              />
+            </label>
+          </div>
+
+          <div class="email-list-header">
+            <div>
+              <strong>${App.utils.escapeDisplay(activeViewLabel)}</strong>
+              <small>${
+                selectedFolder === "all"
+                  ? "Lista completa da fila atual."
+                  : `Filtrado por ${App.utils.escapeDisplay(selectedFolder)}.`
+              }</small>
+            </div>
+            <span>${visibleItems.length} assunto(s)</span>
+          </div>
+
+          ${
+            visibleItems.length
+              ? `
+            <div class="email-thread-stack email-thread-list">
+              ${visibleItems
+                .map((item) =>
+                  App.auth.renderEmailThread(item, {
+                    selected: selectedItem?.key === item.key,
+                  }),
+                )
+                .join("")}
+            </div>
+          `
+              : `
+            <div class="coach-empty-state decision-empty-visible email-empty-state">
+              <span>0</span>
+              <div>
+                <strong>Nenhum e-mail nessa visao</strong>
+                <p>${
+                  normalizedQuery || selectedFolder !== "all" || selectedView !== "action"
+                    ? "Ajuste busca ou pasta para reencontrar a fila do escritorio."
+                    : "Novas mensagens entram aqui quando a diretoria, o mercado ou o DM abrirem um assunto."
+                }</p>
+              </div>
+            </div>
+          `
+          }
         </section>
-      `
-          : `
-        <div class="coach-empty-state decision-empty-visible email-empty-state">
-          <span>0</span>
-          <div>
-            <strong>Nenhum e-mail nessa visao</strong>
-            <p>${
-              normalizedQuery || selectedFolder !== "all" || selectedView !== "action"
-                ? "Ajuste os filtros para voltar a ver a fila completa do escritório."
-                : "Quando uma nova mensagem chegar, ela aparece aqui para leitura, resposta, arquivo ou lixeira."
-            }</p>
-          </div>
-        </div>
-      `
-      }
 
-      ${
-        closedItems.length
-          ? `
-        <details class="email-mailbox-section is-closed" ${selectedView === "closed" ? "open" : ""}>
-          <summary class="email-mailbox-section-header">
-            <div>
-              <strong>Histórico fechado</strong>
-              <span>Assuntos concluídos, expirados ou guardados para consulta rápida.</span>
-            </div>
-            <b>${closedItems.length}</b>
-          </summary>
-          <div class="email-thread-stack">
-            ${renderFolderGroups(closedItems)}
-          </div>
-        </details>
-      `
-          : ""
-      }
-
-      ${
-        archivedItems.length
-          ? `
-        <details class="email-mailbox-section is-closed" ${selectedView === "all" ? "" : ""}>
-          <summary class="email-mailbox-section-header">
-            <div>
-              <strong>Arquivados</strong>
-              <span>Assuntos guardados para consulta rápida.</span>
-            </div>
-            <b>${archivedItems.length}</b>
-          </summary>
-          <div class="email-thread-stack">
-            ${renderFolderGroups(archivedItems)}
-          </div>
-        </details>
-      `
-          : ""
-      }
-
-      ${
-        trashItems.length
-          ? `
-        <details class="email-mailbox-section is-closed is-trash" ${selectedView === "trash" ? "open" : ""}>
-          <summary class="email-mailbox-section-header">
-            <div>
-              <strong>Lixeira</strong>
-              <span>E-mails removidos da fila principal, com opção de restauração.</span>
-            </div>
-            <b>${trashItems.length}</b>
-          </summary>
-          <div class="email-thread-stack">
-            ${renderFolderGroups(trashItems)}
-          </div>
-        </details>
-      `
-          : ""
-      }
+        <aside class="email-preview-pane">
+          ${
+            selectedItem
+              ? App.auth.renderEmailPreview(selectedItem)
+              : `
+            <article class="email-preview-empty">
+              <span>@</span>
+              <div>
+                <strong>Nenhuma mensagem selecionada</strong>
+                <p>Escolha um item da fila para abrir contexto completo e agir sem expandir a lista inteira.</p>
+              </div>
+            </article>
+          `
+          }
+        </aside>
+      </div>
     `;
   },
 
@@ -3802,20 +3865,40 @@ App.auth = {
         return;
       }
 
+      const viewButton = event.target.closest?.(
+        "[data-email-filter-view-button]",
+      );
+      if (viewButton) {
+        event.preventDefault();
+        App.auth.setEmailMailboxFilters({
+          view: viewButton.dataset.emailFilterViewButton || "action",
+          selectedKey: "",
+        });
+        rerenderOffice();
+        return;
+      }
+
+      const folderButton = event.target.closest?.(
+        "[data-email-filter-folder-button]",
+      );
+      if (folderButton) {
+        event.preventDefault();
+        App.auth.setEmailMailboxFilters({
+          folder: folderButton.dataset.emailFilterFolderButton || "all",
+          selectedKey: "",
+        });
+        rerenderOffice();
+        return;
+      }
+
       const focusCard = event.target.closest?.("[data-email-open-thread]");
       if (focusCard) {
         event.preventDefault();
         const key = focusCard.dataset.emailOpenThread;
-        const escapedKey =
-          globalThis.CSS?.escape?.(key) ||
-          String(key || "").replace(/["\\]/g, "\\$&");
-        const thread = office.querySelector(
-          `details[data-email-key="${escapedKey}"]`,
-        );
-        if (thread) {
-          thread.open = true;
-          thread.scrollIntoView({ block: "nearest", behavior: "smooth" });
-        }
+        if (!key) return;
+        App.auth.setEmailsRead(key, true);
+        App.auth.setEmailMailboxFilters({ selectedKey: key });
+        rerenderOffice();
         return;
       }
 
@@ -3856,26 +3939,15 @@ App.auth = {
       if (!searchField) return;
       window.clearTimeout(office.__emailFilterTimer);
       office.__emailFilterTimer = window.setTimeout(() => {
-        App.auth.setEmailMailboxFilters({ query: searchField.value || "" });
+        App.auth.setEmailMailboxFilters({
+          query: searchField.value || "",
+          selectedKey: "",
+        });
         rerenderOffice();
       }, 180);
     });
 
     office.addEventListener("change", (event) => {
-      const viewField = event.target.closest?.("[data-email-filter-view]");
-      if (viewField) {
-        App.auth.setEmailMailboxFilters({ view: viewField.value || "action" });
-        rerenderOffice();
-        return;
-      }
-
-      const folderField = event.target.closest?.("[data-email-filter-folder]");
-      if (folderField) {
-        App.auth.setEmailMailboxFilters({ folder: folderField.value || "all" });
-        rerenderOffice();
-        return;
-      }
-
       const selectAll = event.target.closest?.("[data-email-select-all]");
       if (selectAll) {
         office
@@ -3885,24 +3957,6 @@ App.auth = {
           });
       }
     });
-
-    office.addEventListener(
-      "toggle",
-      (event) => {
-        const thread = event.target;
-        if (!thread.matches?.("details[data-email-key]") || !thread.open) return;
-        const key = thread.dataset.emailKey;
-        App.auth.setEmailsRead(key, true);
-        thread.classList.remove("is-unread");
-        thread.classList.add("is-read");
-        const markButton = thread.querySelector('[data-email-action="read"]');
-        if (markButton) {
-          markButton.dataset.emailAction = "unread";
-          markButton.textContent = "Marcar não lido";
-        }
-      },
-      true,
-    );
   },
 
   bindDecisionAnswerButtons(root = document) {
