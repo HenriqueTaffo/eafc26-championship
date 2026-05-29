@@ -125,91 +125,6 @@ const BRAND_WORDMARK_SRC = resolveAssetUrl(
   "assets/4linhas-wordmark-light.png",
   BRAND_ASSET_VERSION,
 );
-const WORKSPACE_NAV_GROUPS = [
-  {
-    key: "league",
-    label: "Liga",
-    detail: "Rodada, agenda e leitura macro da temporada.",
-    views: [
-      {
-        view: "standingsView",
-        label: "ClassificaÃ§Ã£o",
-        detail: "Tabela, forma e pressÃ£o de campanha",
-        icon: BarChart3,
-      },
-      {
-        view: "calendarView",
-        label: "CalendÃ¡rio",
-        detail: "Agenda mensal, semanas e placares pendentes",
-        icon: CalendarDays,
-      },
-      {
-        view: "cupsView",
-        label: "Copas",
-        detail: "Chaves, avanÃ§o de fase e bÃ´nus",
-        icon: Trophy,
-      },
-      {
-        view: "eventsView",
-        label: "Eventos",
-        detail: "Caos, bastidores, puniÃ§Ãµes e impactos",
-        icon: Sparkles,
-      },
-    ],
-  },
-  {
-    key: "club",
-    label: "Clube",
-    detail: "Fluxo privado do tÃ©cnico, elenco e mercado.",
-    views: [
-      {
-        view: "playersView",
-        label: "EscritÃ³rio",
-        detail: "Inbox, caixa, diretoria e contratos",
-        icon: WalletCards,
-      },
-      {
-        view: "squadView",
-        label: "Elenco",
-        detail: "FormaÃ§Ã£o, disponibilidade e folha",
-        icon: Users,
-      },
-      {
-        view: "transfersView",
-        label: "TransferÃªncias",
-        detail: "Mesa ativa, scouting e negociaÃ§Ãµes",
-        icon: ArrowLeftRight,
-      },
-    ],
-  },
-  {
-    key: "admin",
-    label: "Liga / Admin",
-    detail: "GovernanÃ§a, auditoria e fechamento operacional.",
-    role: "commissioner",
-    views: [
-      {
-        view: "commissionerView",
-        label: "ComissÃ¡rio",
-        detail: "LeilÃµes, auditoria e aÃ§Ãµes mÃ©dicas",
-        icon: Scale,
-      },
-      {
-        view: "submitView",
-        label: "Enviar dados",
-        detail: "Resultados, CPU e rotinas da rodada",
-        icon: UploadCloud,
-      },
-      {
-        view: "experienceView",
-        label: "InteligÃªncia",
-        detail: "Risco, prioridades e leitura do momento",
-        icon: Brain,
-      },
-    ],
-  },
-];
-
 function ViewLoadingPlaceholder({
   title = "Carregando painel",
   detail = "Preparando a tela selecionada...",
@@ -324,8 +239,6 @@ function GlobalLoader() {
   );
 }
 
-void WORKSPACE_NAV_GROUPS;
-
 function WorkspaceNavigation({ activePath }) {
   useAppRuntime();
   const navigate = useNavigate();
@@ -344,7 +257,7 @@ function WorkspaceNavigation({ activePath }) {
     .filter((group) => group.views.length > 0);
 
   return (
-    <nav className="tabs workspace-nav" aria-label="NavegaÃ§Ã£o principal">
+    <nav className="tabs workspace-nav" aria-label="Navegação principal">
       {visibleGroups.map((group) => (
         <section
           className="workspace-nav-group"
@@ -389,42 +302,32 @@ function WorkspaceNavigation({ activePath }) {
 }
 
 function ShellChrome({ activeRoute }) {
-  const session = App.auth?.getSession?.() || null;
-  const audienceLabel = session?.isCommissioner
-    ? "OperaÃ§Ã£o da liga"
-    : session?.managerName
-      ? `${session.managerName} Â· ${session.clubName || "Clube ativo"}`
-      : "Produto operacional da liga";
-
   return (
     <>
       <section className="shell-top-cluster">
-        <header className="hero league-hero league-hero-brand">
-          <div className="league-brand-lockup" aria-hidden="true">
-            <img
-              className="league-brand-wordmark"
-              src={BRAND_WORDMARK_SRC}
-              alt=""
-            />
-          </div>
-          <div className="league-hero-divider" aria-hidden="true"></div>
-          <div className="league-hero-copy">
-            <h1 className="sr-only">{BRAND_NAME}</h1>
-            <span className="league-brand-meta">{activeRoute.kicker}</span>
-            <strong className="league-route-title">{activeRoute.label}</strong>
-            <p>{activeRoute.detail}</p>
-          </div>
-          <aside className="route-focus-panel">
-            <span>{audienceLabel}</span>
-            <strong>{activeRoute.groupLabel}</strong>
-            <p>{activeRoute.groupDetail}</p>
-          </aside>
-        </header>
+        <div className="shell-masthead-row">
+          <header className="hero league-hero league-hero-brand">
+            <div className="league-brand-lockup" aria-hidden="true">
+              <img
+                className="league-brand-wordmark"
+                src={BRAND_WORDMARK_SRC}
+                alt=""
+              />
+            </div>
+            <div className="league-hero-copy">
+              <h1 className="sr-only">{BRAND_NAME}</h1>
+              <span className="league-brand-meta">{activeRoute.groupLabel}</span>
+              <strong className="league-route-title">{activeRoute.label}</strong>
+              <p>{activeRoute.detail}</p>
+            </div>
+          </header>
 
-        <section
-          id="managerLoginPanel"
-          className="manager-login-panel"
-        ></section>
+          <section
+            id="managerLoginPanel"
+            className="manager-login-panel"
+          ></section>
+        </div>
+
         <section
           id="transferProposalPanel"
           className={`decision-center${
@@ -444,7 +347,7 @@ function ShellChrome({ activeRoute }) {
               <input
                 id="globalSearchInput"
                 type="search"
-                placeholder="Buscar jogo, tÃ©cnico, jogador..."
+                placeholder="Buscar jogo, técnico, jogador..."
                 autoComplete="off"
                 aria-label="Busca global da liga"
               />
@@ -482,7 +385,7 @@ function StandingsView() {
         <section className="home-grid">
           <article className="home-panel home-standings-panel">
             <div className="home-panel-header">
-              <h2>ClassificaÃ§Ã£o geral</h2>
+              <h2>Classificação geral</h2>
             </div>
             <div className="home-standings-table-wrap">
               <table className="home-standings-table">
@@ -892,11 +795,11 @@ function ExperienceView() {
         </section>
         <section className="submit-hero experience-hero">
           <div>
-            <span className="modal-kicker">Sala de anÃ¡lise</span>
-            <h2>Central de InteligÃªncia</h2>
+            <span className="modal-kicker">Sala de análise</span>
+            <h2>Central de Inteligência</h2>
             <p>
-              DiagnÃ³stico operacional da liga: aÃ§Ãµes urgentes, risco financeiro,
-              rodada de impacto e postura recomendada para cada tÃ©cnico.
+              Diagnóstico operacional da liga: ações urgentes, risco financeiro,
+              rodada de impacto e postura recomendada para cada técnico.
             </p>
           </div>
           <div className="submit-hero-actions">
@@ -939,7 +842,7 @@ function TransfersView() {
           <TransfersSummary />
         </section>
         <section className="countdown-card">
-          <span>Janela de transferÃªncias</span>
+          <span>Janela de transferências</span>
           <strong id="nextTransferCountdown">Calculando...</strong>
           <p>
             O limite diário reinicia à meia-noite. Eventos podem aumentar ou
@@ -949,9 +852,9 @@ function TransfersView() {
 
         <section className="transfer-lock-card" aria-live="polite">
           <span className="modal-kicker">Mercado travado</span>
-          <h2>Janela de transferÃªncias fechada</h2>
+          <h2>Janela de transferências fechada</h2>
           <p>
-            As contrataÃ§Ãµes ficam bloqueadas atÃ© a liga considerar o app pronto.
+            As contratações ficam bloqueadas até a liga considerar o app pronto.
             HistÃ³rico e orÃ§amento seguem visÃ­veis para conferÃªncia.
           </p>
         </section>

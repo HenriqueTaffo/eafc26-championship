@@ -2275,11 +2275,11 @@ App.auth = {
       <section class="decision-private-card transfer-proposal-card">
         <div class="decision-header">
           <div>
-            <span>Central de negociaÃƒÂ§ÃƒÂ£o</span>
-            <strong>${openCount} aberta(s) Ã‚Â· ${closed.length} encerrada(s)</strong>
-            <p>${App.utils.escapeHtml(session.managerName)}, acompanhe pendÃƒÂªncias, respostas e histÃƒÂ³rico recente entre tÃƒÂ©cnicos e clubes.</p>
+            <span>Central de negociação</span>
+            <strong>${openCount} aberta(s) - ${closed.length} encerrada(s)</strong>
+            <p>${App.utils.escapeHtml(session.managerName)}, acompanhe pendências, respostas e histórico recente entre técnicos e clubes.</p>
           </div>
-          <span class="decision-auto-pill">${accepted} aceita(s) Ã‚Â· ${rejected} recusada(s)</span>
+          <span class="decision-auto-pill">${accepted} aceita(s) - ${rejected} recusada(s)</span>
         </div>
         <div class="proposal-workflow-sections">
           ${
