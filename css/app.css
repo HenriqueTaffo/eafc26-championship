@@ -11832,6 +11832,48 @@ tbody tr:hover td {
   padding: 3px 3px 0 !important;
 }
 
+.player-photo-shell.has-player-image:not(.avatar-loaded) i,
+.market-player-photo.has-player-image:not(.avatar-loaded) i,
+.player-avatar.has-player-image:not(.avatar-loaded) i,
+.ea-rating-photo.has-player-image:not(.avatar-loaded) i,
+.scout-photo.has-player-image:not(.avatar-loaded) i {
+  display: grid !important;
+  place-items: center;
+}
+
+.player-photo-shell.has-player-image:not(.avatar-loaded) img,
+.market-player-photo.has-player-image:not(.avatar-loaded) img,
+.player-avatar.has-player-image:not(.avatar-loaded) img,
+.ea-rating-photo.has-player-image:not(.avatar-loaded) img,
+.scout-photo.has-player-image:not(.avatar-loaded) img {
+  opacity: 0;
+}
+
+.player-photo-shell.avatar-loaded img,
+.market-player-photo.avatar-loaded img,
+.player-avatar.avatar-loaded img,
+.ea-rating-photo.avatar-loaded img,
+.scout-photo.avatar-loaded img {
+  opacity: 1;
+}
+
+.player-photo-shell.avatar-loaded i,
+.market-player-photo.avatar-loaded i,
+.player-avatar.avatar-loaded i,
+.ea-rating-photo.avatar-loaded i,
+.scout-photo.avatar-loaded i {
+  display: none !important;
+}
+
+.player-photo-shell.avatar-failed i,
+.market-player-photo.avatar-failed i,
+.player-avatar.avatar-failed i,
+.ea-rating-photo.avatar-failed i,
+.scout-photo.avatar-failed i {
+  display: grid !important;
+  place-items: center;
+}
+
 .club-badge.has-logo,
 .metric-icon.leader-club-icon {
   overflow: hidden;

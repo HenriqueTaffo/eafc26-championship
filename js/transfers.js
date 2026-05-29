@@ -112,6 +112,48 @@ App.transfers = {
       source_url: "https://sofifa.com/player/263205/baris-alper-yilmaz",
       source_name: "SoFIFA portrait override",
     },
+    {
+      name: "Paul Pogba",
+      avatar_url: "https://cdn.sofifa.net/players/195/864/26_240.png",
+      source_url: "https://sofifa.com/player/195864/paul-pogba",
+      source_name: "SoFIFA FC 26 portrait override",
+    },
+    {
+      name: "Timo Werner",
+      avatar_url: "https://cdn.sofifa.net/players/212/188/26_240.png",
+      source_url: "https://sofifa.com/player/212188/timo-werner",
+      source_name: "SoFIFA FC 26 portrait override",
+    },
+    {
+      name: "Johan Mojica",
+      avatar_url: "https://cdn.sofifa.net/players/214/026/26_240.png",
+      source_url: "https://sofifa.com/player/214026/johan-mojica",
+      source_name: "SoFIFA FC 26 portrait override",
+    },
+    {
+      name: "Xherdan Shaqiri",
+      avatar_url: "https://cdn.sofifa.net/players/183/711/26_240.png",
+      source_url: "https://sofifa.com/player/183711/xherdan-shaqiri",
+      source_name: "SoFIFA FC 26 portrait override",
+    },
+    {
+      name: "N'Golo Kante",
+      avatar_url: "https://cdn.sofifa.net/players/215/914/26_240.png",
+      source_url: "https://sofifa.com/player/215914/ngolo-kante",
+      source_name: "SoFIFA FC 26 portrait override",
+    },
+    {
+      name: "Leandro Paredes",
+      avatar_url: "https://cdn.sofifa.net/players/207/439/26_240.png",
+      source_url: "https://sofifa.com/player/207439/leandro-paredes",
+      source_name: "SoFIFA FC 26 portrait override",
+    },
+    {
+      name: "Stephan El Shaarawy",
+      avatar_url: "https://cdn.sofifa.net/players/190/813/26_240.png",
+      source_url: "https://sofifa.com/player/190813/stephan-el-shaarawy",
+      source_name: "SoFIFA FC 26 portrait override",
+    },
   ],
 
   manualPlayerRatings: {
@@ -592,6 +634,7 @@ App.transfers = {
       "theo hernandez": ["Theo Hernández"],
       "theo hérnandez": ["Theo Hernandez"],
       "marcos llorente": ["Marcos Llorente Moreno"],
+      shaqiri: ["Xherdan Shaqiri"],
       "nicolas pepe": ["Nicolas Pépé"],
       "nicolas pépé": ["Nicolas Pepe"],
     };
@@ -1104,6 +1147,23 @@ App.transfers = {
   handlePlayerPhotoLoad(image) {
     image?.parentElement?.classList.remove("avatar-failed");
     image?.parentElement?.classList.add("avatar-loaded");
+  },
+
+  syncPlayerPhotoLoadStates(root = document) {
+    const scope = root?.querySelectorAll ? root : document;
+    scope
+      .querySelectorAll(".player-photo-shell.has-player-image img")
+      .forEach((image) => {
+        image.onload = () => App.transfers.handlePlayerPhotoLoad(image);
+        image.onerror = () => App.transfers.handlePlayerPhotoError(image);
+
+        if (!image.complete) return;
+        if (image.naturalWidth > 0) {
+          App.transfers.handlePlayerPhotoLoad(image);
+        } else {
+          App.transfers.handlePlayerPhotoError(image);
+        }
+      });
   },
 
   renderPlayerPhoto(player, rating = null, className = "market-player-photo") {

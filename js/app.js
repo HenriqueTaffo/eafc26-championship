@@ -163,6 +163,9 @@ App.dom = App.dom || {
     if (!target) return;
     target.replaceChildren(App.dom.fragmentFromHtml(html));
     App.dom.sanitizeTree(target);
+    window.requestAnimationFrame(() => {
+      App.transfers?.syncPlayerPhotoLoadStates?.(target);
+    });
   },
 
   clear(target) {

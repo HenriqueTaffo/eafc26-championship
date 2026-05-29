@@ -25,6 +25,15 @@ function TransfersRuntime() {
     App.transfers.syncTransferWindowLock();
     App.transfers.renderWorkspace?.(form);
     App.transfers.renderHistory?.();
+
+    const view = document.getElementById("transfersView");
+    const syncPlayerPhotos = () =>
+      App.transfers.syncPlayerPhotoLoadStates?.(view || document);
+    syncPlayerPhotos();
+    window.requestAnimationFrame(syncPlayerPhotos);
+    const photoSyncTimer = window.setTimeout(syncPlayerPhotos, 800);
+
+    return () => window.clearTimeout(photoSyncTimer);
   }, [isActive, runtimeVersion]);
 
   return null;
