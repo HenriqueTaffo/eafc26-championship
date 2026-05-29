@@ -775,10 +775,17 @@ App.api = {
       ...new Set(
         (names || []).map((name) => String(name || "").trim()).filter(Boolean),
       ),
-    ].slice(0, Math.max(1, Number(maxNames || 40)));
+    ]
+      .filter(
+        (name) =>
+          !App.transfers?.findMarketPlayerByName?.(name, {
+            includeTrustedFuzzy: false,
+          }),
+      )
+      .slice(0, Math.max(1, Number(maxNames || 40)));
     if (!uniqueNames.length) return App.state.apiMarketPlayers || [];
 
-    const groups = await App.api.mapWithConcurrency(uniqueNames, 6, (name) =>
+    const groups = await App.api.mapWithConcurrency(uniqueNames, 3, (name) =>
       App.api
         .fetchMarketPlayersDirect(name, limitPerName)
         .then((rows) =>
@@ -1709,6 +1716,17 @@ App.api = {
       ...new Set((names || []).map((name) => String(name || "").trim()).filter(Boolean)),
     ];
     if (!uniqueNames.length) return App.state.apiSquadManagement;
+    const isMobile =
+      typeof window !== "undefined" &&
+      window.matchMedia?.("(max-width: 760px)")?.matches;
+    const maxRatingNames = Math.max(
+      1,
+      Number(options.maxRatingNames || (isMobile ? 24 : 48)),
+    );
+    const maxMarketNames = Math.max(
+      1,
+      Number(options.maxMarketNames || (isMobile ? 18 : 32)),
+    );
 
     const cacheKey = uniqueNames
       .map((name) => App.utils.normalizeText(name))
@@ -1726,8 +1744,8 @@ App.api = {
     }
 
     const request = Promise.allSettled([
-      App.api.loadRatingsForPlayerNames(uniqueNames, 2, 96),
-      App.api.loadMarketPlayersForNames(uniqueNames, 2, 80),
+      App.api.loadRatingsForPlayerNames(uniqueNames, 2, maxRatingNames),
+      App.api.loadMarketPlayersForNames(uniqueNames, 2, maxMarketNames),
     ])
       .then(() => {
         App.react?.notify?.();
@@ -1769,9 +1787,13 @@ App.api = {
         const rosterNames = App.api.getSquadRosterHydrationNames(
           App.state.apiSquadManagement,
         );
-        await App.api.hydrateSquadRosterDetails(rosterNames, {
+        const hydration = App.api.hydrateSquadRosterDetails(rosterNames, {
           waitForHydration,
         });
+        if (waitForHydration) await hydration;
+        else hydration.catch((error) =>
+          console.warn("Hidratacao de elenco indisponivel:", error),
+        );
       }
       return App.state.apiSquadManagement;
     }
@@ -1801,9 +1823,13 @@ App.api = {
       App.state.apiSquadManagementScopeKey = scopeKey;
       App.react?.notify?.();
       if (hydrateRosterDetails && rosterNames.length) {
-        await App.api.hydrateSquadRosterDetails(rosterNames, {
+        const hydration = App.api.hydrateSquadRosterDetails(rosterNames, {
           waitForHydration,
         });
+        if (waitForHydration) await hydration;
+        else hydration.catch((error) =>
+          console.warn("Hidratacao de elenco indisponivel:", error),
+        );
       }
       return App.state.apiSquadManagement;
     } catch (error) {

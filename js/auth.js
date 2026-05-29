@@ -1054,35 +1054,52 @@ App.auth = {
     const session = App.auth.buildSessionFromLogin(result, accessCode);
     const transitionStartedAt = App.auth.startLoginSuccessTransition(session);
     App.auth.persistSession(session);
+    App.main?.preloadDeferredViewModules?.();
 
     try {
-      const tasks = [
-        App.governance?.loadData?.(),
+      const criticalTasks = [
         App.auth.loadPublicNews(),
         App.auth.ensureLeagueDataReady(),
       ];
+      const backgroundTasks = [];
 
-      if (!App.auth.currentSession.isCommissioner) {
-        tasks.push(
-          App.auth.loadMyDecisions(),
-          App.auth.loadMyTransferProposals(),
-          App.auth.loadMyTransferTargets(),
-          App.auth.loadMyTransferSaleListings(),
-          App.auth.loadMySponsorships(),
-          App.api?.loadMedicalCenterData?.(),
-          App.api?.loadSquadManagementData?.({
+      if (App.auth.currentSession.isCommissioner) {
+        backgroundTasks.push(() => App.governance?.loadData?.());
+      } else {
+        backgroundTasks.push(
+          () => App.auth.loadMyDecisions(),
+          () => App.auth.loadMyTransferProposals(),
+          () => App.auth.loadMyTransferTargets(),
+          () => App.auth.loadMyTransferSaleListings(),
+          () => App.auth.loadMySponsorships(),
+          () => App.api?.loadMedicalCenterData?.(),
+          () => App.api?.loadSquadManagementData?.({
             force: true,
             hydrateRosterDetails: false,
           }),
-          App.auth.loadMyQoL(),
+          () => App.auth.loadMyQoL(),
         );
       }
 
-      await Promise.all(tasks);
+      await Promise.all(criticalTasks);
       await App.auth.finishLoginSuccessTransition(transitionStartedAt);
       App.auth.renderAll();
       App.auth.openSessionHome();
       App.main?.renderCurrentView?.();
+
+      const runBackgroundTasks = () => {
+        Promise.allSettled(backgroundTasks.map((task) => task?.())).then(() => {
+          App.auth.renderAll();
+          App.react?.notify?.();
+          App.main?.renderCurrentView?.();
+          App.main?.markSynced?.("Dados privados sincronizados");
+        });
+      };
+      if ("requestIdleCallback" in window) {
+        window.requestIdleCallback(runBackgroundTasks, { timeout: 1500 });
+      } else {
+        window.setTimeout(runBackgroundTasks, 600);
+      }
     } catch (error) {
       App.auth.loginTransitionSession = null;
       App.auth.loginTransitionSnapshotHtml = "";

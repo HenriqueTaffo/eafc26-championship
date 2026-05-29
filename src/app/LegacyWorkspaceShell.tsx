@@ -14,7 +14,7 @@ export function LegacyWorkspaceShell() {
   const navigate = useNavigate();
   const session = useScopedManagerSession();
   const legacyApp = getLegacyApp();
-  const snapshot = useSyncExternalStore(
+  useSyncExternalStore(
     legacyApp.react?.subscribe || (() => () => undefined),
     legacyApp.react?.getSnapshot || (() => 0),
     legacyApp.react?.getSnapshot || (() => 0),
@@ -53,7 +53,6 @@ export function LegacyWorkspaceShell() {
     navigate,
     route.path,
     route.viewId,
-    snapshot,
   ]);
 
   return <StaticShell activePath={route.path} />;

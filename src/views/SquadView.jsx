@@ -619,20 +619,24 @@ function PitchSlot({
       slotId: slot.id,
     },
   });
-  const draggable = player
-    ? useDraggable({
-        id: `player:${player.id}:${slot.id}`,
-        data: {
+  const draggable = useDraggable({
+    id: player ? `player:${player.id}:${slot.id}` : `empty-slot:${slot.id}`,
+    disabled: !player,
+    data: player
+      ? {
           kind: "player",
           playerId: Number(player.id),
           fromSlot: slot.id,
+        }
+      : {
+          kind: "empty-slot",
+          slotId: slot.id,
         },
-      })
-    : null;
-  const setNodeRef = draggable
+  });
+  const setNodeRef = player
     ? combineNodeRefs(droppable.setNodeRef, draggable.setNodeRef)
     : droppable.setNodeRef;
-  const dragStyle = draggable ? getDragTransformStyle(draggable.transform) : null;
+  const dragStyle = player ? getDragTransformStyle(draggable.transform) : null;
   const dragging = Number(player?.id) === Number(draggingPlayerId);
   return (
     <button
@@ -656,8 +660,8 @@ function PitchSlot({
         ...(dragStyle || {}),
       }}
       onClick={onSelect}
-      {...(draggable ? draggable.listeners : {})}
-      {...(draggable ? draggable.attributes : {})}
+      {...(player ? draggable.listeners : {})}
+      {...(player ? draggable.attributes : {})}
       aria-label={
         player
           ? `${player.name}, ${slot.displayLabel}, overall ${player.overall}`

@@ -104,6 +104,29 @@ App.main = {
     if (element) element.textContent = label;
   },
 
+  preloadDeferredViewModules() {
+    if (App.state.deferredViewModulesPreloaded) return;
+    App.state.deferredViewModulesPreloaded = true;
+
+    const preload = () => {
+      Promise.allSettled([
+        import("../src/views/SquadView.jsx"),
+        import("../src/views/TransfersView.jsx"),
+        import("../src/views/AdvancedTransferTools.jsx"),
+        import("../src/views/PlayersView.jsx"),
+        import("../src/views/ViewSummaries.jsx"),
+      ]).catch((error) =>
+        console.warn("Preload de telas operacionais indisponivel:", error),
+      );
+    };
+
+    if ("requestIdleCallback" in window) {
+      window.requestIdleCallback(preload, { timeout: 900 });
+    } else {
+      window.setTimeout(preload, 250);
+    }
+  },
+
   async applyCacheHygiene() {
     const version = App.config.assetVersion || "";
     if (!version) return;
@@ -356,9 +379,11 @@ App.main = {
     if (window.location.pathname === targetPath) return;
 
     window.history.pushState({}, "", targetPath);
-    window.dispatchEvent(
-      new PopStateEvent("popstate", { state: window.history.state }),
-    );
+    const routeEvent =
+      typeof window.PopStateEvent === "function"
+        ? new window.PopStateEvent("popstate", { state: window.history.state })
+        : new window.Event("popstate");
+    window.dispatchEvent(routeEvent);
   },
 
   setupManualSync() {
@@ -744,6 +769,7 @@ App.main = {
     App.main.setupFilters();
     App.calendar.populateWeeks();
     App.main.startTimers();
+    App.main.preloadDeferredViewModules();
 
     if (!App.auth?.isLoggedIn?.()) {
       App.main.hideLoader(true);
