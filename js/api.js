@@ -1146,6 +1146,17 @@ App.api = {
         sponsorshipEvents +
         sponsorshipRewards;
       const totalBudget = baseBudget + homeBonus + winBonusValue + eventTotal;
+      const pendingSignatureTotal = Number(
+        current.pendingSignatureTotal ?? current.reservedBudget ?? 0,
+      );
+      const approvedRemainingBudget = Number(
+        current.approvedRemainingBudget ?? totalBudget - spentTotal,
+      );
+      const availableBudget = Number(
+        current.availableBudget ??
+          current.remainingBudget ??
+          approvedRemainingBudget - pendingSignatureTotal,
+      );
 
       acc[buyer] = {
         ...current,
@@ -1158,7 +1169,11 @@ App.api = {
         eventTotal,
         totalBudget,
         spentTotal,
-        remainingBudget: totalBudget - spentTotal,
+        approvedRemainingBudget,
+        pendingSignatureTotal,
+        reservedBudget: pendingSignatureTotal,
+        availableBudget,
+        remainingBudget: availableBudget,
       };
 
       return acc;

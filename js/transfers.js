@@ -1551,6 +1551,23 @@ App.transfers = {
     const buyers = App.utils.getHumanBuyers();
     const info = buyers.reduce((acc, buyer) => {
       const supabaseBudget = App.state.apiBudgets?.[buyer] || {};
+      const totalBudget = Number(
+        supabaseBudget.totalBudget ?? App.config.transferBudget,
+      );
+      const spentTotal = Number(supabaseBudget.spentTotal ?? 0);
+      const pendingSignatureTotal = Number(
+        supabaseBudget.pendingSignatureTotal ??
+          supabaseBudget.reservedBudget ??
+          0,
+      );
+      const approvedRemainingBudget = Number(
+        supabaseBudget.approvedRemainingBudget ?? totalBudget - spentTotal,
+      );
+      const availableBudget = Number(
+        supabaseBudget.availableBudget ??
+          supabaseBudget.remainingBudget ??
+          approvedRemainingBudget - pendingSignatureTotal,
+      );
 
       acc[buyer] = {
         buyer,
@@ -1573,13 +1590,13 @@ App.transfers = {
           supabaseBudget.transferLimit ?? App.config.baseDailyTransferLimit,
         ),
         activeInjuries: Number(supabaseBudget.activeInjuries ?? 0),
-        totalBudget: Number(
-          supabaseBudget.totalBudget ?? App.config.transferBudget,
-        ),
-        spentTotal: Number(supabaseBudget.spentTotal ?? 0),
-        remainingBudget: Number(
-          supabaseBudget.remainingBudget ?? App.config.transferBudget,
-        ),
+        totalBudget,
+        spentTotal,
+        approvedRemainingBudget,
+        pendingSignatureTotal,
+        reservedBudget: pendingSignatureTotal,
+        availableBudget,
+        remainingBudget: availableBudget,
         transfersToday: Number(supabaseBudget.transfersToday ?? 0),
       };
       return acc;

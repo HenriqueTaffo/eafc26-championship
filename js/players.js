@@ -69,8 +69,16 @@ App.players = {
       budget.totalBudget ?? base + homeBonus + winBonus + eventBonus,
     );
     const spentValue = Number(budget.spentTotal ?? spent ?? 0);
+    const reserved = Number(
+      budget.pendingSignatureTotal ?? budget.reservedBudget ?? 0,
+    );
+    const approvedAvailable = Number(
+      budget.approvedRemainingBudget ?? totalAccumulated - spentValue,
+    );
     const available = Number(
-      budget.remainingBudget ?? totalAccumulated - spentValue,
+      budget.availableBudget ??
+        budget.remainingBudget ??
+        approvedAvailable - reserved,
     );
 
     return {
@@ -84,6 +92,8 @@ App.players = {
       sponsorshipRewards,
       totalAccumulated,
       spent: spentValue,
+      reserved,
+      approvedAvailable,
       available,
     };
   },
@@ -2158,6 +2168,10 @@ App.players = {
       todayCount,
       canViewPrivate,
     );
+    const marketBudgetNote =
+      breakdown.reserved > 0
+        ? `Reservado ${App.utils.formatCurrency(breakdown.reserved)}`
+        : `Gasto ${App.utils.formatCurrency(breakdown.spent)}`;
 
     const nextMatchCard = `
       <article class="coach-panel-card coach-next-match">
@@ -2283,7 +2297,7 @@ App.players = {
           ${
             canViewPrivate
               ? `
-            <article><span>Saldo mercado</span><strong>${App.utils.formatCurrency(breakdown.available)}</strong><small>${budget.marketEmbargo ? "Mercado bloqueado" : `Gasto ${App.utils.formatCurrency(breakdown.spent)}`}</small></article>
+            <article><span>Saldo mercado</span><strong>${App.utils.formatCurrency(breakdown.available)}</strong><small>${budget.marketEmbargo ? "Mercado bloqueado" : marketBudgetNote}</small></article>
             <article><span>Transfers hoje</span><strong>${todayCount}/${transferLimit}</strong><small>${transfers.length} totais validas</small></article>
             <article><span>Folha semanal</span><strong>${App.utils.formatCurrency(payrollWeekly)}</strong><small>base salarial do elenco atual</small></article>
             ${budget.marketEmbargo || salaryDebt ? `<article><span>Fair play</span><strong>Embargo</strong><small>${App.utils.formatCurrency(Number(salaryDebt?.debtAmount || budget.salaryDebtAmount || Math.abs(Number(budget.remainingBudget || 0))))} em aberto</small></article>` : ""}
