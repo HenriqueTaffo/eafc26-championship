@@ -2259,6 +2259,8 @@ body.auth-login-success .manager-login-success-copy {
 
 .scout-priority-row {
   display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
   gap: 9px;
   border: 1px solid rgba(148, 163, 184, 0.16);
   border-radius: $radius;
@@ -2286,7 +2288,8 @@ body.auth-login-success .manager-login-success-copy {
 
 .scout-priority-control {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+  grid-column: 1 / -1;
+  grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
   gap: 8px;
 
@@ -2296,6 +2299,11 @@ body.auth-login-success .manager-login-success-copy {
     min-width: 1.8rem;
     text-align: right;
     font-variant-numeric: tabular-nums;
+  }
+
+  > span:first-child {
+    min-width: 112px;
+    text-align: left;
   }
 
   input[type="range"] {

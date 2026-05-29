@@ -2406,6 +2406,51 @@ App.transfers = {
     };
   },
 
+  buildPublicSalaryReferenceIndex() {
+    const refs = Array.isArray(App.state.apiSalaryReferences)
+      ? App.state.apiSalaryReferences
+      : [];
+    if (
+      App.transfers.publicSalaryReferenceIndex &&
+      App.transfers.publicSalaryReferenceIndexSource === refs
+    ) {
+      return App.transfers.publicSalaryReferenceIndex;
+    }
+
+    const index = new Map();
+    refs.forEach((item) => {
+      const key = App.transfers.normalizeSalaryLookup(
+        item.playerName || item.player_name,
+      );
+      if (!key) return;
+      if (!index.has(key)) index.set(key, []);
+      index.get(key).push(item);
+    });
+
+    App.transfers.publicSalaryReferenceIndex = index;
+    App.transfers.publicSalaryReferenceIndexSource = refs;
+    return index;
+  },
+
+  scorePublicSalaryReference(reference = {}, playerKey = "", clubKey = "") {
+    const referencePlayerKey = App.transfers.normalizeSalaryLookup(
+      reference.playerName || reference.player_name,
+    );
+    const referenceClubKey = App.transfers.normalizeSalaryLookup(
+      reference.clubName || reference.club_name,
+    );
+    const checkedAt = new Date(
+      reference.salaryCheckedAt || reference.source_checked_at || 0,
+    ).getTime();
+    const checkedScore = Number.isNaN(checkedAt) ? 0 : checkedAt;
+
+    return [
+      referencePlayerKey === playerKey ? 1 : 0,
+      clubKey && referenceClubKey === clubKey ? 1 : 0,
+      checkedScore,
+    ];
+  },
+
   findPublicSalaryReference(playerName = "", clubName = "") {
     const aliasKeys = App.transfers
       .getPlayerSearchAliases(playerName)
@@ -2415,57 +2460,50 @@ App.transfers = {
     const clubKey = App.transfers.normalizeSalaryLookup(clubName);
     if (!playerKey) return null;
 
-    const refs = Array.isArray(App.state.apiSalaryReferences)
-      ? App.state.apiSalaryReferences
-      : [];
+    const index = App.transfers.buildPublicSalaryReferenceIndex();
+    const byIdentity = new Map();
 
-    const matches = refs.filter(
-      (item) => {
-        const itemKey = App.transfers.normalizeSalaryLookup(
-          item.playerName || item.player_name,
-        );
-        if (!itemKey) return false;
-        if (aliasKeys.includes(itemKey) || itemKey === playerKey) return true;
-        return aliasKeys.some(
+    aliasKeys.forEach((aliasKey) => {
+      const directMatches = index.get(aliasKey) || [];
+      directMatches.forEach((item) => {
+        const identity = `${item.id || ""}|${item.playerName || item.player_name || ""}|${item.clubName || item.club_name || ""}`;
+        if (identity) byIdentity.set(identity, item);
+      });
+    });
+
+    if (!byIdentity.size) {
+      for (const [itemKey, items] of index.entries()) {
+        const trusted = aliasKeys.some(
           (aliasKey) =>
             App.transfers.isTrustedPlayerNameMatch(aliasKey, itemKey) ||
             App.transfers.isTrustedPlayerNameMatch(itemKey, aliasKey),
         );
-      },
-    );
+        if (!trusted) continue;
+        items.forEach((item) => {
+          const identity = `${item.id || ""}|${item.playerName || item.player_name || ""}|${item.clubName || item.club_name || ""}`;
+          if (identity) byIdentity.set(identity, item);
+        });
+      }
+    }
+
+    const matches = [...byIdentity.values()];
     if (!matches.length) return null;
 
     return (
       [...matches].sort((left, right) => {
-        const leftPlayerKey = App.transfers.normalizeSalaryLookup(
-          left.playerName || left.player_name,
+        const leftScore = App.transfers.scorePublicSalaryReference(
+          left,
+          playerKey,
+          clubKey,
         );
-        const rightPlayerKey = App.transfers.normalizeSalaryLookup(
-          right.playerName || right.player_name,
+        const rightScore = App.transfers.scorePublicSalaryReference(
+          right,
+          playerKey,
+          clubKey,
         );
-        const leftNameExact = leftPlayerKey === playerKey ? 0 : 1;
-        const rightNameExact = rightPlayerKey === playerKey ? 0 : 1;
-        if (leftNameExact !== rightNameExact) return leftNameExact - rightNameExact;
-
-        const leftClubKey = App.transfers.normalizeSalaryLookup(
-          left.clubName || left.club_name,
-        );
-        const rightClubKey = App.transfers.normalizeSalaryLookup(
-          right.clubName || right.club_name,
-        );
-        const leftExact = clubKey && leftClubKey === clubKey ? 0 : 1;
-        const rightExact = clubKey && rightClubKey === clubKey ? 0 : 1;
-        if (leftExact !== rightExact) return leftExact - rightExact;
-
-        const leftChecked = new Date(
-          left.salaryCheckedAt || left.source_checked_at || 0,
-        ).getTime();
-        const rightChecked = new Date(
-          right.salaryCheckedAt || right.source_checked_at || 0,
-        ).getTime();
-        const leftScore = Number.isNaN(leftChecked) ? 0 : leftChecked;
-        const rightScore = Number.isNaN(rightChecked) ? 0 : rightChecked;
-        return rightScore - leftScore;
+        if (leftScore[0] !== rightScore[0]) return rightScore[0] - leftScore[0];
+        if (leftScore[1] !== rightScore[1]) return rightScore[1] - leftScore[1];
+        return rightScore[2] - leftScore[2];
       })[0] || null
     );
   },

@@ -132,16 +132,6 @@ function buildMarketRow(player = {}, buyer = "") {
   };
 }
 
-function mergePlayers(...groups) {
-  const byKey = new Map();
-  groups.flat().forEach((player) => {
-    if (!player) return;
-    const key = `${normalizeText(player.name)}|${normalizeText(player.club)}`;
-    if (!byKey.has(key)) byKey.set(key, player);
-  });
-  return [...byKey.values()];
-}
-
 function useTransferActive() {
   useAppRuntime();
   return (
@@ -360,10 +350,7 @@ function TransferMarketTable() {
   ]);
 
   const baseRows = useMemo(() => {
-    const loaded = App.transfers?.getMarketPlayers?.() || [];
-    return mergePlayers(loaded, searchRows).map((player) =>
-      buildMarketRow(player, buyer),
-    );
+    return (searchRows || []).map((player) => buildMarketRow(player, buyer));
   }, [searchRows, buyer]);
 
   const filterOptions = useMemo(() => {
@@ -678,7 +665,7 @@ function KanbanColumn({ stage, targets }) {
     <section
       className={`kanban-column tone-${meta.tone || "watch"} ${
         isOver ? "is-over" : ""
-      }`}
+      } ${targets.length ? "" : "is-empty"}`}
       ref={setNodeRef}
     >
       <header>
@@ -878,10 +865,16 @@ function AdvancedTransferTools() {
           kanban e proposta validada antes de entrar no fluxo legado.
         </p>
       </div>
-      <TransferProposalAssistant />
-      <TransferWorkflowInspector />
-      <TransferMarketTable />
-      <TransferKanbanBoard />
+      <div className="advanced-transfer-body">
+        <div className="advanced-transfer-sidebar">
+          <TransferProposalAssistant />
+          <TransferWorkflowInspector />
+        </div>
+        <div className="advanced-transfer-main">
+          <TransferMarketTable />
+          <TransferKanbanBoard />
+        </div>
+      </div>
     </section>
   );
 }

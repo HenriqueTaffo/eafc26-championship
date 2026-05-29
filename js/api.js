@@ -841,7 +841,11 @@ App.api = {
       clubOps.push(() => App.api.loadMedicalCenterData?.());
     }
     if (activeView === "squadView") {
-      clubOps.push(() => App.api.loadSquadManagementData?.());
+      clubOps.push(() =>
+        App.api.loadSquadManagementData?.({
+          hydrateRosterDetails: true,
+        }),
+      );
     }
     if (activeView === "experienceView" || activeView === "transfersView") {
       clubOps.push(() => App.api.loadExperienceData?.());
@@ -920,13 +924,24 @@ App.api = {
   },
 
   async loadExperienceData() {
+    const cacheTtlMs = 5 * 60 * 1000;
+    if (
+      App.state.apiExperienceLoadedAt &&
+      Date.now() - Number(App.state.apiExperienceLoadedAt || 0) < cacheTtlMs
+    ) {
+      return App.state.apiExperience;
+    }
+
     try {
-      const data = await App.api.rpc("app_get_experience_data", {}, 30000);
+      const data = await App.api.rpc("app_get_experience_data", {}, 30000, {
+        cacheTtlMs,
+      });
       App.state.apiExperience = data || {
         opportunities: [],
         auctions: [],
         news: [],
       };
+      App.state.apiExperienceLoadedAt = Date.now();
       return App.state.apiExperience;
     } catch (error) {
       console.warn("Camada de experiência indisponível:", error);
@@ -935,6 +950,7 @@ App.api = {
         auctions: [],
         news: [],
       };
+      App.state.apiExperienceLoadedAt = 0;
       return App.state.apiExperience;
     }
   },
@@ -1528,17 +1544,32 @@ App.api = {
   },
 
   async loadManagerOnboarding() {
+    const cacheTtlMs = 10 * 60 * 1000;
+    if (
+      App.state.apiOnboardingLoadedAt &&
+      Date.now() - Number(App.state.apiOnboardingLoadedAt || 0) < cacheTtlMs
+    ) {
+      return App.state.apiOnboarding;
+    }
+
     try {
-      const result = await App.api.rpc("app_get_manager_onboarding", {}, 30000);
+      const result = await App.api.rpc(
+        "app_get_manager_onboarding",
+        {},
+        30000,
+        { cacheTtlMs },
+      );
       const rows = Array.isArray(result) ? result : [];
       App.state.apiOnboarding = rows.reduce((acc, item) => {
         if (item.managerName) acc[item.managerName] = item;
         return acc;
       }, {});
+      App.state.apiOnboardingLoadedAt = Date.now();
       return App.state.apiOnboarding;
     } catch (error) {
       console.warn("Onboarding de técnicos indisponível:", error);
       App.state.apiOnboarding = {};
+      App.state.apiOnboardingLoadedAt = 0;
       return {};
     }
   },
@@ -1572,18 +1603,30 @@ App.api = {
     }
   },
 
-  async loadSalaryReferences() {
+  async loadSalaryReferences(options = {}) {
+    const { force = false, cacheTtlMs = 15 * 60 * 1000 } = options;
+    if (
+      !force &&
+      App.state.apiSalaryReferencesLoadedAt &&
+      Date.now() - Number(App.state.apiSalaryReferencesLoadedAt || 0) < cacheTtlMs
+    ) {
+      return App.state.apiSalaryReferences;
+    }
+
     try {
       const result = await App.api.rpc(
         "app_get_public_salary_references",
         {},
         30000,
+        { cacheTtlMs },
       );
       App.state.apiSalaryReferences = Array.isArray(result) ? result : [];
+      App.state.apiSalaryReferencesLoadedAt = Date.now();
       return App.state.apiSalaryReferences;
     } catch (error) {
       console.warn("Referencias publicas de salario indisponiveis:", error);
       App.state.apiSalaryReferences = [];
+      App.state.apiSalaryReferencesLoadedAt = 0;
       return [];
     }
   },
@@ -1637,8 +1680,82 @@ App.api = {
     return result?.ok === false ? null : result;
   },
 
+  getSquadRosterHydrationNames(data = {}) {
+    const rosters = data?.rosters || {};
+    const session = App.auth?.getSession?.();
+    const rosterGroups = [];
+
+    if (session?.managerName && App.auth?.isCommissioner?.() !== true) {
+      const sessionRoster =
+        Object.entries(rosters).find(
+          ([managerName]) =>
+            App.utils.normalizeText(managerName) ===
+            App.utils.normalizeText(session.managerName),
+        )?.[1] || [];
+      rosterGroups.push(sessionRoster);
+    } else {
+      rosterGroups.push(...Object.values(rosters));
+    }
+
+    return rosterGroups
+      .flat()
+      .map((item) => item?.name || item?.player || item?.playerName || "")
+      .map((name) => String(name || "").trim())
+      .filter(Boolean);
+  },
+
+  async hydrateSquadRosterDetails(names = [], options = {}) {
+    const uniqueNames = [
+      ...new Set((names || []).map((name) => String(name || "").trim()).filter(Boolean)),
+    ];
+    if (!uniqueNames.length) return App.state.apiSquadManagement;
+
+    const cacheKey = uniqueNames
+      .map((name) => App.utils.normalizeText(name))
+      .filter(Boolean)
+      .sort()
+      .join("|");
+    if (
+      App.state.apiSquadRosterHydrationPromise &&
+      App.state.apiSquadRosterHydrationKey === cacheKey
+    ) {
+      if (options.waitForHydration) {
+        await App.state.apiSquadRosterHydrationPromise;
+      }
+      return App.state.apiSquadRosterHydrationPromise;
+    }
+
+    const request = Promise.allSettled([
+      App.api.loadRatingsForPlayerNames(uniqueNames, 2, 96),
+      App.api.loadMarketPlayersForNames(uniqueNames, 2, 80),
+    ])
+      .then(() => {
+        App.react?.notify?.();
+        return App.state.apiSquadManagement;
+      })
+      .finally(() => {
+        if (App.state.apiSquadRosterHydrationKey === cacheKey) {
+          App.state.apiSquadRosterHydrationKey = "";
+          App.state.apiSquadRosterHydrationPromise = null;
+        }
+      });
+
+    App.state.apiSquadRosterHydrationKey = cacheKey;
+    App.state.apiSquadRosterHydrationPromise = request;
+
+    if (options.waitForHydration) {
+      await request;
+    }
+
+    return request;
+  },
+
   async loadSquadManagementData(options = {}) {
-    const { force = false } = options;
+    const {
+      force = false,
+      hydrateRosterDetails = false,
+      waitForHydration = false,
+    } = options;
     const authPayload = App.api.getAuthPayload();
     const scopeKey = `${authPayload.p_manager_id || "anon"}:${authPayload.p_access_code ? "auth" : "guest"}`;
 
@@ -1648,6 +1765,14 @@ App.api = {
       App.state.apiSquadManagementScopeKey === scopeKey &&
       !App.state.apiSquadManagementLoading
     ) {
+      if (hydrateRosterDetails) {
+        const rosterNames = App.api.getSquadRosterHydrationNames(
+          App.state.apiSquadManagement,
+        );
+        await App.api.hydrateSquadRosterDetails(rosterNames, {
+          waitForHydration,
+        });
+      }
       return App.state.apiSquadManagement;
     }
 
@@ -1670,19 +1795,16 @@ App.api = {
         lineups: {},
         finance: [],
       };
-      const rosterNames = Object.values(App.state.apiSquadManagement?.rosters || {})
-        .flat()
-        .map((item) => item?.name || item?.player || item?.playerName || "")
-        .map((name) => String(name || "").trim())
-        .filter(Boolean);
-      if (rosterNames.length) {
-        await Promise.allSettled([
-          App.api.loadRatingsForPlayerNames(rosterNames, 2, 96),
-          App.api.loadMarketPlayersForNames(rosterNames, 2, 80),
-        ]);
-      }
+      const rosterNames = App.api.getSquadRosterHydrationNames(
+        App.state.apiSquadManagement,
+      );
       App.state.apiSquadManagementScopeKey = scopeKey;
       App.react?.notify?.();
+      if (hydrateRosterDetails && rosterNames.length) {
+        await App.api.hydrateSquadRosterDetails(rosterNames, {
+          waitForHydration,
+        });
+      }
       return App.state.apiSquadManagement;
     } catch (error) {
       console.warn("Gestao de elenco indisponivel:", error);
@@ -1719,7 +1841,11 @@ App.api = {
       throw new Error(result?.message || "Nao consegui salvar a escalacao.");
     }
 
-    await App.api.loadSquadManagementData({ force: true });
+    await App.api.loadSquadManagementData({
+      force: true,
+      hydrateRosterDetails: true,
+      waitForHydration: true,
+    });
     return result;
   },
 
@@ -1808,7 +1934,11 @@ App.api = {
         requiredLoads.push(App.api.loadMedicalCenterData?.());
       }
       if (activeView === "squadView") {
-        requiredLoads.push(App.api.loadSquadManagementData({ force: true }));
+        requiredLoads.push(
+          App.api.loadSquadManagementData({
+            hydrateRosterDetails: true,
+          }),
+        );
       }
       await Promise.all(requiredLoads);
 

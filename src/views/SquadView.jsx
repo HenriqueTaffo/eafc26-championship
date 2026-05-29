@@ -828,7 +828,9 @@ function SquadManagementView() {
 
   useEffect(() => {
     if (!isActive) return;
-    App.api?.loadSquadManagementData?.();
+    App.api?.loadSquadManagementData?.({
+      hydrateRosterDetails: true,
+    });
   }, [isActive, runtimeVersion]);
 
   useEffect(() => {

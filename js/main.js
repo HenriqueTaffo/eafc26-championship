@@ -375,7 +375,11 @@ App.main = {
       tasks.push(App.api.loadMedicalCenterData());
     }
     if (viewId === "squadView" && App.api?.loadSquadManagementData) {
-      tasks.push(App.api.loadSquadManagementData({ force: true }));
+      tasks.push(
+        App.api.loadSquadManagementData({
+          hydrateRosterDetails: true,
+        }),
+      );
     }
     if (
       ["transfersView", "experienceView"].includes(viewId) &&

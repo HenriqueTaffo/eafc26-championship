@@ -918,7 +918,10 @@ App.auth = {
         App.auth.loadMyTransferSaleListings(),
         App.auth.loadMySponsorships(),
         App.api?.loadMedicalCenterData?.(),
-        App.api?.loadSquadManagementData?.({ force: true }),
+        App.api?.loadSquadManagementData?.({
+          force: true,
+          hydrateRosterDetails: false,
+        }),
         App.auth.loadMyQoL(),
         App.auth.loadPublicNews(),
       ]);
@@ -1005,19 +1008,29 @@ App.auth = {
     App.auth.persistSession(session);
 
     try {
+      const tasks = [
+        App.governance?.loadData?.(),
+        App.auth.loadPublicNews(),
+        App.auth.ensureLeagueDataReady(),
+      ];
+
       if (!App.auth.currentSession.isCommissioner) {
-        await App.auth.loadMyDecisions();
-        await App.auth.loadMyTransferProposals();
-        await App.auth.loadMyTransferTargets();
-        await App.auth.loadMyTransferSaleListings();
-        await App.auth.loadMySponsorships();
-        await App.api?.loadMedicalCenterData?.();
-        await App.api?.loadSquadManagementData?.({ force: true });
-        await App.auth.loadMyQoL();
+        tasks.push(
+          App.auth.loadMyDecisions(),
+          App.auth.loadMyTransferProposals(),
+          App.auth.loadMyTransferTargets(),
+          App.auth.loadMyTransferSaleListings(),
+          App.auth.loadMySponsorships(),
+          App.api?.loadMedicalCenterData?.(),
+          App.api?.loadSquadManagementData?.({
+            force: true,
+            hydrateRosterDetails: false,
+          }),
+          App.auth.loadMyQoL(),
+        );
       }
-      await App.governance?.loadData?.();
-      await App.auth.loadPublicNews();
-      await App.auth.ensureLeagueDataReady();
+
+      await Promise.all(tasks);
       await App.auth.finishLoginSuccessTransition(transitionStartedAt);
       App.auth.renderAll();
       App.auth.openSessionHome();
@@ -1907,7 +1920,10 @@ App.auth = {
     });
 
     if (decision === "accepted" || result.status === "accepted") {
-      await App.api.loadSquadManagementData?.({ force: true });
+      await App.api.loadSquadManagementData?.({
+        force: true,
+        hydrateRosterDetails: false,
+      });
     }
     await App.auth.syncManagerState();
 
@@ -1926,7 +1942,10 @@ App.auth = {
       App.auth.loadMyTransferProposals(),
       App.auth.loadMyTransferSaleListings(),
       App.auth.loadMySponsorships(),
-      App.api?.loadSquadManagementData?.({ force: true }),
+      App.api?.loadSquadManagementData?.({
+        force: true,
+        hydrateRosterDetails: false,
+      }),
       App.auth.loadMyQoL(),
       App.auth.loadPublicNews(),
     ]);
