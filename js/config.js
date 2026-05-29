@@ -25,6 +25,7 @@ App.config = {
   assetVersion: "20260525-login-icon-teal-v1",
   assetBaseUrl,
   getAssetUrl: resolveAssetUrl,
+  enableRealtimeSync: false,
   enableScopedSessions: false,
   defaultScope: {
     organizationId: "4linhas",

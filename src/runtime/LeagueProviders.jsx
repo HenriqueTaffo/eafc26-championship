@@ -28,6 +28,8 @@ const REALTIME_TABLES = [
 ];
 
 function getRealtimeClient() {
+  if (App.config?.enableRealtimeSync !== true) return null;
+
   const supabaseUrl = App.config?.SUPABASE_URL;
   const publishableKey = App.config?.SUPABASE_PUBLISHABLE_KEY;
   if (!supabaseUrl || !publishableKey) return null;
