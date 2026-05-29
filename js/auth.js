@@ -845,7 +845,7 @@ App.auth = {
     if (!session || session.isCommissioner || !session.clubName) {
       return `
         <span class="login-success-brand-fallback">
-          <img class="brand-icon-img" src="/assets/4linhas-icon-teal.png?v=${App.config.assetVersion}" alt="" loading="eager" />
+          <img class="brand-icon-img" src="${App.config.getAssetUrl("assets/4linhas-icon-teal.png", App.config.assetVersion)}" alt="" loading="eager" />
         </span>
       `;
     }
@@ -891,7 +891,7 @@ App.auth = {
             <span class="manager-login-mascot-ring"></span>
             <span class="manager-login-flip-card">
               <span class="manager-login-face manager-login-face-front manager-login-brand-face">
-                <img class="brand-icon-img" src="/assets/4linhas-icon-teal.png?v=${App.config.assetVersion}" alt="" loading="eager" />
+                <img class="brand-icon-img" src="${App.config.getAssetUrl("assets/4linhas-icon-teal.png", App.config.assetVersion)}" alt="" loading="eager" />
               </span>
               <span class="manager-login-face manager-login-face-back manager-login-club-face">
                 ${App.auth.getLoginSuccessClubHtml(session)}
@@ -2077,8 +2077,8 @@ App.auth = {
           <span class="manager-login-mascot-stage manager-login-avatar-large manager-login-brand-mark" aria-hidden="true">
             <span class="manager-login-mascot-ring"></span>
             <span class="manager-login-flip-card">
-              <img class="manager-login-face manager-login-face-front brand-icon-img" src="/assets/4linhas-icon-teal.png?v=${App.config.assetVersion}" alt="" loading="lazy" />
-              <img class="manager-login-face manager-login-face-back brand-icon-img" src="/assets/4linhas-icon-teal.png?v=${App.config.assetVersion}" alt="" loading="lazy" />
+              <img class="manager-login-face manager-login-face-front brand-icon-img" src="${App.config.getAssetUrl("assets/4linhas-icon-teal.png", App.config.assetVersion)}" alt="" loading="lazy" />
+              <img class="manager-login-face manager-login-face-back brand-icon-img" src="${App.config.getAssetUrl("assets/4linhas-icon-teal.png", App.config.assetVersion)}" alt="" loading="lazy" />
             </span>
           </span>
           <div>

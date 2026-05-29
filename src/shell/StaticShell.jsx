@@ -105,9 +105,26 @@ const AdvancedTransferTools = lazy(() =>
 );
 
 const BRAND_ASSET_VERSION = "20260525-4linhas-brand-v1";
+const APP_BASE_URL = import.meta.env.BASE_URL || "/";
 const BRAND_NAME = "4 Linhas";
-const BRAND_ICON_SRC = `/assets/4linhas-icon-light.png?v=${BRAND_ASSET_VERSION}`;
-const BRAND_WORDMARK_SRC = `/assets/4linhas-wordmark-light.png?v=${BRAND_ASSET_VERSION}`;
+
+function resolveAssetUrl(relativePath = "", version = "") {
+  const normalizedBase = APP_BASE_URL.endsWith("/")
+    ? APP_BASE_URL
+    : `${APP_BASE_URL}/`;
+  const normalizedPath = String(relativePath || "").replace(/^\/+/, "");
+  const assetUrl = `${normalizedBase}${normalizedPath}`;
+  return version ? `${assetUrl}?v=${version}` : assetUrl;
+}
+
+const BRAND_ICON_SRC = resolveAssetUrl(
+  "assets/4linhas-icon-light.png",
+  BRAND_ASSET_VERSION,
+);
+const BRAND_WORDMARK_SRC = resolveAssetUrl(
+  "assets/4linhas-wordmark-light.png",
+  BRAND_ASSET_VERSION,
+);
 const WORKSPACE_NAV_GROUPS = [
   {
     key: "league",

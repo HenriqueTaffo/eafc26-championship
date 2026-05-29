@@ -1,10 +1,30 @@
 import App from "./app.js";
 
+function normalizeBasePath(value = "/") {
+  let normalized = String(value || "/").trim() || "/";
+  if (!normalized.startsWith("/")) normalized = `/${normalized}`;
+  if (!normalized.endsWith("/")) normalized = `${normalized}/`;
+  return normalized;
+}
+
+const assetBaseMeta =
+  typeof document !== "undefined"
+    ? document.querySelector('meta[name="app-base-path"]')?.content || "/"
+    : "/";
+const assetBaseUrl = normalizeBasePath(assetBaseMeta);
+const resolveAssetUrl = (relativePath = "", version = "") => {
+  const normalizedPath = String(relativePath || "").replace(/^\/+/, "");
+  const assetUrl = `${assetBaseUrl}${normalizedPath}`;
+  return version ? `${assetUrl}?v=${version}` : assetUrl;
+};
+
 App.config = {
   API_URL: "https://fdippspwpugnxwxmjnqf.supabase.co",
   SUPABASE_URL: "https://fdippspwpugnxwxmjnqf.supabase.co",
   SUPABASE_PUBLISHABLE_KEY: "sb_publishable_9YyrYEk9jH5CuatQK_Ejpg_VfQq6qCK",
   assetVersion: "20260525-login-icon-teal-v1",
+  assetBaseUrl,
+  getAssetUrl: resolveAssetUrl,
   enableScopedSessions: false,
   defaultScope: {
     organizationId: "4linhas",

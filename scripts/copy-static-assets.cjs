@@ -4,6 +4,7 @@ const { join } = require("path");
 const sourceDir = join(process.cwd(), "assets");
 const outputDir = join(process.cwd(), "dist", "assets");
 const lazyModuleOutputDir = join(process.cwd(), "dist", "js");
+const htmlOutputDir = join(process.cwd(), "dist");
 const lazyModules = ["app.js", "market-avatars.js"];
 
 if (existsSync(sourceDir)) {
@@ -18,3 +19,9 @@ lazyModules.forEach((file) => {
     copyFileSync(sourceFile, join(lazyModuleOutputDir, file));
   }
 });
+
+const builtIndexFile = join(htmlOutputDir, "index.html");
+const spaFallbackFile = join(htmlOutputDir, "404.html");
+if (existsSync(builtIndexFile)) {
+  copyFileSync(builtIndexFile, spaFallbackFile);
+}
