@@ -1037,9 +1037,81 @@ body.auth-unlocked #transfersView .table-wrapper {
   overflow-x: auto;
 }
 
-body.auth-unlocked #transfersView .table-wrapper table {
-  width: max(100%, 1080px);
-  table-layout: auto;
+body.auth-unlocked #transfersView .transfer-history-shell {
+  display: grid;
+  gap: 0;
+}
+
+body.auth-unlocked #transfersView .transfer-history-grid-head,
+body.auth-unlocked #transfersView .transfer-history-row {
+  display: grid;
+  grid-template-columns:
+    minmax(240px, 2.2fr)
+    minmax(132px, 0.95fr)
+    minmax(190px, 1.35fr)
+    76px
+    minmax(140px, 1fr)
+    92px
+    minmax(140px, 1fr)
+    minmax(118px, 0.9fr);
+  gap: 12px;
+  align-items: center;
+  min-width: 1140px;
+}
+
+body.auth-unlocked #transfersView .transfer-history-grid-head {
+  padding: 0 12px 10px;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.16);
+  color: #9de7da;
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+body.auth-unlocked #transfersView .transfer-history-grid-body {
+  display: grid;
+}
+
+body.auth-unlocked #transfersView .transfer-history-row {
+  padding: 14px 12px;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.12);
+}
+
+body.auth-unlocked #transfersView .transfer-history-row:last-child {
+  border-bottom: 0;
+}
+
+body.auth-unlocked #transfersView .transfer-history-cell {
+  min-width: 0;
+}
+
+body.auth-unlocked #transfersView .transfer-history-player,
+body.auth-unlocked #transfersView .transfer-history-destination,
+body.auth-unlocked #transfersView .transfer-history-status {
+  display: flex;
+  align-items: center;
+}
+
+body.auth-unlocked #transfersView .transfer-history-origin,
+body.auth-unlocked #transfersView .transfer-history-base,
+body.auth-unlocked #transfersView .transfer-history-value {
+  color: var(--workspace-text);
+  line-height: 1.45;
+  white-space: normal;
+}
+
+body.auth-unlocked #transfersView .transfer-history-ovr,
+body.auth-unlocked #transfersView .transfer-history-rate {
+  font-variant-numeric: tabular-nums;
+}
+
+body.auth-unlocked #transfersView .transfer-history-status .transfer-status {
+  width: fit-content;
+}
+
+body.auth-unlocked #transfersView .transfer-history-player .table-player-identity {
+  min-width: 0;
+  align-items: start;
 }
 
 body.auth-unlocked #transfersView .table-wrapper th,
@@ -1065,6 +1137,11 @@ body.auth-unlocked #transfersView .table-wrapper td:nth-child(7) {
 
 body.auth-unlocked #transfersView .table-wrapper td:nth-child(3) {
   min-width: 180px;
+}
+
+body.auth-unlocked #transfersView .transfer-history-empty {
+  min-width: 0;
+  margin: 12px;
 }
 
 body.auth-unlocked #playersView .email-preview-empty {

@@ -1272,22 +1272,18 @@ function TransfersView() {
             </li>
           </ul>
         </section>
-        <section className="table-wrapper">
-          <table>
-            <thead>
-              <tr>
-                <th>Jogador</th>
-                <th>Destino</th>
-                <th>Origem</th>
-                <th>OVR</th>
-                <th>Base/Oferta</th>
-                <th>% Overall</th>
-                <th>Valor</th>
-                <th>Status</th>
-              </tr>
-            </thead>
-            <tbody id="transferTable"></tbody>
-          </table>
+        <section className="table-wrapper transfer-history-shell">
+          <div className="transfer-history-grid transfer-history-grid-head" aria-hidden="true">
+            <span>Jogador</span>
+            <span>Destino</span>
+            <span>Origem</span>
+            <span>OVR</span>
+            <span>Base/Oferta</span>
+            <span>% Overall</span>
+            <span>Valor</span>
+            <span>Status</span>
+          </div>
+          <div id="transferTable" className="transfer-history-grid-body"></div>
         </section>
         <section className="mobile-list" id="transferMobile"></section>
         <p className="footer-note">

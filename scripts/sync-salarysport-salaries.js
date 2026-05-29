@@ -11,6 +11,9 @@ const SALARYSPORT_SITEMAP_INDEX_URL =
   `${SALARYSPORT_BASE_URL}/sitemap/sitemap-index.xml`;
 const SALARYSPORT_SEARCH_PAGE_DATA_URL =
   `${SALARYSPORT_BASE_URL}/page-data/search/page-data.json`;
+const MLSPA_SALARY_GUIDE_URL = "https://mlsplayers.org/resources/salary-guide";
+const ECB_DAILY_RATES_URL =
+  "https://www.ecb.europa.eu/stats/eurofxref/eurofxref-daily.xml";
 const DEFAULT_SQL_PATH = path.join(
   ROOT_DIR,
   "supabase",
@@ -244,6 +247,111 @@ async function fetchTextWithRetry(url, options = {}) {
   }
 
   throw lastError;
+}
+
+async function fetchGenericText(url, referer = "", acceptLanguage = "en-US,en;q=0.9") {
+  const response = await fetch(url, {
+    headers: {
+      "user-agent": DEFAULT_USER_AGENT,
+      accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+      "accept-language": acceptLanguage,
+      ...(referer ? { referer } : {}),
+    },
+    redirect: "follow",
+  });
+  if (!response.ok) {
+    const error = new Error(`Remote source respondeu ${response.status} para ${url}`);
+    error.status = response.status;
+    throw error;
+  }
+  return response.text();
+}
+
+function parseMoneyNumber(value = "") {
+  const clean = String(value || "").replace(/[$,]/g, "").trim();
+  const parsed = Number(clean);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+async function fetchMlspaGuide() {
+  const html = await fetchGenericText(
+    MLSPA_SALARY_GUIDE_URL,
+    MLSPA_SALARY_GUIDE_URL,
+    "en-US,en;q=0.9",
+  );
+  const dom = new JSDOM(html);
+  const scripts = [...dom.window.document.querySelectorAll("script")]
+    .map((node) => String(node.textContent || "").trim())
+    .filter((text) => text.includes("\"@type\":\"Person\""));
+  const rows = [];
+
+  scripts.forEach((text) => {
+    try {
+      const payload = JSON.parse(text);
+      const entries = Array.isArray(payload) ? payload : [payload];
+      entries.forEach((entry) => {
+        if (!entry || entry["@type"] !== "Person") return;
+        const playerName = decodeHtml(String(entry.name || "").trim());
+        const memberships = Array.isArray(entry.memberOf)
+          ? entry.memberOf
+          : [entry.memberOf].filter(Boolean);
+        const teamMembership = memberships.find(
+          (membership) => membership?.["@type"] === "SportsTeam",
+        );
+        const clubName = decodeHtml(String(teamMembership?.name || "").trim());
+        const annualBaseSalaryUsd = parseMoneyNumber(
+          teamMembership?.athlete?.baseSalary || "",
+        );
+        if (!playerName || !clubName || annualBaseSalaryUsd <= 0) return;
+        rows.push({
+          playerName,
+          clubName,
+          annualBaseSalaryUsd,
+        });
+      });
+    } catch (_) {
+      // Ignore unrelated or malformed script payloads.
+    }
+  });
+
+  const unique = new Map();
+  rows.forEach((row) => {
+    const key = `${normalizeKey(row.playerName)}|${normalizeKey(row.clubName)}`;
+    if (!key || unique.has(key)) return;
+    unique.set(key, row);
+  });
+
+  const byPlayer = new Map();
+  [...unique.values()].forEach((row) => {
+    const key = normalizeKey(row.playerName);
+    const bucket = byPlayer.get(key) || [];
+    bucket.push(row);
+    byPlayer.set(key, bucket);
+  });
+
+  return {
+    rows: [...unique.values()],
+    byPlayer,
+  };
+}
+
+async function fetchEcbUsdToEurRate() {
+  const xml = await fetchGenericText(
+    ECB_DAILY_RATES_URL,
+    "https://www.ecb.europa.eu/",
+    "en-US,en;q=0.9",
+  );
+  const dom = new JSDOM(xml, { contentType: "text/xml" });
+  const usdNode = dom.window.document.querySelector('Cube[currency="USD"]');
+  const datedNode = dom.window.document.querySelector("Cube[time]");
+  const usdPerEur = Number(usdNode?.getAttribute("rate") || 0);
+  if (!Number.isFinite(usdPerEur) || usdPerEur <= 0) {
+    throw new Error("Nao consegui ler a cotacao USD/EUR do ECB.");
+  }
+  return {
+    usdToEur: 1 / usdPerEur,
+    rateDate: String(datedNode?.getAttribute("time") || "").trim(),
+  };
 }
 
 async function mapWithConcurrency(items, concurrency, iteratee) {
@@ -1190,6 +1298,66 @@ function buildResolvedReferenceFromTeamPage(target, parsed, matchedRow) {
     }));
 }
 
+function findMlspaGuideMatch(guide = null, playerName = "", clubName = "") {
+  if (!guide?.byPlayer) return null;
+  const aliasKeys = getPlayerAliasVariants(playerName)
+    .map((name) => normalizeKey(name))
+    .filter(Boolean);
+  const matches = [];
+
+  aliasKeys.forEach((aliasKey) => {
+    const bucket = guide.byPlayer.get(aliasKey) || [];
+    bucket.forEach((entry) => matches.push(entry));
+  });
+
+  if (!matches.length) return null;
+
+  return matches
+    .filter((entry) => clubTextsLookCompatible(clubName, entry.clubName))
+    .sort(
+      (left, right) =>
+        Number(right.annualBaseSalaryUsd || 0) - Number(left.annualBaseSalaryUsd || 0),
+    )[0] ||
+    null;
+}
+
+function buildResolvedReferenceFromMlspa(target, entry, ecbRate) {
+  const annualBaseSalaryUsd = Number(entry?.annualBaseSalaryUsd || 0);
+  const usdToEur = Number(ecbRate?.usdToEur || 0);
+  if (annualBaseSalaryUsd <= 0 || usdToEur <= 0) return [];
+
+  const weeklySalary = Math.round((annualBaseSalaryUsd / 52) * usdToEur);
+  if (weeklySalary <= 0) return [];
+
+  const resolvedClub = String(target.clubName || entry.clubName || "").trim();
+  const rateDate = String(ecbRate?.rateDate || "").trim();
+  const notes = [
+    `MLSPA sync ${new Date().toISOString()}`,
+    `baseSalaryUSD=${annualBaseSalaryUsd}`,
+    `usdToEur=${usdToEur.toFixed(6)}`,
+    `rateDate=${rateDate || "unknown"}`,
+  ].join(" | ");
+
+  const names = new Set([
+    target.playerName,
+    ...(target.playerNames || []),
+    entry.playerName,
+    ...getPlayerAliasVariants(target.playerName),
+  ]);
+
+  return [...names]
+    .filter(Boolean)
+    .map((name) => ({
+      playerName: name,
+      clubName: resolvedClub,
+      weeklySalary,
+      sourceName: "MLS Players Association salary guide",
+      sourceUrl: MLSPA_SALARY_GUIDE_URL,
+      referenceType: "public_mlspa",
+      notes,
+    }));
+}
+
 async function resolveSalarySportReferences(
   playerIndex,
   teamIndex,
@@ -1198,6 +1366,8 @@ async function resolveSalarySportReferences(
 ) {
   const playerPageCache = new Map();
   const teamPageCache = new Map();
+  let mlspaGuidePromise = null;
+  let ecbRatePromise = null;
 
   const loadPlayerPage = async (url) => {
     if (!playerPageCache.has(url)) {
@@ -1217,6 +1387,20 @@ async function resolveSalarySportReferences(
       );
     }
     return teamPageCache.get(url);
+  };
+
+  const loadMlspaGuide = async () => {
+    if (!mlspaGuidePromise) {
+      mlspaGuidePromise = fetchMlspaGuide();
+    }
+    return mlspaGuidePromise;
+  };
+
+  const loadEcbRate = async () => {
+    if (!ecbRatePromise) {
+      ecbRatePromise = fetchEcbUsdToEurRate();
+    }
+    return ecbRatePromise;
   };
 
   const results = await mapWithConcurrency(
@@ -1328,6 +1512,29 @@ async function resolveSalarySportReferences(
             "",
           weeklySalary: Number(bestPlayerMatch.parsed.currentWeeklySalary || 0),
         };
+      }
+
+      const mlspaMatch = findMlspaGuideMatch(
+        await loadMlspaGuide(),
+        target.playerName,
+        target.clubName,
+      );
+      if (mlspaMatch) {
+        const refs = buildResolvedReferenceFromMlspa(
+          target,
+          mlspaMatch,
+          await loadEcbRate(),
+        );
+        if (refs.length) {
+          return {
+            target,
+            refs,
+            page: MLSPA_SALARY_GUIDE_URL,
+            player: mlspaMatch.playerName,
+            currentClub: mlspaMatch.clubName,
+            weeklySalary: Number(refs[0]?.weeklySalary || 0),
+          };
+        }
       }
 
       return {

@@ -1982,6 +1982,7 @@ App.transfers = {
     );
     if (type === "regulatory_estimate") return "Estimativa regulatoria";
     if (type === "public_capology") return "Capology";
+    if (type === "public_mlspa") return "MLSPA";
     if (type === "public_salarysport") return "SalarySport";
     if (sourceUrl.includes("capology.com") || sourceName.includes("capology")) {
       return "Capology";
@@ -1991,6 +1992,12 @@ App.transfers = {
       sourceName.includes("salarysport")
     ) {
       return "SalarySport";
+    }
+    if (
+      sourceUrl.includes("mlsplayers.org") ||
+      sourceName.includes("mls players association")
+    ) {
+      return "MLSPA";
     }
     return "Fonte salarial";
   },
@@ -4570,7 +4577,102 @@ App.transfers = {
     App.react?.notify?.();
   },
 
+  renderHistoryGrid() {
+    const table = document.getElementById("transferTable");
+    const mobile = document.getElementById("transferMobile");
+    if (!table || !mobile) return;
+
+    const data = App.transfers.getFilteredTransfers(5);
+    if (!data.length) {
+      App.dom.setHtml(
+        table,
+        App.ui.emptyCard(
+          "Nenhuma transferência aprovada",
+          "As movimentações confirmadas aparecem aqui assim que a liga concluir a assinatura.",
+          "calendar-card transfer-history-empty",
+        ),
+      );
+      App.dom.setHtml(
+        mobile,
+        App.ui.emptyCard(
+          "Nenhuma transferência cadastrada",
+          "Use o formulário Registrar transferência nesta aba.",
+        ),
+      );
+      return;
+    }
+
+    App.dom.setHtml(
+      table,
+      data
+        .map((item) => {
+          const statusClass = App.transfers.getTransferStatusClass(item);
+          const isCpuSale = App.transfers.isCpuSaleTransfer(item);
+          const ownerLabel = isCpuSale
+            ? item.seller || item.originalBuyer || "Técnico"
+            : item.buyer;
+          const destinationLabel = isCpuSale
+            ? App.transfers.getCpuSaleDestination(item)
+            : item.buyer;
+          const originLabel = isCpuSale ? ownerLabel : item.fromClub || "-";
+          return `
+        <article class="transfer-history-row ours-row">
+          <div class="transfer-history-cell transfer-history-player">${App.transfers.renderPlayerIdentity(
+            item.player,
+            "",
+            "table-player-identity",
+            {
+              club: item.fromClub,
+            },
+          )}</div>
+          <div class="transfer-history-cell transfer-history-destination">${App.ui.ownerBadge(destinationLabel, App.data.ownerColors["Livre / CPU"])}</div>
+          <div class="transfer-history-cell transfer-history-origin">${App.utils.escapeHtml(originLabel)}</div>
+          <div class="transfer-history-cell transfer-history-ovr numeric">${App.utils.escapeHtml(item.overall || "-")}</div>
+          <div class="transfer-history-cell transfer-history-base">${App.utils.formatCurrency(item.marketValue)}</div>
+          <div class="transfer-history-cell transfer-history-rate numeric">${Math.round(item.feeRate * 100)}%</div>
+          <div class="transfer-history-cell transfer-history-value">${App.utils.formatCurrency(item.totalCost)}</div>
+          <div class="transfer-history-cell transfer-history-status"><span class="transfer-status ${statusClass}">${App.transfers.getTransferStatusLabel(item)}</span></div>
+        </article>
+      `;
+        })
+        .join(""),
+    );
+
+    App.dom.setHtml(
+      mobile,
+      data
+        .map((item) => {
+          const isCpuSale = App.transfers.isCpuSaleTransfer(item);
+          const ownerLabel = isCpuSale
+            ? item.seller || item.originalBuyer || "Técnico"
+            : item.buyer;
+          const destinationLabel = isCpuSale
+            ? App.transfers.getCpuSaleDestination(item)
+            : item.buyer;
+          return `
+        <article class="calendar-card ours-row">
+          <div class="calendar-card-header">${App.ui.ownerBadge(destinationLabel, App.data.ownerColors["Livre / CPU"])}<span class="transfer-status ${App.transfers.getTransferStatusClass(item)}">${App.transfers.getTransferStatusLabel(item)}</span></div>
+          ${App.transfers.renderPlayerIdentity(
+            item.player,
+            `${isCpuSale ? `${ownerLabel} vendeu para ${destinationLabel}` : item.fromClub || "-"} · OVR ${item.overall}`,
+            "mobile-player-identity",
+            {
+              club: item.fromClub,
+            },
+          )}
+          <p>${isCpuSale ? "Valor recebido" : "Valor final"}: <strong>${App.utils.formatCurrency(item.totalCost)}</strong></p>
+        </article>
+      `;
+        })
+        .join(""),
+    );
+  },
+
   renderHistory() {
+    if (document.getElementById("transferTable")?.classList.contains("transfer-history-grid-body")) {
+      App.transfers.renderHistoryGrid();
+      return;
+    }
     const table = document.getElementById("transferTable");
     const mobile = document.getElementById("transferMobile");
     if (!table || !mobile) return;
