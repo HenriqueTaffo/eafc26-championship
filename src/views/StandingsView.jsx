@@ -253,10 +253,10 @@ function ActivityPanel() {
         </div>
         {items.length ? (
           <div className="activity-list">
-            {items.map((item) => (
+            {items.map((item, index) => (
               <div
                 className={`activity-item activity-${item.tone || "event"}`}
-                key={`${item.type}-${item.title}-${item.date}`}
+                key={`${item.type}-${item.title}-${item.date}-${index}`}
               >
                 <span className="activity-type">{item.type}</span>
                 <div>

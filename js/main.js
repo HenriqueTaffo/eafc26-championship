@@ -317,6 +317,50 @@ App.main = {
     return true;
   },
 
+  getRoutePathForView(viewId) {
+    return (
+      {
+        standingsView: "/league/standings",
+        calendarView: "/league/calendar",
+        cupsView: "/league/cups",
+        eventsView: "/league/events",
+        playersView: "/club/inbox",
+        squadView: "/club/squad",
+        transfersView: "/club/transfers",
+        commissionerView: "/ops/commissioner",
+        experienceView: "/ops/intelligence",
+        submitView: "/ops/results",
+      }[viewId] || ""
+    );
+  },
+
+  getAppBasePath() {
+    const value =
+      document.querySelector('meta[name="app-base-path"]')?.content || "/";
+    let normalized = String(value || "/").trim() || "/";
+    if (!normalized.startsWith("/")) normalized = `/${normalized}`;
+    if (!normalized.endsWith("/")) normalized = `${normalized}/`;
+    return normalized;
+  },
+
+  syncRouteForView(viewId) {
+    if (typeof window === "undefined" || !window.history?.pushState) return;
+
+    const routePath = App.main.getRoutePathForView(viewId);
+    if (!routePath) return;
+
+    const basePath = App.main.getAppBasePath();
+    const basePrefix = basePath === "/" ? "" : basePath.replace(/\/$/, "");
+    const targetPath = `${basePrefix}${routePath}` || "/";
+
+    if (window.location.pathname === targetPath) return;
+
+    window.history.pushState({}, "", targetPath);
+    window.dispatchEvent(
+      new PopStateEvent("popstate", { state: window.history.state }),
+    );
+  },
+
   setupManualSync() {
     document.querySelectorAll("[data-manual-sync]").forEach((button) => {
       if (button.dataset.bound === "true") return;
@@ -350,6 +394,16 @@ App.main = {
     const view = document.getElementById(targetViewId);
     if (!button || !view) return;
 
+    const isAlreadyActive =
+      button.classList.contains("active") &&
+      view.classList.contains("active") &&
+      document.querySelector(".view.active")?.id === targetViewId;
+    if (isAlreadyActive) {
+      App.main.syncRouteForView(targetViewId);
+      App.main.preloadViewData(targetViewId);
+      return;
+    }
+
     document
       .querySelectorAll(".tab-button")
       .forEach((item) => item.classList.remove("active"));
@@ -358,6 +412,7 @@ App.main = {
       .forEach((item) => item.classList.remove("active"));
     button.classList.add("active");
     view.classList.add("active");
+    App.main.syncRouteForView(targetViewId);
     App.react?.notify?.();
     App.main.renderCurrentView();
     App.main.preloadViewData(targetViewId);

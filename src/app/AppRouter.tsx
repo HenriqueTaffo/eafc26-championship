@@ -1,14 +1,11 @@
-import { Navigate, Route, Routes } from "react-router-dom";
+import { Route, Routes } from "react-router-dom";
 import { LegacyWorkspaceShell } from "./LegacyWorkspaceShell";
-import { DEFAULT_WORKSPACE_ROUTE, workspaceRoutes } from "../shared/navigation/workspace-routes";
+import { workspaceRoutes } from "../shared/navigation/workspace-routes";
 
 export function AppRouter() {
   return (
     <Routes>
-      <Route
-        path="/"
-        element={<Navigate replace to={DEFAULT_WORKSPACE_ROUTE.path} />}
-      />
+      <Route path="/" element={<LegacyWorkspaceShell />} />
       {workspaceRoutes.map((route) => (
         <Route
           key={route.path}
@@ -16,10 +13,7 @@ export function AppRouter() {
           element={<LegacyWorkspaceShell />}
         />
       ))}
-      <Route
-        path="*"
-        element={<Navigate replace to={DEFAULT_WORKSPACE_ROUTE.path} />}
-      />
+      <Route path="*" element={<LegacyWorkspaceShell />} />
     </Routes>
   );
 }
