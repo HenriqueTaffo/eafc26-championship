@@ -194,6 +194,41 @@ App.api = {
     ];
   },
 
+  async loadMarketCatalogMeta() {
+    const cachePayload = {};
+    const cached = App.api.getRpcCache(
+      "market_catalog_meta",
+      cachePayload,
+      15 * 60 * 1000,
+    );
+    if (cached) return cached;
+
+    const fallbackMeta = () => {
+      const players = Array.isArray(App.state.apiMarketPlayers)
+        ? App.state.apiMarketPlayers
+        : [];
+      const positions = [...new Set(players.map((item) => String(item.position || "").trim()).filter(Boolean))].sort();
+      const leagues = [...new Set(players.map((item) => String(item.league || "").trim()).filter(Boolean))].sort();
+      return { positions, leagues };
+    };
+
+    try {
+      const data = await App.api.rpc(
+        "app_market_catalog_meta",
+        {},
+        30000,
+        { cacheTtlMs: 15 * 60 * 1000 },
+      );
+      return {
+        positions: Array.isArray(data?.positions) ? data.positions.filter(Boolean) : [],
+        leagues: Array.isArray(data?.leagues) ? data.leagues.filter(Boolean) : [],
+      };
+    } catch (error) {
+      console.warn("Nao consegui carregar catalogo de mercado:", error);
+      return fallbackMeta();
+    }
+  },
+
   async loadRegionalMarketFallbackStore() {
     if (
       Array.isArray(App.api.regionalMarketFallbackRows) &&

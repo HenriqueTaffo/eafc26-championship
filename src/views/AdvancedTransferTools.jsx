@@ -69,6 +69,17 @@ function normalizeText(value = "") {
   return App.utils?.normalizeText?.(value) || String(value || "").toLowerCase();
 }
 
+function formatMarketFacetLabel(value = "") {
+  const raw = String(value || "").trim();
+  if (!raw) return "";
+  if (!raw.includes("-")) return raw;
+  return raw
+    .split("-")
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
+}
+
 function getPlayerId(player = {}, fallback = "") {
   return String(
     player.id ||
@@ -257,6 +268,7 @@ function TransferMarketTable() {
   const active = useTransferActive();
   const pushToast = useLeagueUiStore((state) => state.pushToast);
   const parentRef = useRef(null);
+  const [catalogMeta, setCatalogMeta] = useState({ positions: [], leagues: [] });
   const [searchRows, setSearchRows] = useState([]);
   const [searching, setSearching] = useState(false);
   const [sorting, setSorting] = useState([{ id: "fit", desc: true }]);
@@ -280,16 +292,43 @@ function TransferMarketTable() {
 
   useEffect(() => {
     if (!active) return undefined;
+    let cancelled = false;
+
+    App.api
+      ?.loadMarketCatalogMeta?.()
+      .then((meta) => {
+        if (cancelled || !meta) return;
+        setCatalogMeta({
+          positions: Array.isArray(meta.positions) ? meta.positions : [],
+          leagues: Array.isArray(meta.leagues) ? meta.leagues : [],
+        });
+      })
+      .catch(() => {});
+
+    return () => {
+      cancelled = true;
+    };
+  }, [active]);
+
+  useEffect(() => {
+    if (!active) return undefined;
     const query = String(filters.query || "").trim();
+    const searchSeed =
+      query ||
+      (filters.league !== "all" ? String(filters.league || "") : "") ||
+      (filters.position !== "all" ? String(filters.position || "") : "");
     const legacyToggle = document.getElementById("showContractedPlayers");
     if (legacyToggle) legacyToggle.checked = Boolean(filters.showContracted);
-    if (query.length < 2) return undefined;
+    if (searchSeed.trim().length < 2) {
+      setSearchRows([]);
+      return undefined;
+    }
 
     let cancelled = false;
     const timeoutId = window.setTimeout(async () => {
       setSearching(true);
       try {
-        const rows = await App.transfers.searchMarketPlayers(query);
+        const rows = await App.transfers.searchMarketPlayers(searchSeed);
         if (!cancelled) {
           setSearchRows(rows || []);
           App.react?.notify?.();
@@ -311,7 +350,14 @@ function TransferMarketTable() {
       cancelled = true;
       window.clearTimeout(timeoutId);
     };
-  }, [active, filters.query, filters.showContracted, pushToast]);
+  }, [
+    active,
+    filters.league,
+    filters.position,
+    filters.query,
+    filters.showContracted,
+    pushToast,
+  ]);
 
   const baseRows = useMemo(() => {
     const loaded = App.transfers?.getMarketPlayers?.() || [];
@@ -323,6 +369,12 @@ function TransferMarketTable() {
   const filterOptions = useMemo(() => {
     const positions = new Set();
     const leagues = new Set();
+    (catalogMeta.positions || []).forEach((position) => {
+      if (position && position !== "-") positions.add(position);
+    });
+    (catalogMeta.leagues || []).forEach((league) => {
+      if (league) leagues.add(league);
+    });
     baseRows.forEach((row) => {
       if (row.position && row.position !== "-") positions.add(row.position);
       if (row.league) leagues.add(row.league);
@@ -331,7 +383,7 @@ function TransferMarketTable() {
       positions: [...positions].sort(),
       leagues: [...leagues].sort(),
     };
-  }, [baseRows]);
+  }, [baseRows, catalogMeta]);
 
   const rows = useMemo(() => {
     let next = baseRows;
@@ -513,7 +565,7 @@ function TransferMarketTable() {
           <option value="all">Todas as ligas</option>
           {filterOptions.leagues.map((league) => (
             <option key={league} value={league}>
-              {league}
+              {formatMarketFacetLabel(league)}
             </option>
           ))}
         </select>
@@ -581,7 +633,7 @@ function TransferMarketTable() {
         </div>
         {!rows.length ? (
           <div className="advanced-empty">
-            Busque pelo menos 2 letras para carregar jogadores do mercado.
+            Busque por nome, clube, liga ou posicao, ou selecione uma liga para carregar o mercado.
           </div>
         ) : null}
       </div>

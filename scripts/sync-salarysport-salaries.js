@@ -402,6 +402,10 @@ function getClubComparableTokens(value = "") {
     .filter((token) => token && !stopwords.has(token));
 }
 
+function getClubComparableKey(value = "") {
+  return getClubComparableTokens(value).join(" ");
+}
+
 function clubTextsLookCompatible(requestedClub = "", candidateClub = "") {
   const requestedKey = normalizeKey(requestedClub);
   const candidateKey = normalizeKey(candidateClub);
@@ -578,6 +582,7 @@ function matchesFilters(target, options = {}) {
     [...(target.playerNames || []), target.playerName].filter(Boolean).join(" "),
   );
   const haystackClub = normalizeKey(target.clubName);
+  const haystackClubComparable = getClubComparableKey(target.clubName);
 
   if (
     playerFilters.length &&
@@ -588,7 +593,15 @@ function matchesFilters(target, options = {}) {
 
   if (
     clubFilters.length &&
-    !clubFilters.some((filter) => haystackClub.includes(filter))
+    !clubFilters.some((filter) => {
+      const comparableFilter = getClubComparableKey(filter);
+      if (comparableFilter && comparableFilter === haystackClubComparable) {
+        return true;
+      }
+      if (filter === haystackClub) return true;
+      const filterTokenCount = filter.split(" ").filter(Boolean).length;
+      return filterTokenCount >= 2 && haystackClub.includes(filter);
+    })
   ) {
     return false;
   }
@@ -847,6 +860,7 @@ async function fetchTeamSearchIndex(options = {}) {
     const lookupKeys = new Set([
       normalizeKey(rawName),
       normalizeClubAlias(rawName),
+      getClubComparableKey(rawName),
       slugKey,
     ]);
 
@@ -920,6 +934,7 @@ function getCandidateTeamPages(index, clubName = "") {
   const directKeys = new Set([
     normalizeKey(clubName),
     normalizeClubAlias(clubName),
+    getClubComparableKey(clubName),
   ]);
   const candidates = new Map();
 
