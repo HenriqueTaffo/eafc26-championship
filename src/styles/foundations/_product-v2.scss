@@ -1,0 +1,335 @@
+.product-v2-app {
+  --v2-bg: #071015;
+  --v2-bg-elevated: rgba(14, 24, 31, 0.86);
+  --v2-surface: rgba(11, 20, 26, 0.88);
+  --v2-surface-soft: rgba(14, 23, 30, 0.72);
+  --v2-border: rgba(132, 245, 226, 0.14);
+  --v2-border-strong: rgba(132, 245, 226, 0.26);
+  --v2-copy: #f4f8f7;
+  --v2-copy-muted: #99aba6;
+  --v2-accent: #83f5e2;
+  --v2-accent-soft: rgba(131, 245, 226, 0.12);
+  --v2-shadow: 0 24px 80px rgba(0, 0, 0, 0.28);
+  color: var(--v2-copy);
+}
+
+body {
+  background:
+    radial-gradient(circle at top left, rgba(60, 145, 133, 0.14), transparent 28%),
+    radial-gradient(circle at top right, rgba(83, 107, 161, 0.16), transparent 32%),
+    #04080b;
+}
+
+.product-v2-app .app {
+  gap: 0;
+}
+
+.product-v2-app .shell-top-cluster,
+.product-v2-app .view {
+  width: min(1480px, calc(100vw - 48px));
+  margin: 0 auto;
+}
+
+.product-v2-app .shell-top-cluster {
+  padding: 28px 0 18px;
+}
+
+.product-v2-app .league-hero-brand {
+  display: grid;
+  grid-template-columns: auto 1px minmax(320px, 1fr) minmax(220px, 320px);
+  align-items: center;
+  gap: 24px;
+  min-height: auto;
+  padding: 26px 28px;
+  border-radius: 22px;
+  border: 1px solid var(--v2-border-strong);
+  background:
+    linear-gradient(135deg, rgba(9, 16, 21, 0.96), rgba(12, 23, 29, 0.92));
+  box-shadow: var(--v2-shadow);
+}
+
+.product-v2-app .league-brand-lockup {
+  display: flex;
+  align-items: center;
+}
+
+.product-v2-app .league-brand-wordmark {
+  width: 168px;
+  height: auto;
+}
+
+.product-v2-app .league-hero-divider {
+  width: 1px;
+  height: 72px;
+  background: linear-gradient(
+    180deg,
+    transparent,
+    rgba(131, 245, 226, 0.28),
+    transparent
+  );
+}
+
+.product-v2-app .league-hero-copy {
+  display: grid;
+  gap: 8px;
+}
+
+.product-v2-app .league-brand-meta,
+.product-v2-app .status-kicker,
+.product-v2-app .workspace-nav-group-kicker,
+.product-v2-app .route-focus-panel span {
+  font-size: 0.78rem;
+  line-height: 1;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--v2-accent);
+}
+
+.product-v2-app .league-route-title {
+  font-size: clamp(2.1rem, 2vw + 1.2rem, 3rem);
+  line-height: 1;
+  font-weight: 700;
+}
+
+.product-v2-app .league-hero-copy p,
+.product-v2-app .route-focus-panel p,
+.product-v2-app .workspace-nav-group-header p,
+.product-v2-app .summary-card small,
+.product-v2-app .footer-note {
+  color: var(--v2-copy-muted);
+}
+
+.product-v2-app .route-focus-panel {
+  display: grid;
+  gap: 8px;
+  padding: 18px;
+  border-radius: 18px;
+  border: 1px solid var(--v2-border);
+  background: var(--v2-surface-soft);
+}
+
+.product-v2-app .workspace-nav {
+  display: grid;
+  gap: 16px;
+  margin-top: 18px;
+}
+
+.product-v2-app .decision-center.is-collapsed:empty,
+.product-v2-app .decision-center.is-collapsed {
+  display: none;
+}
+
+.product-v2-app .workspace-nav-group,
+.product-v2-app .app-status-bar,
+.product-v2-app .summary-card,
+.product-v2-app .home-panel,
+.product-v2-app .home-cup-card,
+.product-v2-app .countdown-card,
+.product-v2-app .rule-card,
+.product-v2-app .table-wrapper,
+.product-v2-app .submit-card,
+.product-v2-app .coach-panel-card,
+.product-v2-app .transfer-negotiation-hub,
+.product-v2-app .transfer-compare-board,
+.product-v2-app .transfer-market-shell,
+.product-v2-app .transfer-history-shell,
+.product-v2-app .commissioner-hero,
+.product-v2-app .submit-hero,
+.product-v2-app .form-card {
+  border-radius: 18px;
+  border: 1px solid var(--v2-border);
+  background: var(--v2-surface);
+  box-shadow: var(--v2-shadow);
+}
+
+.product-v2-app .workspace-nav-group,
+.product-v2-app .app-status-bar {
+  padding: 18px 20px;
+}
+
+.product-v2-app .workspace-nav-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.product-v2-app .workspace-nav-tab {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  min-height: 88px;
+  padding: 16px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.02);
+  transition:
+    border-color 160ms ease,
+    background-color 160ms ease,
+    transform 160ms ease;
+}
+
+.product-v2-app .workspace-nav-tab:hover,
+.product-v2-app .workspace-nav-tab[aria-current="page"] {
+  border-color: var(--v2-border-strong);
+  background: var(--v2-accent-soft);
+  transform: translateY(-1px);
+}
+
+.product-v2-app .workspace-nav-tab-copy {
+  display: grid;
+  gap: 4px;
+  text-align: left;
+}
+
+.product-v2-app .workspace-nav-tab-copy strong {
+  font-size: 1rem;
+  line-height: 1.1;
+}
+
+.product-v2-app .workspace-nav-tab-copy small {
+  color: var(--v2-copy-muted);
+}
+
+.product-v2-app .app-status-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 18px;
+}
+
+.product-v2-app .status-primary {
+  display: grid;
+  gap: 6px;
+}
+
+.product-v2-app .status-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.product-v2-app .global-search {
+  min-width: min(440px, 100%);
+}
+
+.product-v2-app .view {
+  padding: 14px 0 40px;
+}
+
+.product-v2-app .summary,
+.product-v2-app .controls,
+.product-v2-app .legend-block,
+.product-v2-app .footer-note,
+.product-v2-app .transfer-insights,
+.product-v2-app .transfer-negotiation-hub,
+.product-v2-app .transfer-compare-board,
+.product-v2-app .transfer-market-shell,
+.product-v2-app .transfer-history-shell,
+.product-v2-app .mobile-list,
+.product-v2-app .home-grid,
+.product-v2-app .full-standings-block,
+.product-v2-app .submit-form-grid,
+.product-v2-app .commissioner-grid {
+  margin-top: 18px;
+}
+
+.product-v2-app .controls,
+.product-v2-app .submit-hero-actions,
+.product-v2-app .status-actions button,
+.product-v2-app .primary-button,
+.product-v2-app .ghost-button {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.product-v2-app input,
+.product-v2-app select,
+.product-v2-app textarea,
+.product-v2-app button {
+  border-radius: 14px;
+}
+
+.product-v2-app input,
+.product-v2-app select,
+.product-v2-app textarea {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--v2-copy);
+}
+
+.product-v2-app button {
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.02);
+  color: var(--v2-copy);
+}
+
+.product-v2-app .primary-button,
+.product-v2-app [data-manual-sync] {
+  border-color: rgba(131, 245, 226, 0.26);
+  background: linear-gradient(
+    135deg,
+    rgba(131, 245, 226, 0.22),
+    rgba(48, 206, 182, 0.08)
+  );
+}
+
+.product-v2-app .summary-card,
+.product-v2-app .home-panel,
+.product-v2-app .coach-panel-card,
+.product-v2-app .submit-card,
+.product-v2-app .table-wrapper,
+.product-v2-app .rule-card {
+  backdrop-filter: blur(18px);
+}
+
+.product-v2-app .footer-note {
+  padding: 0 4px;
+  font-size: 0.94rem;
+}
+
+@media (max-width: 1100px) {
+  .product-v2-app .league-hero-brand {
+    grid-template-columns: 1fr;
+  }
+
+  .product-v2-app .league-hero-divider {
+    display: none;
+  }
+
+  .product-v2-app .route-focus-panel {
+    max-width: none;
+  }
+
+  .product-v2-app .app-status-bar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .product-v2-app .status-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .product-v2-app .global-search {
+    min-width: 100%;
+  }
+}
+
+@media (max-width: 720px) {
+  .product-v2-app .shell-top-cluster,
+  .product-v2-app .view {
+    width: min(100vw - 24px, 1480px);
+  }
+
+  .product-v2-app .league-hero-brand,
+  .product-v2-app .workspace-nav-group,
+  .product-v2-app .app-status-bar {
+    padding: 18px;
+  }
+
+  .product-v2-app .workspace-nav-grid {
+    grid-template-columns: 1fr;
+  }
+}

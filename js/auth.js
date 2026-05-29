@@ -597,6 +597,7 @@ App.auth = {
     } catch (error) {
       console.warn("SessÃƒÂ£o temporÃƒÂ¡ria indisponÃƒÂ­vel:", error);
     }
+    App.react?.notify?.();
   },
 
   clearStoredSession() {
@@ -607,9 +608,17 @@ App.auth = {
     } catch (error) {
       console.warn("NÃƒÂ£o consegui limpar a sessÃƒÂ£o local:", error);
     }
+    App.react?.notify?.();
   },
 
   buildSessionFromLogin(result, fallbackAccessCode = "") {
+    const defaultScope = App.config.defaultScope || {};
+    const scope = result.scope || {};
+    const isCommissioner = Boolean(
+      scope.membershipRole === "commissioner" ||
+        result?.manager?.isCommissioner,
+    );
+
     return {
       managerId: result.manager.id,
       managerName: result.manager.name,
@@ -618,6 +627,25 @@ App.auth = {
       accessCode: result.sessionToken || fallbackAccessCode,
       sessionToken: result.sessionToken || "",
       sessionExpiresAt: result.expiresAt || "",
+      scope: {
+        organizationId:
+          scope.organizationId || defaultScope.organizationId || "4linhas",
+        organizationName:
+          scope.organizationName || defaultScope.organizationName || "4 Linhas",
+        leagueId: scope.leagueId || defaultScope.leagueId || "championship",
+        leagueName:
+          scope.leagueName ||
+          defaultScope.leagueName ||
+          "Championship Managers Hub",
+        seasonId:
+          scope.seasonId || defaultScope.seasonId || "2026-championship",
+        seasonName:
+          scope.seasonName || defaultScope.seasonName || "Temporada 2026",
+        membershipRole:
+          scope.membershipRole ||
+          defaultScope.membershipRole ||
+          (isCommissioner ? "commissioner" : "manager"),
+      },
     };
   },
 
@@ -817,7 +845,7 @@ App.auth = {
     if (!session || session.isCommissioner || !session.clubName) {
       return `
         <span class="login-success-brand-fallback">
-          <img class="brand-icon-img" src="./assets/4linhas-icon-teal.png?v=${App.config.assetVersion}" alt="" loading="eager" />
+          <img class="brand-icon-img" src="/assets/4linhas-icon-teal.png?v=${App.config.assetVersion}" alt="" loading="eager" />
         </span>
       `;
     }
@@ -863,7 +891,7 @@ App.auth = {
             <span class="manager-login-mascot-ring"></span>
             <span class="manager-login-flip-card">
               <span class="manager-login-face manager-login-face-front manager-login-brand-face">
-                <img class="brand-icon-img" src="./assets/4linhas-icon-teal.png?v=${App.config.assetVersion}" alt="" loading="eager" />
+                <img class="brand-icon-img" src="/assets/4linhas-icon-teal.png?v=${App.config.assetVersion}" alt="" loading="eager" />
               </span>
               <span class="manager-login-face manager-login-face-back manager-login-club-face">
                 ${App.auth.getLoginSuccessClubHtml(session)}
@@ -966,38 +994,58 @@ App.auth = {
   async login(managerName, accessCode) {
     let result;
 
-    try {
-      result = await App.api.rpc(
-        "app_create_manager_session",
-        {
-          p_manager_name: managerName,
-          p_access_code: accessCode,
-        },
-        30000,
-      );
-    } catch (sessionError) {
-      console.warn(
-        "SessÃƒÂ£o temporÃƒÂ¡ria indisponÃƒÂ­vel, usando login legado nesta aba:",
-        sessionError,
-      );
-      if (App.utils.normalizeText(managerName).includes("comiss")) {
+    if (App.config.enableScopedSessions) {
+      try {
         result = await App.api.rpc(
-          "app_login_commissioner",
+          "app_create_manager_scoped_session",
           {
             p_manager_name: managerName,
             p_access_code: accessCode,
           },
           30000,
         );
-      } else {
+      } catch (sessionError) {
+        console.warn(
+          "Sessao escopada indisponivel, usando login legado nesta aba:",
+          sessionError,
+        );
+      }
+    }
+
+    if (!result) {
+      try {
         result = await App.api.rpc(
-          "app_login_manager",
+          "app_create_manager_session",
           {
             p_manager_name: managerName,
             p_access_code: accessCode,
           },
           30000,
         );
+      } catch (legacySessionError) {
+        console.warn(
+          "Sessao temporaria indisponivel, usando login legado bruto nesta aba:",
+          legacySessionError,
+        );
+        if (App.utils.normalizeText(managerName).includes("comiss")) {
+          result = await App.api.rpc(
+            "app_login_commissioner",
+            {
+              p_manager_name: managerName,
+              p_access_code: accessCode,
+            },
+            30000,
+          );
+        } else {
+          result = await App.api.rpc(
+            "app_login_manager",
+            {
+              p_manager_name: managerName,
+              p_access_code: accessCode,
+            },
+            30000,
+          );
+        }
       }
     }
 
@@ -2029,8 +2077,8 @@ App.auth = {
           <span class="manager-login-mascot-stage manager-login-avatar-large manager-login-brand-mark" aria-hidden="true">
             <span class="manager-login-mascot-ring"></span>
             <span class="manager-login-flip-card">
-              <img class="manager-login-face manager-login-face-front brand-icon-img" src="./assets/4linhas-icon-teal.png?v=${App.config.assetVersion}" alt="" loading="lazy" />
-              <img class="manager-login-face manager-login-face-back brand-icon-img" src="./assets/4linhas-icon-teal.png?v=${App.config.assetVersion}" alt="" loading="lazy" />
+              <img class="manager-login-face manager-login-face-front brand-icon-img" src="/assets/4linhas-icon-teal.png?v=${App.config.assetVersion}" alt="" loading="lazy" />
+              <img class="manager-login-face manager-login-face-back brand-icon-img" src="/assets/4linhas-icon-teal.png?v=${App.config.assetVersion}" alt="" loading="lazy" />
             </span>
           </span>
           <div>
@@ -2764,7 +2812,7 @@ App.auth = {
     `;
   },
 
-  renderEmailMailbox(items = [], resolved = []) {
+  renderEmailMailbox(items = []) {
     const filters = App.auth.getEmailMailboxFilters();
     const inboxItems = items.filter((item) => !item.archived && !item.deleted);
     const archivedItems = items.filter((item) => item.archived && !item.deleted);
@@ -5008,4 +5056,5 @@ App.auth = {
 };
 
 document.addEventListener("DOMContentLoaded", () => App.auth.init());
+
 

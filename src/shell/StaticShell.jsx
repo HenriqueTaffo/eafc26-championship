@@ -1,4 +1,4 @@
-import { Suspense, lazy, useEffect, useState } from "react";
+﻿import { Suspense, lazy, useEffect, useState } from "react";
 import {
   ActivityPanel,
   AttentionPanel,
@@ -34,7 +34,14 @@ import {
   Users,
   WalletCards,
 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import App from "../../js/app.js";
+import {
+  getWorkspaceRouteByPath,
+  getWorkspaceRoutesForGroup,
+  isWorkspaceRouteVisible,
+  workspaceRouteGroups,
+} from "../shared/navigation/workspace-routes";
 
 const CalendarMonthBoard = lazy(() =>
   import("../views/CalendarCupsViews.jsx").then((module) => ({
@@ -99,8 +106,8 @@ const AdvancedTransferTools = lazy(() =>
 
 const BRAND_ASSET_VERSION = "20260525-4linhas-brand-v1";
 const BRAND_NAME = "4 Linhas";
-const BRAND_ICON_SRC = `./assets/4linhas-icon-light.png?v=${BRAND_ASSET_VERSION}`;
-const BRAND_WORDMARK_SRC = `./assets/4linhas-wordmark-light.png?v=${BRAND_ASSET_VERSION}`;
+const BRAND_ICON_SRC = `/assets/4linhas-icon-light.png?v=${BRAND_ASSET_VERSION}`;
+const BRAND_WORDMARK_SRC = `/assets/4linhas-wordmark-light.png?v=${BRAND_ASSET_VERSION}`;
 const WORKSPACE_NAV_GROUPS = [
   {
     key: "league",
@@ -109,26 +116,26 @@ const WORKSPACE_NAV_GROUPS = [
     views: [
       {
         view: "standingsView",
-        label: "Classificação",
-        detail: "Tabela, forma e pressão de campanha",
+        label: "ClassificaÃ§Ã£o",
+        detail: "Tabela, forma e pressÃ£o de campanha",
         icon: BarChart3,
       },
       {
         view: "calendarView",
-        label: "Calendário",
+        label: "CalendÃ¡rio",
         detail: "Agenda mensal, semanas e placares pendentes",
         icon: CalendarDays,
       },
       {
         view: "cupsView",
         label: "Copas",
-        detail: "Chaves, avanço de fase e bônus",
+        detail: "Chaves, avanÃ§o de fase e bÃ´nus",
         icon: Trophy,
       },
       {
         view: "eventsView",
         label: "Eventos",
-        detail: "Caos, bastidores, punições e impactos",
+        detail: "Caos, bastidores, puniÃ§Ãµes e impactos",
         icon: Sparkles,
       },
     ],
@@ -136,24 +143,24 @@ const WORKSPACE_NAV_GROUPS = [
   {
     key: "club",
     label: "Clube",
-    detail: "Fluxo privado do técnico, elenco e mercado.",
+    detail: "Fluxo privado do tÃ©cnico, elenco e mercado.",
     views: [
       {
         view: "playersView",
-        label: "Escritório",
+        label: "EscritÃ³rio",
         detail: "Inbox, caixa, diretoria e contratos",
         icon: WalletCards,
       },
       {
         view: "squadView",
         label: "Elenco",
-        detail: "Formação, disponibilidade e folha",
+        detail: "FormaÃ§Ã£o, disponibilidade e folha",
         icon: Users,
       },
       {
         view: "transfersView",
-        label: "Transferências",
-        detail: "Mesa ativa, scouting e negociações",
+        label: "TransferÃªncias",
+        detail: "Mesa ativa, scouting e negociaÃ§Ãµes",
         icon: ArrowLeftRight,
       },
     ],
@@ -161,13 +168,13 @@ const WORKSPACE_NAV_GROUPS = [
   {
     key: "admin",
     label: "Liga / Admin",
-    detail: "Governança, auditoria e fechamento operacional.",
+    detail: "GovernanÃ§a, auditoria e fechamento operacional.",
     role: "commissioner",
     views: [
       {
         view: "commissionerView",
-        label: "Comissário",
-        detail: "Leilões, auditoria e ações médicas",
+        label: "ComissÃ¡rio",
+        detail: "LeilÃµes, auditoria e aÃ§Ãµes mÃ©dicas",
         icon: Scale,
       },
       {
@@ -178,7 +185,7 @@ const WORKSPACE_NAV_GROUPS = [
       },
       {
         view: "experienceView",
-        label: "Inteligência",
+        label: "InteligÃªncia",
         detail: "Risco, prioridades e leitura do momento",
         icon: Brain,
       },
@@ -281,7 +288,7 @@ function GlobalLoader() {
             </div>
 
             <div className="loader-chaos-list">
-              <span id="globalLoaderChaosItem1">conferindo lesões</span>
+              <span id="globalLoaderChaosItem1">conferindo lesÃµes</span>
               <span id="globalLoaderChaosItem2">validando mercado</span>
               <span id="globalLoaderChaosItem3">organizando bastidores</span>
             </div>
@@ -290,7 +297,7 @@ function GlobalLoader() {
           <div className="loader-copy">
             <strong id="globalLoaderTitle">Carregando dados da liga</strong>
             <span id="globalLoaderText">
-              Aguarde enquanto a classificação, o calendário e os painéis são
+              Aguarde enquanto a classificaÃ§Ã£o, o calendÃ¡rio e os painÃ©is sÃ£o
               atualizados.
             </span>
           </div>
@@ -300,25 +307,31 @@ function GlobalLoader() {
   );
 }
 
-function WorkspaceNavigation() {
+void WORKSPACE_NAV_GROUPS;
+
+function WorkspaceNavigation({ activePath }) {
   useAppRuntime();
+  const navigate = useNavigate();
 
   const session = App.auth?.getSession?.() || null;
   const isCommissioner = Boolean(
     session?.isCommissioner || App.auth?.isCommissioner?.(),
   );
-  const visibleGroups = WORKSPACE_NAV_GROUPS.filter((group) => {
-    if (!group.role) return true;
-    if (group.role === "commissioner") return isCommissioner;
-    return false;
-  });
+  const visibleGroups = workspaceRouteGroups
+    .map((group) => ({
+      ...group,
+      views: getWorkspaceRoutesForGroup(group.key).filter((route) =>
+        isWorkspaceRouteVisible(route, isCommissioner),
+      ),
+    }))
+    .filter((group) => group.views.length > 0);
 
   return (
-    <nav className="tabs workspace-nav" aria-label="Navegação principal">
+    <nav className="tabs workspace-nav" aria-label="NavegaÃ§Ã£o principal">
       {visibleGroups.map((group) => (
         <section
           className="workspace-nav-group"
-          data-role={group.role || "all"}
+          data-role={group.key}
           key={group.key}
         >
           <header className="workspace-nav-group-header">
@@ -329,16 +342,17 @@ function WorkspaceNavigation() {
             <b>{group.views.length}</b>
           </header>
           <div className="workspace-nav-grid">
-            {group.views.map((item, index) => {
+            {group.views.map((item) => {
               const Icon = item.icon;
+              const isActive = item.path === activePath;
               return (
                 <button
-                  className={`tab-button workspace-nav-tab${
-                    index === 0 && group.key === "league" ? " active" : ""
-                  }`}
-                  data-view={item.view}
-                  key={item.view}
+                  className={`tab-button workspace-nav-tab${isActive ? " active" : ""}`}
+                  data-view={item.viewId}
+                  key={item.path}
                   type="button"
+                  aria-current={isActive ? "page" : undefined}
+                  onClick={() => navigate(item.path)}
                 >
                   <span className="workspace-nav-tab-icon" aria-hidden="true">
                     <Icon size={16} strokeWidth={2.2} />
@@ -357,7 +371,14 @@ function WorkspaceNavigation() {
   );
 }
 
-function ShellChrome() {
+function ShellChrome({ activeRoute }) {
+  const session = App.auth?.getSession?.() || null;
+  const audienceLabel = session?.isCommissioner
+    ? "OperaÃ§Ã£o da liga"
+    : session?.managerName
+      ? `${session.managerName} Â· ${session.clubName || "Clube ativo"}`
+      : "Produto operacional da liga";
+
   return (
     <>
       <section className="shell-top-cluster">
@@ -372,12 +393,15 @@ function ShellChrome() {
           <div className="league-hero-divider" aria-hidden="true"></div>
           <div className="league-hero-copy">
             <h1 className="sr-only">{BRAND_NAME}</h1>
-            <span className="league-brand-meta">Championship managers hub</span>
-            <p>
-              Liga privada de gestão esportiva com mesa de mercado, escritório,
-              elenco e governança em um só fluxo.
-            </p>
+            <span className="league-brand-meta">{activeRoute.kicker}</span>
+            <strong className="league-route-title">{activeRoute.label}</strong>
+            <p>{activeRoute.detail}</p>
           </div>
+          <aside className="route-focus-panel">
+            <span>{audienceLabel}</span>
+            <strong>{activeRoute.groupLabel}</strong>
+            <p>{activeRoute.groupDetail}</p>
+          </aside>
         </header>
 
         <section
@@ -386,10 +410,12 @@ function ShellChrome() {
         ></section>
         <section
           id="transferProposalPanel"
-          className="decision-center"
+          className={`decision-center${
+            activeRoute.groupKey !== "club" ? " is-collapsed" : ""
+          }`}
         ></section>
 
-        <WorkspaceNavigation />
+        <WorkspaceNavigation activePath={activeRoute.path} />
 
         <section className="app-status-bar" aria-live="polite">
           <div className="status-primary">
@@ -401,7 +427,7 @@ function ShellChrome() {
               <input
                 id="globalSearchInput"
                 type="search"
-                placeholder="Buscar jogo, técnico, jogador..."
+                placeholder="Buscar jogo, tÃ©cnico, jogador..."
                 autoComplete="off"
                 aria-label="Busca global da liga"
               />
@@ -439,7 +465,7 @@ function StandingsView() {
         <section className="home-grid">
           <article className="home-panel home-standings-panel">
             <div className="home-panel-header">
-              <h2>Classificação geral</h2>
+              <h2>ClassificaÃ§Ã£o geral</h2>
             </div>
             <div className="home-standings-table-wrap">
               <table className="home-standings-table">
@@ -461,41 +487,41 @@ function StandingsView() {
               </table>
             </div>
             <ScrollButton className="home-link" target="standingsFullBlock">
-              Ver classificação completa <span>›</span>
+              Ver classificaÃ§Ã£o completa <span>â€º</span>
             </ScrollButton>
           </article>
 
           <article className="home-panel home-next-panel">
             <div className="home-panel-header">
-              <h2>Próximos jogos</h2>
+              <h2>PrÃ³ximos jogos</h2>
             </div>
             <div className="next-games-list" id="homeNextGames">
               <HomeNextGames />
             </div>
             <ViewButton className="home-link" target="calendarView">
-              Ver calendário completo <span>›</span>
+              Ver calendÃ¡rio completo <span>â€º</span>
             </ViewButton>
           </article>
         </section>
 
         <section className="home-cup-card">
-          <div className="cup-icon">🏆</div>
+          <div className="cup-icon">ðŸ†</div>
           <div>
             <h2>Copas oficiais</h2>
             <p>
-              Carabao Cup e The Emirates FA Cup: chaveamento, próximos jogos e
-              classificação.
+              Carabao Cup e The Emirates FA Cup: chaveamento, prÃ³ximos jogos e
+              classificaÃ§Ã£o.
             </p>
           </div>
           <ViewButton className="cup-action" target="cupsView">
-            Ver copas <span>›</span>
+            Ver copas <span>â€º</span>
           </ViewButton>
         </section>
 
         <ActivityPanel />
 
         <section className="legend-block compact-legend">
-          <p className="legend-title">Legendas de classificação</p>
+          <p className="legend-title">Legendas de classificaÃ§Ã£o</p>
           <div className="legend">
             <span className="badge">
               <span className="dot promotion"></span>Acesso direto
@@ -507,7 +533,7 @@ function StandingsView() {
               <span className="dot relegation"></span>Rebaixamento
             </span>
             <span className="badge">
-              <span className="dot ours"></span>Times com técnico
+              <span className="dot ours"></span>Times com tÃ©cnico
             </span>
           </div>
         </section>
@@ -556,23 +582,23 @@ function CalendarView() {
           <input
             id="calendarSearchInput"
             type="search"
-            placeholder="Buscar time, competição, rodada ou técnico..."
+            placeholder="Buscar time, competiÃ§Ã£o, rodada ou tÃ©cnico..."
           />
           <select id="calendarCompetitionFilter">
-            <option value="all">Todas as competições</option>
+            <option value="all">Todas as competiÃ§Ãµes</option>
             <option value="Championship">Championship</option>
             <option value="Copa da Liga">Carabao Cup</option>
             <option value="FA Cup">The Emirates FA Cup</option>
           </select>
           <select id="calendarOwnerFilter">
-            <option value="all">Todos os técnicos</option>
+            <option value="all">Todos os tÃ©cnicos</option>
             <option value="Henrique">Henrique</option>
             <option value="Willian">Willian</option>
             <option value="Rafael">Rafael</option>
             <option value="Renato">Renato</option>
             <option value="Bruno Silva">Bruno Silva</option>
-            <option value="human">Apenas jogos com técnico</option>
-            <option value="human-vs-human">Técnico x Técnico</option>
+            <option value="human">Apenas jogos com tÃ©cnico</option>
+            <option value="human-vs-human">TÃ©cnico x TÃ©cnico</option>
             <option value="cpu">CPU x CPU</option>
           </select>
           <select id="calendarWeekFilter">
@@ -580,7 +606,7 @@ function CalendarView() {
           </select>
           <select id="calendarStatusFilter" defaultValue="pending">
             <option value="pending">Somente pendentes</option>
-            <option value="next">Próximos 30 jogos</option>
+            <option value="next">PrÃ³ximos 30 jogos</option>
             <option value="done">Somente realizados</option>
             <option value="all">Todos os jogos</option>
           </select>
@@ -589,7 +615,7 @@ function CalendarView() {
           <p className="legend-title">Destaques</p>
           <div className="legend">
             <span className="badge">
-              <span className="dot ours"></span>Jogo com técnico
+              <span className="dot ours"></span>Jogo com tÃ©cnico
             </span>
             <span className="badge">
               <span className="dot pending"></span>Pendente
@@ -601,7 +627,7 @@ function CalendarView() {
         </section>
         <DeferredViewSection
           viewId="calendarView"
-          title="Carregando calendário"
+          title="Carregando calendÃ¡rio"
           detail="Montando agenda mensal e semana atual."
         >
           <>
@@ -649,40 +675,40 @@ function CupsView() {
         </section>
         <section className="cup-prize-card">
           <div className="cup-prize-copy">
-            <span className="modal-kicker">Premiação das copas</span>
-            <h2>Bônus por avanço de fase</h2>
+            <span className="modal-kicker">PremiaÃ§Ã£o das copas</span>
+            <h2>BÃ´nus por avanÃ§o de fase</h2>
             <p>
-              Além da bilheteria, cada técnico recebe orçamento extra quando seu
-              time avança nas copas.
+              AlÃ©m da bilheteria, cada tÃ©cnico recebe orÃ§amento extra quando seu
+              time avanÃ§a nas copas.
             </p>
           </div>
           <div className="cup-prize-grid">
             <span>
               <small>Fase inicial</small>
-              <strong>+€ 1M</strong>
+              <strong>+â‚¬ 1M</strong>
             </span>
             <span>
               <small>Oitavas</small>
-              <strong>+€ 3M</strong>
+              <strong>+â‚¬ 3M</strong>
             </span>
             <span>
               <small>Quartas</small>
-              <strong>+€ 5M</strong>
+              <strong>+â‚¬ 5M</strong>
             </span>
             <span>
               <small>Semifinal</small>
-              <strong>+€ 8M</strong>
+              <strong>+â‚¬ 8M</strong>
             </span>
             <span>
-              <small>Campeão</small>
-              <strong>+€ 12M</strong>
+              <small>CampeÃ£o</small>
+              <strong>+â‚¬ 12M</strong>
             </span>
           </div>
         </section>
         <DeferredViewSection
           viewId="cupsView"
           title="Carregando copas"
-          detail="Montando chaves, rodadas pendentes e classificação."
+          detail="Montando chaves, rodadas pendentes e classificaÃ§Ã£o."
         >
           <CupsBracket />
         </DeferredViewSection>
@@ -702,10 +728,10 @@ function PlayersView() {
           <input
             id="playersSearchInput"
             type="search"
-            placeholder="Buscar técnico, jogador, time, e-mail ou próximo jogo..."
+            placeholder="Buscar tÃ©cnico, jogador, time, e-mail ou prÃ³ximo jogo..."
           />
           <select id="playersFilter">
-            <option value="all">Todos os técnicos</option>
+            <option value="all">Todos os tÃ©cnicos</option>
             <option value="Henrique">Henrique</option>
             <option value="Willian">Willian</option>
             <option value="Rafael">Rafael</option>
@@ -715,8 +741,8 @@ function PlayersView() {
         </section>
         <DeferredViewSection
           viewId="playersView"
-          title="Carregando escritório"
-          detail="Buscando dados privados, DM e alertas do técnico."
+          title="Carregando escritÃ³rio"
+          detail="Buscando dados privados, DM e alertas do tÃ©cnico."
         >
           <>
             <PlayersGrid />
@@ -724,8 +750,8 @@ function PlayersView() {
           </>
         </DeferredViewSection>
         <p className="footer-note">
-          Os gols por time consideram apenas os clubes controlados por técnicos.
-          A lista ao lado mostra as cinco contratações mais caras aprovadas até
+          Os gols por time consideram apenas os clubes controlados por tÃ©cnicos.
+          A lista ao lado mostra as cinco contrataÃ§Ãµes mais caras aprovadas atÃ©
           agora.
         </p>
       </section>
@@ -743,7 +769,7 @@ function SquadView() {
         <DeferredViewSection
           viewId="squadView"
           title="Carregando elenco"
-          detail="Sincronizando formação, folha e disponibilidade."
+          detail="Sincronizando formaÃ§Ã£o, folha e disponibilidade."
         >
           <SquadManagementView />
         </DeferredViewSection>
@@ -764,9 +790,9 @@ function EventsView() {
             <span>Central de Eventos</span>
             <strong id="nextEventCountdown">Calculando...</strong>
             <p>
-              A sala do caos da liga: dinheiro inesperado, punições, lesões,
-              travas de mercado e premiações aparecem aqui com impacto direto
-              nos técnicos.
+              A sala do caos da liga: dinheiro inesperado, puniÃ§Ãµes, lesÃµes,
+              travas de mercado e premiaÃ§Ãµes aparecem aqui com impacto direto
+              nos tÃ©cnicos.
             </p>
           </div>
           <DeferredViewSection
@@ -784,7 +810,7 @@ function EventsView() {
             placeholder="Buscar evento, jogador ou efeito..."
           />
           <select id="eventsOwnerFilter">
-            <option value="all">Todos os técnicos</option>
+            <option value="all">Todos os tÃ©cnicos</option>
             <option value="Henrique">Henrique</option>
             <option value="Willian">Willian</option>
             <option value="Rafael">Rafael</option>
@@ -798,41 +824,41 @@ function EventsView() {
             <option value="neutral">Neutros / mercado</option>
           </select>
           <select id="eventsPeriodFilter" defaultValue="latest">
-            <option value="latest">Última rodada</option>
-            <option value="active">Ativos / em duração</option>
+            <option value="latest">Ãšltima rodada</option>
+            <option value="active">Ativos / em duraÃ§Ã£o</option>
             <option value="today">Todos de hoje</option>
-            <option value="last12">Últimos 12</option>
-            <option value="all">Histórico completo</option>
+            <option value="last12">Ãšltimos 12</option>
+            <option value="all">HistÃ³rico completo</option>
           </select>
         </section>
         <section className="form-card events-intro-card">
           <div>
             <h2>Radar da Liga</h2>
             <p>
-              Por padrão, exibimos a última rodada para manter a tela leve. Use
-              os filtros para investigar histórico, lesões ativas, punições de
-              mercado, premiações e impactos financeiros.
+              Por padrÃ£o, exibimos a Ãºltima rodada para manter a tela leve. Use
+              os filtros para investigar histÃ³rico, lesÃµes ativas, puniÃ§Ãµes de
+              mercado, premiaÃ§Ãµes e impactos financeiros.
             </p>
           </div>
           <div className="event-legend-pills">
-            <span>💰 Caixa</span>
-            <span>🚑 DM</span>
-            <span>🔒 Mercado</span>
-            <span>🏆 Copas</span>
-            <span>⚠️ Punições</span>
+            <span>Caixa</span>
+            <span>DM</span>
+            <span>Mercado</span>
+            <span>Copas</span>
+            <span>Punições</span>
           </div>
           <span className="app-message" id="eventsMessage"></span>
         </section>
         <DeferredViewSection
           viewId="eventsView"
           title="Carregando eventos"
-          detail="Organizando histórico, filtros e eventos ativos."
+          detail="Organizando histÃ³rico, filtros e eventos ativos."
         >
           <EventsGrid />
         </DeferredViewSection>
         <p className="footer-note">
-          Central de eventos: impactos financeiros, mercado, lesões, punições e
-          premiações ficam consolidados por técnico com status e efeitos
+          Central de eventos: impactos financeiros, mercado, lesÃµes, puniÃ§Ãµes e
+          premiaÃ§Ãµes ficam consolidados por tÃ©cnico com status e efeitos
           atualizados.
         </p>
       </section>
@@ -849,23 +875,23 @@ function ExperienceView() {
         </section>
         <section className="submit-hero experience-hero">
           <div>
-            <span className="modal-kicker">Sala de análise</span>
-            <h2>Central de Inteligência</h2>
+            <span className="modal-kicker">Sala de anÃ¡lise</span>
+            <h2>Central de InteligÃªncia</h2>
             <p>
-              Diagnóstico operacional da liga: ações urgentes, risco financeiro,
-              rodada de impacto e postura recomendada para cada técnico.
+              DiagnÃ³stico operacional da liga: aÃ§Ãµes urgentes, risco financeiro,
+              rodada de impacto e postura recomendada para cada tÃ©cnico.
             </p>
           </div>
           <div className="submit-hero-actions">
-            <a href="#intelligenceQueue">Fila de ação</a>
+            <a href="#intelligenceQueue">Fila de aÃ§Ã£o</a>
             <a href="#intelligencePower">Power index</a>
             <a href="#intelligenceMarket">Mercado</a>
           </div>
         </section>
         <DeferredViewSection
           viewId="experienceView"
-          title="Carregando inteligência"
-          detail="Preparando painéis de risco, mercado e operação."
+          title="Carregando inteligÃªncia"
+          detail="Preparando painÃ©is de risco, mercado e operaÃ§Ã£o."
         >
           <ExperienceGrid />
         </DeferredViewSection>
@@ -881,7 +907,7 @@ function TransfersView() {
         <DeferredViewSection
           viewId="transfersView"
           title="Carregando mercado"
-          detail="Sincronizando negociações, scouting e diagnóstico financeiro."
+          detail="Sincronizando negociaÃ§Ãµes, scouting e diagnÃ³stico financeiro."
         >
           <TransfersRuntime />
         </DeferredViewSection>
@@ -896,7 +922,7 @@ function TransfersView() {
           <TransfersSummary />
         </section>
         <section className="countdown-card">
-          <span>Janela de transferências</span>
+          <span>Janela de transferÃªncias</span>
           <strong id="nextTransferCountdown">Calculando...</strong>
           <p>
             O limite diário reinicia à meia-noite. Eventos podem aumentar ou
@@ -906,10 +932,10 @@ function TransfersView() {
 
         <section className="transfer-lock-card" aria-live="polite">
           <span className="modal-kicker">Mercado travado</span>
-          <h2>Janela de transferências fechada</h2>
+          <h2>Janela de transferÃªncias fechada</h2>
           <p>
-            As contratações ficam bloqueadas até a liga considerar o app pronto.
-            Histórico e orçamento seguem visíveis para conferência.
+            As contrataÃ§Ãµes ficam bloqueadas atÃ© a liga considerar o app pronto.
+            HistÃ³rico e orÃ§amento seguem visÃ­veis para conferÃªncia.
           </p>
         </section>
 
@@ -923,11 +949,11 @@ function TransfersView() {
         <section className="transfer-workbench">
           <section className="form-card submit-card submit-card-transfer">
             <div className="submit-card-header">
-              <span className="submit-card-icon">⇄</span>
+              <span className="submit-card-icon">â‡„</span>
               <div>
-                <h2>Abrir negociação</h2>
+                <h2>Abrir negociaÃ§Ã£o</h2>
                 <p>
-                  Mercado externo, propostas entre técnicos e troca de jogador
+                  Mercado externo, propostas entre tÃ©cnicos e troca de jogador
                   no mesmo fluxo.
                 </p>
               </div>
@@ -936,7 +962,7 @@ function TransfersView() {
               <div className="form-grid">
                 <div
                   className="submit-mode-switch full"
-                  aria-label="Tipo de transferência"
+                  aria-label="Tipo de transferÃªncia"
                 >
                   <label>
                     <input
@@ -949,7 +975,7 @@ function TransfersView() {
                   </label>
                   <label>
                     <input name="transferType" type="radio" value="internal" />
-                    <span>Entre técnicos</span>
+                    <span>Entre tÃ©cnicos</span>
                   </label>
                 </div>
                 <label>
@@ -992,7 +1018,7 @@ function TransfersView() {
                   <input
                     id="marketPlayerSearch"
                     type="search"
-                    placeholder="Digite nome, clube, liga ou posição..."
+                    placeholder="Digite nome, clube, liga ou posiÃ§Ã£o..."
                     autoComplete="off"
                   />
                 </label>
@@ -1001,11 +1027,11 @@ function TransfersView() {
                   data-market-transfer-field
                 >
                   <span>
-                    Por padrão, jogadores já contratados ficam escondidos.
+                    Por padrÃ£o, jogadores jÃ¡ contratados ficam escondidos.
                   </span>
                   <label className="market-toggle">
                     <input id="showContractedPlayers" type="checkbox" />
-                    <span>Mostrar já contratados</span>
+                    <span>Mostrar jÃ¡ contratados</span>
                   </label>
                 </div>
                 <div
@@ -1014,7 +1040,7 @@ function TransfersView() {
                   data-market-transfer-field
                 >
                   <div className="market-empty">
-                    Digite o nome, clube, liga ou posição para buscar jogadores.
+                    Digite o nome, clube, liga ou posiÃ§Ã£o para buscar jogadores.
                   </div>
                 </div>
                 <div
@@ -1022,10 +1048,10 @@ function TransfersView() {
                   data-market-transfer-field
                 >
                   <div className="transfer-exchange-copy">
-                    <span>Troca na negociação</span>
+                    <span>Troca na negociaÃ§Ã£o</span>
                     <strong>Jogador + dinheiro</strong>
                     <small id="transferExchangeHint">
-                      Opcional. O abatimento aparece na prévia antes do envio.
+                      Opcional. O abatimento aparece na prÃ©via antes do envio.
                     </small>
                   </div>
                   <label className="transfer-exchange-control">
@@ -1089,14 +1115,14 @@ function TransfersView() {
                       </strong>
                     </div>
                     <small id="transferOfferReference">
-                      Selecione um jogador para carregar a referência.
+                      Selecione um jogador para carregar a referÃªncia.
                     </small>
                   </div>
                   <div className="offer-value-row">
                     <label className="offer-input-shell">
                       <span>Valor ofertado</span>
                       <div className="currency-input-shell">
-                        <b>€</b>
+                        <b>â‚¬</b>
                         <input
                           name="offerValue"
                           type="text"
@@ -1113,7 +1139,7 @@ function TransfersView() {
                     >
                       <span id="transferOfferGuidanceText">
                         A oferta inicial pode ficar abaixo ou acima da
-                        referência.
+                        referÃªncia.
                       </span>
                       <div
                         className="offer-strength-meter"
@@ -1138,7 +1164,7 @@ function TransfersView() {
                     </button>
                     <button type="button" data-offer-multiplier="1.25">
                       <strong>125%</strong>
-                      <span>Fechar rápido</span>
+                      <span>Fechar rÃ¡pido</span>
                     </button>
                   </div>
                 </div>
@@ -1161,7 +1187,7 @@ function TransfersView() {
               </div>
 
               <div className="transfer-live-preview" id="transferFormPreview">
-                <strong>Prévia da contratação</strong>
+                <strong>PrÃ©via da contrataÃ§Ã£o</strong>
                 <span>
                   Preencha comprador, jogador, overall e valor para calcular
                   custo final, folha e travas antes de enviar.
@@ -1176,8 +1202,8 @@ function TransfersView() {
                   required
                 />
                 <span>
-                  Confirmo que o comprador selecionado está correto para esta
-                  negociação.
+                  Confirmo que o comprador selecionado estÃ¡ correto para esta
+                  negociaÃ§Ã£o.
                 </span>
               </label>
 
@@ -1220,10 +1246,10 @@ function TransfersView() {
           <input
             id="transferSearchInput"
             type="search"
-            placeholder="Buscar jogador, técnico, destino ou clube..."
+            placeholder="Buscar jogador, tÃ©cnico, destino ou clube..."
           />
           <select id="transferOwnerFilter">
-            <option value="all">Todos os técnicos/destinos</option>
+            <option value="all">Todos os tÃ©cnicos/destinos</option>
             <option value="Henrique">Henrique</option>
             <option value="Willian">Willian</option>
             <option value="Rafael">Rafael</option>
@@ -1232,7 +1258,7 @@ function TransfersView() {
           </select>
           <select id="transferStatusFilter">
             <option value="all">Todos os status</option>
-            <option value="valid">Válidas</option>
+            <option value="valid">VÃ¡lidas</option>
             <option value="sale">Vendas CPU</option>
             <option value="duplicate">Duplicadas</option>
           </select>
@@ -1240,29 +1266,29 @@ function TransfersView() {
         <section className="transfer-insights" id="transferInsights"></section>
 
         <section className="rule-card">
-          <h2>Regras de transferência</h2>
+          <h2>Regras de transferÃªncia</h2>
           <ul>
             <li>
-              Orçamento base por jogador: <strong>22 milhões</strong>.
+              OrÃ§amento base por jogador: <strong>22 milhÃµes</strong>.
             </li>
             <li>
               Receita semanal: <strong>+2M</strong> por semana ativa da
               temporada.
             </li>
             <li>
-              Bônus por mando: <strong>+400k</strong> por partida em casa.
+              BÃ´nus por mando: <strong>+400k</strong> por partida em casa.
             </li>
             <li>
-              Bônus por vitória: <strong>+250k</strong> por vitória.
+              BÃ´nus por vitÃ³ria: <strong>+250k</strong> por vitÃ³ria.
             </li>
             <li>
-              Bônus de campanha: blocos de 5 jogos rendem até
-              <strong>+5M</strong> conforme pontuação.
+              BÃ´nus de campanha: blocos de 5 jogos rendem atÃ©
+              <strong>+5M</strong> conforme pontuaÃ§Ã£o.
             </li>
-            <li>Eventos financeiros podem aumentar ou reduzir o orçamento.</li>
-            <li>Copas geram premiação automática por avanço de fase.</li>
+            <li>Eventos financeiros podem aumentar ou reduzir o orÃ§amento.</li>
+            <li>Copas geram premiaÃ§Ã£o automÃ¡tica por avanÃ§o de fase.</li>
             <li>
-              Limite base: <strong>3 transferências por dia</strong>. Eventos
+              Limite base: <strong>3 transferÃªncias por dia</strong>. Eventos
               podem alterar esse limite.
             </li>
               <li>Proposta inicial = referencia de mercado + percentual por overall.</li>
@@ -1287,7 +1313,7 @@ function TransfersView() {
         </section>
         <section className="mobile-list" id="transferMobile"></section>
         <p className="footer-note">
-          Mostrando apenas as 5 movimentações aprovadas mais recentes.
+          Mostrando apenas as 5 movimentaÃ§Ãµes aprovadas mais recentes.
         </p>
       </section>
     </>
@@ -1300,8 +1326,8 @@ function CommissionerView() {
       <section id="commissionerView" className="view">
         <DeferredViewSection
           viewId="commissionerView"
-          title="Carregando governança"
-          detail="Preparando auditoria, ações médicas e controles da liga."
+          title="Carregando governanÃ§a"
+          detail="Preparando auditoria, aÃ§Ãµes mÃ©dicas e controles da liga."
         >
           <CommissionerRuntime />
         </DeferredViewSection>
@@ -1313,16 +1339,16 @@ function CommissionerView() {
         </section>
         <section className="submit-hero commissioner-hero">
           <div>
-            <span className="modal-kicker">Governança da liga</span>
-            <h2>Mesa do comissário</h2>
+            <span className="modal-kicker">GovernanÃ§a da liga</span>
+            <h2>Mesa do comissÃ¡rio</h2>
             <p>
-              Leilões, centro médico, fair play, fechamento semanal e ações
+              LeilÃµes, centro mÃ©dico, fair play, fechamento semanal e aÃ§Ãµes
               especiais para manter a temporada divertida e controlada.
             </p>
           </div>
           <div className="submit-hero-actions">
-            <a href="#commissionerAuctions">Leilões</a>
-            <a href="#commissionerMedical">Centro médico</a>
+            <a href="#commissionerAuctions">LeilÃµes</a>
+            <a href="#commissionerMedical">Centro mÃ©dico</a>
             <a href="#commissionerWeekly">Semana</a>
           </div>
         </section>
@@ -1339,10 +1365,10 @@ function SubmitView() {
       <section id="submitView" className="view">
         <section className="submit-hero">
           <div>
-            <span className="modal-kicker">Central de lançamentos</span>
+            <span className="modal-kicker">Central de lanÃ§amentos</span>
             <h2>Enviar dados da liga</h2>
             <p>
-              Resultados oficiais e simulações CPU x CPU em uma tela mais
+              Resultados oficiais e simulaÃ§Ãµes CPU x CPU em uma tela mais
               direta.
             </p>
           </div>
@@ -1355,19 +1381,19 @@ function SubmitView() {
         <section className="submit-form-grid">
           <section className="form-card submit-card submit-card-result">
             <div className="submit-card-header">
-              <span className="submit-card-icon">▦</span>
+              <span className="submit-card-icon">â–¦</span>
               <div>
                 <h2>Enviar resultado</h2>
                 <p>
                   Registre placares. Em jogos de copa empatados, informe o
-                  vencedor nos pênaltis.
+                  vencedor nos pÃªnaltis.
                 </p>
               </div>
             </div>
             <form id="resultForm">
               <div className="form-grid">
                 <label>
-                  Competição
+                  CompetiÃ§Ã£o
                   <select name="competition" required>
                     <option value="Championship">Championship</option>
                     <option value="Copa da Liga">Carabao Cup</option>
@@ -1438,11 +1464,11 @@ function SubmitView() {
                 >
                   <label className="checkbox-row">
                     <input name="hasPenalties" type="checkbox" value="yes" />
-                    <span>Houve disputa de pênaltis?</span>
+                    <span>Houve disputa de pÃªnaltis?</span>
                   </label>
                   <div className="penalty-fields" data-penalty-fields hidden>
                     <label>
-                      Vencedor nos pênaltis
+                      Vencedor nos pÃªnaltis
                       <input
                         name="penaltyWinner"
                         list="teamOptions"
@@ -1451,7 +1477,7 @@ function SubmitView() {
                       />
                     </label>
                     <label>
-                      Placar dos pênaltis
+                      Placar dos pÃªnaltis
                       <input
                         name="penaltyScore"
                         type="text"
@@ -1472,7 +1498,7 @@ function SubmitView() {
 
           <section className="form-card submit-card submit-card-cpu">
             <div className="submit-card-header">
-              <span className="submit-card-icon">☁</span>
+              <span className="submit-card-icon">â˜</span>
               <div>
                 <h2>Simular CPU x CPU da semana</h2>
                 <p>
@@ -1545,11 +1571,11 @@ function CalendarResultModal() {
             type="button"
             data-close-result-modal
           >
-            ×
+            Ã—
           </button>
           <div className="result-modal-header">
             <span className="modal-kicker">
-              Enviar resultado pelo calendário
+              Enviar resultado pelo calendÃ¡rio
             </span>
             <h2 id="calendarResultModalTitle">Resultado da partida</h2>
             <p id="calendarResultModalSubtitle">
@@ -1592,11 +1618,11 @@ function CalendarResultModal() {
               <div className="penalty-section full" data-penalty-section hidden>
                 <label className="checkbox-row">
                   <input name="hasPenalties" type="checkbox" value="yes" />
-                  <span>Houve disputa de pênaltis?</span>
+                  <span>Houve disputa de pÃªnaltis?</span>
                 </label>
                 <div className="penalty-fields" data-penalty-fields hidden>
                   <label>
-                    Vencedor nos pênaltis
+                    Vencedor nos pÃªnaltis
                     <input
                       name="penaltyWinner"
                       list="teamOptions"
@@ -1605,7 +1631,7 @@ function CalendarResultModal() {
                     />
                   </label>
                   <label>
-                    Placar dos pênaltis
+                    Placar dos pÃªnaltis
                     <input
                       name="penaltyScore"
                       type="text"
@@ -1629,12 +1655,14 @@ function CalendarResultModal() {
   );
 }
 
-export function StaticShell() {
+export function StaticShell({ activePath = "/league/standings" }) {
+  const activeRoute = getWorkspaceRouteByPath(activePath);
+
   return (
     <>
       <GlobalLoader />
       <main className="app">
-        <ShellChrome />
+        <ShellChrome activeRoute={activeRoute} />
         <StandingsView />
         <CalendarView />
         <CupsView />
@@ -1652,3 +1680,4 @@ export function StaticShell() {
 }
 
 export default StaticShell;
+

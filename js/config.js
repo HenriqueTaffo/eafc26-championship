@@ -5,6 +5,16 @@ App.config = {
   SUPABASE_URL: "https://fdippspwpugnxwxmjnqf.supabase.co",
   SUPABASE_PUBLISHABLE_KEY: "sb_publishable_9YyrYEk9jH5CuatQK_Ejpg_VfQq6qCK",
   assetVersion: "20260525-login-icon-teal-v1",
+  enableScopedSessions: false,
+  defaultScope: {
+    organizationId: "4linhas",
+    organizationName: "4 Linhas",
+    leagueId: "championship",
+    leagueName: "Championship Managers Hub",
+    seasonId: "2026-championship",
+    seasonName: "Temporada 2026",
+    membershipRole: "manager"
+  },
   transferBudget: 18000000,
   homeMatchBonus: 150000,
   winBonus: 100000,

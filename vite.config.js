@@ -21,8 +21,8 @@ module.exports = defineConfig({
         background_color: "#070909",
         lang: "pt-BR",
         display: "standalone",
-        start_url: "./index.html",
-        scope: "./",
+        start_url: "/",
+        scope: "/",
         icons: [
           {
             src: "assets/4linhas-icon.png",
@@ -55,7 +55,7 @@ module.exports = defineConfig({
       },
     }),
   ],
-  base: "./",
+  base: "/",
   build: {
     target: "es2019",
     cssCodeSplit: true,

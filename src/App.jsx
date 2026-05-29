@@ -1,6 +1,5 @@
 import { useEffect } from "react";
-import { StaticShell } from "./shell/StaticShell.jsx";
-import { LeagueProviders } from "./runtime/LeagueProviders.jsx";
+import { RootApp } from "./app/RootApp.tsx";
 
 const ACCORDION_SELECTOR = [
   "#submitView .submit-card",
@@ -70,11 +69,5 @@ function useAccordionEnhancement() {
 export default function App() {
   useAccordionEnhancement();
 
-  return (
-    <LeagueProviders>
-      <div className="react-shell">
-        <StaticShell />
-      </div>
-    </LeagueProviders>
-  );
+  return <RootApp />;
 }
