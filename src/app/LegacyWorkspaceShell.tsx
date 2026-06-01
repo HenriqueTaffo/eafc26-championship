@@ -1,4 +1,4 @@
-import { useEffect, useSyncExternalStore } from "react";
+import { useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { StaticShell } from "../shell/StaticShell.jsx";
 import { useScopedManagerSession } from "../features/session/useScopedManagerSession";
@@ -14,11 +14,6 @@ export function LegacyWorkspaceShell() {
   const navigate = useNavigate();
   const session = useScopedManagerSession();
   const legacyApp = getLegacyApp();
-  useSyncExternalStore(
-    legacyApp.react?.subscribe || (() => () => undefined),
-    legacyApp.react?.getSnapshot || (() => 0),
-    legacyApp.react?.getSnapshot || (() => 0),
-  );
   const route = getWorkspaceRouteByPath(location.pathname);
   const isCommissioner = Boolean(session?.isCommissioner);
   const isLoggedIn = Boolean(session?.managerId);
@@ -36,7 +31,14 @@ export function LegacyWorkspaceShell() {
 
     if (typeof window !== "undefined") {
       const frameId = window.requestAnimationFrame(callback);
-      const settleId = window.setTimeout(callback, isLoggedIn ? 1600 : 180);
+      const settleId = window.setTimeout(
+        () => {
+          if (document.querySelector(".view.active")?.id !== route.viewId) {
+            callback();
+          }
+        },
+        isLoggedIn ? 240 : 180,
+      );
       return () => {
         window.cancelAnimationFrame(frameId);
         window.clearTimeout(settleId);

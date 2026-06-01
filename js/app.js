@@ -155,14 +155,12 @@ App.dom = App.dom || {
     );
     const fragment = documentRef.createDocumentFragment();
     fragment.append(...parsed.body.childNodes);
-    App.dom.sanitizeTree(fragment);
     return fragment;
   },
 
   setHtml(target, html = "") {
     if (!target) return;
     target.replaceChildren(App.dom.fragmentFromHtml(html));
-    App.dom.sanitizeTree(target);
     window.requestAnimationFrame(() => {
       App.transfers?.syncPlayerPhotoLoadStates?.(target);
     });

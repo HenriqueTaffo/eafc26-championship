@@ -1,4 +1,4 @@
-﻿import { Suspense, lazy, useEffect, useState } from "react";
+﻿import { Suspense, lazy, memo } from "react";
 import {
   ActivityPanel,
   AttentionPanel,
@@ -34,7 +34,6 @@ import {
   Users,
   WalletCards,
 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
 import App from "../../js/app.js";
 import {
   getWorkspaceRouteByPath,
@@ -149,24 +148,9 @@ function ViewLoadingPlaceholder({
   );
 }
 
-function useViewActivation(viewId) {
-  useAppRuntime();
-  const isActive =
-    typeof document !== "undefined" &&
-    document.getElementById(viewId)?.classList.contains("active");
-  const [hasActivated, setHasActivated] = useState(Boolean(isActive));
-
-  useEffect(() => {
-    if (isActive) setHasActivated(true);
-  }, [isActive]);
-
-  return hasActivated || Boolean(isActive);
-}
-
-function DeferredViewSection({ viewId, title, detail, children }) {
-  const isReady = useViewActivation(viewId);
+function DeferredViewSection({ isActive = false, title, detail, children }) {
   const fallback = <ViewLoadingPlaceholder title={title} detail={detail} />;
-  if (!isReady) return fallback;
+  if (!isActive) return null;
   return <Suspense fallback={fallback}>{children}</Suspense>;
 }
 
@@ -240,9 +224,6 @@ function GlobalLoader() {
 }
 
 function WorkspaceNavigation({ activePath }) {
-  useAppRuntime();
-  const navigate = useNavigate();
-
   const session = App.auth?.getSession?.() || null;
   const isCommissioner = Boolean(
     session?.isCommissioner || App.auth?.isCommissioner?.(),
@@ -282,7 +263,14 @@ function WorkspaceNavigation({ activePath }) {
                   key={item.path}
                   type="button"
                   aria-current={isActive ? "page" : undefined}
-                  onClick={() => navigate(item.path)}
+                  onClick={() => {
+                    App.main?.switchToView?.(item.viewId, { syncRoute: false });
+                    window.clearTimeout(App.main.pendingRouteSyncId);
+                    App.main.pendingRouteSyncId = window.setTimeout(
+                      () => App.main?.syncRouteForView?.(item.viewId),
+                      90,
+                    );
+                  }}
                 >
                   <span className="workspace-nav-tab-icon" aria-hidden="true">
                     <Icon size={16} strokeWidth={2.2} />
@@ -368,7 +356,9 @@ function ShellChrome({ activeRoute }) {
   );
 }
 
-function StandingsView() {
+function StandingsView({ isActive = false }) {
+  if (!isActive) return <section id="standingsView" className="view"></section>;
+
   return (
     <>
       <section id="standingsView" className="view active">
@@ -491,10 +481,12 @@ function StandingsView() {
   );
 }
 
-function CalendarView() {
+function CalendarView({ isActive = false }) {
+  if (!isActive) return <section id="calendarView" className="view"></section>;
+
   return (
     <>
-      <section id="calendarView" className="view">
+      <section id="calendarView" className="view active">
         <section className="summary" id="calendarSummary">
           <CalendarSummary />
         </section>
@@ -547,6 +539,7 @@ function CalendarView() {
         </section>
         <DeferredViewSection
           viewId="calendarView"
+          isActive={isActive}
           title="Carregando calendÃ¡rio"
           detail="Montando agenda mensal e semana atual."
         >
@@ -560,10 +553,12 @@ function CalendarView() {
   );
 }
 
-function CupsView() {
+function CupsView({ isActive = false }) {
+  if (!isActive) return <section id="cupsView" className="view"></section>;
+
   return (
     <>
-      <section id="cupsView" className="view">
+      <section id="cupsView" className="view active">
         <section className="summary" id="cupsSummary">
           <CupsSummary />
         </section>
@@ -627,6 +622,7 @@ function CupsView() {
         </section>
         <DeferredViewSection
           viewId="cupsView"
+          isActive={isActive}
           title="Carregando copas"
           detail="Montando chaves, rodadas pendentes e classificaÃ§Ã£o."
         >
@@ -637,10 +633,12 @@ function CupsView() {
   );
 }
 
-function PlayersView() {
+function PlayersView({ isActive = false }) {
+  if (!isActive) return <section id="playersView" className="view"></section>;
+
   return (
     <>
-      <section id="playersView" className="view">
+      <section id="playersView" className="view active">
         <section className="summary" id="playersSummary">
           <PlayersSummary />
         </section>
@@ -661,6 +659,7 @@ function PlayersView() {
         </section>
         <DeferredViewSection
           viewId="playersView"
+          isActive={isActive}
           title="Carregando escritÃ³rio"
           detail="Buscando dados privados, DM e alertas do tÃ©cnico."
         >
@@ -679,15 +678,18 @@ function PlayersView() {
   );
 }
 
-function SquadView() {
+function SquadView({ isActive = false }) {
+  if (!isActive) return <section id="squadView" className="view"></section>;
+
   return (
     <>
-      <section id="squadView" className="view">
+      <section id="squadView" className="view active">
         <section className="summary squad-summary" id="squadSummary">
           <SquadSummary />
         </section>
         <DeferredViewSection
           viewId="squadView"
+          isActive={isActive}
           title="Carregando elenco"
           detail="Sincronizando formaÃ§Ã£o, folha e disponibilidade."
         >
@@ -698,10 +700,12 @@ function SquadView() {
   );
 }
 
-function EventsView() {
+function EventsView({ isActive = false }) {
+  if (!isActive) return <section id="eventsView" className="view"></section>;
+
   return (
     <>
-      <section id="eventsView" className="view">
+      <section id="eventsView" className="view active">
         <section className="summary events-summary-v45" id="eventsSummary">
           <EventsSummary />
         </section>
@@ -717,6 +721,7 @@ function EventsView() {
           </div>
           <DeferredViewSection
             viewId="eventsView"
+            isActive={isActive}
             title="Carregando eventos"
             detail="Sincronizando slots, impactos e estado atual da rodada."
           >
@@ -771,6 +776,7 @@ function EventsView() {
         </section>
         <DeferredViewSection
           viewId="eventsView"
+          isActive={isActive}
           title="Carregando eventos"
           detail="Organizando histÃ³rico, filtros e eventos ativos."
         >
@@ -786,10 +792,12 @@ function EventsView() {
   );
 }
 
-function ExperienceView() {
+function ExperienceView({ isActive = false }) {
+  if (!isActive) return <section id="experienceView" className="view"></section>;
+
   return (
     <>
-      <section id="experienceView" className="view">
+      <section id="experienceView" className="view active">
         <section className="summary" id="experienceSummary">
           <ExperienceSummary />
         </section>
@@ -810,6 +818,7 @@ function ExperienceView() {
         </section>
         <DeferredViewSection
           viewId="experienceView"
+          isActive={isActive}
           title="Carregando inteligÃªncia"
           detail="Preparando painÃ©is de risco, mercado e operaÃ§Ã£o."
         >
@@ -820,12 +829,15 @@ function ExperienceView() {
   );
 }
 
-function TransfersView() {
+function TransfersView({ isActive = false }) {
+  if (!isActive) return <section id="transfersView" className="view"></section>;
+
   return (
     <>
-      <section id="transfersView" className="view">
+      <section id="transfersView" className="view active">
         <DeferredViewSection
           viewId="transfersView"
+          isActive={isActive}
           title="Carregando mercado"
           detail="Sincronizando negociaÃ§Ãµes, scouting e diagnÃ³stico financeiro."
         >
@@ -833,6 +845,7 @@ function TransfersView() {
         </DeferredViewSection>
         <DeferredViewSection
           viewId="transfersView"
+          isActive={isActive}
           title="Carregando mercado inteligente"
           detail="Preparando filtros virtuais, kanban e assistente de proposta."
         >
@@ -1240,12 +1253,15 @@ function TransfersView() {
   );
 }
 
-function CommissionerView() {
+function CommissionerView({ isActive = false }) {
+  if (!isActive) return <section id="commissionerView" className="view"></section>;
+
   return (
     <>
-      <section id="commissionerView" className="view">
+      <section id="commissionerView" className="view active">
         <DeferredViewSection
           viewId="commissionerView"
+          isActive={isActive}
           title="Carregando governanÃ§a"
           detail="Preparando auditoria, aÃ§Ãµes mÃ©dicas e controles da liga."
         >
@@ -1279,10 +1295,12 @@ function CommissionerView() {
   );
 }
 
-function SubmitView() {
+function SubmitView({ isActive = false }) {
+  if (!isActive) return <section id="submitView" className="view"></section>;
+
   return (
     <>
-      <section id="submitView" className="view">
+      <section id="submitView" className="view active">
         <section className="submit-hero">
           <div>
             <span className="modal-kicker">Central de lanÃ§amentos</span>
@@ -1575,25 +1593,38 @@ function CalendarResultModal() {
   );
 }
 
+const MemoStandingsView = memo(StandingsView);
+const MemoCalendarView = memo(CalendarView);
+const MemoCupsView = memo(CupsView);
+const MemoPlayersView = memo(PlayersView);
+const MemoSquadView = memo(SquadView);
+const MemoEventsView = memo(EventsView);
+const MemoExperienceView = memo(ExperienceView);
+const MemoTransfersView = memo(TransfersView);
+const MemoCommissionerView = memo(CommissionerView);
+const MemoSubmitView = memo(SubmitView);
+const MemoCalendarResultModal = memo(CalendarResultModal);
+
 export function StaticShell({ activePath = "/league/standings" }) {
   const activeRoute = getWorkspaceRouteByPath(activePath);
+  const activeViewId = activeRoute.viewId;
 
   return (
     <>
       <GlobalLoader />
       <main className="app">
         <ShellChrome activeRoute={activeRoute} />
-        <StandingsView />
-        <CalendarView />
-        <CupsView />
-        <PlayersView />
-        <SquadView />
-        <EventsView />
-        <ExperienceView />
-        <TransfersView />
-        <CommissionerView />
-        <SubmitView />
-        <CalendarResultModal />
+        <MemoStandingsView isActive={activeViewId === "standingsView"} />
+        <MemoCalendarView isActive={activeViewId === "calendarView"} />
+        <MemoCupsView isActive={activeViewId === "cupsView"} />
+        <MemoPlayersView isActive={activeViewId === "playersView"} />
+        <MemoSquadView isActive={activeViewId === "squadView"} />
+        <MemoEventsView isActive={activeViewId === "eventsView"} />
+        <MemoExperienceView isActive={activeViewId === "experienceView"} />
+        <MemoTransfersView isActive={activeViewId === "transfersView"} />
+        <MemoCommissionerView isActive={activeViewId === "commissionerView"} />
+        <MemoSubmitView isActive={activeViewId === "submitView"} />
+        <MemoCalendarResultModal />
       </main>
     </>
   );

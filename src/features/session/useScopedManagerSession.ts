@@ -3,14 +3,27 @@ import { normalizeLegacySession, type ScopedManagerSession } from "./normalizeLe
 import { getLegacyApp } from "../../shared/platform/legacy-app";
 
 const noopSubscribe = () => () => undefined;
-const noopSnapshot = () => 0;
+const emptySessionSnapshot = "";
+
+function getSessionSnapshot() {
+  const legacyApp = getLegacyApp();
+  const session = legacyApp.auth?.getSession?.();
+  if (!session) return emptySessionSnapshot;
+
+  return JSON.stringify({
+    managerId: session.managerId || "",
+    managerName: session.managerName || "",
+    clubName: session.clubName || "",
+    isCommissioner: Boolean(session.isCommissioner),
+    scope: session.scope || {},
+  });
+}
 
 export function useScopedManagerSession(): ScopedManagerSession | null {
   const legacyApp = getLegacyApp();
   const subscribe = legacyApp.react?.subscribe || noopSubscribe;
-  const getSnapshot = legacyApp.react?.getSnapshot || noopSnapshot;
 
-  useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
+  useSyncExternalStore(subscribe, getSessionSnapshot, getSessionSnapshot);
 
   return normalizeLegacySession(
     legacyApp.auth?.getSession?.() || null,

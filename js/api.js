@@ -836,21 +836,29 @@ App.api = {
   getSecondaryHydrationGroups(data = {}) {
     const activeView = document.querySelector(".view.active")?.id || "";
     const names = App.api.getTransferLookupNames(data);
+    const shouldHydrateTransferLookups = [
+      "playersView",
+      "transfersView",
+      "squadView",
+    ].includes(activeView);
     const isLoggedIn = App.auth?.isLoggedIn?.() === true;
     const isCommissioner = App.auth?.isCommissioner?.() === true;
 
-    const common = [
-      () => App.auth?.loadPublicNews?.(),
-      () =>
+    const common = [() => App.auth?.loadPublicNews?.()];
+
+    if (shouldHydrateTransferLookups) {
+      common.push(() =>
         names.length
-          ? App.api.loadMarketPlayersForNames(names)
+          ? App.api.loadMarketPlayersForNames(names, 2, 10)
           : App.state.apiMarketPlayers || [],
-      () => App.api.loadEaRatings("", 50),
-      () =>
+      );
+      common.push(() => App.api.loadEaRatings("", 24));
+      common.push(() =>
         names.length
-          ? App.api.loadRatingsForPlayerNames(names)
+          ? App.api.loadRatingsForPlayerNames(names, 2, 12)
           : App.state.apiEaRatings || [],
-    ];
+      );
+    }
 
     const clubOps = [];
     if (
@@ -932,7 +940,8 @@ App.api = {
       }
 
       if (App.state.apiLoaded) {
-        App.main?.renderCurrentView?.();
+        App.auth?.renderAll?.();
+        App.react?.notify?.();
         App.main?.markSynced?.("Dados complementares sincronizados");
       }
     } finally {
@@ -1675,7 +1684,8 @@ App.api = {
     }
   },
 
-  async loadMedicalCenterData() {
+  async loadMedicalCenterData(options = {}) {
+    const { silent = false } = options;
     try {
       const result = await App.api.rpc(
         "app_get_medical_center_data",
@@ -1687,7 +1697,7 @@ App.api = {
         options: [],
         plans: {},
       };
-      App.react?.notify?.();
+      if (!silent) App.react?.notify?.();
       return App.state.apiMedicalCenter;
     } catch (error) {
       console.warn("Centro medico indisponivel:", error);
@@ -1785,7 +1795,7 @@ App.api = {
       App.api.loadMarketPlayersForNames(uniqueNames, 2, maxMarketNames),
     ])
       .then(() => {
-        App.react?.notify?.();
+        if (!options.silent) App.react?.notify?.();
         return App.state.apiSquadManagement;
       })
       .finally(() => {
@@ -1810,6 +1820,7 @@ App.api = {
       force = false,
       hydrateRosterDetails = false,
       waitForHydration = false,
+      silent = false,
     } = options;
     const authPayload = App.api.getAuthPayload();
     const scopeKey = `${authPayload.p_manager_id || "anon"}:${authPayload.p_access_code ? "auth" : "guest"}`;
@@ -1826,6 +1837,7 @@ App.api = {
         );
         const hydration = App.api.hydrateSquadRosterDetails(rosterNames, {
           waitForHydration,
+          silent,
         });
         if (waitForHydration) await hydration;
         else hydration.catch((error) =>
@@ -1858,10 +1870,11 @@ App.api = {
         App.state.apiSquadManagement,
       );
       App.state.apiSquadManagementScopeKey = scopeKey;
-      App.react?.notify?.();
+      if (!silent) App.react?.notify?.();
       if (hydrateRosterDetails && rosterNames.length) {
         const hydration = App.api.hydrateSquadRosterDetails(rosterNames, {
           waitForHydration,
+          silent,
         });
         if (waitForHydration) await hydration;
         else hydration.catch((error) =>
@@ -1879,7 +1892,7 @@ App.api = {
         finance: [],
         error: error.message,
       };
-      App.react?.notify?.();
+      if (!silent) App.react?.notify?.();
       return App.state.apiSquadManagement;
     } finally {
       App.state.apiSquadManagementLoading = false;

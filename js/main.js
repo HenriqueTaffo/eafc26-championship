@@ -83,8 +83,6 @@ App.main = {
     if (render) render();
     else if (activeView === "submitView") App.forms.renderApiSummary();
     else App.main.renderAll();
-
-    App.auth?.renderAll?.();
   },
 
   markSynced(label = "Dados sincronizados") {
@@ -267,7 +265,10 @@ App.main = {
     App.main.syncRestrictedNavigation();
 
     document.querySelectorAll(".tab-button").forEach((button) => {
+      if (button.dataset.legacyTabBound === "true") return;
+      button.dataset.legacyTabBound = "true";
       button.addEventListener("click", () => {
+        if (button.closest(".react-shell")) return;
         App.main.syncRestrictedNavigation();
         if (!App.main.canAccessView(button.dataset.view)) return;
 
@@ -407,7 +408,8 @@ App.main = {
     });
   },
 
-  switchToView(viewId) {
+  switchToView(viewId, options = {}) {
+    const { syncRoute = true } = options;
     const targetViewId = App.main.canAccessView(viewId)
       ? viewId
       : App.auth?.isCommissioner?.()
@@ -424,7 +426,7 @@ App.main = {
       view.classList.contains("active") &&
       document.querySelector(".view.active")?.id === targetViewId;
     if (isAlreadyActive) {
-      App.main.syncRouteForView(targetViewId);
+      if (syncRoute) App.main.syncRouteForView(targetViewId);
       App.main.preloadViewData(targetViewId);
       return;
     }
@@ -437,9 +439,7 @@ App.main = {
       .forEach((item) => item.classList.remove("active"));
     button.classList.add("active");
     view.classList.add("active");
-    App.main.syncRouteForView(targetViewId);
-    App.react?.notify?.();
-    App.main.renderCurrentView();
+    if (syncRoute) App.main.syncRouteForView(targetViewId);
     App.main.preloadViewData(targetViewId);
   },
 
@@ -452,12 +452,13 @@ App.main = {
       if (App.api?.loadSalaryReferences) tasks.push(App.api.loadSalaryReferences());
     }
     if (viewId === "playersView" && App.api?.loadMedicalCenterData) {
-      tasks.push(App.api.loadMedicalCenterData());
+      tasks.push(App.api.loadMedicalCenterData({ silent: true }));
     }
     if (viewId === "squadView" && App.api?.loadSquadManagementData) {
       tasks.push(
         App.api.loadSquadManagementData({
           hydrateRosterDetails: true,
+          silent: true,
         }),
       );
     }
@@ -479,7 +480,6 @@ App.main = {
     Promise.allSettled(tasks).then(() => {
       if (!document.getElementById(viewId)?.classList.contains("active")) return;
       App.react?.notify?.();
-      App.main.renderCurrentView();
     });
   },
 

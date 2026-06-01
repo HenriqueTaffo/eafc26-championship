@@ -47,7 +47,11 @@ export interface LegacyAppRuntime {
     isLoggedIn?: () => boolean;
   };
   main?: {
-    switchToView?: (viewId: WorkspaceViewId) => void;
+    switchToView?: (
+      viewId: WorkspaceViewId,
+      options?: { syncRoute?: boolean },
+    ) => void;
+    syncRouteForView?: (viewId: WorkspaceViewId) => void;
     canAccessView?: (viewId: WorkspaceViewId) => boolean;
   };
   config?: {
