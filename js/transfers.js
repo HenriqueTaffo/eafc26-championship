@@ -2058,6 +2058,7 @@ App.transfers = {
       reference.salarySourceUrl || reference.sourceUrl || "",
     );
     if (type === "regulatory_estimate") return "Estimativa regulatoria";
+    if (type === "league_smart_estimate") return "Estimativa da liga";
     if (type === "public_capology") return "Capology";
     if (type === "public_mlspa") return "MLSPA";
     if (type === "public_salarysport") return "SalarySport";
@@ -3959,8 +3960,10 @@ App.transfers = {
     if (source.includes("dcaribou_transfermarkt_datasets")) {
       return marketValue > 0 ? 70 : 40;
     }
+    if (source.includes("transferencias_existentes")) {
+      return hasTransfermarktUrl && marketValue > 0 ? 65 : 20;
+    }
     if (hasTransfermarktUrl && marketValue > 0) return 65;
-    if (source.includes("transferencias_existentes")) return 20;
     if (marketValue > 0) return 50;
     return 10;
   },
@@ -4205,84 +4208,23 @@ App.transfers = {
     App.transfers.marketSearchPending = App.transfers.marketSearchPending || {};
     const request = (async () => {
       const aliases = App.transfers.sortMarketSearchAliases(query);
-      const loadSyntheticRatings = async () => {
-        const ratingGroups = await Promise.all(
-          aliases.map((alias) =>
-            App.transfers.searchEaRatingsCached(alias, 6).catch(() => []),
-          ),
-        );
-        const ratingRows = ratingGroups.flat();
-        if (ratingRows.length && App.api?.mergeEaRatings) {
-          App.api.mergeEaRatings(ratingRows);
-        }
-        return App.transfers.buildSyntheticMarketPlayersFromRatings(
-          query,
-          ratingRows,
-          8,
-        );
-      };
-      try {
-        const playerRows = [];
-        for (const alias of aliases) {
-          const rows = await App.api
-            .loadMarketPlayers(alias, showContracted, 18)
-            .catch(() => []);
-          if (rows.length) playerRows.push(...rows);
-          if (App.transfers.hasReliableMarketCoverage(query, playerRows)) break;
-        }
-        const fallbackRows = App.transfers.hasReliableMarketCoverage(
-          query,
-          playerRows,
-        )
-          ? []
-          : await App.api.searchRegionalFallbackPlayers(query, 18, {
-              showContracted,
-            }).catch(() => []);
-        const merged = App.api.mergeMarketSearchRows(
-          playerRows,
-          fallbackRows,
-          24,
-        );
-        const syntheticRatings = await loadSyntheticRatings();
-        const ranked = App.transfers.consolidateMarketSearchPlayers(
-          query,
-          App.api.mergeMarketSearchRows(merged, syntheticRatings, 24),
-        );
-        if (ranked.length) {
-          App.api.mergeMarketPlayers(ranked);
-          return remember(ranked.slice(0, 18));
-        }
-      } catch (error) {
-        console.warn(
-          "Busca RPC de mercado indisponivel, tentando leitura direta:",
-          error,
-        );
-      }
-
       const groups = [];
       for (const alias of aliases) {
-        const rows = await App.api.fetchMarketPlayersDirect(alias, 14).catch(
-          () => [],
-        );
+        const rows = await App.api
+          .loadMarketPlayers(alias, showContracted, 18)
+          .catch(() => []);
         if (rows.length) groups.push(...rows);
         if (App.transfers.hasReliableMarketCoverage(query, groups)) break;
       }
-      const fallback = App.transfers.hasReliableMarketCoverage(query, groups)
-        ? []
-        : await App.api.searchRegionalFallbackPlayers(query, 18, {
-            showContracted,
-          }).catch(() => []);
-      const merged = App.api.mergeMarketSearchRows(
-        App.api.applyMarketPlayerOverrides(groups, { showContracted }),
-        fallback,
-        24,
-      );
-      const syntheticRatings = await loadSyntheticRatings();
+
       const ranked = App.transfers.consolidateMarketSearchPlayers(
         query,
-        App.api.mergeMarketSearchRows(merged, syntheticRatings, 24),
+        App.api.applyMarketPlayerOverrides(groups, { showContracted }),
       );
-      App.api.mergeMarketPlayers(ranked);
+
+      if (ranked.length) {
+        App.api.mergeMarketPlayers(ranked);
+      }
       return remember(ranked.slice(0, 18));
     })().finally(() => {
       delete App.transfers.marketSearchPending?.[cacheKey];

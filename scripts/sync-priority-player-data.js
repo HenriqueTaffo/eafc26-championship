@@ -84,6 +84,15 @@ async function main() {
     "--retry-delay-ms=1500",
     ...clubArgs,
   ]);
+  runNodeScript(path.join(ROOT_DIR, "scripts", "sync-capology-player-pages.js"), [
+    "--apply-rest",
+    "--concurrency=4",
+    "--retry-count=4",
+    "--retry-delay-ms=1500",
+    "--limit=300",
+    "--min-market-value=2500000",
+    ...clubArgs,
+  ]);
   runNodeScript(path.join(ROOT_DIR, "scripts", "sync-salarysport-salaries.js"), [
     "--apply-rest",
     "--concurrency=4",
@@ -100,6 +109,7 @@ async function main() {
     "--retry-delay-ms=1200",
     ...clubArgs,
   ]);
+  runNodeScript(path.join(ROOT_DIR, "scripts", "generate-market-eligibility-report.js"));
 }
 
 main().catch((error) => {

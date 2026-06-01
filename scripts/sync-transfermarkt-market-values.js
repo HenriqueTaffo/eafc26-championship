@@ -223,29 +223,6 @@ function matchesStaleWindow(player, staleBeforeIso = "") {
 }
 
 async function loadMarketPlayers(supabaseUrl, key, options) {
-  if (options.playerQuery && !options.clubFilters.length) {
-    const response = await fetchWithTimeout(
-      `${supabaseUrl}/rest/v1/rpc/app_search_market_players`,
-      {
-        method: "POST",
-        headers: getSupabaseHeaders(key),
-        body: JSON.stringify({
-          p_query: options.playerQuery,
-          p_show_contracted: true,
-          p_limit: Math.max(options.limit * 6, 24),
-        }),
-      },
-    );
-    const text = await response.text();
-    if (!response.ok) {
-      throw new Error(text || `Supabase respondeu ${response.status}`);
-    }
-    const payload = text ? JSON.parse(text) : [];
-    return (Array.isArray(payload) ? payload : [])
-      .filter((player) => matchesPlayerQuery(player, options.playerQuery))
-      .slice(0, options.limit);
-  }
-
   const select =
     "id,name,normalized_name,club,league,position,market_value_eur,transfermarkt_url,source,last_synced_at";
   const headers = getSupabaseHeaders(key);
@@ -356,6 +333,7 @@ async function updateMarketValue(supabaseUrl, key, player, marketValue) {
       },
       body: JSON.stringify({
         market_value_eur: marketValue,
+        transfermarkt_url: String(player.transfermarkt_url || "").trim(),
         source: "transfermarkt_profile_sync",
         last_synced_at: new Date().toISOString(),
       }),

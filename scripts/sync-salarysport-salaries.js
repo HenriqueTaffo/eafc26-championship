@@ -50,6 +50,7 @@ function parseArgs(argv = process.argv.slice(2)) {
     playerFilters: [],
     retryCount: DEFAULT_RETRY_COUNT,
     retryDelayMs: DEFAULT_RETRY_DELAY_MS,
+    skipPlayerPages: false,
     sqlOut: DEFAULT_SQL_PATH,
     jsonOut: DEFAULT_JSON_PATH,
   };
@@ -65,6 +66,10 @@ function parseArgs(argv = process.argv.slice(2)) {
     }
     if (arg === "--force-refresh") {
       options.forceRefresh = true;
+      return;
+    }
+    if (arg === "--skip-player-pages") {
+      options.skipPlayerPages = true;
       return;
     }
     if (arg.startsWith("--club=")) {
@@ -84,35 +89,39 @@ function parseArgs(argv = process.argv.slice(2)) {
       return;
     }
     if (arg.startsWith("--limit=")) {
-      options.limit = Number(arg.split("=", 2)[1] || 0) || 0;
+      options.limit = parseNumberArg(arg.split("=", 2)[1], 0);
       return;
     }
     if (arg.startsWith("--offset=")) {
-      options.offset = Number(arg.split("=", 2)[1] || 0) || 0;
+      options.offset = parseNumberArg(arg.split("=", 2)[1], 0);
       return;
     }
     if (arg.startsWith("--min-market-value=")) {
-      options.minMarketValue =
-        Number(arg.split("=", 2)[1] || DEFAULT_MIN_MARKET_VALUE) ||
-        DEFAULT_MIN_MARKET_VALUE;
+      options.minMarketValue = parseNumberArg(
+        arg.split("=", 2)[1],
+        DEFAULT_MIN_MARKET_VALUE,
+      );
       return;
     }
     if (arg.startsWith("--concurrency=")) {
-      options.concurrency =
-        Number(arg.split("=", 2)[1] || DEFAULT_FETCH_CONCURRENCY) ||
-        DEFAULT_FETCH_CONCURRENCY;
+      options.concurrency = parseNumberArg(
+        arg.split("=", 2)[1],
+        DEFAULT_FETCH_CONCURRENCY,
+      );
       return;
     }
     if (arg.startsWith("--retry-count=")) {
-      options.retryCount =
-        Number(arg.split("=", 2)[1] || DEFAULT_RETRY_COUNT) ||
-        DEFAULT_RETRY_COUNT;
+      options.retryCount = parseNumberArg(
+        arg.split("=", 2)[1],
+        DEFAULT_RETRY_COUNT,
+      );
       return;
     }
     if (arg.startsWith("--retry-delay-ms=")) {
-      options.retryDelayMs =
-        Number(arg.split("=", 2)[1] || DEFAULT_RETRY_DELAY_MS) ||
-        DEFAULT_RETRY_DELAY_MS;
+      options.retryDelayMs = parseNumberArg(
+        arg.split("=", 2)[1],
+        DEFAULT_RETRY_DELAY_MS,
+      );
       return;
     }
     if (arg.startsWith("--sql-out=")) {
@@ -125,6 +134,11 @@ function parseArgs(argv = process.argv.slice(2)) {
   });
 
   return options;
+}
+
+function parseNumberArg(rawValue, fallback) {
+  const parsed = Number(rawValue);
+  return Number.isFinite(parsed) ? parsed : fallback;
 }
 
 function decodeHtml(value = "") {
@@ -680,6 +694,13 @@ function targetAlreadyHasPublicRef(refIndex, playerName = "", clubName = "") {
   if (!playerKey) return false;
   if (refIndex.byPlayerClub.has(`${playerKey}|${clubKey}`)) return true;
   const entries = refIndex.byPlayer.get(playerKey) || [];
+  if (
+    entries.some((entry) =>
+      clubTextsLookCompatible(clubName, entry.clubName || entry.club_name || ""),
+    )
+  ) {
+    return true;
+  }
   return entries.length === 1;
 }
 
@@ -1214,6 +1235,35 @@ function scoreClubMatch(targetClub = "", parsed = {}) {
   return 9;
 }
 
+function scoreTeamPageClubMatch(targetClub = "", candidate = {}, parsed = {}) {
+  const requestedComparable = getClubComparableKey(targetClub);
+  if (!requestedComparable) return 9;
+
+  const candidateComparable = [
+    candidate.name,
+    candidate.slugKey,
+    parsed.pageHeading,
+  ]
+    .map((value) => getClubComparableKey(value))
+    .filter(Boolean);
+
+  if (candidateComparable.includes(requestedComparable)) {
+    return 0;
+  }
+
+  const candidateTexts = [
+    candidate.name,
+    candidate.slugKey,
+    parsed.pageHeading,
+  ].filter(Boolean);
+
+  if (candidateTexts.some((value) => clubTextsLookCompatible(targetClub, value))) {
+    return 1;
+  }
+
+  return 9;
+}
+
 function scoreNameMatch(playerName = "", parsedPlayerName = "") {
   const aliasKeys = getPlayerAliasVariants(playerName)
     .map((name) => normalizeKey(name))
@@ -1232,15 +1282,32 @@ function scoreNameMatch(playerName = "", parsedPlayerName = "") {
   return 9;
 }
 
-function buildResolvedReference(target, parsed) {
+function getMeaningfulPlayerTokens(value = "") {
+  return normalizeKey(value)
+    .split(" ")
+    .map((token) => token.trim())
+    .filter((token) => token.length >= 2);
+}
+
+function buildResolvedReference(target, parsed, options = {}) {
   const weeklySalary = Number(
     parsed.currentWeeklySalary || parsed.latestRow?.weeklySalary || 0,
   );
   if (weeklySalary <= 0) return [];
 
-  const resolvedClub = String(target.clubName || "").trim();
+  const mode = String(options.mode || "current_public").trim() || "current_public";
+  const useTargetClub = options.useTargetClub !== false;
+  const sourceClub = String(
+    parsed.breadcrumbClub || parsed.latestRow?.clubName || "",
+  ).trim();
+  const resolvedClub = String(
+    useTargetClub ? target.clubName || sourceClub : sourceClub || target.clubName,
+  ).trim();
   const notes = [
     `SalarySport sync ${new Date().toISOString()}`,
+    `mode=${mode}`,
+    `requestedClub=${target.clubName || ""}`,
+    `sourceClub=${sourceClub}`,
     `pagePlayer=${parsed.pagePlayerName || target.playerName}`,
     `breadcrumbClub=${parsed.breadcrumbClub || ""}`,
     `latestRowClub=${parsed.latestRow?.clubName || ""}`,
@@ -1358,6 +1425,154 @@ function buildResolvedReferenceFromMlspa(target, entry, ecbRate) {
     }));
 }
 
+function getTargetKey(target = {}) {
+  const playerKey = normalizeKey(target.playerName);
+  const clubKey = getClubComparableKey(target.clubName) || normalizeKey(target.clubName);
+  return `${playerKey}|${clubKey}`;
+}
+
+function getTeamRosterRowKey(row = {}) {
+  return normalizeKey(row.playerUrl || row.playerName);
+}
+
+function matchTargetsToTeamRows(targets = [], parsed = {}) {
+  const candidateMatches = targets
+    .map((target) => {
+      const matches = (parsed.rosterRows || [])
+        .map((row) => ({
+          row,
+          nameScore: scoreNameMatch(target.playerName, row.playerName),
+        }))
+        .filter((entry) => entry.nameScore <= 1)
+        .sort((left, right) => {
+          if (left.nameScore !== right.nameScore) {
+            return left.nameScore - right.nameScore;
+          }
+          return Number(right.row?.weeklySalary || 0) - Number(left.row?.weeklySalary || 0);
+        });
+
+      return {
+        target,
+        matches,
+      };
+    })
+    .filter((entry) => entry.matches.length)
+    .sort((left, right) => {
+      const leftTopScore = Number(left.matches[0]?.nameScore ?? 99);
+      const rightTopScore = Number(right.matches[0]?.nameScore ?? 99);
+      if (leftTopScore !== rightTopScore) {
+        return leftTopScore - rightTopScore;
+      }
+      return String(left.target.playerName || "").localeCompare(
+        String(right.target.playerName || ""),
+        "pt-BR",
+      );
+    });
+
+  const usedRowKeys = new Set();
+  const assignments = [];
+
+  candidateMatches.forEach((entry) => {
+    const match = entry.matches.find((candidate) => {
+      const rowKey = getTeamRosterRowKey(candidate.row);
+      return rowKey && !usedRowKeys.has(rowKey);
+    });
+    if (!match) return;
+    usedRowKeys.add(getTeamRosterRowKey(match.row));
+    assignments.push({
+      target: entry.target,
+      row: match.row,
+      nameScore: match.nameScore,
+    });
+  });
+
+  return assignments;
+}
+
+async function resolveTargetsByTeamPages(teamIndex, loadTeamPage, targets = []) {
+  const clubGroups = new Map();
+  targets.forEach((target) => {
+    const clubKey = getClubComparableKey(target.clubName) || normalizeKey(target.clubName);
+    if (!clubKey) return;
+    const existing = clubGroups.get(clubKey);
+    if (existing) {
+      existing.targets.push(target);
+      return;
+    }
+    clubGroups.set(clubKey, {
+      clubName: target.clubName,
+      targets: [target],
+    });
+  });
+
+  const resolved = new Map();
+
+  for (const group of clubGroups.values()) {
+    const teamCandidates = getCandidateTeamPages(teamIndex, group.clubName);
+    const attempts = [];
+
+    for (const candidate of teamCandidates.slice(0, 4)) {
+      try {
+        const parsed = await loadTeamPage(getTeamCandidateUrl(candidate));
+        const clubScore = scoreTeamPageClubMatch(group.clubName, candidate, parsed);
+        const assignments =
+          clubScore <= 1 ? matchTargetsToTeamRows(group.targets, parsed) : [];
+        attempts.push({
+          candidate,
+          parsed,
+          clubScore,
+          assignments,
+          matchedCount: assignments.length,
+        });
+      } catch (error) {
+        attempts.push({
+          candidate,
+          error: error.message,
+          clubScore: 99,
+          assignments: [],
+          matchedCount: 0,
+        });
+      }
+    }
+
+    const bestAttempt = attempts
+      .filter((attempt) => attempt.parsed && attempt.clubScore <= 1 && attempt.matchedCount > 0)
+      .sort((left, right) => {
+        if (left.clubScore !== right.clubScore) {
+          return left.clubScore - right.clubScore;
+        }
+        if (left.matchedCount !== right.matchedCount) {
+          return right.matchedCount - left.matchedCount;
+        }
+        return String(left.parsed?.pageHeading || "").localeCompare(
+          String(right.parsed?.pageHeading || ""),
+          "pt-BR",
+        );
+      })[0];
+
+    if (!bestAttempt) continue;
+
+    bestAttempt.assignments.forEach((assignment) => {
+      resolved.set(getTargetKey(assignment.target), {
+        target: assignment.target,
+        refs: buildResolvedReferenceFromTeamPage(
+          assignment.target,
+          bestAttempt.parsed,
+          assignment.row,
+        ),
+        page: getTeamCandidateUrl(bestAttempt.candidate),
+        player: assignment.row.playerName,
+        currentClub: assignment.target.clubName,
+        matchedClub:
+          bestAttempt.parsed.pageHeading || bestAttempt.candidate.name || "",
+        weeklySalary: Number(assignment.row.weeklySalary || 0),
+      });
+    });
+  }
+
+  return resolved;
+}
+
 async function resolveSalarySportReferences(
   playerIndex,
   teamIndex,
@@ -1403,10 +1618,53 @@ async function resolveSalarySportReferences(
     return ecbRatePromise;
   };
 
+  const teamResolvedByTarget = await resolveTargetsByTeamPages(
+    teamIndex,
+    loadTeamPage,
+    targets,
+  );
+
   const results = await mapWithConcurrency(
     targets,
     Math.max(1, Number(options.concurrency || DEFAULT_FETCH_CONCURRENCY)),
     async (target) => {
+      const teamResolved = teamResolvedByTarget.get(getTargetKey(target));
+      if (teamResolved) {
+        return teamResolved;
+      }
+
+      if (options.skipPlayerPages) {
+        const mlspaMatch = findMlspaGuideMatch(
+          await loadMlspaGuide(),
+          target.playerName,
+          target.clubName,
+        );
+        if (mlspaMatch) {
+          const refs = buildResolvedReferenceFromMlspa(
+            target,
+            mlspaMatch,
+            await loadEcbRate(),
+          );
+          if (refs.length) {
+            return {
+              target,
+              refs,
+              page: MLSPA_SALARY_GUIDE_URL,
+              player: mlspaMatch.playerName,
+              currentClub: mlspaMatch.clubName,
+              matchedClub: mlspaMatch.clubName,
+              weeklySalary: Number(refs[0]?.weeklySalary || 0),
+            };
+          }
+        }
+
+        return {
+          target,
+          refs: [],
+          error: "Nao encontrei pagina de clube compativel no SalarySport.",
+        };
+      }
+
       const pageAttempts = [];
       const candidatePages = getCandidatePages(playerIndex, target.playerName);
       for (const candidate of candidatePages.slice(0, 6)) {
@@ -1428,64 +1686,6 @@ async function resolveSalarySportReferences(
         }
       }
 
-      const teamAttempts = [];
-      const teamCandidates = getCandidateTeamPages(teamIndex, target.clubName);
-      for (const candidate of teamCandidates.slice(0, 4)) {
-        try {
-          const parsed = await loadTeamPage(getTeamCandidateUrl(candidate));
-          const matchedRow = (parsed.rosterRows || [])
-            .map((row) => ({
-              row,
-              nameScore: scoreNameMatch(target.playerName, row.playerName),
-            }))
-            .filter((entry) => entry.nameScore <= 1)
-            .sort((left, right) => {
-              if (left.nameScore !== right.nameScore) {
-                return left.nameScore - right.nameScore;
-              }
-              return Number(right.row?.weeklySalary || 0) - Number(left.row?.weeklySalary || 0);
-            })[0];
-
-          teamAttempts.push({
-            candidate,
-            parsed,
-            matchedRow,
-            nameScore: Number(matchedRow?.nameScore ?? 99),
-          });
-        } catch (error) {
-          teamAttempts.push({
-            candidate,
-            error: error.message,
-            nameScore: 99,
-          });
-        }
-      }
-
-      const bestTeamMatch = teamAttempts
-        .filter((attempt) => attempt.parsed && attempt.matchedRow?.row)
-        .sort((left, right) => {
-          if (left.nameScore !== right.nameScore) {
-            return left.nameScore - right.nameScore;
-          }
-          return Number(right.matchedRow?.row?.weeklySalary || 0) -
-            Number(left.matchedRow?.row?.weeklySalary || 0);
-        })[0];
-
-      if (bestTeamMatch && bestTeamMatch.nameScore <= 1) {
-        return {
-          target,
-          refs: buildResolvedReferenceFromTeamPage(
-            target,
-            bestTeamMatch.parsed,
-            bestTeamMatch.matchedRow.row,
-          ),
-          page: getTeamCandidateUrl(bestTeamMatch.candidate),
-          player: bestTeamMatch.matchedRow.row.playerName,
-          currentClub: target.clubName,
-          weeklySalary: Number(bestTeamMatch.matchedRow.row.weeklySalary || 0),
-        };
-      }
-
       const bestPlayerMatch = pageAttempts
         .filter((attempt) => attempt.parsed)
         .sort((left, right) => {
@@ -1503,14 +1703,59 @@ async function resolveSalarySportReferences(
       if (bestPlayerMatch && bestPlayerMatch.nameScore <= 1 && bestPlayerMatch.clubScore <= 1) {
         return {
           target,
-          refs: buildResolvedReference(target, bestPlayerMatch.parsed),
+          refs: buildResolvedReference(target, bestPlayerMatch.parsed, {
+            mode: "current_public",
+          }),
           page: bestPlayerMatch.candidate.deUrl,
           player: bestPlayerMatch.parsed.pagePlayerName,
           currentClub:
             bestPlayerMatch.parsed.breadcrumbClub ||
             bestPlayerMatch.parsed.latestRow?.clubName ||
             "",
+          matchedClub:
+            bestPlayerMatch.parsed.breadcrumbClub ||
+            bestPlayerMatch.parsed.latestRow?.clubName ||
+            "",
           weeklySalary: Number(bestPlayerMatch.parsed.currentWeeklySalary || 0),
+        };
+      }
+
+      const bestHistoricalPlayerMatch = pageAttempts
+        .filter((attempt) => attempt.parsed)
+        .sort((left, right) => {
+          if (left.nameScore !== right.nameScore) {
+            return left.nameScore - right.nameScore;
+          }
+          const leftSalary = Number(left.parsed?.currentWeeklySalary || 0);
+          const rightSalary = Number(right.parsed?.currentWeeklySalary || 0);
+          return rightSalary - leftSalary;
+        })[0];
+
+      if (
+        bestHistoricalPlayerMatch &&
+        bestHistoricalPlayerMatch.nameScore === 0 &&
+        getMeaningfulPlayerTokens(target.playerName).length >= 2 &&
+        Number(bestHistoricalPlayerMatch.parsed?.currentWeeklySalary || 0) > 0
+      ) {
+        return {
+          target,
+          refs: buildResolvedReference(target, bestHistoricalPlayerMatch.parsed, {
+            mode: "historical_public",
+            useTargetClub: false,
+          }),
+          page: bestHistoricalPlayerMatch.candidate.deUrl,
+          player: bestHistoricalPlayerMatch.parsed.pagePlayerName,
+          currentClub:
+            bestHistoricalPlayerMatch.parsed.breadcrumbClub ||
+            bestHistoricalPlayerMatch.parsed.latestRow?.clubName ||
+            "",
+          matchedClub:
+            bestHistoricalPlayerMatch.parsed.breadcrumbClub ||
+            bestHistoricalPlayerMatch.parsed.latestRow?.clubName ||
+            "",
+          weeklySalary: Number(
+            bestHistoricalPlayerMatch.parsed.currentWeeklySalary || 0,
+          ),
         };
       }
 
@@ -1526,15 +1771,16 @@ async function resolveSalarySportReferences(
           await loadEcbRate(),
         );
         if (refs.length) {
-          return {
-            target,
-            refs,
-            page: MLSPA_SALARY_GUIDE_URL,
-            player: mlspaMatch.playerName,
-            currentClub: mlspaMatch.clubName,
-            weeklySalary: Number(refs[0]?.weeklySalary || 0),
-          };
-        }
+        return {
+          target,
+          refs,
+          page: MLSPA_SALARY_GUIDE_URL,
+          player: mlspaMatch.playerName,
+          currentClub: mlspaMatch.clubName,
+          matchedClub: mlspaMatch.clubName,
+          weeklySalary: Number(refs[0]?.weeklySalary || 0),
+        };
+      }
       }
 
       return {
@@ -1989,6 +2235,7 @@ async function main() {
       .map((entry) => ({
         player: entry.target.playerName,
         club: entry.target.clubName,
+        matchedClub: entry.matchedClub || entry.currentClub || "",
         salary: entry.weeklySalary,
         page: entry.page,
       })),

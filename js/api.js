@@ -161,13 +161,63 @@ App.api = {
     return request;
   },
 
+  getTransfermarktPlayerId(value = "") {
+    const match = String(value || "").match(/\/spieler\/(\d+)/i);
+    return match ? match[1] : "";
+  },
+
   getMarketPlayerIdentityKey(item = {}) {
+    const transfermarktId = App.api.getTransfermarktPlayerId(
+      item.transfermarkt_url || item.transfermarktUrl || "",
+    );
+    if (transfermarktId) return `tm:${transfermarktId}`;
+
     return [
       App.utils.normalizeText(item.normalized_name || item.name || ""),
       App.utils.normalizeText(item.original_club || item.club || ""),
     ]
       .filter(Boolean)
       .join("|");
+  },
+
+  getMarketPlayerSourceRank(item = {}) {
+    const source = App.utils.normalizeText(
+      item.source || item.syntheticSource || "",
+    );
+    const marketValue = Number(item.market_value_eur || item.marketValue || 0);
+    const hasTransfermarktUrl = Boolean(
+      App.api.getTransfermarktPlayerId(item.transfermarkt_url || ""),
+    );
+
+    if (item.isRatingOnly || source.includes("ea_rating")) return 5;
+    if (source.includes("transfermarkt_profile_sync")) return 100;
+    if (source.includes("dcaribou_transfermarkt_datasets")) {
+      return marketValue > 0 ? 80 : 40;
+    }
+    if (hasTransfermarktUrl && marketValue > 0) return 70;
+    if (marketValue > 0) return 50;
+    return 10;
+  },
+
+  pickPreferredMarketPlayer(current, next) {
+    if (!current) return next;
+    const rankDelta =
+      App.api.getMarketPlayerSourceRank(next) -
+      App.api.getMarketPlayerSourceRank(current);
+    if (rankDelta !== 0) return rankDelta > 0 ? next : current;
+
+    const valueDelta =
+      Number(next.market_value_eur || next.marketValue || 0) -
+      Number(current.market_value_eur || current.marketValue || 0);
+    if (valueDelta !== 0) return valueDelta > 0 ? next : current;
+
+    const salaryDelta =
+      Number(next.weeklySalary || next.weekly_salary_eur || 0) -
+      Number(current.weeklySalary || current.weekly_salary_eur || 0);
+    if (salaryDelta !== 0) return salaryDelta > 0 ? next : current;
+
+    if (next.avatar_url && !current.avatar_url) return next;
+    return current;
   },
 
   polishMarketFallbackRow(item = {}) {
@@ -306,7 +356,8 @@ App.api = {
         App.api.getMarketPlayerIdentityKey(item) ||
         String(item.id || item.name || "").toLowerCase();
       if (!key) return acc;
-      acc[key] = { ...(acc[key] || {}), ...item };
+      const preferred = App.api.pickPreferredMarketPlayer(acc[key], item);
+      acc[key] = { ...(acc[key] || {}), ...preferred };
       return acc;
     }, {});
 
@@ -407,23 +458,16 @@ App.api = {
       return cachedRows;
     }
 
-    const finalizeRows = async (rows = []) => {
-      const mergedRows = await App.api.augmentMarketPlayersWithFallback(
-        rows,
-        query,
-        {
-          limit: normalizedLimit,
-          showContracted,
-        },
-      );
-      App.api.mergeMarketPlayers(mergedRows);
+    const finalizeRows = (rows = []) => {
+      const nextRows = Array.isArray(rows) ? rows : [];
+      App.api.mergeMarketPlayers(nextRows);
       App.api.setRpcCache(
         "local_market_players",
         cachePayload,
-        mergedRows,
+        nextRows,
         8 * 60 * 1000,
       );
-      return mergedRows;
+      return nextRows;
     };
 
     try {
@@ -443,29 +487,11 @@ App.api = {
       );
       return finalizeRows(rows);
     } catch (rpcError) {
-      console.warn(
-        "Busca RPC players_market indisponivel, tentando leitura direta:",
-        rpcError,
-      );
-
-      try {
-        const data = await App.api.fetchMarketPlayersDirect(
-          query,
-          normalizedLimit,
-        );
-        const rows = App.api.applyMarketPlayerOverrides(
-          Array.isArray(data) ? data : [],
-          { showContracted: Boolean(showContracted) },
-        );
-        return finalizeRows(rows);
-      } catch (error) {
-        console.warn("Nao consegui carregar players_market:", error);
-        App.state.apiMarketPlayers = [];
-        return App.api.augmentMarketPlayersWithFallback([], query, {
-          limit: normalizedLimit,
-          showContracted,
-        });
-      }
+      console.warn("Catalogo elegivel de mercado indisponivel:", rpcError);
+      App.state.apiMarketPlayers = Array.isArray(App.state.apiMarketPlayers)
+        ? App.state.apiMarketPlayers
+        : [];
+      return [];
     }
   },
   async fetchMarketPlayersDirect(query = "", limit = 12) {
@@ -522,7 +548,10 @@ App.api = {
         const key =
           App.api.getMarketPlayerIdentityKey(item) ||
           String(item.id || item.name || "").toLowerCase();
-        if (key) byKey[key] = { ...(byKey[key] || {}), ...item };
+        if (key) {
+          const preferred = App.api.pickPreferredMarketPlayer(byKey[key], item);
+          byKey[key] = { ...(byKey[key] || {}), ...preferred };
+        }
       });
 
     App.state.apiMarketPlayers = Object.values(byKey);
@@ -787,15 +816,8 @@ App.api = {
 
     const groups = await App.api.mapWithConcurrency(uniqueNames, 3, (name) =>
       App.api
-        .fetchMarketPlayersDirect(name, limitPerName)
-        .then((rows) =>
-          App.api.applyMarketPlayerOverrides(Array.isArray(rows) ? rows : [], {
-            showContracted: true,
-          }),
-        )
-        .catch(() =>
-          App.api.loadMarketPlayers(name, true, limitPerName).catch(() => []),
-        ),
+        .loadMarketPlayers(name, true, limitPerName)
+        .catch(() => []),
     );
 
     App.api.mergeMarketPlayers(groups.flat());
