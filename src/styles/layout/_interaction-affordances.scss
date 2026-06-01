@@ -8,6 +8,9 @@
   --interactive-ring: 0 0 0 3px rgba(56, 216, 193, 0.18);
   --interactive-glow: 0 12px 30px rgba(0, 0, 0, 0.26);
   --interactive-glow-accent: 0 14px 34px rgba(45, 212, 191, 0.12);
+  --interactive-glow-strong:
+    0 0 0 1px rgba(56, 216, 193, 0.28), 0 18px 44px rgba(0, 0, 0, 0.34),
+    0 0 34px rgba(56, 216, 193, 0.14);
 }
 
 body :where(button:not(:disabled), a[href], summary, [role="button"]) {
@@ -21,7 +24,19 @@ body :where(button:disabled, [aria-disabled="true"], .is-disabled) {
 
 body select:not(:disabled),
 body input[type="checkbox"]:not(:disabled),
-body input[type="radio"]:not(:disabled) {
+body input[type="radio"]:not(:disabled),
+body input[type="range"]:not(:disabled) {
+  cursor: pointer;
+}
+
+body
+  label:has(
+    :where(
+      input[type="checkbox"],
+      input[type="radio"],
+      input[type="range"]
+    ):not(:disabled)
+  ) {
   cursor: pointer;
 }
 
@@ -59,6 +74,31 @@ body :where(button svg, a[href] svg, summary svg, [role="button"] svg) {
     color var(--motion-base) var(--motion-ease),
     opacity var(--motion-base) var(--motion-ease),
     transform var(--motion-base) var(--motion-ease);
+}
+
+@keyframes interactive-sheen {
+  from {
+    transform: translateX(-130%) skewX(-16deg);
+  }
+
+  to {
+    transform: translateX(130%) skewX(-16deg);
+  }
+}
+
+@keyframes interactive-pulse {
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 0 rgba(56, 216, 193, 0),
+      0 0 0 1px rgba(56, 216, 193, 0.18);
+  }
+
+  50% {
+    box-shadow:
+      0 0 0 5px rgba(56, 216, 193, 0.08),
+      0 0 0 1px rgba(56, 216, 193, 0.34);
+  }
 }
 
 body.auth-unlocked
@@ -168,6 +208,13 @@ body.auth-unlocked :where(input, select, textarea):not(:disabled):focus {
   background-color: rgba(3, 7, 9, 0.82);
 }
 
+body.auth-unlocked input[type="range"]:not(:disabled) {
+  accent-color: var(--ds-teal);
+  transition:
+    accent-color var(--motion-base) var(--motion-ease),
+    filter var(--motion-base) var(--motion-ease);
+}
+
 body.auth-unlocked
   :where(
     .summary-card,
@@ -249,6 +296,8 @@ body.auth-unlocked .email-thread-check input {
 }
 
 body.auth-unlocked #playersView .email-thread-item {
+  position: relative;
+  isolation: isolate;
   transition:
     background-color var(--motion-base) var(--motion-ease),
     border-color var(--motion-base) var(--motion-ease),
@@ -257,10 +306,53 @@ body.auth-unlocked #playersView .email-thread-item {
     transform var(--motion-fast) var(--motion-press);
 }
 
+body.auth-unlocked #playersView .email-thread-item > * {
+  position: relative;
+  z-index: 1;
+}
+
+body.auth-unlocked #playersView .email-thread-item::before,
+body.auth-unlocked #playersView .email-thread-item::after {
+  content: "";
+  pointer-events: none;
+  position: absolute;
+  z-index: 0;
+}
+
+body.auth-unlocked #playersView .email-thread-item::before {
+  inset: 0 auto 0 0;
+  width: 4px;
+  opacity: 0.62;
+  background: linear-gradient(
+    180deg,
+    rgba(245, 196, 81, 0.92),
+    rgba(56, 216, 193, 0.82)
+  );
+  transform: scaleY(0.74);
+  transform-origin: center;
+  transition:
+    opacity var(--motion-base) var(--motion-ease),
+    transform var(--motion-base) var(--motion-ease),
+    width var(--motion-base) var(--motion-ease);
+}
+
+body.auth-unlocked #playersView .email-thread-item::after {
+  inset: 0;
+  opacity: 0;
+  background: linear-gradient(
+    105deg,
+    transparent 12%,
+    rgba(255, 255, 255, 0.08) 44%,
+    transparent 62%
+  );
+  transform: translateX(-130%) skewX(-16deg);
+}
+
 body.auth-unlocked #playersView .email-thread-item.is-selected {
   box-shadow:
-    inset 3px 0 0 var(--ds-teal),
-    0 0 0 1px rgba(56, 216, 193, 0.06);
+    inset 4px 0 0 var(--ds-teal),
+    0 0 0 1px rgba(56, 216, 193, 0.18),
+    0 0 24px rgba(56, 216, 193, 0.08);
 }
 
 body.auth-unlocked #playersView .email-thread-item.is-read:not(.is-selected) {
@@ -280,6 +372,23 @@ body.auth-unlocked #playersView .email-thread-state {
     color var(--motion-base) var(--motion-ease);
 }
 
+body.auth-unlocked #playersView .email-thread-button::after,
+body.auth-unlocked #playersView .email-filter-button::after,
+body.auth-unlocked #playersView .email-folder-button::after,
+body.auth-unlocked #playersView .email-focus-card::after {
+  opacity: 0.48;
+}
+
+body.auth-unlocked #playersView .email-filter-button.is-active::after,
+body.auth-unlocked #playersView .email-folder-button.is-active::after,
+body.auth-unlocked
+  #playersView
+  .email-thread-item.is-selected
+  .email-thread-button::after {
+  opacity: 1;
+  transform: translate(0, -50%) rotate(45deg);
+}
+
 body.auth-unlocked
   #playersView
   :where(
@@ -291,6 +400,9 @@ body.auth-unlocked
   background:
     linear-gradient(90deg, rgba(56, 216, 193, 0.12), transparent 82%),
     rgba(14, 37, 42, 0.82);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    0 0 0 1px rgba(56, 216, 193, 0.08);
 }
 
 body.auth-unlocked #playersView .email-thread-item.is-unread:not(.is-selected) {
@@ -302,6 +414,49 @@ body.auth-unlocked #playersView .email-thread-item.is-unread:not(.is-selected) {
 
 body.auth-unlocked #playersView .email-preview-actions button {
   cursor: pointer;
+}
+
+body.auth-unlocked
+  :where(
+    .workspace-nav-tab,
+    .email-filter-button,
+    .email-folder-button,
+    .email-focus-card,
+    .email-thread-button,
+    .market-player-option,
+    .attention-item,
+    .coach-chip,
+    .round-cpu-card
+  ) {
+  overflow: hidden;
+}
+
+body.auth-unlocked
+  :where(
+    .workspace-nav-tab,
+    .email-filter-button,
+    .email-folder-button,
+    .email-focus-card,
+    .market-player-option,
+    .attention-item,
+    .coach-chip,
+    .round-cpu-card
+  )::after {
+  z-index: 2;
+}
+
+body.auth-unlocked .workspace-nav-tab-icon,
+body.auth-unlocked .email-thread-badge,
+body.auth-unlocked .email-thread-state,
+body.auth-unlocked .transfer-pill,
+body.auth-unlocked .status-pill,
+body.auth-unlocked .coach-section-kicker {
+  transition:
+    background-color var(--motion-base) var(--motion-ease),
+    border-color var(--motion-base) var(--motion-ease),
+    box-shadow var(--motion-base) var(--motion-ease),
+    color var(--motion-base) var(--motion-ease),
+    transform var(--motion-base) var(--motion-ease);
 }
 
 body.auth-unlocked .app-action-modal-backdrop {
@@ -321,11 +476,20 @@ body.auth-unlocked .app-action-modal-card {
       button[type="submit"]
     ):not(:disabled):hover {
     border-color: rgba(245, 196, 81, 0.6);
+    background: linear-gradient(
+      135deg,
+      rgba(245, 196, 81, 0.98),
+      rgba(56, 216, 193, 0.98) 58%,
+      rgba(125, 211, 252, 0.9)
+    );
     box-shadow:
       inset 0 1px 0 rgba(255, 255, 255, 0.18),
-      var(--interactive-glow-accent);
-    filter: saturate(1.06);
-    transform: translateY(-1px);
+      0 0 0 2px rgba(56, 216, 193, 0.24),
+      0 16px 38px rgba(0, 0, 0, 0.34),
+      0 0 30px rgba(56, 216, 193, 0.18);
+    color: #02100d;
+    filter: brightness(1.05) saturate(1.16);
+    transform: translateY(-3px);
   }
 
   body.auth-unlocked
@@ -340,8 +504,62 @@ body.auth-unlocked .app-action-modal-card {
     border-color: rgba(56, 216, 193, 0.38);
     background: rgba(56, 216, 193, 0.095);
     color: #f8fffd;
-    box-shadow: var(--interactive-glow);
-    transform: translateY(-1px);
+    box-shadow: var(--interactive-glow-strong);
+    transform: translateY(-2px);
+  }
+
+  body.auth-unlocked
+    :is(
+      #playersView,
+      #calendarView,
+      #eventsView,
+      #squadView,
+      #transfersView,
+      #commissionerView,
+      #submitView,
+      #experienceView
+    )
+    :where(.primary-button, .mini-action-button, button[type="submit"]):not(
+      :disabled
+    ):hover {
+    border-color: rgba(245, 196, 81, 0.7);
+    background: linear-gradient(
+      135deg,
+      rgba(245, 196, 81, 0.98),
+      rgba(56, 216, 193, 0.98) 58%,
+      rgba(125, 211, 252, 0.92)
+    );
+    color: #02100d;
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.2),
+      0 0 0 2px rgba(56, 216, 193, 0.28),
+      0 18px 46px rgba(0, 0, 0, 0.36),
+      0 0 34px rgba(56, 216, 193, 0.2);
+    filter: brightness(1.06) saturate(1.18);
+    transform: translateY(-3px);
+  }
+
+  body.auth-unlocked
+    :is(
+      #playersView,
+      #calendarView,
+      #eventsView,
+      #squadView,
+      #transfersView,
+      #commissionerView,
+      #submitView,
+      #experienceView
+    )
+    :where(.secondary-button, .ghost-button, .app-action-modal-button):not(
+      :disabled
+    ):hover {
+    border-color: rgba(56, 216, 193, 0.45);
+    background:
+      linear-gradient(90deg, rgba(56, 216, 193, 0.13), transparent 76%),
+      rgba(255, 255, 255, 0.045);
+    color: #f8fffd;
+    box-shadow: var(--interactive-glow-strong);
+    transform: translateY(-2px);
   }
 
   body.auth-unlocked
@@ -371,7 +589,40 @@ body.auth-unlocked .app-action-modal-card {
       rgba(255, 255, 255, 0.035);
     color: var(--ds-text-strong);
     box-shadow: var(--interactive-glow-accent);
-    transform: translateY(-1px);
+    transform: translateY(-2px);
+  }
+
+  body.auth-unlocked
+    button:not(:disabled):not(.workspace-nav-tab):not(.email-thread-button):not(
+      .email-filter-button
+    ):not(.email-folder-button):not(.email-focus-card):not(
+      .market-player-option
+    ):hover {
+    border-color: rgba(56, 216, 193, 0.42);
+    box-shadow: var(--interactive-glow-accent);
+    filter: saturate(1.05);
+    transform: translateY(-2px);
+  }
+
+  body.auth-unlocked
+    :where(button, a[href], summary, [role="button"]):not(:disabled):hover {
+    text-decoration: none;
+  }
+
+  body.auth-unlocked
+    label:has(
+      :where(
+        input[type="checkbox"],
+        input[type="radio"],
+        input[type="range"]
+      ):not(:disabled)
+    ):hover {
+    color: var(--ds-text-strong);
+  }
+
+  body.auth-unlocked input[type="range"]:not(:disabled):hover {
+    accent-color: var(--ds-amber);
+    filter: drop-shadow(0 0 8px rgba(56, 216, 193, 0.24));
   }
 
   body.auth-unlocked
@@ -402,20 +653,59 @@ body.auth-unlocked .app-action-modal-card {
   }
 
   body.auth-unlocked
+    :where(.email-filter-button, .email-folder-button):not(:disabled):hover {
+    animation: interactive-pulse 900ms ease-out;
+  }
+
+  body.auth-unlocked
     :where(button, a[href], summary, [role="button"]):not(:disabled):hover
     svg {
     transform: translateY(-1px);
   }
 
+  body.auth-unlocked .workspace-nav-tab:hover .workspace-nav-tab-icon {
+    color: var(--ds-teal);
+    background: rgba(56, 216, 193, 0.12);
+    box-shadow: 0 0 0 1px rgba(56, 216, 193, 0.22);
+    transform: translateY(-1px) scale(1.04);
+  }
+
+  body.auth-unlocked .workspace-nav-tab:hover .workspace-nav-tab-copy strong,
+  body.auth-unlocked .email-thread-button:hover .email-thread-copy strong,
+  body.auth-unlocked .email-focus-card:hover strong,
+  body.auth-unlocked .market-player-option:hover strong,
+  body.auth-unlocked .attention-item:hover strong {
+    color: #ffffff;
+    text-shadow: 0 0 18px rgba(56, 216, 193, 0.16);
+  }
+
+  body.auth-unlocked #playersView .email-thread-item:hover,
   body.auth-unlocked
     #playersView
     .email-thread-item:has(.email-thread-button:hover) {
-    border-color: rgba(56, 216, 193, 0.38);
+    border-color: rgba(56, 216, 193, 0.58);
     background:
-      linear-gradient(90deg, rgba(56, 216, 193, 0.105), transparent 86%),
-      rgba(255, 255, 255, 0.035);
-    box-shadow: var(--interactive-glow-accent);
-    transform: translateY(-1px);
+      linear-gradient(90deg, rgba(56, 216, 193, 0.18), transparent 74%),
+      rgba(255, 255, 255, 0.052);
+    box-shadow: var(--interactive-glow-strong);
+    transform: translateY(-3px);
+  }
+
+  body.auth-unlocked #playersView .email-thread-item:hover::before,
+  body.auth-unlocked
+    #playersView
+    .email-thread-item:has(.email-thread-button:hover)::before {
+    width: 7px;
+    opacity: 1;
+    transform: scaleY(1);
+  }
+
+  body.auth-unlocked #playersView .email-thread-item:hover::after,
+  body.auth-unlocked
+    #playersView
+    .email-thread-item:has(.email-thread-button:hover)::after {
+    animation: interactive-sheen 780ms var(--motion-ease);
+    opacity: 1;
   }
 
   body.auth-unlocked
@@ -436,12 +726,60 @@ body.auth-unlocked .app-action-modal-card {
     border-color: rgba(56, 216, 193, 0.32);
     color: var(--ds-teal);
     background: rgba(56, 216, 193, 0.09);
+    transform: translateX(2px);
   }
 
   body.auth-unlocked
     :where(.sponsor-email-card, .email-preview-card):has(button:hover) {
     border-color: rgba(56, 216, 193, 0.28);
     box-shadow: var(--interactive-glow-accent);
+  }
+
+  body.auth-unlocked
+    :where(
+      .coach-panel-card,
+      .transfer-deal-card,
+      .transfer-scout-card,
+      .transfer-shortlist-card,
+      .transfer-shortlist-item,
+      .transfer-compare-card,
+      .transfer-hub-card,
+      .coach-target-item,
+      .calendar-day-cell.has-events,
+      .event-card,
+      .commissioner-card
+    ):has(button:not(:disabled):hover) {
+    border-color: rgba(56, 216, 193, 0.3);
+    box-shadow: var(--interactive-glow-accent);
+  }
+
+  body.auth-unlocked
+    #calendarView
+    .calendar-day-cell.has-events:has(button:not(:disabled):hover) {
+    background:
+      linear-gradient(135deg, rgba(56, 216, 193, 0.08), transparent 48%),
+      var(--workspace-panel);
+  }
+
+  body.auth-unlocked .market-player-option:hover,
+  body.auth-unlocked .transfer-shortlist-item:has(button:hover),
+  body.auth-unlocked .transfer-compare-card:has(button:hover),
+  body.auth-unlocked .coach-target-item:has(button:hover) {
+    transform: translateY(-2px);
+  }
+
+  body.auth-unlocked
+    .email-preview-actions
+    button[data-email-action="delete"]:hover,
+  body.auth-unlocked [data-email-bulk-action="delete"]:hover,
+  body.auth-unlocked [data-remove-private-target]:hover,
+  body.auth-unlocked [data-remove-sale-listing]:hover,
+  body.auth-unlocked [data-remove-favorite-key]:hover {
+    border-color: rgba(251, 113, 133, 0.42);
+    background: rgba(251, 113, 133, 0.11);
+    box-shadow:
+      0 0 0 1px rgba(251, 113, 133, 0.16),
+      0 18px 44px rgba(0, 0, 0, 0.28);
   }
 }
 

@@ -82,6 +82,52 @@ const routeViewIds = new Map([
   ["/ops/results", "submitView"],
 ]);
 
+const hoverChecks = [
+  {
+    name: "inbox-thread-hover",
+    route: "/club/inbox",
+    kind: "manager",
+    viewport: { width: 1440, height: 1000 },
+    waitSelector: ".email-office-layout",
+    targetSelector: ".email-thread-item:not(.is-selected) .email-thread-button",
+    assertSelector: ".email-thread-item:not(.is-selected)",
+  },
+  {
+    name: "inbox-filter-hover",
+    route: "/club/inbox",
+    kind: "manager",
+    viewport: { width: 1440, height: 1000 },
+    waitSelector: ".email-office-layout",
+    targetSelector: ".email-filter-button:not(.is-active)",
+    assertSelector: ".email-filter-button:not(.is-active)",
+  },
+  {
+    name: "nav-hover",
+    route: "/club/transfers",
+    kind: "manager",
+    viewport: { width: 1440, height: 1000 },
+    targetSelector: '.workspace-nav-tab[data-view="calendarView"]',
+    assertSelector: '.workspace-nav-tab[data-view="calendarView"]',
+  },
+  {
+    name: "standings-attention-hover",
+    route: "/",
+    kind: "manager",
+    viewport: { width: 1440, height: 1000 },
+    targetSelector: ".attention-item",
+    assertSelector: ".attention-item",
+  },
+  {
+    name: "transfer-action-hover",
+    route: "/club/transfers",
+    kind: "manager",
+    viewport: { width: 1440, height: 1000 },
+    waitSelector: "#transferForm",
+    targetSelector: '#transferForm .primary-button[type="submit"]',
+    assertSelector: '#transferForm .primary-button[type="submit"]',
+  },
+];
+
 function createSession(kind) {
   if (!kind) return null;
 
@@ -162,7 +208,7 @@ await withDevServer(async () => {
   const browser = await chromium.launch({ headless: true });
   const summary = [];
 
-  for (const [name, route, kind, viewport] of routes) {
+  async function preparePage(route, kind, viewport) {
     const page = await browser.newPage({ viewport });
     const session = createSession(kind);
 
@@ -189,6 +235,12 @@ await withDevServer(async () => {
       }, view);
       await page.waitForTimeout(1800);
     }
+
+    return page;
+  }
+
+  for (const [name, route, kind, viewport] of routes) {
+    const page = await preparePage(route, kind, viewport);
 
     const file = path.join(OUT_DIR, `${name}.png`);
     await page.screenshot({ path: file, fullPage: true });
@@ -232,6 +284,7 @@ await withDevServer(async () => {
             '[role="button"]',
             'input[type="checkbox"]:not(:disabled)',
             'input[type="radio"]:not(:disabled)',
+            'input[type="range"]:not(:disabled)',
             "select:not(:disabled)",
           ].join(","),
         ),
@@ -320,6 +373,80 @@ await withDevServer(async () => {
       throw new Error(`${name} layout guard failed: ${problems.join("; ")}`);
     }
     summary.push({ name, file, ...metrics });
+    await page.close();
+  }
+
+  for (const check of hoverChecks) {
+    const page = await preparePage(check.route, check.kind, check.viewport);
+
+    if (check.waitSelector) {
+      await page
+        .waitForSelector(check.waitSelector, { timeout: 30000 })
+        .catch(() => null);
+    }
+
+    const target = page.locator(check.targetSelector).first();
+    const assertTarget = page.locator(check.assertSelector).first();
+    await target.waitFor({ state: "visible", timeout: 30000 });
+    await assertTarget.waitFor({ state: "visible", timeout: 30000 });
+    await target.scrollIntoViewIfNeeded();
+    await page.waitForTimeout(300);
+
+    const readHoverState = (selector) =>
+      page
+        .locator(selector)
+        .first()
+        .evaluate((node) => {
+          const styles = getComputedStyle(node);
+          return {
+            backgroundColor: styles.backgroundColor,
+            borderColor: styles.borderColor,
+            boxShadow: styles.boxShadow,
+            color: styles.color,
+            cursor: styles.cursor,
+            transform: styles.transform,
+          };
+        });
+
+    const before = await readHoverState(check.assertSelector);
+    await target.hover();
+    await page.waitForTimeout(300);
+    const after = await readHoverState(check.assertSelector);
+    const targetCursor = await page
+      .locator(check.targetSelector)
+      .first()
+      .evaluate((node) => getComputedStyle(node).cursor);
+    const changed = [
+      "backgroundColor",
+      "borderColor",
+      "boxShadow",
+      "color",
+      "transform",
+    ].some((property) => before[property] !== after[property]);
+    const file = path.join(OUT_DIR, `${check.name}.png`);
+    await page.screenshot({ path: file, fullPage: false });
+
+    if (targetCursor !== "pointer") {
+      throw new Error(
+        `${check.name} hover guard failed: target cursor is ${targetCursor}`,
+      );
+    }
+    if (!changed) {
+      throw new Error(
+        `${check.name} hover guard failed: hover did not change visible styles`,
+      );
+    }
+
+    summary.push({
+      name: check.name,
+      file,
+      hover: {
+        changed,
+        targetCursor,
+        before,
+        after,
+      },
+    });
     await page.close();
   }
 
