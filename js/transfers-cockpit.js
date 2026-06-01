@@ -2323,6 +2323,14 @@ Object.assign(App.transfers, {
         title: "Janela fechada",
         detail: App.transfers.getTransferWindowLockMessage(),
       });
+    } else if (App.config.transferWindowOpenUntil) {
+      opsAlerts.push({
+        tone: "warning",
+        title: "Deadline domingo",
+        detail:
+          App.config.transferWindowOpenNotice ||
+          `Janela reaberta: mercado externo fecha em ${openUntil}.`,
+      });
     }
     if (remainingMoves <= 0) {
       opsAlerts.push({

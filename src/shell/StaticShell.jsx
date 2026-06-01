@@ -875,8 +875,8 @@ function TransfersView({ isActive = false }) {
           <span>Janela de transferências</span>
           <strong id="nextTransferCountdown">Calculando...</strong>
           <p>
-            O limite diário reinicia à meia-noite. Eventos podem aumentar ou
-            reduzir o limite do dia.
+            Janela reaberta até domingo, 07/06/2026, 23:59 BRT. O limite
+            diário reinicia à meia-noite.
           </p>
         </section>
 

@@ -40,9 +40,11 @@ App.config = {
   homeMatchBonus: 150000,
   winBonus: 100000,
   transferWindowLocked: false,
-  transferWindowOpenUntil: "2026-05-31T23:59:59-03:00",
+  transferWindowOpenUntil: "2026-06-07T23:59:59-03:00",
+  transferWindowOpenNotice:
+    "Janela reaberta ate domingo, 07/06/2026, 23:59 BRT.",
   transferWindowLockedMessage:
-    "Janela de transferencias encerrada em 31/05/2026, 23:59.",
+    "Janela de transferencias encerrada em 07/06/2026, 23:59 BRT.",
   sponsorshipSigningLocked: false,
   sponsorshipSigningLockedMessage:
     "Assinaturas de patrocinio indisponiveis no momento.",

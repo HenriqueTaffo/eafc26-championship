@@ -14,6 +14,7 @@ App.auth = {
     ownedPlayers: [],
   },
   mySponsorships: null,
+  mySponsorshipsLoading: false,
   myQoL: null,
   myFavorites: [],
   myNotifications: [],
@@ -1161,6 +1162,7 @@ App.auth = {
     App.auth.myTransferTargetsLoaded = false;
     App.auth.myTransferSaleListings = { listings: [], ownedPlayers: [] };
     App.auth.mySponsorships = null;
+    App.auth.mySponsorshipsLoading = false;
     App.auth.myQoL = null;
     App.auth.myFavorites = [];
     App.auth.myNotifications = [];
@@ -1463,8 +1465,11 @@ App.auth = {
     const session = App.auth.getSession();
     if (!session?.managerId || !session?.accessCode) {
       App.auth.mySponsorships = null;
+      App.auth.mySponsorshipsLoading = false;
       return null;
     }
+
+    App.auth.mySponsorshipsLoading = true;
 
     try {
       const result = await App.api.rpc(
@@ -1476,13 +1481,47 @@ App.auth = {
         30000,
       );
 
-      App.auth.mySponsorships = result || null;
+      App.auth.mySponsorships = App.auth.normalizeSponsorshipPortfolio(result);
       return App.auth.mySponsorships;
     } catch (error) {
       console.warn("PatrocÃƒÂ­nios indisponÃƒÂ­veis:", error);
-      App.auth.mySponsorships = null;
-      return null;
+      App.auth.mySponsorships = App.auth.normalizeSponsorshipPortfolio({
+        loadError:
+          error?.message || "Nao foi possivel carregar patrocinios agora.",
+      });
+      return App.auth.mySponsorships;
+    } finally {
+      App.auth.mySponsorshipsLoading = false;
     }
+  },
+
+  normalizeSponsorshipPortfolio(payload = {}) {
+    const active = Array.isArray(payload?.active) ? payload.active : [];
+    const offers = Array.isArray(payload?.offers) ? payload.offers : [];
+    const recentRewards = Array.isArray(payload?.recentRewards)
+      ? payload.recentRewards
+      : [];
+    const activeCount = Math.max(
+      active.length,
+      Number(payload?.activeCount || 0),
+    );
+    const maxActiveContracts = Math.max(
+      activeCount,
+      Number(payload?.maxActiveContracts ?? 3) || 3,
+    );
+
+    return {
+      ...payload,
+      active,
+      offers,
+      recentRewards,
+      activeCount,
+      maxActiveContracts,
+      activeSlotsLeft: Math.max(
+        0,
+        Number(payload?.activeSlotsLeft ?? maxActiveContracts - activeCount),
+      ),
+    };
   },
 
   async loadMyQoL() {
@@ -3253,6 +3292,8 @@ App.auth = {
 
     const data = App.auth.mySponsorships;
     const hasLoadedPortfolio = Boolean(data);
+    const isLoadingPortfolio =
+      !hasLoadedPortfolio || App.auth.mySponsorshipsLoading;
     const active = Array.isArray(data?.active) ? data.active : [];
     const offers = App.auth.getSponsorshipInboxOffers(ownerName);
     const rewards = Array.isArray(data?.recentRewards)
@@ -3280,6 +3321,17 @@ App.auth = {
     }, {});
     const offerCategories = Object.keys(offersByCategory);
     const renderOfferInboxInsideSponsorshipCard = false;
+
+    if (!hasLoadedPortfolio && !App.auth.mySponsorshipsLoading) {
+      App.auth
+        .loadMySponsorships()
+        .then(() => {
+          App.auth.renderAll();
+          App.main?.renderCurrentView?.();
+        })
+        .catch(() => null);
+    }
+
     return `
       <article class="coach-panel-card sponsorship-card sponsorship-contracts-card">
         <div class="home-panel-header">
@@ -3291,10 +3343,19 @@ App.auth = {
         </div>
 
         ${
-          !hasLoadedPortfolio
+          isLoadingPortfolio
             ? `<div class="sponsor-market-note sponsor-contracts-note">
                 <strong>Carregando carteira comercial</strong>
                 <span>Buscando contratos ativos, pagamentos e propostas do clube.</span>
+              </div>`
+            : ""
+        }
+
+        ${
+          hasLoadedPortfolio && data?.loadError
+            ? `<div class="sponsor-market-note sponsor-contracts-note">
+                <strong>Carteira comercial indisponível</strong>
+                <span>${App.utils.escapeDisplay(data.loadError)}</span>
               </div>`
             : ""
         }
