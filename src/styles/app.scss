@@ -1,4 +1,6 @@
 @use "./legacy/base-app";
+@use "./foundations/design-system";
 @use "./layout/post-login-workspace";
 @use "./views/operational-screens";
 @use "./features/advanced-tools";
+@use "./layout/visual-rework";

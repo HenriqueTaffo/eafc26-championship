@@ -1,0 +1,576 @@
+/* Visual system v1: operational density, clearer hierarchy and safer mobile rhythm. */
+body.auth-unlocked {
+  color: var(--ds-text);
+  background:
+    linear-gradient(90deg, rgba(56, 216, 193, 0.04) 1px, transparent 1px),
+    linear-gradient(180deg, rgba(96, 165, 250, 0.035) 1px, transparent 1px),
+    linear-gradient(180deg, #091112 0%, #070909 44%, #050607 100%);
+  background-size:
+    112px 112px,
+    112px 112px,
+    auto;
+}
+
+body.auth-unlocked .app {
+  width: min(1560px, calc(100% - 28px));
+  gap: 14px;
+  padding: 10px 0 40px;
+}
+
+body.auth-unlocked .shell-top-cluster {
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+body.auth-unlocked .shell-masthead-row {
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 410px);
+  gap: 10px;
+}
+
+body.auth-unlocked .league-hero-brand,
+body.auth-unlocked .manager-session-card.manager-login-shell,
+body.auth-unlocked .app-status-bar,
+body.auth-unlocked .workspace-nav {
+  border: 1px solid var(--ds-line);
+  border-radius: var(--ds-radius-md);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.028), transparent),
+    rgba(9, 13, 15, 0.94);
+  box-shadow: var(--ds-shadow-1);
+}
+
+body.auth-unlocked .league-hero-brand {
+  min-height: 78px;
+  padding: 12px 14px;
+}
+
+body.auth-unlocked .league-brand-wordmark {
+  width: 116px;
+}
+
+body.auth-unlocked .league-brand-meta,
+body.auth-unlocked .status-kicker,
+body.auth-unlocked .workspace-nav-group-kicker,
+body.auth-unlocked .summary-card span,
+body.auth-unlocked .home-panel-header span,
+body.auth-unlocked .coach-section-kicker,
+body.auth-unlocked .modal-kicker,
+body.auth-unlocked .submit-card-header span:not(.submit-card-icon) {
+  color: var(--ds-teal);
+  font-size: 0.68rem;
+  font-weight: 900;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+body.auth-unlocked .league-route-title {
+  color: var(--ds-text-strong);
+  font-size: 1.1rem;
+  line-height: 1.08;
+}
+
+body.auth-unlocked .league-hero-copy p,
+body.auth-unlocked .manager-session-card small,
+body.auth-unlocked .app-status-bar strong,
+body.auth-unlocked .summary-card small,
+body.auth-unlocked .home-panel-header p,
+body.auth-unlocked .calendar-muted {
+  color: var(--ds-muted);
+}
+
+body.auth-unlocked .manager-session-card.manager-login-shell {
+  min-height: 78px;
+  padding: 10px 12px;
+}
+
+body.auth-unlocked .manager-login-avatar-shell,
+body.auth-unlocked .manager-custom-avatar,
+body.auth-unlocked .login-success-club-badge {
+  border-radius: var(--ds-radius-md);
+}
+
+body.auth-unlocked .manager-session-actions .ghost-button,
+body.auth-unlocked .status-actions button,
+body.auth-unlocked .secondary-button,
+body.auth-unlocked .ghost-button {
+  border-color: var(--ds-line);
+  border-radius: var(--ds-radius-sm);
+  background: rgba(255, 255, 255, 0.035);
+  color: var(--ds-text);
+  box-shadow: none;
+}
+
+body.auth-unlocked .manager-session-actions .ghost-button:hover,
+body.auth-unlocked .status-actions button:hover,
+body.auth-unlocked .secondary-button:hover,
+body.auth-unlocked .ghost-button:hover {
+  border-color: var(--ds-line-strong);
+  background: var(--ds-surface-3);
+}
+
+body.auth-unlocked .workspace-nav {
+  top: 8px;
+  padding: 6px;
+  background: rgba(6, 9, 11, 0.96);
+  backdrop-filter: blur(18px);
+}
+
+body.auth-unlocked .workspace-nav-grid {
+  gap: 5px;
+}
+
+body.auth-unlocked .workspace-nav-tab {
+  min-height: 38px;
+  border: 1px solid transparent;
+  border-radius: var(--ds-radius-sm);
+  padding: 0 10px;
+  background: transparent;
+  color: var(--ds-muted);
+}
+
+body.auth-unlocked .workspace-nav-tab-icon {
+  color: var(--ds-subtle);
+}
+
+body.auth-unlocked .workspace-nav-tab-copy {
+  gap: 0;
+}
+
+body.auth-unlocked .workspace-nav-tab-copy strong {
+  font-size: 0.75rem;
+}
+
+body.auth-unlocked .workspace-nav-tab-copy small {
+  display: none;
+}
+
+body.auth-unlocked .workspace-nav-tab:hover,
+body.auth-unlocked .workspace-nav-tab.active,
+body.auth-unlocked .workspace-nav-tab[aria-current="page"] {
+  border-color: rgba(56, 216, 193, 0.3);
+  background: var(--ds-teal-soft);
+  color: var(--ds-text-strong);
+  transform: none;
+}
+
+body.auth-unlocked .workspace-nav-tab.active .workspace-nav-tab-icon,
+body.auth-unlocked
+  .workspace-nav-tab[aria-current="page"]
+  .workspace-nav-tab-icon {
+  color: var(--ds-teal);
+}
+
+body.auth-unlocked .app-status-bar {
+  min-height: 50px;
+  margin: 0;
+  padding: 7px 10px;
+}
+
+body.auth-unlocked .status-actions {
+  gap: 8px;
+}
+
+body.auth-unlocked .global-search input,
+body.auth-unlocked input,
+body.auth-unlocked select,
+body.auth-unlocked textarea {
+  border-color: var(--ds-line);
+  border-radius: var(--ds-radius-sm);
+  background: rgba(3, 7, 9, 0.68);
+  color: var(--ds-text);
+  box-shadow: none;
+}
+
+body.auth-unlocked .global-search input:focus,
+body.auth-unlocked input:focus,
+body.auth-unlocked select:focus,
+body.auth-unlocked textarea:focus {
+  border-color: rgba(56, 216, 193, 0.58);
+  box-shadow: var(--ds-focus);
+}
+
+body.auth-unlocked .view {
+  width: 100%;
+  padding: 0 0 40px;
+}
+
+body.auth-unlocked .summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 10px;
+}
+
+body.auth-unlocked
+  :is(
+    .summary-card,
+    .home-panel,
+    .home-cup-card,
+    .countdown-card,
+    .rule-card,
+    .table-wrapper,
+    .submit-card,
+    .coach-panel-card,
+    .transfer-negotiation-hub,
+    .transfer-compare-board,
+    .transfer-market-shell,
+    .transfer-history-shell,
+    .commissioner-hero,
+    .submit-hero,
+    .form-card,
+    .legend-block,
+    .transfer-ops-card,
+    .transfer-ops-alert,
+    .market-player-option,
+    .coach-empty-state,
+    .app-skeleton-stack
+  ) {
+  border: 1px solid var(--ds-line);
+  border-radius: var(--ds-radius-md);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.026), transparent),
+    var(--ds-surface-1);
+  box-shadow: var(--ds-shadow-1);
+}
+
+body.auth-unlocked :is(.summary-card, .transfer-ops-card) {
+  min-height: 92px;
+  padding: 14px;
+}
+
+body.auth-unlocked .summary-card {
+  position: relative;
+  overflow: hidden;
+  border-left: 3px solid rgba(56, 216, 193, 0.74);
+}
+
+body.auth-unlocked .summary-card::before,
+body.auth-unlocked .summary-card::after {
+  display: none;
+}
+
+body.auth-unlocked .summary-card strong,
+body.auth-unlocked .transfer-ops-card strong,
+body.auth-unlocked .home-panel-header h2,
+body.auth-unlocked .coach-panel-card h2,
+body.auth-unlocked .submit-card h2,
+body.auth-unlocked .rule-card h2 {
+  color: var(--ds-text-strong);
+}
+
+body.auth-unlocked .summary-card strong {
+  margin-top: 7px;
+  font-size: 1.55rem;
+  line-height: 1;
+}
+
+body.auth-unlocked .home-panel-header,
+body.auth-unlocked .submit-card-header {
+  align-items: flex-start;
+  gap: 10px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--ds-line-soft);
+}
+
+body.auth-unlocked .primary-button,
+body.auth-unlocked .cup-action,
+body.auth-unlocked .home-link,
+body.auth-unlocked button[type="submit"] {
+  border: 1px solid rgba(56, 216, 193, 0.34);
+  border-radius: var(--ds-radius-sm);
+  background: linear-gradient(135deg, var(--ds-amber), var(--ds-teal));
+  color: #06110f;
+  box-shadow: none;
+  font-weight: 850;
+}
+
+body.auth-unlocked .primary-button:hover,
+body.auth-unlocked .cup-action:hover,
+body.auth-unlocked .home-link:hover,
+body.auth-unlocked button[type="submit"]:hover {
+  filter: brightness(1.03);
+  transform: translateY(-1px);
+}
+
+body.auth-unlocked .round-center,
+body.auth-unlocked .round-center-card,
+body.auth-unlocked .attention-panel,
+body.auth-unlocked .league-news-panel,
+body.auth-unlocked .activity-panel,
+body.auth-unlocked .commissioner-grid,
+body.auth-unlocked .coach-dashboard,
+body.auth-unlocked .squad-management-shell {
+  gap: 10px;
+}
+
+body.auth-unlocked .home-grid,
+body.auth-unlocked .coach-layout-v54,
+body.auth-unlocked .coach-flow-v55 {
+  gap: 10px;
+}
+
+body.auth-unlocked .table-wrapper {
+  overflow: auto;
+}
+
+body.auth-unlocked table {
+  border-collapse: collapse;
+}
+
+body.auth-unlocked th {
+  color: var(--ds-teal);
+  font-size: 0.68rem;
+  font-weight: 900;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+body.auth-unlocked td {
+  color: var(--ds-text);
+}
+
+body.auth-unlocked th,
+body.auth-unlocked td {
+  border-color: var(--ds-line-soft);
+}
+
+body.auth-unlocked .badge,
+body.auth-unlocked .coach-section-kicker,
+body.auth-unlocked .events-status-pill,
+body.auth-unlocked .market-player-status,
+body.auth-unlocked .transfer-deal-status,
+body.auth-unlocked .operation-chip {
+  border-radius: 999px;
+}
+
+body.auth-unlocked .coach-empty-state,
+body.auth-unlocked .market-empty,
+body.auth-unlocked .transfer-shortlist-empty,
+body.auth-unlocked .app-skeleton-stack {
+  min-height: 110px;
+  border-style: dashed;
+  background:
+    linear-gradient(180deg, rgba(96, 165, 250, 0.035), transparent),
+    rgba(8, 12, 15, 0.72);
+}
+
+body.auth-unlocked .transfer-lock-card {
+  display: none;
+}
+
+body.auth-unlocked #transfersView {
+  display: grid;
+  gap: 10px;
+}
+
+body.auth-unlocked #transfersView .advanced-tools-shell,
+body.auth-unlocked #transfersView .transfer-market-shell {
+  min-height: 420px;
+}
+
+body.auth-unlocked #transfersView .countdown-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  border-left: 3px solid var(--ds-sky);
+}
+
+body.auth-unlocked #transfersView .countdown-card span,
+body.auth-unlocked #eventsView .countdown-card span {
+  grid-column: 1;
+}
+
+body.auth-unlocked #transfersView .countdown-card strong,
+body.auth-unlocked #eventsView .countdown-card strong {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  padding: 8px 10px;
+  border: 1px solid rgba(96, 165, 250, 0.26);
+  border-radius: var(--ds-radius-sm);
+  background: var(--ds-sky-soft);
+  color: #dbeafe;
+  font-size: 1.4rem;
+  white-space: nowrap;
+}
+
+body.auth-unlocked #transfersView .countdown-card p,
+body.auth-unlocked #eventsView .countdown-card p {
+  grid-column: 1;
+  margin: 0;
+}
+
+body.auth-unlocked .transfer-ops-board {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 8px;
+}
+
+body.auth-unlocked .transfer-ops-alerts {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 8px;
+}
+
+body.auth-unlocked .transfer-ops-alert.is-warning {
+  border-color: rgba(245, 196, 81, 0.32);
+  background: var(--ds-amber-soft);
+}
+
+body.auth-unlocked .transfer-ops-alert.is-danger {
+  border-color: rgba(251, 113, 133, 0.34);
+  background: var(--ds-red-soft);
+}
+
+body.auth-unlocked .transfer-workbench {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(300px, 0.75fr);
+  gap: 10px;
+}
+
+body.auth-unlocked .submit-card-transfer {
+  border-left: 3px solid var(--ds-teal);
+}
+
+body.auth-unlocked .transfer-history-shell {
+  min-height: 360px;
+}
+
+body.auth-unlocked #commissionerView .commissioner-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: start;
+}
+
+body.auth-unlocked #commissionerView .coach-panel-card {
+  min-height: 0;
+}
+
+body.auth-unlocked .global-search-results {
+  border-radius: var(--ds-radius-md);
+  border-color: var(--ds-line-strong);
+  background: var(--ds-elevated);
+}
+
+@media (max-width: 1080px) {
+  body.auth-unlocked .app {
+    width: min(100% - 18px, 980px);
+  }
+
+  body.auth-unlocked .shell-masthead-row,
+  body.auth-unlocked .transfer-workbench,
+  body.auth-unlocked #commissionerView .commissioner-grid {
+    grid-template-columns: 1fr;
+  }
+
+  body.auth-unlocked .transfer-ops-board {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 720px) {
+  body.auth-unlocked {
+    background-size:
+      72px 72px,
+      72px 72px,
+      auto;
+  }
+
+  body.auth-unlocked .app {
+    width: calc(100% - 12px);
+    padding-top: 6px;
+  }
+
+  body.auth-unlocked .league-hero-brand {
+    min-height: 64px;
+    grid-template-columns: auto minmax(0, 1fr);
+    padding: 9px 10px;
+  }
+
+  body.auth-unlocked .league-brand-wordmark {
+    width: 82px;
+  }
+
+  body.auth-unlocked .league-route-title {
+    font-size: 0.96rem;
+  }
+
+  body.auth-unlocked .league-hero-copy p {
+    display: none;
+  }
+
+  body.auth-unlocked .manager-session-card.manager-login-shell {
+    min-height: 58px;
+  }
+
+  body.auth-unlocked .manager-session-actions .ghost-button:not(:last-child) {
+    display: none;
+  }
+
+  body.auth-unlocked .workspace-nav {
+    top: 4px;
+    padding: 5px;
+  }
+
+  body.auth-unlocked .workspace-nav-tab {
+    min-height: 36px;
+    padding: 0 9px;
+  }
+
+  body.auth-unlocked .workspace-nav-tab-copy strong {
+    font-size: 0.72rem;
+  }
+
+  body.auth-unlocked .app-status-bar {
+    grid-template-columns: 1fr;
+    align-items: stretch;
+  }
+
+  body.auth-unlocked .status-actions {
+    width: 100%;
+    justify-content: stretch;
+  }
+
+  body.auth-unlocked .global-search {
+    min-width: 0;
+    flex: 1 1 100%;
+  }
+
+  body.auth-unlocked .summary,
+  body.auth-unlocked .transfer-ops-board,
+  body.auth-unlocked .transfer-ops-alerts {
+    grid-template-columns: 1fr;
+  }
+
+  body.auth-unlocked
+    :is(
+      .summary-card,
+      .home-panel,
+      .home-cup-card,
+      .countdown-card,
+      .rule-card,
+      .table-wrapper,
+      .submit-card,
+      .coach-panel-card,
+      .transfer-ops-card
+    ) {
+    padding: 12px;
+  }
+
+  body.auth-unlocked #transfersView .countdown-card {
+    grid-template-columns: 1fr;
+  }
+
+  body.auth-unlocked #transfersView .countdown-card strong,
+  body.auth-unlocked #eventsView .countdown-card strong {
+    grid-column: 1;
+    grid-row: auto;
+    width: fit-content;
+    font-size: 1.1rem;
+  }
+
+  body.auth-unlocked .ds-empty-state {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}

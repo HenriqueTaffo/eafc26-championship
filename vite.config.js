@@ -19,59 +19,62 @@ function resolveBasePath(command) {
 
 module.exports = defineConfig(({ command }) => {
   const basePath = resolveBasePath(command);
+  const isStorybook = process.env.STORYBOOK === "true";
 
   return {
     plugins: [
       react(),
-      VitePWA({
-        registerType: "autoUpdate",
-        injectRegister: "auto",
-        includeAssets: [
-          "assets/4linhas-icon.png",
-          "assets/4linhas-icon-light.png",
-          "assets/4linhas-wordmark-light.png",
-        ],
-        manifest: {
-          name: "4 Linhas",
-          short_name: "4 Linhas",
-          description: "Painel operacional da liga EAFC 26.",
-          theme_color: "#070909",
-          background_color: "#070909",
-          lang: "pt-BR",
-          display: "standalone",
-          start_url: basePath,
-          scope: basePath,
-          icons: [
-            {
-              src: "assets/4linhas-icon.png",
-              sizes: "192x192",
-              type: "image/png",
-            },
-            {
-              src: "assets/4linhas-icon.png",
-              sizes: "512x512",
-              type: "image/png",
-            },
+      !isStorybook &&
+        VitePWA({
+          registerType: "autoUpdate",
+          injectRegister: "auto",
+          includeAssets: [
+            "assets/4linhas-icon.png",
+            "assets/4linhas-icon-light.png",
+            "assets/4linhas-wordmark-light.png",
           ],
-        },
-        workbox: {
-          globPatterns: ["**/*.{js,css,html,png,svg,woff2,json}"],
-          runtimeCaching: [
-            {
-              urlPattern: /^https:\/\/fdippspwpugnxwxmjnqf\.supabase\.co\/.*/i,
-              handler: "NetworkFirst",
-              options: {
-                cacheName: "eafc26-supabase-runtime",
-                networkTimeoutSeconds: 6,
-                expiration: {
-                  maxEntries: 80,
-                  maxAgeSeconds: 60 * 60,
+          manifest: {
+            name: "4 Linhas",
+            short_name: "4 Linhas",
+            description: "Painel operacional da liga EAFC 26.",
+            theme_color: "#070909",
+            background_color: "#070909",
+            lang: "pt-BR",
+            display: "standalone",
+            start_url: basePath,
+            scope: basePath,
+            icons: [
+              {
+                src: "assets/4linhas-icon.png",
+                sizes: "192x192",
+                type: "image/png",
+              },
+              {
+                src: "assets/4linhas-icon.png",
+                sizes: "512x512",
+                type: "image/png",
+              },
+            ],
+          },
+          workbox: {
+            globPatterns: ["**/*.{js,css,html,png,svg,woff2,json}"],
+            runtimeCaching: [
+              {
+                urlPattern:
+                  /^https:\/\/fdippspwpugnxwxmjnqf\.supabase\.co\/.*/i,
+                handler: "NetworkFirst",
+                options: {
+                  cacheName: "eafc26-supabase-runtime",
+                  networkTimeoutSeconds: 6,
+                  expiration: {
+                    maxEntries: 80,
+                    maxAgeSeconds: 60 * 60,
+                  },
                 },
               },
-            },
-          ],
-        },
-      }),
+            ],
+          },
+        }),
     ],
     base: basePath,
     build: {
@@ -107,10 +110,15 @@ module.exports = defineConfig(({ command }) => {
               return "shared-club-view";
             }
             if (normalizedId.includes("/js/")) {
-              if (/(\/js\/)(app|api|auth|config|main|ui|utils)\.js$/.test(normalizedId)) {
+              if (
+                /(\/js\/)(app|api|auth|config|main|ui|utils)\.js$/.test(
+                  normalizedId,
+                )
+              ) {
                 return "app-core";
               }
-              if (normalizedId.includes("/js/transfers")) return "transfers-runtime";
+              if (normalizedId.includes("/js/transfers"))
+                return "transfers-runtime";
               if (
                 normalizedId.includes("/js/players") ||
                 normalizedId.includes("/js/events") ||

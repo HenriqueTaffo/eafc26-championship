@@ -20,7 +20,6 @@ import {
   SquadSummary,
   StandingsSummary,
   TransfersSummary,
-  useAppRuntime,
 } from "../views/ViewSummaries.jsx";
 import {
   ArrowLeftRight,
