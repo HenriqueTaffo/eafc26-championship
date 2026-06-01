@@ -151,11 +151,87 @@ await withDevServer(async () => {
 
     const file = path.join(OUT_DIR, `${name}.png`);
     await page.screenshot({ path: file, fullPage: true });
-    const metrics = await page.evaluate(() => ({
-      activeView: document.querySelector(".view.active")?.id || "",
-      overflowX: document.documentElement.scrollWidth > innerWidth + 2,
-      width: document.documentElement.scrollWidth,
-    }));
+    const metrics = await page.evaluate(() => {
+      const readRect = (selector) => {
+        const node = document.querySelector(selector);
+        if (!node) return null;
+        const rect = node.getBoundingClientRect();
+        return {
+          width: Math.round(rect.width),
+          height: Math.round(rect.height),
+          left: Math.round(rect.left),
+          top: Math.round(rect.top),
+        };
+      };
+      const readStyles = (selector) => {
+        const node = document.querySelector(selector);
+        if (!node) return null;
+        const styles = getComputedStyle(node);
+        return {
+          display: styles.display,
+          gridTemplateColumns: styles.gridTemplateColumns,
+          maxHeight: styles.maxHeight,
+          overflow: styles.overflow,
+        };
+      };
+
+      return {
+        activeView: document.querySelector(".view.active")?.id || "",
+        overflowX: document.documentElement.scrollWidth > innerWidth + 2,
+        width: document.documentElement.scrollWidth,
+        innerWidth,
+        chrome: {
+          app: readStyles(".app"),
+          shell: readRect(".shell-top-cluster"),
+          shellStyles: readStyles(".shell-top-cluster"),
+          nav: readRect(".workspace-nav"),
+          navStyles: readStyles(".workspace-nav"),
+          navScrollWidth:
+            document.querySelector(".workspace-nav")?.scrollWidth || 0,
+          navClientWidth:
+            document.querySelector(".workspace-nav")?.clientWidth || 0,
+          status: readRect(".app-status-bar"),
+        },
+      };
+    });
+    const problems = [];
+    if (metrics.overflowX) {
+      problems.push("document has horizontal overflow");
+    }
+    if (kind && viewport.width >= 1180) {
+      const minimumChromeWidth = Math.round(viewport.width * 0.65);
+      if ((metrics.chrome.shell?.width || 0) < minimumChromeWidth) {
+        problems.push(
+          `shell chrome collapsed to ${metrics.chrome.shell?.width || 0}px`,
+        );
+      }
+      if ((metrics.chrome.nav?.width || 0) < minimumChromeWidth) {
+        problems.push(
+          `workspace nav collapsed to ${metrics.chrome.nav?.width || 0}px`,
+        );
+      }
+      if ((metrics.chrome.status?.width || 0) < minimumChromeWidth) {
+        problems.push(
+          `status bar collapsed to ${metrics.chrome.status?.width || 0}px`,
+        );
+      }
+      if ((metrics.chrome.nav?.height || 0) > 320) {
+        problems.push(
+          `workspace nav is too tall (${metrics.chrome.nav?.height || 0}px)`,
+        );
+      }
+      if (metrics.chrome.navScrollWidth > metrics.chrome.navClientWidth + 2) {
+        problems.push("workspace nav has horizontal internal overflow");
+      }
+      if (
+        String(metrics.chrome.app?.gridTemplateColumns || "").includes("292px")
+      ) {
+        problems.push("app grid still contains the rejected 292px sidebar");
+      }
+    }
+    if (problems.length > 0) {
+      throw new Error(`${name} layout guard failed: ${problems.join("; ")}`);
+    }
     summary.push({ name, file, ...metrics });
     await page.close();
   }
