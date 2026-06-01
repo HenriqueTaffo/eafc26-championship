@@ -1,4 +1,4 @@
-﻿import { Suspense, lazy, memo } from "react";
+import { Suspense, lazy, memo, useLayoutEffect } from "react";
 import {
   ActivityPanel,
   AttentionPanel,
@@ -289,7 +289,32 @@ function WorkspaceNavigation({ activePath }) {
   );
 }
 
+export function LegacyLoginPanel() {
+  useLayoutEffect(() => {
+    App.auth?.renderLoginPanel?.();
+  });
+
+  return (
+    <section id="managerLoginPanel" className="manager-login-panel"></section>
+  );
+}
+
+export function LegacyTransferProposalPanel({ isCollapsed }) {
+  useLayoutEffect(() => {
+    App.auth?.renderTransferProposalPanel?.();
+  });
+
+  return (
+    <section
+      id="transferProposalPanel"
+      className={`decision-center${isCollapsed ? " is-collapsed" : ""}`}
+    ></section>
+  );
+}
+
 function ShellChrome({ activeRoute }) {
+  const isTransferPanelCollapsed = activeRoute.groupKey !== "club";
+
   return (
     <>
       <section className="shell-top-cluster">
@@ -310,18 +335,10 @@ function ShellChrome({ activeRoute }) {
             </div>
           </header>
 
-          <section
-            id="managerLoginPanel"
-            className="manager-login-panel"
-          ></section>
+          <LegacyLoginPanel />
         </div>
 
-        <section
-          id="transferProposalPanel"
-          className={`decision-center${
-            activeRoute.groupKey !== "club" ? " is-collapsed" : ""
-          }`}
-        ></section>
+        <LegacyTransferProposalPanel isCollapsed={isTransferPanelCollapsed} />
 
         <WorkspaceNavigation activePath={activeRoute.path} />
 
@@ -1631,4 +1648,3 @@ export function StaticShell({ activePath = "/league/standings" }) {
 }
 
 export default StaticShell;
-
