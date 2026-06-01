@@ -1,0 +1,461 @@
+/* Interaction affordances: make clickable surfaces obvious without animating static cards. */
+:root {
+  --motion-fast: 120ms;
+  --motion-base: 180ms;
+  --motion-slow: 260ms;
+  --motion-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --motion-press: cubic-bezier(0.3, 0, 0.2, 1);
+  --interactive-ring: 0 0 0 3px rgba(56, 216, 193, 0.18);
+  --interactive-glow: 0 12px 30px rgba(0, 0, 0, 0.26);
+  --interactive-glow-accent: 0 14px 34px rgba(45, 212, 191, 0.12);
+}
+
+body :where(button:not(:disabled), a[href], summary, [role="button"]) {
+  cursor: pointer;
+}
+
+body :where(button:disabled, [aria-disabled="true"], .is-disabled) {
+  cursor: not-allowed;
+  opacity: 0.56;
+}
+
+body select:not(:disabled),
+body input[type="checkbox"]:not(:disabled),
+body input[type="radio"]:not(:disabled) {
+  cursor: pointer;
+}
+
+body input[type="search"],
+body input[type="text"],
+body input[type="password"],
+body input[type="number"],
+body textarea {
+  cursor: text;
+}
+
+body
+  :where(button, a[href], summary, [role="button"], input, select, textarea) {
+  transition:
+    background-color var(--motion-base) var(--motion-ease),
+    border-color var(--motion-base) var(--motion-ease),
+    box-shadow var(--motion-base) var(--motion-ease),
+    color var(--motion-base) var(--motion-ease),
+    opacity var(--motion-base) var(--motion-ease),
+    transform var(--motion-fast) var(--motion-press);
+}
+
+body :where(button, a[href], summary, [role="button"]):focus-visible,
+body :where(input, select, textarea):focus-visible {
+  outline: 0;
+  box-shadow: var(--interactive-ring);
+}
+
+body :where(button, a[href], summary, [role="button"]):active:not(:disabled) {
+  transform: translateY(0) scale(0.985);
+}
+
+body :where(button svg, a[href] svg, summary svg, [role="button"] svg) {
+  transition:
+    color var(--motion-base) var(--motion-ease),
+    opacity var(--motion-base) var(--motion-ease),
+    transform var(--motion-base) var(--motion-ease);
+}
+
+body.auth-unlocked
+  :where(
+    .primary-button,
+    .secondary-button,
+    .ghost-button,
+    .mini-action-button,
+    .manager-login-submit,
+    .workspace-nav-tab,
+    .home-link,
+    .cup-action,
+    .attention-item,
+    .round-cpu-card,
+    .coach-chip,
+    .email-filter-button,
+    .email-folder-button,
+    .email-focus-card,
+    .email-thread-button,
+    .email-preview-actions button,
+    .email-bulk-toolbar button,
+    .email-thread-row-actions button,
+    .market-player-option,
+    .ea-rating-option,
+    .app-action-modal-button,
+    [data-view-target],
+    [data-open-result-modal],
+    [data-reverse-result],
+    [data-market-player],
+    [data-market-player-select],
+    [data-transfer-load-candidate],
+    [data-transfer-compare-add],
+    [data-transfer-compare-remove],
+    [data-transfer-compare-clear],
+    [data-transfer-shortlist-save],
+    [data-transfer-shortlist-remove],
+    [data-transfer-apply-exchange],
+    [data-transfer-proposal-answer],
+    [data-medical-plan-key],
+    [data-medical-treatment],
+    [data-medical-action],
+    [data-audit-action],
+    [data-email-action],
+    [data-email-bulk-action],
+    [data-email-open-thread],
+    [data-email-filter-view-button],
+    [data-email-filter-folder-button],
+    [data-coach-owner],
+    [data-manager-avatar-trigger],
+    [data-manager-avatar-remove],
+    [data-favorite-target],
+    [data-remove-favorite-key],
+    [data-remove-private-target],
+    [data-remove-sale-listing]
+  ) {
+  position: relative;
+  isolation: isolate;
+  will-change: transform;
+}
+
+body.auth-unlocked
+  :where(
+    .primary-button,
+    .secondary-button,
+    .ghost-button,
+    .mini-action-button,
+    .manager-login-submit,
+    .workspace-nav-tab,
+    .home-link,
+    .cup-action,
+    .attention-item,
+    .round-cpu-card,
+    .coach-chip,
+    .email-filter-button,
+    .email-folder-button,
+    .email-focus-card,
+    .email-thread-button,
+    .email-preview-actions button,
+    .email-bulk-toolbar button,
+    .email-thread-row-actions button,
+    .market-player-option,
+    .ea-rating-option,
+    .app-action-modal-button
+  ) {
+  outline-offset: 2px;
+}
+
+body.auth-unlocked
+  :where(
+    .primary-button,
+    .manager-login-submit,
+    .mini-action-button,
+    button[type="submit"]
+  ):not(:disabled) {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.16),
+    0 0 0 0 rgba(56, 216, 193, 0);
+}
+
+body.auth-unlocked :where(input, select, textarea):not(:disabled):hover {
+  border-color: rgba(174, 200, 208, 0.3);
+  background-color: rgba(255, 255, 255, 0.04);
+}
+
+body.auth-unlocked :where(input, select, textarea):not(:disabled):focus {
+  border-color: rgba(56, 216, 193, 0.58);
+  background-color: rgba(3, 7, 9, 0.82);
+}
+
+body.auth-unlocked
+  :where(
+    .summary-card,
+    .home-panel,
+    .home-cup-card,
+    .countdown-card,
+    .rule-card,
+    .table-wrapper,
+    .submit-card,
+    .coach-panel-card,
+    .transfer-ops-card,
+    .email-preview-card,
+    .sponsor-email-card
+  ) {
+  cursor: default;
+}
+
+body.auth-unlocked .workspace-nav-tab::before,
+body.auth-unlocked .email-thread-button::after,
+body.auth-unlocked .email-filter-button::after,
+body.auth-unlocked .email-folder-button::after,
+body.auth-unlocked .email-focus-card::after,
+body.auth-unlocked .market-player-option::after,
+body.auth-unlocked .attention-item::after {
+  content: "";
+  pointer-events: none;
+  position: absolute;
+  opacity: 0;
+  transition:
+    opacity var(--motion-base) var(--motion-ease),
+    transform var(--motion-base) var(--motion-ease);
+}
+
+body.auth-unlocked .workspace-nav-tab::before {
+  inset: 5px auto 5px 5px;
+  width: 3px;
+  border-radius: 999px;
+  background: var(--ds-teal);
+  transform: scaleY(0.2);
+  transform-origin: center;
+}
+
+body.auth-unlocked .email-thread-button::after,
+body.auth-unlocked .email-filter-button::after,
+body.auth-unlocked .email-folder-button::after,
+body.auth-unlocked .email-focus-card::after,
+body.auth-unlocked .market-player-option::after,
+body.auth-unlocked .attention-item::after {
+  top: 50%;
+  right: 12px;
+  width: 7px;
+  height: 7px;
+  border-top: 2px solid rgba(56, 216, 193, 0.9);
+  border-right: 2px solid rgba(56, 216, 193, 0.9);
+  transform: translate(-4px, -50%) rotate(45deg);
+}
+
+body.auth-unlocked
+  :where(
+    .email-thread-button,
+    .email-filter-button,
+    .email-folder-button,
+    .email-focus-card,
+    .market-player-option,
+    .attention-item
+  ) {
+  padding-right: max(12px, 2.2rem);
+}
+
+body.auth-unlocked .email-thread-check {
+  cursor: pointer;
+}
+
+body.auth-unlocked .email-thread-check input {
+  cursor: pointer;
+  transition:
+    box-shadow var(--motion-base) var(--motion-ease),
+    transform var(--motion-base) var(--motion-ease);
+}
+
+body.auth-unlocked #playersView .email-thread-item {
+  transition:
+    background-color var(--motion-base) var(--motion-ease),
+    border-color var(--motion-base) var(--motion-ease),
+    box-shadow var(--motion-base) var(--motion-ease),
+    opacity var(--motion-base) var(--motion-ease),
+    transform var(--motion-fast) var(--motion-press);
+}
+
+body.auth-unlocked #playersView .email-thread-item.is-selected {
+  box-shadow:
+    inset 3px 0 0 var(--ds-teal),
+    0 0 0 1px rgba(56, 216, 193, 0.06);
+}
+
+body.auth-unlocked #playersView .email-thread-item.is-read:not(.is-selected) {
+  opacity: 0.72;
+}
+
+body.auth-unlocked
+  #playersView
+  .email-thread-item.is-read:not(.is-selected):hover {
+  opacity: 0.92;
+}
+
+body.auth-unlocked #playersView .email-thread-state {
+  transition:
+    background-color var(--motion-base) var(--motion-ease),
+    border-color var(--motion-base) var(--motion-ease),
+    color var(--motion-base) var(--motion-ease);
+}
+
+body.auth-unlocked
+  #playersView
+  :where(
+    .email-filter-button.is-active,
+    .email-folder-button.is-active,
+    .email-thread-item.is-selected
+  ) {
+  border-color: rgba(56, 216, 193, 0.42);
+  background:
+    linear-gradient(90deg, rgba(56, 216, 193, 0.12), transparent 82%),
+    rgba(14, 37, 42, 0.82);
+}
+
+body.auth-unlocked #playersView .email-thread-item.is-unread:not(.is-selected) {
+  border-color: rgba(56, 216, 193, 0.18);
+  background:
+    linear-gradient(90deg, rgba(56, 216, 193, 0.055), transparent 82%),
+    rgba(255, 255, 255, 0.024);
+}
+
+body.auth-unlocked #playersView .email-preview-actions button {
+  cursor: pointer;
+}
+
+body.auth-unlocked .app-action-modal-backdrop {
+  cursor: pointer;
+}
+
+body.auth-unlocked .app-action-modal-card {
+  cursor: default;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  body.auth-unlocked
+    :where(
+      .primary-button,
+      .manager-login-submit,
+      .mini-action-button,
+      button[type="submit"]
+    ):not(:disabled):hover {
+    border-color: rgba(245, 196, 81, 0.6);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.18),
+      var(--interactive-glow-accent);
+    filter: saturate(1.06);
+    transform: translateY(-1px);
+  }
+
+  body.auth-unlocked
+    :where(
+      .secondary-button,
+      .ghost-button,
+      .app-action-modal-button,
+      .email-preview-actions button,
+      .email-bulk-toolbar button,
+      .email-thread-row-actions button
+    ):not(:disabled):hover {
+    border-color: rgba(56, 216, 193, 0.38);
+    background: rgba(56, 216, 193, 0.095);
+    color: #f8fffd;
+    box-shadow: var(--interactive-glow);
+    transform: translateY(-1px);
+  }
+
+  body.auth-unlocked
+    :where(
+      .workspace-nav-tab,
+      .home-link,
+      .cup-action,
+      .attention-item,
+      .round-cpu-card,
+      .coach-chip,
+      .email-filter-button,
+      .email-folder-button,
+      .email-focus-card,
+      .market-player-option,
+      .ea-rating-option,
+      [data-view-target],
+      [data-email-open-thread],
+      [data-email-filter-view-button],
+      [data-email-filter-folder-button],
+      [data-market-player],
+      [data-market-player-select],
+      [data-coach-owner]
+    ):not(:disabled):hover {
+    border-color: rgba(56, 216, 193, 0.36);
+    background:
+      linear-gradient(90deg, rgba(56, 216, 193, 0.115), transparent 88%),
+      rgba(255, 255, 255, 0.035);
+    color: var(--ds-text-strong);
+    box-shadow: var(--interactive-glow-accent);
+    transform: translateY(-1px);
+  }
+
+  body.auth-unlocked
+    :where(
+      .workspace-nav-tab,
+      .email-thread-button,
+      .email-filter-button,
+      .email-folder-button,
+      .email-focus-card,
+      .market-player-option,
+      .attention-item
+    ):not(:disabled):hover::before {
+    opacity: 1;
+    transform: scaleY(1);
+  }
+
+  body.auth-unlocked
+    :where(
+      .email-thread-button,
+      .email-filter-button,
+      .email-folder-button,
+      .email-focus-card,
+      .market-player-option,
+      .attention-item
+    ):not(:disabled):hover::after {
+    opacity: 1;
+    transform: translate(0, -50%) rotate(45deg);
+  }
+
+  body.auth-unlocked
+    :where(button, a[href], summary, [role="button"]):not(:disabled):hover
+    svg {
+    transform: translateY(-1px);
+  }
+
+  body.auth-unlocked
+    #playersView
+    .email-thread-item:has(.email-thread-button:hover) {
+    border-color: rgba(56, 216, 193, 0.38);
+    background:
+      linear-gradient(90deg, rgba(56, 216, 193, 0.105), transparent 86%),
+      rgba(255, 255, 255, 0.035);
+    box-shadow: var(--interactive-glow-accent);
+    transform: translateY(-1px);
+  }
+
+  body.auth-unlocked
+    #playersView
+    .email-thread-item:has(.email-thread-check:hover) {
+    border-color: rgba(245, 196, 81, 0.42);
+  }
+
+  body.auth-unlocked #playersView .email-thread-check:hover input {
+    box-shadow: 0 0 0 4px rgba(245, 196, 81, 0.14);
+    transform: scale(1.08);
+  }
+
+  body.auth-unlocked
+    #playersView
+    .email-thread-item:has(.email-thread-button:hover)
+    .email-thread-state {
+    border-color: rgba(56, 216, 193, 0.32);
+    color: var(--ds-teal);
+    background: rgba(56, 216, 193, 0.09);
+  }
+
+  body.auth-unlocked
+    :where(.sponsor-email-card, .email-preview-card):has(button:hover) {
+    border-color: rgba(56, 216, 193, 0.28);
+    box-shadow: var(--interactive-glow-accent);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body *,
+  body *::before,
+  body *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  body :where(button, a[href], summary, [role="button"]):active:not(:disabled) {
+    transform: none;
+  }
+}

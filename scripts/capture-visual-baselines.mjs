@@ -15,6 +15,26 @@ const routes = [
   ["login-desktop", "/", null, { width: 1440, height: 1000 }],
   ["standings-desktop", "/", "manager", { width: 1440, height: 1000 }],
   [
+    "calendar-desktop",
+    "/league/calendar",
+    "manager",
+    { width: 1440, height: 1000 },
+  ],
+  ["cups-desktop", "/league/cups", "manager", { width: 1440, height: 1000 }],
+  [
+    "events-desktop",
+    "/league/events",
+    "manager",
+    { width: 1440, height: 1000 },
+  ],
+  ["inbox-desktop", "/club/inbox", "manager", { width: 1440, height: 1000 }],
+  [
+    "commercial-desktop",
+    "/club/commercial",
+    "manager",
+    { width: 1440, height: 1000 },
+  ],
+  [
     "transfers-desktop",
     "/club/transfers",
     "manager",
@@ -28,12 +48,39 @@ const routes = [
     { width: 1440, height: 1000 },
   ],
   [
+    "intelligence-desktop",
+    "/ops/intelligence",
+    "commissioner",
+    { width: 1440, height: 1000 },
+  ],
+  [
+    "results-desktop",
+    "/ops/results",
+    "commissioner",
+    { width: 1440, height: 1000 },
+  ],
+  [
     "transfers-mobile",
     "/club/transfers",
     "manager",
     { width: 390, height: 844 },
   ],
 ];
+
+const routeViewIds = new Map([
+  ["/", "standingsView"],
+  ["/league/standings", "standingsView"],
+  ["/league/calendar", "calendarView"],
+  ["/league/cups", "cupsView"],
+  ["/league/events", "eventsView"],
+  ["/club/inbox", "playersView"],
+  ["/club/commercial", "playersView"],
+  ["/club/transfers", "transfersView"],
+  ["/club/squad", "squadView"],
+  ["/ops/commissioner", "commissionerView"],
+  ["/ops/intelligence", "experienceView"],
+  ["/ops/results", "submitView"],
+]);
 
 function createSession(kind) {
   if (!kind) return null;
@@ -133,13 +180,7 @@ await withDevServer(async () => {
     await page.goto(targetUrl, { waitUntil: "networkidle", timeout: 60000 });
     await page.waitForTimeout(3500);
 
-    const view = route.includes("transfers")
-      ? "transfersView"
-      : route.includes("squad")
-        ? "squadView"
-        : route.includes("commissioner")
-          ? "commissionerView"
-          : null;
+    const view = routeViewIds.get(route) || null;
 
     if (view && kind) {
       await page.evaluate((viewId) => {
@@ -174,6 +215,38 @@ await withDevServer(async () => {
           overflow: styles.overflow,
         };
       };
+      const isVisible = (node) => {
+        const rect = node.getBoundingClientRect();
+        return (
+          rect.width > 0 &&
+          rect.height > 0 &&
+          getComputedStyle(node).visibility !== "hidden"
+        );
+      };
+      const clickableNodes = [
+        ...document.querySelectorAll(
+          [
+            "button:not(:disabled)",
+            "a[href]",
+            "summary",
+            '[role="button"]',
+            'input[type="checkbox"]:not(:disabled)',
+            'input[type="radio"]:not(:disabled)',
+            "select:not(:disabled)",
+          ].join(","),
+        ),
+      ].filter(isVisible);
+      const nonPointerClickable = clickableNodes
+        .filter((node) => getComputedStyle(node).cursor !== "pointer")
+        .slice(0, 8)
+        .map((node) => ({
+          tag: node.tagName.toLowerCase(),
+          className: String(node.className || ""),
+          text: String(node.textContent || "")
+            .trim()
+            .slice(0, 48),
+          cursor: getComputedStyle(node).cursor,
+        }));
 
       return {
         activeView: document.querySelector(".view.active")?.id || "",
@@ -192,11 +265,25 @@ await withDevServer(async () => {
             document.querySelector(".workspace-nav")?.clientWidth || 0,
           status: readRect(".app-status-bar"),
         },
+        interactions: {
+          clickableCount: clickableNodes.length,
+          nonPointerClickable,
+        },
       };
     });
     const problems = [];
     if (metrics.overflowX) {
       problems.push("document has horizontal overflow");
+    }
+    if (
+      viewport.width >= 1180 &&
+      metrics.interactions.nonPointerClickable.length > 0
+    ) {
+      problems.push(
+        `visible clickable controls without pointer cursor: ${JSON.stringify(
+          metrics.interactions.nonPointerClickable,
+        )}`,
+      );
     }
     if (kind && viewport.width >= 1180) {
       const minimumChromeWidth = Math.round(viewport.width * 0.65);
