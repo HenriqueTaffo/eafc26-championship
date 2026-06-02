@@ -93,13 +93,15 @@ const hoverChecks = [
     assertSelector: ".email-thread-item:not(.is-selected)",
   },
   {
-    name: "inbox-filter-hover",
+    name: "office-action-hover",
     route: "/club/inbox",
     kind: "manager",
     viewport: { width: 1440, height: 1000 },
     waitSelector: ".email-office-layout",
-    targetSelector: ".email-filter-button:not(.is-active)",
-    assertSelector: ".email-filter-button:not(.is-active)",
+    targetSelector:
+      ".email-filter-button:not(.is-active):visible, .email-focus-card:visible, #playersView .coach-panel-card button:not(:disabled):visible",
+    assertSelector:
+      ".email-filter-button:not(.is-active):visible, .email-focus-card:visible, #playersView .coach-panel-card button:not(:disabled):visible",
   },
   {
     name: "nav-hover",

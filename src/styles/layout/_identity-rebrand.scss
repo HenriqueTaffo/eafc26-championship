@@ -1,0 +1,990 @@
+/* Identity rebrand: premium matchday command center, visual-only layer. */
+:root {
+  --brand-font-display:
+    Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+    "Segoe UI", sans-serif;
+  --brand-ink: #05070a;
+  --brand-night: #071018;
+  --brand-night-2: #0a171a;
+  --brand-panel: rgba(10, 17, 21, 0.92);
+  --brand-panel-solid: #0b1317;
+  --brand-panel-raised: rgba(14, 23, 29, 0.94);
+  --brand-panel-soft: rgba(17, 27, 32, 0.68);
+  --brand-line: rgba(196, 226, 222, 0.17);
+  --brand-line-strong: rgba(211, 238, 231, 0.3);
+  --brand-line-warm: rgba(246, 200, 78, 0.32);
+  --brand-text: #eef7f4;
+  --brand-text-strong: #ffffff;
+  --brand-muted: #a6b8bf;
+  --brand-subtle: #72868e;
+  --brand-teal: #25e0bd;
+  --brand-gold: #f6c84e;
+  --brand-blue: #5aa8ff;
+  --brand-coral: #ff6b6b;
+  --brand-violet: #b994ff;
+  --brand-green: #80e27e;
+  --brand-teal-soft: rgba(37, 224, 189, 0.13);
+  --brand-gold-soft: rgba(246, 200, 78, 0.14);
+  --brand-blue-soft: rgba(90, 168, 255, 0.13);
+  --brand-coral-soft: rgba(255, 107, 107, 0.13);
+  --brand-violet-soft: rgba(185, 148, 255, 0.14);
+  --brand-radius: 8px;
+  --brand-radius-sm: 6px;
+  --brand-shadow:
+    0 20px 48px rgba(0, 0, 0, 0.34), 0 0 0 1px rgba(255, 255, 255, 0.03);
+  --brand-shadow-soft:
+    0 14px 34px rgba(0, 0, 0, 0.24), 0 1px 0 rgba(255, 255, 255, 0.04);
+  --brand-glow: 0 0 34px rgba(37, 224, 189, 0.16);
+  --brand-focus:
+    0 0 0 3px rgba(246, 200, 78, 0.18), 0 0 0 1px rgba(37, 224, 189, 0.35);
+}
+
+body.auth-unlocked {
+  color: var(--brand-text);
+  background:
+    linear-gradient(
+      90deg,
+      rgba(246, 200, 78, 0.07) 0 1px,
+      transparent 1px 72px
+    ),
+    linear-gradient(
+      180deg,
+      rgba(37, 224, 189, 0.045) 0 1px,
+      transparent 1px 72px
+    ),
+    linear-gradient(135deg, rgba(246, 200, 78, 0.12), transparent 24%),
+    linear-gradient(220deg, rgba(90, 168, 255, 0.11), transparent 34%),
+    linear-gradient(180deg, #081216 0%, #05070a 52%, #030405 100%);
+  background-attachment: fixed;
+}
+
+body.auth-unlocked::before {
+  content: "";
+  pointer-events: none;
+  position: fixed;
+  z-index: -1;
+  inset: 0;
+  background:
+    linear-gradient(
+      115deg,
+      transparent 0 38%,
+      rgba(37, 224, 189, 0.055) 38% 39%,
+      transparent 39% 100%
+    ),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.045), transparent 22% 100%);
+  opacity: 0.95;
+}
+
+body.auth-unlocked,
+body.auth-unlocked *:not(svg):not(path) {
+  font-family: var(--brand-font-display) !important;
+}
+
+body.auth-unlocked .app {
+  width: min(1580px, calc(100% - 28px));
+  gap: 16px;
+  padding: 14px 0 44px;
+}
+
+body.auth-unlocked .shell-top-cluster {
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+body.auth-unlocked .shell-masthead-row {
+  grid-template-columns: minmax(0, 1fr) minmax(330px, 450px);
+  gap: 12px;
+}
+
+body.auth-unlocked
+  :where(
+    .league-hero-brand,
+    .manager-session-card.manager-login-shell,
+    .app-status-bar,
+    .workspace-nav
+  ) {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--brand-line);
+  border-radius: var(--brand-radius);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.075), transparent 42%),
+    linear-gradient(135deg, rgba(37, 224, 189, 0.1), transparent 38%),
+    var(--brand-panel);
+  box-shadow: var(--brand-shadow-soft);
+}
+
+body.auth-unlocked
+  :where(
+    .league-hero-brand,
+    .manager-session-card.manager-login-shell,
+    .app-status-bar,
+    .workspace-nav
+  )::after {
+  content: "";
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+body.auth-unlocked .league-hero-brand {
+  min-height: 92px;
+  padding: 16px 18px;
+  background:
+    linear-gradient(90deg, rgba(246, 200, 78, 0.18), transparent 28%),
+    linear-gradient(135deg, rgba(37, 224, 189, 0.12), transparent 48%),
+    linear-gradient(180deg, rgba(16, 26, 31, 0.98), rgba(7, 12, 16, 0.95));
+}
+
+body.auth-unlocked .league-hero-brand::before,
+body.auth-unlocked .manager-session-card.manager-login-shell::before,
+body.auth-unlocked .app-status-bar::before {
+  content: "";
+  pointer-events: none;
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 5px;
+  background: linear-gradient(
+    180deg,
+    var(--brand-gold),
+    var(--brand-teal) 58%,
+    var(--brand-blue)
+  );
+}
+
+body.auth-unlocked .league-brand-wordmark {
+  width: 132px;
+  filter: drop-shadow(0 10px 20px rgba(0, 0, 0, 0.3))
+    drop-shadow(0 0 12px rgba(246, 200, 78, 0.1));
+}
+
+body.auth-unlocked .league-brand-meta,
+body.auth-unlocked .status-kicker,
+body.auth-unlocked .workspace-nav-group-kicker,
+body.auth-unlocked .summary-card span,
+body.auth-unlocked .home-panel-header span,
+body.auth-unlocked .coach-section-kicker,
+body.auth-unlocked .modal-kicker,
+body.auth-unlocked .submit-card-header span:not(.submit-card-icon),
+body.auth-unlocked .advanced-tool-head span,
+body.auth-unlocked .advanced-transfer-title span {
+  color: var(--brand-gold);
+  font-size: 0.68rem;
+  font-weight: 950;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+body.auth-unlocked .league-route-title {
+  color: var(--brand-text-strong);
+  font-size: 1.34rem;
+  font-weight: 900;
+  line-height: 1;
+  text-shadow: 0 0 24px rgba(37, 224, 189, 0.16);
+}
+
+body.auth-unlocked .league-hero-copy p,
+body.auth-unlocked .manager-session-card small,
+body.auth-unlocked .summary-card small,
+body.auth-unlocked .home-panel-header p,
+body.auth-unlocked .calendar-muted,
+body.auth-unlocked .coach-card-subtitle,
+body.auth-unlocked .advanced-transfer-title p {
+  color: var(--brand-muted);
+}
+
+body.auth-unlocked .manager-session-card.manager-login-shell {
+  min-height: 92px;
+  padding: 13px 15px;
+  background:
+    linear-gradient(90deg, rgba(90, 168, 255, 0.14), transparent 42%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.06), transparent),
+    var(--brand-panel);
+}
+
+body.auth-unlocked .manager-login-avatar-shell,
+body.auth-unlocked .manager-custom-avatar,
+body.auth-unlocked .login-success-club-badge {
+  border-radius: var(--brand-radius);
+  box-shadow:
+    inset 0 0 0 1px rgba(37, 224, 189, 0.28),
+    0 0 22px rgba(37, 224, 189, 0.12);
+}
+
+body.auth-unlocked .manager-session-card span {
+  color: var(--brand-teal) !important;
+}
+
+body.auth-unlocked .manager-session-card strong {
+  color: var(--brand-text-strong) !important;
+  font-weight: 900;
+}
+
+body.auth-unlocked .manager-session-actions .ghost-button,
+body.auth-unlocked .status-actions button,
+body.auth-unlocked .secondary-button,
+body.auth-unlocked .ghost-button,
+body.auth-unlocked .app-action-modal-button {
+  border-color: var(--brand-line);
+  border-radius: var(--brand-radius-sm);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.055), transparent),
+    rgba(8, 15, 20, 0.82);
+  color: var(--brand-text);
+  box-shadow: none;
+}
+
+body.auth-unlocked .primary-button,
+body.auth-unlocked .cup-action,
+body.auth-unlocked .home-link,
+body.auth-unlocked button[type="submit"] {
+  border: 1px solid rgba(246, 200, 78, 0.48);
+  border-radius: var(--brand-radius-sm);
+  background: linear-gradient(135deg, #f9d76a 0%, #25e0bd 58%, #5aa8ff 100%);
+  color: #04100e;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.34),
+    0 12px 30px rgba(37, 224, 189, 0.12);
+  font-weight: 950;
+}
+
+body.auth-unlocked .workspace-nav {
+  top: 10px;
+  gap: 8px;
+  padding: 8px;
+  background:
+    linear-gradient(90deg, rgba(246, 200, 78, 0.08), transparent 22%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.07), transparent),
+    rgba(5, 10, 13, 0.94);
+  backdrop-filter: blur(24px);
+}
+
+body.auth-unlocked .workspace-nav::before {
+  content: "";
+  pointer-events: none;
+  position: absolute;
+  inset: 0 0 auto;
+  height: 2px;
+  background: linear-gradient(
+    90deg,
+    var(--brand-gold),
+    var(--brand-teal),
+    var(--brand-blue),
+    var(--brand-violet)
+  );
+}
+
+body.auth-unlocked .workspace-nav-group {
+  gap: 6px;
+  border: 1px solid rgba(196, 226, 222, 0.09);
+  border-radius: var(--brand-radius);
+  padding: 4px;
+  background: rgba(255, 255, 255, 0.025);
+}
+
+body.auth-unlocked .workspace-nav-group:nth-of-type(1) {
+  background:
+    linear-gradient(90deg, rgba(246, 200, 78, 0.06), transparent 62%),
+    rgba(255, 255, 255, 0.025);
+}
+
+body.auth-unlocked .workspace-nav-group:nth-of-type(2) {
+  background:
+    linear-gradient(90deg, rgba(37, 224, 189, 0.06), transparent 62%),
+    rgba(255, 255, 255, 0.025);
+}
+
+body.auth-unlocked .workspace-nav-group:nth-of-type(3) {
+  background:
+    linear-gradient(90deg, rgba(90, 168, 255, 0.06), transparent 62%),
+    rgba(255, 255, 255, 0.025);
+}
+
+body.auth-unlocked .workspace-nav-grid {
+  gap: 6px;
+}
+
+body.auth-unlocked .workspace-nav-tab {
+  min-height: 42px;
+  border: 1px solid transparent;
+  border-radius: var(--brand-radius-sm);
+  padding: 0 12px;
+  background: rgba(255, 255, 255, 0.02);
+  color: var(--brand-muted);
+}
+
+body.auth-unlocked .workspace-nav-tab-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--brand-radius-sm);
+  background: rgba(255, 255, 255, 0.045);
+  color: var(--brand-subtle);
+}
+
+body.auth-unlocked .workspace-nav-tab.active,
+body.auth-unlocked .workspace-nav-tab[aria-current="page"] {
+  border-color: rgba(37, 224, 189, 0.46);
+  background:
+    linear-gradient(90deg, rgba(37, 224, 189, 0.2), transparent 82%),
+    rgba(255, 255, 255, 0.05);
+  color: var(--brand-text-strong);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.03),
+    0 0 26px rgba(37, 224, 189, 0.12);
+}
+
+body.auth-unlocked .workspace-nav-tab.active .workspace-nav-tab-icon,
+body.auth-unlocked
+  .workspace-nav-tab[aria-current="page"]
+  .workspace-nav-tab-icon {
+  background: linear-gradient(135deg, var(--brand-gold), var(--brand-teal));
+  color: #04100e;
+}
+
+body.auth-unlocked .app-status-bar {
+  min-height: 58px;
+  padding: 9px 12px;
+}
+
+body.auth-unlocked .status-primary strong {
+  color: var(--brand-muted);
+}
+
+body.auth-unlocked .global-search input,
+body.auth-unlocked input,
+body.auth-unlocked select,
+body.auth-unlocked textarea {
+  border-color: rgba(196, 226, 222, 0.2);
+  border-radius: var(--brand-radius-sm);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.04), transparent),
+    rgba(3, 8, 11, 0.86);
+  color: var(--brand-text);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.035);
+}
+
+body.auth-unlocked :where(input, select, textarea):focus {
+  border-color: rgba(37, 224, 189, 0.64);
+  box-shadow: var(--brand-focus);
+}
+
+body.auth-unlocked .view {
+  padding-bottom: 48px;
+}
+
+body.auth-unlocked
+  :is(
+    .summary-card,
+    .home-panel,
+    .home-cup-card,
+    .countdown-card,
+    .rule-card,
+    .table-wrapper,
+    .submit-card,
+    .coach-panel-card,
+    .leaderboard-card,
+    .coach-comparison-v47,
+    .calendar-month-card,
+    .calendar-week-card,
+    .calendar-month-highlights article,
+    .calendar-agenda-card,
+    .calendar-day-cell,
+    .calendar-event-card,
+    .event-card,
+    .event-card-v45,
+    .event-effect-box,
+    .event-board-header,
+    .transfer-negotiation-hub,
+    .transfer-compare-board,
+    .transfer-market-shell,
+    .transfer-history-shell,
+    .transfer-budget-card,
+    .transfer-deal-card,
+    .transfer-scout-card,
+    .transfer-shortlist-card,
+    .transfer-hub-card,
+    .transfer-ops-card,
+    .transfer-ops-alert,
+    .transfer-shortlist-item,
+    .transfer-compare-card,
+    .advanced-tool-card,
+    .commissioner-card,
+    .commissioner-hero,
+    .submit-hero,
+    .form-card,
+    .legend-block,
+    .coach-empty-state,
+    .market-empty,
+    .transfer-shortlist-empty,
+    .app-skeleton-stack
+  ) {
+  border: 1px solid var(--brand-line);
+  border-radius: var(--brand-radius);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.06), transparent 44%),
+    linear-gradient(135deg, rgba(37, 224, 189, 0.045), transparent 42%),
+    var(--brand-panel);
+  box-shadow: var(--brand-shadow-soft);
+}
+
+body.auth-unlocked
+  :is(
+    .home-panel,
+    .coach-panel-card,
+    .calendar-month-card,
+    .transfer-negotiation-hub,
+    .transfer-compare-board,
+    .transfer-market-shell,
+    .advanced-tool-card,
+    .submit-card,
+    .commissioner-card,
+    .experience-card
+  ) {
+  position: relative;
+  overflow: hidden;
+}
+
+body.auth-unlocked
+  :is(
+    .home-panel,
+    .coach-panel-card,
+    .calendar-month-card,
+    .transfer-negotiation-hub,
+    .transfer-compare-board,
+    .transfer-market-shell,
+    .advanced-tool-card,
+    .submit-card,
+    .commissioner-card,
+    .experience-card
+  )::before {
+  content: "";
+  pointer-events: none;
+  position: absolute;
+  inset: 0 0 auto;
+  height: 2px;
+  background: linear-gradient(
+    90deg,
+    rgba(246, 200, 78, 0.72),
+    rgba(37, 224, 189, 0.54),
+    transparent
+  );
+}
+
+body.auth-unlocked .summary {
+  gap: 12px;
+}
+
+body.auth-unlocked .summary-card {
+  min-height: 104px;
+  padding: 16px;
+  border-left: 0;
+  background:
+    linear-gradient(135deg, rgba(246, 200, 78, 0.13), transparent 46%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.06), transparent),
+    var(--brand-panel-raised);
+}
+
+body.auth-unlocked .summary-card:nth-child(2n) {
+  background:
+    linear-gradient(135deg, rgba(37, 224, 189, 0.13), transparent 46%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.06), transparent),
+    var(--brand-panel-raised);
+}
+
+body.auth-unlocked .summary-card:nth-child(3n) {
+  background:
+    linear-gradient(135deg, rgba(90, 168, 255, 0.13), transparent 46%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.06), transparent),
+    var(--brand-panel-raised);
+}
+
+body.auth-unlocked .summary-card strong,
+body.auth-unlocked .round-center-card h2,
+body.auth-unlocked .home-panel-header h2,
+body.auth-unlocked .coach-panel-card h2,
+body.auth-unlocked .calendar-month-header h2,
+body.auth-unlocked .advanced-tool-head h2,
+body.auth-unlocked .submit-card h2,
+body.auth-unlocked .commissioner-card h2,
+body.auth-unlocked .experience-card h2 {
+  color: var(--brand-text-strong);
+  font-weight: 950;
+}
+
+body.auth-unlocked .summary-card strong {
+  font-size: 1.72rem;
+  line-height: 1;
+}
+
+body.auth-unlocked .round-center-card {
+  border-color: rgba(90, 168, 255, 0.25);
+  background:
+    linear-gradient(100deg, rgba(90, 168, 255, 0.22), transparent 42%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.08), transparent), #101936;
+}
+
+body.auth-unlocked .round-manager-card,
+body.auth-unlocked .round-cpu-card,
+body.auth-unlocked .attention-item,
+body.auth-unlocked .activity-item,
+body.auth-unlocked .next-game-item,
+body.auth-unlocked .home-news-item {
+  border: 1px solid rgba(196, 226, 222, 0.15);
+  border-radius: var(--brand-radius-sm);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.05), transparent),
+    rgba(7, 13, 17, 0.72);
+}
+
+body.auth-unlocked .round-manager-card.pending {
+  border-color: rgba(246, 200, 78, 0.48);
+  background:
+    linear-gradient(135deg, rgba(246, 200, 78, 0.16), transparent 58%),
+    rgba(7, 13, 17, 0.72);
+}
+
+body.auth-unlocked .round-manager-card.done {
+  border-color: rgba(128, 226, 126, 0.35);
+}
+
+body.auth-unlocked .home-cup-card {
+  border-color: rgba(246, 200, 78, 0.36);
+  background:
+    linear-gradient(90deg, rgba(246, 200, 78, 0.18), transparent 45%),
+    var(--brand-panel);
+}
+
+body.auth-unlocked .cup-icon {
+  border-radius: var(--brand-radius);
+  background: linear-gradient(135deg, var(--brand-violet), var(--brand-gold));
+  box-shadow: 0 0 28px rgba(185, 148, 255, 0.18);
+}
+
+body.auth-unlocked .league-news-panel,
+body.auth-unlocked .home-grid > .home-panel:empty,
+body.auth-unlocked .full-standings-block:empty,
+body.auth-unlocked #playersView .coach-panel-card:empty,
+body.auth-unlocked #transfersView .transfer-history-shell:empty,
+body.auth-unlocked .app-skeleton-stack {
+  position: relative;
+  overflow: hidden;
+  background:
+    repeating-linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.03) 0 1px,
+      transparent 1px 18px
+    ),
+    linear-gradient(115deg, rgba(37, 224, 189, 0.08), transparent 34%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.035), transparent),
+    rgba(6, 12, 16, 0.72);
+}
+
+body.auth-unlocked .league-news-panel::before,
+body.auth-unlocked .home-grid > .home-panel:empty::before,
+body.auth-unlocked .full-standings-block:empty::before,
+body.auth-unlocked #playersView .coach-panel-card:empty::before,
+body.auth-unlocked #transfersView .transfer-history-shell:empty::before,
+body.auth-unlocked .app-skeleton-stack::before {
+  content: "";
+  pointer-events: none;
+  position: absolute;
+  inset: 0 0 auto;
+  height: 3px;
+  background: linear-gradient(
+    90deg,
+    rgba(246, 200, 78, 0.7),
+    rgba(37, 224, 189, 0.5),
+    rgba(90, 168, 255, 0.35)
+  );
+}
+
+body.auth-unlocked table {
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+body.auth-unlocked th {
+  color: var(--brand-gold);
+  background: rgba(246, 200, 78, 0.055);
+}
+
+body.auth-unlocked td {
+  color: var(--brand-text);
+}
+
+body.auth-unlocked tbody tr:nth-child(2n) td {
+  background: rgba(255, 255, 255, 0.018);
+}
+
+body.auth-unlocked tbody tr:hover td {
+  background: rgba(37, 224, 189, 0.055);
+}
+
+body.auth-unlocked .badge,
+body.auth-unlocked .events-status-pill,
+body.auth-unlocked .competition-badge,
+body.auth-unlocked .market-player-status,
+body.auth-unlocked .transfer-deal-status,
+body.auth-unlocked .operation-chip,
+body.auth-unlocked .transfer-pill,
+body.auth-unlocked .status-pill,
+body.auth-unlocked .round-pill {
+  border: 1px solid rgba(196, 226, 222, 0.16);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.045);
+  color: var(--brand-text);
+}
+
+body.auth-unlocked #playersView .coach-hero-card,
+body.auth-unlocked #squadView .squad-hero-panel,
+body.auth-unlocked #eventsView .countdown-card,
+body.auth-unlocked #transfersView .countdown-card,
+body.auth-unlocked #experienceView .submit-hero,
+body.auth-unlocked #commissionerView .submit-hero,
+body.auth-unlocked #submitView .submit-hero {
+  border-color: rgba(37, 224, 189, 0.24);
+  background:
+    linear-gradient(90deg, rgba(37, 224, 189, 0.18), transparent 44%),
+    linear-gradient(135deg, rgba(246, 200, 78, 0.1), transparent 56%),
+    var(--brand-panel-raised);
+  box-shadow: var(--brand-shadow);
+}
+
+body.auth-unlocked #playersView .email-office-layout,
+body.auth-unlocked #playersView .email-office-card,
+body.auth-unlocked #playersView .email-preview-card,
+body.auth-unlocked #playersView .email-focus-card,
+body.auth-unlocked #playersView .sponsor-email-card {
+  border-color: rgba(196, 226, 222, 0.18);
+  border-radius: var(--brand-radius);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.055), transparent),
+    rgba(8, 15, 20, 0.88);
+  box-shadow: var(--brand-shadow-soft);
+}
+
+body.auth-unlocked #playersView .email-thread-item {
+  border-color: rgba(196, 226, 222, 0.15);
+  background:
+    linear-gradient(90deg, rgba(37, 224, 189, 0.05), transparent 72%),
+    rgba(4, 9, 12, 0.72);
+}
+
+body.auth-unlocked #playersView .email-thread-item.is-selected {
+  border-color: rgba(37, 224, 189, 0.62);
+  background:
+    linear-gradient(90deg, rgba(37, 224, 189, 0.22), transparent 72%),
+    rgba(9, 23, 24, 0.9);
+  box-shadow:
+    inset 4px 0 0 var(--brand-teal),
+    0 0 34px rgba(37, 224, 189, 0.14);
+}
+
+body.auth-unlocked #playersView .email-thread-item::before {
+  background: linear-gradient(
+    180deg,
+    var(--brand-gold),
+    var(--brand-teal),
+    var(--brand-blue)
+  );
+}
+
+body.auth-unlocked #playersView .email-filter-button,
+body.auth-unlocked #playersView .email-folder-button {
+  border-color: rgba(196, 226, 222, 0.16);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.04), transparent),
+    rgba(7, 15, 18, 0.78);
+}
+
+body.auth-unlocked #playersView .email-filter-button.is-active,
+body.auth-unlocked #playersView .email-folder-button.is-active {
+  border-color: rgba(37, 224, 189, 0.5);
+  background:
+    linear-gradient(90deg, rgba(37, 224, 189, 0.22), transparent 80%),
+    rgba(8, 24, 24, 0.9);
+}
+
+body.auth-unlocked #calendarView .calendar-month-card {
+  background:
+    linear-gradient(90deg, rgba(90, 168, 255, 0.12), transparent 42%),
+    var(--brand-panel);
+}
+
+body.auth-unlocked #calendarView .calendar-day-cell {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.04), transparent),
+    rgba(5, 10, 14, 0.72);
+}
+
+body.auth-unlocked #calendarView .calendar-day-cell.has-events {
+  border-color: rgba(90, 168, 255, 0.25);
+  background:
+    linear-gradient(135deg, rgba(90, 168, 255, 0.11), transparent 52%),
+    var(--brand-panel);
+}
+
+body.auth-unlocked #calendarView .calendar-event-card.pending {
+  border-color: rgba(246, 200, 78, 0.34);
+}
+
+body.auth-unlocked #calendarView .calendar-event-card.done {
+  border-color: rgba(128, 226, 126, 0.28);
+}
+
+body.auth-unlocked #eventsView .event-card-v45 {
+  border-left-color: var(--event-color, var(--brand-gold));
+}
+
+body.auth-unlocked #eventsView .event-icon {
+  background:
+    linear-gradient(135deg, rgba(246, 200, 78, 0.22), rgba(37, 224, 189, 0.16)),
+    rgba(255, 255, 255, 0.045);
+}
+
+body.auth-unlocked #transfersView .advanced-transfer-tools,
+body.auth-unlocked #transfersView .transfer-workbench,
+body.auth-unlocked #transfersView .transfer-budget-board,
+body.auth-unlocked #transfersView .transfer-ops-board {
+  gap: 12px;
+}
+
+body.auth-unlocked #transfersView .advanced-transfer-sidebar,
+body.auth-unlocked #transfersView .advanced-transfer-main {
+  min-width: 0;
+}
+
+body.auth-unlocked #transfersView .transfer-assistant-card {
+  border-color: rgba(246, 200, 78, 0.28);
+  background:
+    linear-gradient(135deg, rgba(246, 200, 78, 0.14), transparent 50%),
+    var(--brand-panel);
+}
+
+body.auth-unlocked #transfersView .transfer-market-shell,
+body.auth-unlocked #transfersView .transfer-kanban-card {
+  border-color: rgba(37, 224, 189, 0.22);
+}
+
+body.auth-unlocked #transfersView .transfer-kanban-column,
+body.auth-unlocked #transfersView .transfer-live-preview,
+body.auth-unlocked #transfersView .transfer-deal-metrics article,
+body.auth-unlocked #transfersView .transfer-deal-alert,
+body.auth-unlocked #transfersView .transfer-swap-item,
+body.auth-unlocked #transfersView .transfer-timeline-item,
+body.auth-unlocked #transfersView .transfer-hub-card-body,
+body.auth-unlocked #transfersView .preview-metric,
+body.auth-unlocked #transfersView .preview-offer-card {
+  border: 1px solid rgba(196, 226, 222, 0.14);
+  border-radius: var(--brand-radius-sm);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.04), transparent),
+    rgba(5, 10, 14, 0.72);
+}
+
+body.auth-unlocked #transfersView .transfer-ops-alert {
+  border-color: rgba(246, 200, 78, 0.25);
+  background:
+    linear-gradient(90deg, rgba(246, 200, 78, 0.13), transparent 70%),
+    rgba(14, 11, 5, 0.58);
+}
+
+body.auth-unlocked #transfersView .market-player-option,
+body.auth-unlocked #transfersView .market-player-shell {
+  border-color: rgba(196, 226, 222, 0.16);
+  background:
+    linear-gradient(135deg, rgba(37, 224, 189, 0.07), transparent 54%),
+    rgba(5, 10, 14, 0.76);
+}
+
+body.auth-unlocked #squadView .squad-roster-row,
+body.auth-unlocked #squadView .squad-pitch,
+body.auth-unlocked #squadView .squad-field-slot,
+body.auth-unlocked #squadView .squad-balance-card,
+body.auth-unlocked #squadView .squad-availability-card {
+  border-color: rgba(196, 226, 222, 0.16);
+  border-radius: var(--brand-radius);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.045), transparent),
+    rgba(6, 12, 16, 0.76);
+}
+
+body.auth-unlocked #commissionerView .commissioner-card,
+body.auth-unlocked #experienceView .experience-card,
+body.auth-unlocked #submitView .submit-card {
+  border-color: rgba(90, 168, 255, 0.2);
+}
+
+body.auth-unlocked .coach-empty-state,
+body.auth-unlocked .market-empty,
+body.auth-unlocked .transfer-shortlist-empty,
+body.auth-unlocked .app-skeleton-stack,
+body.auth-unlocked .next-game-empty {
+  border-color: rgba(196, 226, 222, 0.18);
+  border-style: dashed;
+  background:
+    linear-gradient(135deg, rgba(90, 168, 255, 0.06), transparent 42%),
+    rgba(4, 8, 11, 0.62);
+  color: var(--brand-muted);
+}
+
+body.auth-unlocked .status-pill.done,
+body.auth-unlocked .events-status-pill.done,
+body.auth-unlocked .transfer-pill.is-success,
+body.auth-unlocked .transfer-pill.is-ready {
+  border-color: rgba(128, 226, 126, 0.34);
+  background: rgba(128, 226, 126, 0.12);
+  color: #d9ffd5;
+}
+
+body.auth-unlocked .status-pill.pending,
+body.auth-unlocked .events-status-pill.pending,
+body.auth-unlocked .transfer-pill.is-watch,
+body.auth-unlocked .transfer-pill.is-warning {
+  border-color: rgba(246, 200, 78, 0.38);
+  background: rgba(246, 200, 78, 0.13);
+  color: #ffefba;
+}
+
+body.auth-unlocked .status-pill.danger,
+body.auth-unlocked .events-status-pill.danger,
+body.auth-unlocked .transfer-pill.is-danger {
+  border-color: rgba(255, 107, 107, 0.38);
+  background: rgba(255, 107, 107, 0.13);
+  color: #ffd0d0;
+}
+
+body.auth-unlocked .medical-case-card,
+body.auth-unlocked .medical-plan-option,
+body.auth-unlocked .medical-summary-strip article,
+body.auth-unlocked .medical-metric-grid article {
+  border-color: rgba(196, 226, 222, 0.16);
+  border-radius: var(--brand-radius-sm);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.045), transparent),
+    rgba(5, 10, 14, 0.74);
+}
+
+body.auth-unlocked :where(button, a[href], summary, [role="button"]) {
+  text-underline-offset: 3px;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  body.auth-unlocked .manager-session-actions .ghost-button:hover,
+  body.auth-unlocked .status-actions button:hover,
+  body.auth-unlocked .secondary-button:hover,
+  body.auth-unlocked .ghost-button:hover,
+  body.auth-unlocked .workspace-nav-tab:hover {
+    border-color: rgba(37, 224, 189, 0.42);
+    background:
+      linear-gradient(90deg, rgba(37, 224, 189, 0.14), transparent 78%),
+      rgba(255, 255, 255, 0.055);
+    box-shadow: var(--brand-glow);
+  }
+
+  body.auth-unlocked .summary-card:hover,
+  body.auth-unlocked
+    :is(
+      .home-panel,
+      .coach-panel-card,
+      .calendar-month-card,
+      .transfer-market-shell,
+      .advanced-tool-card,
+      .commissioner-card,
+      .experience-card,
+      .submit-card
+    ):hover {
+    border-color: rgba(196, 226, 222, 0.28);
+    box-shadow: var(--brand-shadow);
+  }
+}
+
+@media (max-width: 1180px) {
+  body.auth-unlocked .shell-masthead-row {
+    grid-template-columns: 1fr;
+  }
+
+  body.auth-unlocked .manager-session-card.manager-login-shell {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 760px) {
+  body.auth-unlocked .app {
+    width: min(100% - 16px, 520px);
+    padding-top: 8px;
+  }
+
+  body.auth-unlocked .league-hero-brand,
+  body.auth-unlocked .manager-session-card.manager-login-shell,
+  body.auth-unlocked .app-status-bar {
+    min-height: 0;
+    padding: 10px;
+  }
+
+  body.auth-unlocked .league-brand-wordmark {
+    width: 102px;
+  }
+
+  body.auth-unlocked .league-route-title {
+    font-size: 1rem;
+  }
+
+  body.auth-unlocked .league-hero-copy p,
+  body.auth-unlocked .manager-session-card small {
+    display: none;
+  }
+
+  body.auth-unlocked .manager-session-actions {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    width: 100%;
+  }
+
+  body.auth-unlocked .manager-session-actions .ghost-button {
+    min-width: 0;
+    min-height: 32px;
+    padding: 0 8px;
+    font-size: 0.68rem;
+  }
+
+  body.auth-unlocked .workspace-nav {
+    top: 6px;
+    padding: 6px;
+  }
+
+  body.auth-unlocked .workspace-nav-group {
+    padding: 3px;
+  }
+
+  body.auth-unlocked .workspace-nav-tab {
+    min-height: 38px;
+    padding: 0 10px;
+  }
+
+  body.auth-unlocked .app-status-bar {
+    grid-template-columns: 1fr;
+  }
+
+  body.auth-unlocked .status-actions {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 8px;
+  }
+
+  body.auth-unlocked .status-actions button {
+    min-height: 36px;
+    padding: 0 10px;
+    font-size: 0.68rem;
+  }
+
+  body.auth-unlocked .global-search input {
+    min-height: 36px;
+  }
+
+  body.auth-unlocked .summary-card {
+    min-height: 86px;
+    padding: 13px;
+  }
+}
