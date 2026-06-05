@@ -616,7 +616,7 @@ App.forms = {
       clearTimeout(marketSearchTimer);
       marketSearchTimer = setTimeout(
         App.transfers.renderMarketPlayerResults,
-        360,
+        240,
       );
     };
 

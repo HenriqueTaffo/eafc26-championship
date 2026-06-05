@@ -3968,6 +3968,46 @@ App.transfers = {
     return 10;
   },
 
+  getMarketPositionQueryAliases(query = "") {
+    const key = App.transfers.normalizePlayerRatingKey(query).replace(/\s+/g, " ");
+    const compactKey = key.replace(/\s+/g, "");
+    const aliases = {
+      gk: ["gk", "goalkeeper", "keeper"],
+      cb: ["cb", "centre back", "centre-back", "center back", "center-back"],
+      lb: ["lb", "left back", "left-back"],
+      rb: ["rb", "right back", "right-back"],
+      lwb: ["lwb", "left wing back", "left wing-back", "left-wing-back"],
+      rwb: ["rwb", "right wing back", "right wing-back", "right-wing-back"],
+      cdm: ["cdm", "defensive midfield", "defensive midfielder"],
+      cm: ["cm", "central midfield", "central midfielder", "midfield"],
+      cam: ["cam", "attacking midfield", "attacking midfielder"],
+      lm: ["lm", "left midfield", "left midfielder"],
+      rm: ["rm", "right midfield", "right midfielder"],
+      lw: ["lw", "left winger", "left wing"],
+      rw: ["rw", "right winger", "right wing"],
+      cf: ["cf", "centre forward", "centre-forward", "center forward", "center-forward"],
+      st: ["st", "striker", "centre forward", "centre-forward", "center forward", "center-forward"],
+    };
+    return aliases[key] || aliases[compactKey] || [];
+  },
+
+  getMarketPositionSearchRelevance(query = "", position = "") {
+    const positionKey = App.transfers.normalizePlayerRatingKey(position);
+    if (!positionKey) return 0;
+    const aliases = App.transfers.getMarketPositionQueryAliases(query);
+    if (!aliases.length) return 0;
+    const aliasKeys = aliases.map(App.transfers.normalizePlayerRatingKey);
+    return aliasKeys.some(
+      (aliasKey) =>
+        aliasKey &&
+        (positionKey === aliasKey ||
+          positionKey.includes(aliasKey) ||
+          aliasKey.includes(positionKey)),
+    )
+      ? 185
+      : 0;
+  },
+
   hasReliableMarketCoverage(query = "", players = []) {
     const aliasKeys = App.transfers
       .sortMarketSearchAliases(query)
@@ -4069,14 +4109,37 @@ App.transfers = {
     const nameKey = App.transfers.normalizePlayerRatingKey(player.name || "");
     const clubKey = App.transfers.normalizePlayerRatingKey(player.club || "");
     const leagueKey = App.transfers.normalizePlayerRatingKey(player.league || "");
+    const countryKey = App.transfers.normalizePlayerRatingKey(
+      player.country || "",
+    );
+    const positionKey = App.transfers.normalizePlayerRatingKey(
+      player.position || "",
+    );
     const nameTokens = nameKey.split(" ").filter(Boolean);
     const clubTokens = clubKey.split(" ").filter(Boolean);
     const leagueTokens = leagueKey.split(" ").filter(Boolean);
-    const allTokens = [...nameTokens, ...clubTokens, ...leagueTokens];
+    const countryTokens = countryKey.split(" ").filter(Boolean);
+    const positionTokens = positionKey.split(" ").filter(Boolean);
+    const allTokens = [
+      ...nameTokens,
+      ...clubTokens,
+      ...leagueTokens,
+      ...countryTokens,
+      ...positionTokens,
+    ];
+    const positionAliasScore = !hasExpandedAlias
+      ? App.transfers.getMarketPositionSearchRelevance(
+          normalizedQuery,
+          positionKey,
+        )
+      : 0;
 
     if (aliasKeys.includes(nameKey)) return 220;
     if (aliasKeys.some((aliasKey) => nameTokens.includes(aliasKey))) return 200;
     if (nameTokens.includes(normalizedQuery)) return 190;
+    if (positionAliasScore) return positionAliasScore;
+    if (!hasExpandedAlias && positionTokens.includes(normalizedQuery))
+      return 185;
     if (
       aliasKeys.some((aliasKey) =>
         App.transfers.isTrustedPlayerNameMatch(aliasKey, nameKey),
@@ -4103,6 +4166,18 @@ App.transfers = {
       leagueTokens.some((token) => token.startsWith(normalizedQuery))
     )
       return 100;
+    if (
+      !hasExpandedAlias &&
+      positionTokens.some((token) => token.startsWith(normalizedQuery))
+    )
+      return 115;
+    if (!hasExpandedAlias && countryTokens.includes(normalizedQuery))
+      return 105;
+    if (
+      !hasExpandedAlias &&
+      countryTokens.some((token) => token.startsWith(normalizedQuery))
+    )
+      return 95;
     if (
       !hasExpandedAlias &&
       normalizedQuery.length <= 3 &&
@@ -4184,13 +4259,25 @@ App.transfers = {
     return [...byIdentity.values()].slice(0, Math.max(1, Number(limit || 8)));
   },
 
-  async searchMarketPlayers(query = "") {
-    const showContracted = Boolean(
-      document.getElementById("showContractedPlayers")?.checked,
-    );
+  getMarketSearchShowContracted(options = {}) {
+    const searchOptions = options || {};
+    if (Object.prototype.hasOwnProperty.call(searchOptions, "showContracted")) {
+      return Boolean(searchOptions.showContracted);
+    }
+    return Boolean(document.getElementById("showContractedPlayers")?.checked);
+  },
+
+  async searchMarketPlayers(query = "", options = {}) {
+    const searchOptions = options || {};
+    const showContracted =
+      App.transfers.getMarketSearchShowContracted(searchOptions);
     const normalized = App.utils.normalizeText(query);
     if (normalized.length < 2) return [];
-    const cacheKey = `${normalized}|${showContracted ? "all" : "available"}`;
+    const resultLimit = Math.max(
+      1,
+      Math.min(Number(searchOptions.limit || 18), 80),
+    );
+    const cacheKey = `${normalized}|${showContracted ? "all" : "available"}|${resultLimit}`;
     const cached = App.transfers.marketSearchCache?.[cacheKey];
     if (cached && Date.now() - cached.at < 60000) return cached.players;
     const pending = App.transfers.marketSearchPending?.[cacheKey];
@@ -4208,30 +4295,94 @@ App.transfers = {
     App.transfers.marketSearchPending = App.transfers.marketSearchPending || {};
     const request = (async () => {
       const aliases = App.transfers.sortMarketSearchAliases(query);
-      const groups = [];
-      for (const alias of aliases) {
-        const rows = await App.api
-          .loadMarketPlayers(alias, showContracted, 18)
-          .catch(() => []);
-        if (rows.length) groups.push(...rows);
-        if (App.transfers.hasReliableMarketCoverage(query, groups)) break;
-      }
-
-      const ranked = App.transfers.consolidateMarketSearchPlayers(
+      const primaryAlias = aliases[0] || query;
+      const groups = await App.api
+        .loadMarketPlayers(primaryAlias, showContracted, resultLimit)
+        .catch(() => []);
+      let ranked = App.transfers.consolidateMarketSearchPlayers(
         query,
         App.api.applyMarketPlayerOverrides(groups, { showContracted }),
+      );
+
+      if (
+        aliases.length > 1 &&
+        !App.transfers.hasReliableMarketCoverage(query, ranked)
+      ) {
+        const secondaryGroups = await Promise.all(
+          aliases.slice(1, 3).map((alias) =>
+            App.api
+              .loadMarketPlayers(alias, showContracted, Math.min(resultLimit, 18))
+              .catch(() => []),
+          ),
+        );
+        ranked = App.transfers.consolidateMarketSearchPlayers(
+          query,
+          App.api.applyMarketPlayerOverrides(
+            [...groups, ...secondaryGroups.flat()],
+            { showContracted },
+          ),
+        );
+      }
+
+      const fallbackEnhanced = await App.api
+        .augmentMarketPlayersWithFallback(ranked, query, {
+          limit: resultLimit,
+          showContracted,
+        })
+        .catch(() => ranked);
+
+      ranked = App.transfers.consolidateMarketSearchPlayers(
+        query,
+        App.api.applyMarketPlayerOverrides(fallbackEnhanced, { showContracted }),
       );
 
       if (ranked.length) {
         App.api.mergeMarketPlayers(ranked);
       }
-      return remember(ranked.slice(0, 18));
+      return remember(ranked.slice(0, resultLimit));
     })().finally(() => {
       delete App.transfers.marketSearchPending?.[cacheKey];
     });
 
     App.transfers.marketSearchPending[cacheKey] = request;
     return request;
+  },
+
+  queueMarketResultRatingHydration(players = [], renderKey = "", requestId = "") {
+    if (!players.length || !App.api?.loadRatingsForPlayerNames) return;
+
+    const names = [
+      ...new Set(
+        players
+          .map((player) => String(player?.name || "").trim())
+          .filter(Boolean),
+      ),
+    ]
+      .filter((name) => !App.transfers.getRatingForPlayerName(name)?.overall)
+      .slice(0, 8);
+    if (!names.length) return;
+
+    const hydrationKey = `${renderKey}|${names
+      .map((name) => App.transfers.normalizePlayerRatingKey(name))
+      .sort()
+      .join("|")}`;
+    App.transfers.marketRatingHydrationKeys =
+      App.transfers.marketRatingHydrationKeys || new Set();
+    if (App.transfers.marketRatingHydrationKeys.has(hydrationKey)) return;
+    App.transfers.marketRatingHydrationKeys.add(hydrationKey);
+
+    App.api
+      .loadRatingsForPlayerNames(names, 2, 8)
+      .then(() => {
+        if (App.transfers.marketSearchRequestId !== requestId) return;
+        const target = document.getElementById("marketPlayerResults");
+        if (!target || target.dataset.marketRenderKey !== renderKey) return;
+        target.dataset.marketRenderReady = "false";
+        App.transfers.renderMarketPlayerResults();
+      })
+      .catch((error) =>
+        console.warn("Hidratacao de ratings do mercado indisponivel:", error),
+      );
   },
 
   async searchEaRatingsCached(query = "", limit = 2) {
@@ -4501,15 +4652,10 @@ App.transfers = {
     );
 
     const renderRequest = (async () => {
-      const players = await App.transfers.searchMarketPlayers(query);
+      const players = await App.transfers.searchMarketPlayers(query, {
+        showContracted,
+      });
       if (App.transfers.marketSearchRequestId !== requestId) return;
-      if (players.length && App.api?.loadRatingsForPlayerNames) {
-        await App.api.loadRatingsForPlayerNames(
-          players.map((player) => player.name || ""),
-          2,
-        );
-        if (App.transfers.marketSearchRequestId !== requestId) return;
-      }
 
       if (!players.length) {
         App.dom.setHtml(
@@ -4578,6 +4724,11 @@ App.transfers = {
       });
       target.dataset.marketRenderReady = "true";
       target.setAttribute("aria-busy", "false");
+      App.transfers.queueMarketResultRatingHydration(
+        players,
+        renderKey,
+        requestId,
+      );
     })().finally(() => {
       if (App.transfers.marketResultsPending?.key === renderKey) {
         App.transfers.marketResultsPending = null;

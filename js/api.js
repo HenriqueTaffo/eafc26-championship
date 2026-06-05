@@ -442,7 +442,7 @@ App.api = {
           }).slice(0, Math.max(1, Number(limit || 12)))
         : [];
     }
-    const normalizedLimit = Number(limit || 12);
+    const normalizedLimit = Math.max(1, Math.min(Number(limit || 12), 50));
     const cachePayload = {
       p_query: normalizedQuery,
       p_show_contracted: Boolean(showContracted),
@@ -491,7 +491,23 @@ App.api = {
       App.state.apiMarketPlayers = Array.isArray(App.state.apiMarketPlayers)
         ? App.state.apiMarketPlayers
         : [];
-      return [];
+      const directRows = await App.api
+        .fetchMarketPlayersDirect(query, normalizedLimit)
+        .catch(() => []);
+      const directRowsWithOverrides = App.api.applyMarketPlayerOverrides(
+        directRows,
+        { showContracted: Boolean(showContracted) },
+      );
+      if (directRowsWithOverrides.length) {
+        return finalizeRows(directRowsWithOverrides);
+      }
+
+      const fallbackRows = await App.api
+        .searchRegionalFallbackPlayers(query, normalizedLimit, {
+          showContracted: Boolean(showContracted),
+        })
+        .catch(() => []);
+      return fallbackRows.length ? finalizeRows(fallbackRows) : [];
     }
   },
   async fetchMarketPlayersDirect(query = "", limit = 12) {
@@ -503,20 +519,25 @@ App.api = {
     const queryText = String(query || "").trim();
     const normalizedQuery = App.utils.normalizeText(queryText);
     if (normalizedQuery.length < 2) return [];
-    const filters = queryText
-      ? `&or=(${[
+    const positionAliases =
+      App.transfers?.getMarketPositionQueryAliases?.(queryText) || [];
+    const filterParts = positionAliases.length
+      ? positionAliases.map((alias) => `position.ilike.*${alias}*`)
+      : [
           `name.ilike.*${queryText}*`,
           `normalized_name.ilike.*${normalizedQuery || queryText}*`,
           `club.ilike.*${queryText}*`,
           `position.ilike.*${queryText}*`,
-        ]
+        ];
+    const filters = queryText
+      ? `&or=(${filterParts
           .map((item) => encodeURIComponent(item))
           .join(",")})`
       : "";
 
     const request = async (select) =>
       App.api.fetchWithTimeout(
-        `${App.config.SUPABASE_URL}/rest/v1/players_market?select=${select}${filters}&order=name.asc&limit=${normalizedLimit}`,
+        `${App.config.SUPABASE_URL}/rest/v1/players_market?select=${select}${filters}&order=market_value_eur.desc.nullslast,name.asc&limit=${normalizedLimit}`,
         {
           method: "GET",
           headers: App.api.getSupabaseHeaders(),

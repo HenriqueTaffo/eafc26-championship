@@ -307,8 +307,6 @@ function TransferMarketTable() {
       query ||
       (filters.league !== "all" ? String(filters.league || "") : "") ||
       (filters.position !== "all" ? String(filters.position || "") : "");
-    const legacyToggle = document.getElementById("showContractedPlayers");
-    if (legacyToggle) legacyToggle.checked = Boolean(filters.showContracted);
     if (searchSeed.trim().length < 2) {
       setSearchRows([]);
       return undefined;
@@ -318,7 +316,10 @@ function TransferMarketTable() {
     const timeoutId = window.setTimeout(async () => {
       setSearching(true);
       try {
-        const rows = await App.transfers.searchMarketPlayers(searchSeed);
+        const rows = await App.transfers.searchMarketPlayers(searchSeed, {
+          showContracted: filters.showContracted,
+          limit: 60,
+        });
         if (!cancelled) {
           setSearchRows(rows || []);
           App.react?.notify?.();

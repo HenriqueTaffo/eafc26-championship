@@ -3187,15 +3187,10 @@ Object.assign(App.transfers, {
     );
 
     const renderRequest = (async () => {
-      const players = await App.transfers.searchMarketPlayers(query);
+      const players = await App.transfers.searchMarketPlayers(query, {
+        showContracted,
+      });
       if (App.transfers.marketSearchRequestId !== requestId) return;
-      if (players.length && App.api?.loadRatingsForPlayerNames) {
-        await App.api.loadRatingsForPlayerNames(
-          players.map((player) => player.name || ""),
-          2,
-        );
-        if (App.transfers.marketSearchRequestId !== requestId) return;
-      }
 
       if (!players.length) {
         App.dom.setHtml(
@@ -3275,6 +3270,11 @@ Object.assign(App.transfers, {
       });
       target.dataset.marketRenderReady = "true";
       target.setAttribute("aria-busy", "false");
+      App.transfers.queueMarketResultRatingHydration(
+        players,
+        renderKey,
+        requestId,
+      );
     })().finally(() => {
       if (App.transfers.marketResultsPending?.key === renderKey) {
         App.transfers.marketResultsPending = null;
