@@ -224,6 +224,7 @@ App.forms = {
     const form = event.currentTarget;
     const button = form.querySelector("button");
     const message = document.getElementById("transferMessage");
+    App.transfers.syncTransferBuyerScope?.(form);
     const payload = Object.fromEntries(new FormData(form).entries());
 
     if (App.transfers?.isTransferWindowLocked?.()) {
@@ -377,6 +378,9 @@ App.forms = {
         throw new Error(
           data.message || data.error || "Transferência rejeitada.",
         );
+      App.api?.rpcMemoryCache?.clear?.();
+      App.transfers.marketSearchCache = {};
+      App.transfers.marketSearchPending = {};
       const negotiationEntry = App.transfers.recordNegotiationResult?.(
         payload,
         preview,
@@ -392,8 +396,10 @@ App.forms = {
         "success",
       );
       form.reset();
+      App.transfers.syncTransferBuyerScope?.(form);
       if (form.elements.confirmTransferBuyer)
-        form.elements.confirmTransferBuyer.checked = false;
+        form.elements.confirmTransferBuyer.checked =
+          form.elements.confirmTransferBuyer.dataset.sessionLocked === "true";
       App.transfers.syncInternalTransferFields(form);
       App.transfers.renderTransferPreview(form);
       await App.api.loadApiData({
@@ -529,7 +535,14 @@ App.forms = {
 
   setupTransferPreview() {
     const transferForm = document.getElementById("transferForm");
-    if (!transferForm || transferForm.dataset.previewReady === "true") return;
+    if (!transferForm) return;
+    App.transfers.syncTransferBuyerScope?.(transferForm);
+    if (transferForm.dataset.previewReady === "true") {
+      App.transfers.populateSellerOptions?.(transferForm);
+      App.transfers.populateExchangePlayers?.(transferForm);
+      App.transfers.refreshWorkspace?.(transferForm);
+      return;
+    }
 
     transferForm.dataset.previewReady = "true";
     transferForm.noValidate = true;
@@ -558,6 +571,7 @@ App.forms = {
     });
 
     transferForm.elements.buyer?.addEventListener("change", () => {
+      App.transfers.syncTransferBuyerScope?.(transferForm);
       App.transfers.populateSellerOptions?.(transferForm);
       App.transfers.populateExchangePlayers(transferForm);
       App.transfers.refreshWorkspace(transferForm);
@@ -678,6 +692,7 @@ App.forms = {
 
     App.transfers.bindWorkspaceEvents?.();
     App.transfers.renderMarketPlayerResults();
+    App.transfers.syncTransferBuyerScope?.(transferForm);
     App.transfers.syncInternalTransferFields(transferForm);
     App.transfers.refreshWorkspace(transferForm);
   },

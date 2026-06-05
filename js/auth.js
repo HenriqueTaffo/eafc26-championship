@@ -184,39 +184,34 @@ App.auth = {
     const auditTimeline = Array.isArray(item.operation_audit_timeline)
       ? item.operation_audit_timeline
       : [];
-    const stages = Array.isArray(auditTimeline)
-      ? auditTimeline
-          .filter(
-            (entry) =>
-              entry &&
-              typeof entry === "object" &&
-              (entry.title || entry.detail || entry.when),
-          )
-          .map((entry) => ({
-            when: entry.when || "",
-            title: entry.title || "Evento da negociacao",
-            detail:
-              entry.detail ||
-              App.auth.getTransferProposalStatusHint(item) ||
-              "Status atualizado.",
-            tone: entry.tone || "watch",
-          }))
-          .sort((a, b) => {
-            const aWhen = a.when ? new Date(a.when).getTime() : NaN;
-            const bWhen = b.when ? new Date(b.when).getTime() : NaN;
-            const aValue = Number.isNaN(aWhen)
-              ? Number.MAX_SAFE_INTEGER
-              : aWhen;
-            const bValue = Number.isNaN(bWhen)
-              ? Number.MAX_SAFE_INTEGER
-              : bWhen;
-            return aValue - bValue;
-          })
-      : App.transfers?.buildTransferNegotiationStages
-        ? App.transfers.buildTransferNegotiationStages(item, null, {
-            isInternal,
-          })
-        : [];
+    const auditStages = auditTimeline
+      .filter(
+        (entry) =>
+          entry &&
+          typeof entry === "object" &&
+          (entry.title || entry.detail || entry.when),
+      )
+      .map((entry) => ({
+        when: entry.when || "",
+        title: entry.title || "Evento da negociacao",
+        detail:
+          entry.detail ||
+          App.auth.getTransferProposalStatusHint(item) ||
+          "Status atualizado.",
+        tone: entry.tone || "watch",
+      }))
+      .sort((a, b) => {
+        const aWhen = a.when ? new Date(a.when).getTime() : NaN;
+        const bWhen = b.when ? new Date(b.when).getTime() : NaN;
+        const aValue = Number.isNaN(aWhen) ? Number.MAX_SAFE_INTEGER : aWhen;
+        const bValue = Number.isNaN(bWhen) ? Number.MAX_SAFE_INTEGER : bWhen;
+        return aValue - bValue;
+      });
+    const syntheticStages = App.transfers?.buildTransferNegotiationStages
+      ? App.transfers.buildTransferNegotiationStages(item, null, {
+          isInternal,
+        })
+      : [];
     const fallback = [
       {
         title:
@@ -227,8 +222,11 @@ App.auth = {
         tone: "watch",
       },
     ];
-    const items = Array.isArray(stages) ? stages : [];
-    const normalizedItems = items.length ? items : fallback;
+    const normalizedItems = auditStages.length
+      ? auditStages
+      : syntheticStages.length
+        ? syntheticStages
+        : fallback;
 
     const maxItems = Number(options.maxItems || 3);
     const compact = options.compact

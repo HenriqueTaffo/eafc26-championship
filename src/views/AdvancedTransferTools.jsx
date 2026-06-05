@@ -165,6 +165,33 @@ function getFastMarketSearchRows(query = "", showContracted = false, limit = 18)
     .slice(0, Math.max(1, Number(limit || 18)));
 }
 
+function mergeProgressiveMarketRows(
+  query = "",
+  currentRows = [],
+  nextRows = [],
+  showContracted = false,
+  limit = 60,
+) {
+  const normalizedLimit = Math.max(1, Number(limit || 60));
+  const incoming = Array.isArray(nextRows) ? nextRows : [];
+  if (!incoming.length) {
+    return Array.isArray(currentRows) ? currentRows.slice(0, normalizedLimit) : [];
+  }
+
+  const merged =
+    App.api?.mergeMarketSearchRows?.(
+      currentRows,
+      incoming,
+      Math.max(normalizedLimit, currentRows.length + incoming.length),
+    ) || [...(currentRows || []), ...incoming];
+  const overridden =
+    App.api?.applyMarketPlayerOverrides?.(merged, { showContracted }) || merged;
+  const ranked =
+    App.transfers?.consolidateMarketSearchPlayers?.(query, overridden) ||
+    overridden;
+  return ranked.slice(0, normalizedLimit);
+}
+
 function useTransferActive() {
   useAppRuntime();
   return (
@@ -183,10 +210,12 @@ function TransferProposalAssistant() {
     "Bruno Silva",
   ];
   const session = App.auth?.getSession?.();
+  const isCommissioner = App.auth?.isCommissioner?.() === true;
+  const sessionBuyer = !isCommissioner ? session?.managerName || "" : "";
   const form = useForm({
     resolver: zodResolver(proposalSchema),
     defaultValues: {
-      buyer: session?.managerName || buyers[0] || "",
+      buyer: sessionBuyer || buyers[0] || "",
       player: "",
       fromClub: "",
       overall: "",
@@ -195,20 +224,29 @@ function TransferProposalAssistant() {
     },
   });
 
+  useEffect(() => {
+    if (sessionBuyer) form.setValue("buyer", sessionBuyer);
+  }, [form, sessionBuyer]);
+
   const fillLegacyForm = (values) => {
     const target = document.getElementById("transferForm");
     if (!target) return;
+    const scopedValues = {
+      ...values,
+      buyer: sessionBuyer || values.buyer,
+    };
     const fields = target.elements;
-    if (fields.buyer) fields.buyer.value = values.buyer;
-    if (fields.player) fields.player.value = values.player;
-    if (fields.fromClub) fields.fromClub.value = values.fromClub;
-    if (fields.overall) fields.overall.value = values.overall;
-    if (fields.marketValue) fields.marketValue.value = values.marketValue || "";
-    if (fields.offerValue && values.offerValue) {
+    if (fields.buyer) fields.buyer.value = scopedValues.buyer;
+    App.transfers?.syncTransferBuyerScope?.(target);
+    if (fields.player) fields.player.value = scopedValues.player;
+    if (fields.fromClub) fields.fromClub.value = scopedValues.fromClub;
+    if (fields.overall) fields.overall.value = scopedValues.overall;
+    if (fields.marketValue) fields.marketValue.value = scopedValues.marketValue || "";
+    if (fields.offerValue && scopedValues.offerValue) {
       if (typeof App.transfers?.setTransferOfferInputValue === "function") {
-        App.transfers.setTransferOfferInputValue(target, Number(values.offerValue));
+        App.transfers.setTransferOfferInputValue(target, Number(scopedValues.offerValue));
       } else {
-        fields.offerValue.value = values.offerValue;
+        fields.offerValue.value = scopedValues.offerValue;
       }
     }
     App.transfers?.refreshWorkspace?.(target);
@@ -216,7 +254,7 @@ function TransferProposalAssistant() {
     target.scrollIntoView({ behavior: "smooth", block: "center" });
     pushToast({
       title: "Formulario preenchido",
-      description: `${values.player} foi carregado na mesa de negociacao.`,
+      description: `${scopedValues.player} foi carregado na mesa de negociacao.`,
       tone: "success",
     });
   };
@@ -229,16 +267,20 @@ function TransferProposalAssistant() {
       </div>
       <form onSubmit={form.handleSubmit(fillLegacyForm)} noValidate>
         <div className="advanced-form-grid">
-          <label>
-            Comprador
-            <select {...form.register("buyer")}>
-              {buyers.map((buyer) => (
-                <option key={buyer} value={buyer}>
-                  {buyer}
-                </option>
-              ))}
-            </select>
-          </label>
+          {isCommissioner ? (
+            <label>
+              Comprador
+              <select {...form.register("buyer")}>
+                {buyers.map((buyer) => (
+                  <option key={buyer} value={buyer}>
+                    {buyer}
+                  </option>
+                ))}
+              </select>
+            </label>
+          ) : (
+            <input type="hidden" {...form.register("buyer")} />
+          )}
           <label>
             Jogador
             <input {...form.register("player")} placeholder="Nome do jogador" />
@@ -436,6 +478,7 @@ function TransferMarketTable({ onSelectPlayer } = {}) {
   const active = useTransferActive();
   const pushToast = useLeagueUiStore((state) => state.pushToast);
   const parentRef = useRef(null);
+  const searchRequestRef = useRef(0);
   const [catalogMeta, setCatalogMeta] = useState({ positions: [], leagues: [] });
   const [searchRows, setSearchRows] = useState([]);
   const [searching, setSearching] = useState(false);
@@ -453,7 +496,10 @@ function TransferMarketTable({ onSelectPlayer } = {}) {
     },
   });
   const filters = form.watch();
+  const isCommissioner = App.auth?.isCommissioner?.() === true;
+  const sessionBuyer = !isCommissioner ? session?.managerName || "" : "";
   const buyer =
+    sessionBuyer ||
     document.getElementById("transferForm")?.elements?.buyer?.value ||
     session?.managerName ||
     "";
@@ -486,46 +532,64 @@ function TransferMarketTable({ onSelectPlayer } = {}) {
       (filters.league !== "all" ? String(filters.league || "") : "") ||
       (filters.position !== "all" ? String(filters.position || "") : "");
     if (searchSeed.trim().length < 2) {
+      searchRequestRef.current += 1;
       setSearchRows([]);
+      setSearching(false);
       return undefined;
     }
 
     let cancelled = false;
-    const timeoutId = window.setTimeout(async () => {
-      setSearching(true);
-      let bestRows = getFastMarketSearchRows(
-        searchSeed,
-        filters.showContracted,
-        60,
-      );
-      if (!cancelled && bestRows.length) {
-        setSearchRows(bestRows);
+    const requestId = searchRequestRef.current + 1;
+    searchRequestRef.current = requestId;
+    const resultLimit = 60;
+    const applyRows = (incomingRows = []) => {
+      if (
+        cancelled ||
+        searchRequestRef.current !== requestId ||
+        !Array.isArray(incomingRows) ||
+        !incomingRows.length
+      ) {
+        return;
       }
-      const fallbackRowsPromise = (
-        App.api?.searchRegionalFallbackPlayers?.(searchSeed, 60, {
-          showContracted: filters.showContracted,
-        }) || Promise.resolve([])
-      )
-        .then((fallbackRows) => {
-          if (!Array.isArray(fallbackRows) || !fallbackRows.length) return [];
-          const nextRows =
-            App.transfers?.consolidateMarketSearchPlayers?.(
-              searchSeed,
-              [...bestRows, ...fallbackRows],
-            ) || fallbackRows;
-          bestRows = nextRows.slice(0, 60);
-          if (!cancelled) setSearchRows(bestRows);
-          return fallbackRows;
-        })
-        .catch(() => []);
+      setSearchRows((currentRows) =>
+        mergeProgressiveMarketRows(
+          searchSeed,
+          currentRows,
+          incomingRows,
+          filters.showContracted,
+          resultLimit,
+        ),
+      );
+    };
+
+    const immediateRows = getFastMarketSearchRows(
+      searchSeed,
+      filters.showContracted,
+      resultLimit,
+    );
+    const isSpecificNameSearch =
+      query.split(/\s+/).filter(Boolean).length >= 2 &&
+      filters.position === "all" &&
+      filters.league === "all";
+    setSearchRows(immediateRows);
+    setSearching(true);
+
+    const timeoutId = window.setTimeout(async () => {
       try {
         const rows = await App.transfers.searchMarketPlayers(searchSeed, {
           showContracted: filters.showContracted,
-          limit: 60,
+          limit: resultLimit,
+          directTimeoutMs: 5000,
+          fallbackSourceDelayMs: isSpecificNameSearch ? 3600 : 1200,
+          ratingSourceDelayMs: isSpecificNameSearch ? 900 : 1700,
+          marketSourceGraceMs: isSpecificNameSearch
+            ? 1500
+            : immediateRows.length
+              ? 800
+              : 1200,
+          onProgress: applyRows,
         });
-        if (!cancelled) {
-          setSearchRows(rows?.length ? rows : bestRows);
-        }
+        applyRows(rows);
       } catch (error) {
         if (!cancelled) {
           pushToast({
@@ -535,10 +599,11 @@ function TransferMarketTable({ onSelectPlayer } = {}) {
           });
         }
       } finally {
-        await fallbackRowsPromise;
-        if (!cancelled) setSearching(false);
+        if (!cancelled && searchRequestRef.current === requestId) {
+          setSearching(false);
+        }
       }
-    }, 320);
+    }, immediateRows.length ? 90 : 160);
 
     return () => {
       cancelled = true;
@@ -593,6 +658,8 @@ function TransferMarketTable({ onSelectPlayer } = {}) {
     }
     return next.slice(0, 600);
   }, [baseRows, filters]);
+
+  const hasRowsWithPendingMarket = rows.some((row) => !row.marketValue);
 
   const selectPlayer = (row) => {
     if (row.contracted) return;
@@ -736,7 +803,15 @@ function TransferMarketTable({ onSelectPlayer } = {}) {
           <h2>Mercado avancado</h2>
         </div>
         <small>
-          {searching ? (
+          {searching && rows.length ? (
+            <InlineLoader
+              label={
+                hasRowsWithPendingMarket
+                  ? "Atualizando valores"
+                  : "Refinando mercado"
+              }
+            />
+          ) : searching ? (
             <InlineLoader label="Buscando mercado" />
           ) : (
             `${rows.length} jogador(es) filtrados`

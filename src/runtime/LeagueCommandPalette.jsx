@@ -59,6 +59,7 @@ const NAV_COMMANDS = [
     title: "Inteligência",
     detail: "Risco, prioridades e leitura do momento",
     view: "experienceView",
+    role: "commissioner",
   },
 ];
 
@@ -84,6 +85,8 @@ function normalizeCommandItem(item, index, source = "runtime") {
     filterId: item.filterId,
     filterValue: item.filterValue,
     action: item.action,
+    role: item.role || "all",
+    haystack: item.haystack || "",
   };
 }
 
@@ -105,11 +108,42 @@ function normalizeSearch(value = "") {
   return App.utils?.normalizeText?.(value) || String(value || "").toLowerCase();
 }
 
+function isCommissionerOnly(item) {
+  return item?.role === "commissioner";
+}
+
+function isCoachScopedRuntimeItem(item, session) {
+  const type = normalizeSearch(item?.type || "");
+  if (type === "favorito") return true;
+  if (type === "jogo" || type === "copa") return true;
+
+  const sessionKey = normalizeSearch(session?.managerName || "");
+  if (!sessionKey) return false;
+
+  const haystack = normalizeSearch(
+    `${item?.title || ""} ${item?.detail || ""} ${item?.meta || ""}`,
+  );
+
+  if (type.includes("transfer")) return haystack.includes(sessionKey);
+  if (type.includes("evento")) return haystack.includes(sessionKey);
+  return false;
+}
+
+function limitRuntimeItems(items, limit) {
+  if (!Number.isFinite(limit) || limit <= 0) return [];
+  return items.slice(0, limit);
+}
+
 export function LeagueCommandPalette() {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const snapshot = useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
   const pushToast = useLeagueUiStore((state) => state.pushToast);
+  const session = App.auth?.getSession?.() || null;
+  const isCommissioner = Boolean(
+    session?.isCommissioner || App.auth?.isCommissioner?.(),
+  );
+  const normalizedQuery = normalizeSearch(query).trim();
 
   useEffect(() => {
     const onKeyDown = (event) => {
@@ -191,6 +225,7 @@ export function LeagueCommandPalette() {
         title: "Ver saude do sistema",
         detail: "Abre inteligencia e mostra auditoria, vitals e filas",
         view: "experienceView",
+        role: "commissioner",
         action: () => {
           requestAnimationFrame(() => {
             document
@@ -205,12 +240,14 @@ export function LeagueCommandPalette() {
         title: "Fechamento semanal",
         detail: "Vai para resultados, CPU x CPU e rotinas oficiais",
         view: "submitView",
+        role: "commissioner",
       },
       {
         id: "action-clear-local-cache",
         type: "Acao",
         title: "Limpar cache local",
         detail: "Remove cache de queries e pesquisas locais desta sessao",
+        role: "commissioner",
         action: async () => {
           try {
             localStorage.removeItem("4linhas-query-cache-v1");
@@ -233,10 +270,36 @@ export function LeagueCommandPalette() {
       },
     ];
 
-    return [...NAV_COMMANDS, ...actions, ...runtimeItems]
+    const visibleNavCommands = NAV_COMMANDS.filter(
+      (item) => isCommissioner || !isCommissionerOnly(item),
+    );
+    const visibleActions = actions.filter(
+      (item) => isCommissioner || !isCommissionerOnly(item),
+    );
+    const coachFavorites = runtimeItems.filter(
+      (item) => normalizeSearch(item?.type || "") === "favorito",
+    );
+    const scopedRuntimeItems = isCommissioner
+      ? limitRuntimeItems(runtimeItems, 80)
+      : normalizedQuery.length >= 2
+        ? limitRuntimeItems(
+            runtimeItems.filter((item) =>
+              isCoachScopedRuntimeItem(item, session),
+            ),
+            12,
+          )
+        : limitRuntimeItems(coachFavorites, 5);
+
+    return [...visibleNavCommands, ...visibleActions, ...scopedRuntimeItems]
       .map((item, index) => normalizeCommandItem(item, index))
       .filter(Boolean);
-  }, [snapshot, pushToast]);
+  }, [
+    snapshot,
+    pushToast,
+    isCommissioner,
+    normalizedQuery,
+    session?.managerName,
+  ]);
 
   const runCommand = async (item) => {
     if (!item) return;
@@ -277,6 +340,12 @@ export function LeagueCommandPalette() {
       commands[0]
     );
   };
+  const palettePlaceholder = isCommissioner
+    ? "Buscar tela, jogador, partida, transferencia ou acao..."
+    : "Buscar atalho, jogo, favorito ou sua negociacao...";
+  const paletteGroupTitle = isCommissioner
+    ? "Navegacao e acoes"
+    : "Atalhos do tecnico";
 
   return (
     <>
@@ -311,11 +380,11 @@ export function LeagueCommandPalette() {
                   event.preventDefault();
                   runCommand(getBestCommandForQuery(event.currentTarget.value));
                 }}
-                placeholder="Buscar tela, jogador, partida, transferencia ou acao..."
+                placeholder={palettePlaceholder}
               />
               <Command.List>
                 <Command.Empty>Nenhum resultado encontrado.</Command.Empty>
-                <Command.Group heading="Navegacao e acoes">
+                <Command.Group heading={paletteGroupTitle}>
                   {commands.map((item) => (
                     <Command.Item
                       key={item.id}

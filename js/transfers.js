@@ -722,6 +722,32 @@ App.transfers = {
       : fallback;
   },
 
+  renderMarketPlayerName(name = "", query = "") {
+    const rawName = String(name || "-");
+    const terms = [
+      String(query || "").trim(),
+      ...String(query || "")
+        .split(/\s+/)
+        .map((item) => item.trim())
+        .filter((item) => item.length >= 3),
+    ]
+      .filter(Boolean)
+      .sort((left, right) => right.length - left.length);
+    const lowerName = rawName.toLowerCase();
+    const match = terms.find((term) =>
+      lowerName.includes(term.toLowerCase()),
+    );
+    if (!match) return App.utils.escapeHtml(rawName);
+
+    const index = lowerName.indexOf(match.toLowerCase());
+    const end = index + match.length;
+    return [
+      App.utils.escapeHtml(rawName.slice(0, index)),
+      `<mark class="market-player-match">${App.utils.escapeHtml(rawName.slice(index, end))}</mark>`,
+      App.utils.escapeHtml(rawName.slice(end)),
+    ].join("");
+  },
+
   getTransfermarktPlayerId(value) {
     return (
       String(value || "").match(/\/spieler\/(\d+)/)?.[1] ||
@@ -1355,11 +1381,13 @@ App.transfers = {
         };
       });
 
-    const staticTransfers = App.data.transfers.map((transfer, index) => ({
-      ...transfer,
-      timestamp: transfer.timestamp || "",
-      sourceIndex: index,
-    }));
+    const staticTransfers = App.state.apiLoaded
+      ? []
+      : App.data.transfers.map((transfer, index) => ({
+          ...transfer,
+          timestamp: transfer.timestamp || "",
+          sourceIndex: index,
+        }));
 
     return [...staticTransfers, ...approvedApiTransfers];
   },
@@ -2874,6 +2902,38 @@ App.transfers = {
     return form?.elements.transferType?.value === "internal";
   },
 
+  syncTransferBuyerScope(form = document.getElementById("transferForm")) {
+    if (!form?.elements?.buyer) return;
+    const session = App.auth?.getSession?.() || null;
+    const isCommissioner = App.auth?.isCommissioner?.() === true;
+    const buyerField = form.elements.buyer;
+    const buyerLabel = buyerField.closest("label");
+    const confirmField = form.elements.confirmTransferBuyer;
+    const confirmLabel = confirmField?.closest("label");
+    const setScopedFieldVisibility = (label, hidden) => {
+      if (!label) return;
+      label.hidden = hidden;
+      label.setAttribute("aria-hidden", hidden ? "true" : "false");
+      label.style.display = hidden ? "none" : "";
+    };
+
+    if (session?.managerName && !isCommissioner) {
+      buyerField.value = session.managerName;
+      buyerField.dataset.sessionLocked = "true";
+      setScopedFieldVisibility(buyerLabel, true);
+      if (confirmField) {
+        confirmField.checked = true;
+        confirmField.dataset.sessionLocked = "true";
+      }
+      setScopedFieldVisibility(confirmLabel, true);
+    } else {
+      delete buyerField.dataset.sessionLocked;
+      setScopedFieldVisibility(buyerLabel, false);
+      if (confirmField) delete confirmField.dataset.sessionLocked;
+      setScopedFieldVisibility(confirmLabel, false);
+    }
+  },
+
   getOwnedTransfersByBuyer(buyer) {
     return App.transfers
       .getValidTransfers()
@@ -3927,11 +3987,26 @@ App.transfers = {
   },
 
   getMarketSearchAliases(query = "") {
+    const clubAliases = App.transfers.getMarketClubSearchAliases(query);
     return [
       ...new Set(
-        [query, ...App.transfers.getPlayerSearchAliases(query)].filter(Boolean),
+        [
+          query,
+          ...clubAliases,
+          ...App.transfers.getPlayerSearchAliases(query),
+        ].filter(Boolean),
       ),
     ].slice(0, 4);
+  },
+
+  getMarketClubSearchAliases(query = "") {
+    const key = App.transfers.normalizePlayerRatingKey(query).replace(/\s+/g, " ");
+    const compactKey = key.replace(/\s+/g, "");
+    const aliases = {
+      brent: ["Brentford", "Brentford Football Club"],
+      brentford: ["Brentford Football Club"],
+    };
+    return aliases[key] || aliases[compactKey] || [];
   },
 
   sortMarketSearchAliases(query = "") {
@@ -4103,11 +4178,18 @@ App.transfers = {
     const aliasKeys = App.transfers
       .getMarketSearchAliases(query)
       .map(App.transfers.normalizePlayerRatingKey);
+    const clubAliasKeys = App.transfers
+      .getMarketClubSearchAliases(query)
+      .map(App.transfers.normalizePlayerRatingKey)
+      .filter(Boolean);
     const hasExpandedAlias = aliasKeys.some(
       (aliasKey) => aliasKey && aliasKey !== normalizedQuery,
     );
     const nameKey = App.transfers.normalizePlayerRatingKey(player.name || "");
     const clubKey = App.transfers.normalizePlayerRatingKey(player.club || "");
+    const originalClubKey = App.transfers.normalizePlayerRatingKey(
+      player.original_club || player.originalClub || "",
+    );
     const leagueKey = App.transfers.normalizePlayerRatingKey(player.league || "");
     const countryKey = App.transfers.normalizePlayerRatingKey(
       player.country || "",
@@ -4117,16 +4199,20 @@ App.transfers = {
     );
     const nameTokens = nameKey.split(" ").filter(Boolean);
     const clubTokens = clubKey.split(" ").filter(Boolean);
+    const originalClubTokens = originalClubKey.split(" ").filter(Boolean);
     const leagueTokens = leagueKey.split(" ").filter(Boolean);
     const countryTokens = countryKey.split(" ").filter(Boolean);
     const positionTokens = positionKey.split(" ").filter(Boolean);
     const allTokens = [
       ...nameTokens,
       ...clubTokens,
+      ...originalClubTokens,
       ...leagueTokens,
       ...countryTokens,
       ...positionTokens,
     ];
+    const clubFieldKeys = [clubKey, originalClubKey].filter(Boolean);
+    const clubSearchKeys = [...new Set([normalizedQuery, ...clubAliasKeys])];
     const positionAliasScore = !hasExpandedAlias
       ? App.transfers.getMarketPositionSearchRelevance(
           normalizedQuery,
@@ -4154,10 +4240,27 @@ App.transfers = {
       nameTokens.some((token) => token.startsWith(normalizedQuery))
     )
       return 160;
+    if (
+      clubAliasKeys.length &&
+      clubSearchKeys.some((searchKey) =>
+        clubFieldKeys.some(
+          (fieldKey) =>
+            fieldKey === searchKey ||
+            fieldKey.includes(searchKey) ||
+            searchKey.includes(fieldKey),
+        ),
+      )
+    ) {
+      return 145;
+    }
     if (!hasExpandedAlias && clubTokens.includes(normalizedQuery)) return 130;
+    if (!hasExpandedAlias && originalClubTokens.includes(normalizedQuery))
+      return 130;
     if (
       !hasExpandedAlias &&
-      clubTokens.some((token) => token.startsWith(normalizedQuery))
+      [...clubTokens, ...originalClubTokens].some((token) =>
+        token.startsWith(normalizedQuery),
+      )
     )
       return 120;
     if (!hasExpandedAlias && leagueTokens.includes(normalizedQuery)) return 110;
@@ -4278,27 +4381,80 @@ App.transfers = {
       Math.min(Number(searchOptions.limit || 18), 80),
     );
     const cacheKey = `${normalized}|${showContracted ? "all" : "available"}|${resultLimit}`;
+    const onProgress =
+      typeof searchOptions.onProgress === "function"
+        ? searchOptions.onProgress
+        : null;
     const cached = App.transfers.marketSearchCache?.[cacheKey];
-    if (cached && Date.now() - cached.at < 60000) return cached.players;
+    if (cached && Date.now() - cached.at < 60000) {
+      const players = App.api?.applyMarketPlayerOverrides
+        ? App.api.applyMarketPlayerOverrides(cached.players, {
+            showContracted,
+          })
+        : cached.players;
+      cached.players = players;
+      if (onProgress) {
+        try {
+          onProgress(players, { source: "cache" });
+        } catch (error) {
+          console.warn("Progresso da busca de mercado indisponivel:", error);
+        }
+      }
+      return players;
+    }
     const pending = App.transfers.marketSearchPending?.[cacheKey];
-    if (pending) return pending;
+    if (pending) {
+      if (onProgress) {
+        pending
+          .then((players) => onProgress(players, { source: "pending" }))
+          .catch(() => {});
+      }
+      return pending;
+    }
 
     const remember = (players = []) => {
+      const normalizedPlayers = App.api?.applyMarketPlayerOverrides
+        ? App.api.applyMarketPlayerOverrides(players, {
+            showContracted,
+          })
+        : players;
       App.transfers.marketSearchCache = App.transfers.marketSearchCache || {};
       App.transfers.marketSearchCache[cacheKey] = {
         at: Date.now(),
-        players,
+        players: normalizedPlayers,
       };
-      return players;
+      return normalizedPlayers;
     };
 
     App.transfers.marketSearchPending = App.transfers.marketSearchPending || {};
     const request = (async () => {
       const aliases = App.transfers.sortMarketSearchAliases(query);
       const primaryAlias = aliases[0] || query;
+      const primaryAliasTokens = App.transfers
+        .normalizePlayerRatingKey(primaryAlias)
+        .split(" ")
+        .filter(Boolean);
+      const isSpecificNameSearch =
+        primaryAliasTokens.length >= 2 &&
+        !App.transfers.getMarketPositionQueryAliases(primaryAlias).length;
       const renderKey = `${normalized}|${showContracted ? "all" : "available"}`;
       const applyOverrides = (rows = []) =>
         App.api.applyMarketPlayerOverrides(rows, { showContracted });
+      const publishProgress = (rows = [], source = "market") => {
+        const ranked = App.transfers
+          .consolidateMarketSearchPlayers(query, applyOverrides(rows))
+          .slice(0, resultLimit);
+        if (!ranked.length) return [];
+        App.api.mergeMarketPlayers(ranked);
+        if (onProgress) {
+          try {
+            onProgress(ranked, { source });
+          } catch (error) {
+            console.warn("Progresso da busca de mercado indisponivel:", error);
+          }
+        }
+        return ranked;
+      };
       const refreshFromRows = (rows = []) => {
         if (!rows.length) return;
         const freshRanked = App.transfers
@@ -4337,21 +4493,50 @@ App.transfers = {
           window.setTimeout(runRefresh, 750);
         }
       };
+      const scheduleDelay = (delayMs = 0) =>
+        new Promise((resolve) => {
+          const timer =
+            typeof window !== "undefined" && window.setTimeout
+              ? window.setTimeout
+              : setTimeout;
+          timer(resolve, Math.max(0, Number(delayMs || 0)));
+        });
+      const fallbackSourceDelayMs = Math.max(
+        0,
+        Number(
+          searchOptions.fallbackSourceDelayMs ??
+            (isSpecificNameSearch ? 3600 : 1200),
+        ),
+      );
+      const ratingSourceDelayMs = Math.max(
+        0,
+        Number(
+          searchOptions.ratingSourceDelayMs ??
+            (isSpecificNameSearch ? 900 : 1600),
+        ),
+      );
 
       const directRowsPromise = App.api
         .fetchMarketPlayersDirect(primaryAlias, resultLimit, {
-          timeoutMs: Number(searchOptions.directTimeoutMs || 2600),
+          timeoutMs: Number(searchOptions.directTimeoutMs || 4200),
         })
-        .then(applyOverrides)
+        .then((rows) => publishProgress(rows, "direct"))
         .catch(() => []);
-      const fallbackRowsPromise = App.api
-        .searchRegionalFallbackPlayers(primaryAlias, resultLimit, {
-          showContracted,
-        })
-        .then(applyOverrides)
+      const fallbackRowsPromise = scheduleDelay(fallbackSourceDelayMs)
+        .then(() =>
+          App.api.searchRegionalFallbackPlayers(primaryAlias, resultLimit, {
+            showContracted,
+          }),
+        )
+        .then((rows) => publishProgress(rows, "fallback"))
         .catch(() => []);
-      const ratingFallbackPromise = App.transfers
-        .searchEaRatingsCached(primaryAlias, Math.min(resultLimit, 8))
+      const ratingFallbackRowsPromise = scheduleDelay(ratingSourceDelayMs)
+        .then(() =>
+          App.transfers.searchEaRatingsCached(
+            primaryAlias,
+            Math.min(resultLimit, 8),
+          ),
+        )
         .then((ratings) =>
           App.transfers.buildSyntheticMarketPlayersFromRatings(
             query,
@@ -4360,15 +4545,45 @@ App.transfers = {
           ),
         )
         .catch(() => []);
-      const firstRows = await Promise.any(
-        [directRowsPromise, fallbackRowsPromise, ratingFallbackPromise].map(
-          (source) =>
-            source.then((rows) => {
+      const requireRows = (source) =>
+        source.then((rows) => {
+          if (rows.length) return rows;
+          throw new Error("empty-market-source");
+        });
+      const waitForMarketSource = () =>
+        new Promise((resolve) => {
+          const timeout = Math.max(
+            0,
+            Number(
+              searchOptions.marketSourceGraceMs ??
+                (isSpecificNameSearch ? 1500 : 260),
+            ),
+          );
+          const timer =
+            typeof window !== "undefined" && window.setTimeout
+              ? window.setTimeout
+              : setTimeout;
+          timer(() => resolve([]), timeout);
+        });
+      const preferredMarketRowsPromise = Promise.any(
+        [directRowsPromise, fallbackRowsPromise].map(requireRows),
+      ).catch(() => []);
+      const preferredMarketRows = await Promise.race([
+        preferredMarketRowsPromise,
+        waitForMarketSource(),
+      ]);
+      const ratingFallbackPromise = ratingFallbackRowsPromise.then((rows) =>
+        publishProgress(rows, "rating"),
+      );
+      const firstRows = preferredMarketRows.length
+        ? preferredMarketRows
+        : await Promise.any([
+            preferredMarketRowsPromise.then((rows) => {
               if (rows.length) return rows;
               throw new Error("empty-market-source");
             }),
-        ),
-      ).catch(() => []);
+            requireRows(ratingFallbackPromise),
+          ]).catch(() => []);
       scheduleFullMarketRefresh();
       const groups = firstRows.length
         ? firstRows
@@ -4500,6 +4715,7 @@ App.transfers = {
       .searchEaRatings(query, limit)
       .catch(() => [])
       .then((rows) => {
+        App.api.mergeEaRatings?.(rows);
         App.transfers.eaRatingSearchCache[cacheKey] = {
           at: Date.now(),
           rows,
@@ -4798,7 +5014,7 @@ App.transfers = {
         <button class="market-player-option ${isContracted ? "is-contracted" : ""}" type="button" data-market-player="${player.id}" ${isContracted ? "disabled" : ""}>
           ${App.transfers.renderPlayerPhoto(player, eaRating)}
           <span class="market-player-main">
-            <strong>${App.utils.escapeHtml(player.name || "-")}</strong>
+            <strong>${App.transfers.renderMarketPlayerName(player.name || "-", query)}</strong>
             <small>${App.utils.escapeHtml([player.position, player.age ? `${player.age} anos` : "", player.league, player.club].filter(Boolean).join(" · "))}</small>
           </span>
           <span class="market-player-side">

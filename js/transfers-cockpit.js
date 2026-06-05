@@ -482,6 +482,7 @@ Object.assign(App.transfers, {
 
   recordNegotiationResult(payload = {}, preview = null, data = {}, isInternal = false) {
     const now = new Date().toISOString();
+    const proposalId = Number(data.proposalId || data.proposal_id || 0);
     const value = Number(
       preview?.cashFinalValue ||
         preview?.finalValue ||
@@ -500,7 +501,12 @@ Object.assign(App.transfers, {
           ? "approved"
           : "buyer_review";
     const entry = {
-      id: data.transferId || data.id || `${Date.now()}-${Math.random()}`,
+      id:
+        data.transferId ||
+        (Number.isFinite(proposalId) && proposalId > 0 ? proposalId : "") ||
+        data.id ||
+        `${Date.now()}-${Math.random()}`,
+      proposalId: Number.isFinite(proposalId) && proposalId > 0 ? proposalId : null,
       createdAt: now,
       player: payload.player || preview?.player || "",
       buyer: payload.buyer || preview?.buyer || "",
@@ -515,6 +521,7 @@ Object.assign(App.transfers, {
       referenceValue: Number(data.referenceValue || preview?.marketValue || 0),
       buyerOfferValue: Number(data.buyerOfferValue || preview?.finalValue || 0),
       sellerValue: Number(data.sellerValue || value || 0),
+      cashValue: Number(data.cashValue || preview?.cashFinalValue || value || 0),
       transferType: isInternal ? "internal" : "market",
       status: entryStatus,
       responseMessage: isInternal
@@ -589,7 +596,53 @@ Object.assign(App.transfers, {
       const aTime = new Date(a.createdAt || a.timestamp || 0).getTime();
       const bTime = new Date(b.createdAt || b.timestamp || 0).getTime();
       return (Number.isNaN(bTime) ? 0 : bTime) - (Number.isNaN(aTime) ? 0 : aTime);
-    });
+      });
+  },
+
+  getOpenLocalTransferNegotiationItems(owner = "") {
+    const ownerKey = App.utils.normalizeText(owner);
+    return App.transfers
+      .getNegotiationLogs()
+      .filter((item) => {
+        const status = App.utils.normalizeText(item.status || "");
+        return (
+          ["sent", "pending", "buyer_review", "signature_pending"].includes(
+            status,
+          ) &&
+          (!ownerKey || App.utils.normalizeText(item.buyer) === ownerKey)
+        );
+      })
+      .map((item) => {
+        const status =
+          App.utils.normalizeText(item.status || "") === "sent"
+            ? "pending"
+            : item.status || "pending";
+        return {
+          id: item.proposalId || item.id,
+          local_fallback: true,
+          buyer: item.buyer || owner,
+          seller: item.seller || item.fromClub || "Clube vendedor",
+          player: item.player || "",
+          from_club: item.fromClub || item.seller || "",
+          status,
+          created_at: item.createdAt || new Date().toISOString(),
+          proposal_role: "sent",
+          proposal_type: item.transferType === "internal" ? "internal" : "external_market",
+          proposed_value: Number(item.sellerValue || item.totalCost || item.value || 0),
+          reference_value: Number(item.referenceValue || 0),
+          buyer_offer_value: Number(item.buyerOfferValue || item.value || 0),
+          cash_offer_value: Number(item.cashValue || item.value || 0),
+          weekly_salary_eur: Number(item.weeklySalary || 0),
+          trade_in_player: item.tradeInPlayer || "",
+          trade_in_credit: Number(item.tradeInCredit || 0),
+          response_message:
+            item.responseMessage ||
+            "Negociacao registrada localmente enquanto a sincronizacao privada atualiza.",
+          operation_audit_timeline: Array.isArray(item.stages)
+            ? item.stages
+            : App.transfers.buildTransferNegotiationStages(item),
+        };
+      });
   },
 
   renderNegotiationTimelineSummary(entry = {}) {
@@ -2987,11 +3040,45 @@ Object.assign(App.transfers, {
         item.proposal_role !== "sent" &&
         App.auth?.isOpenTransferProposal?.(item),
     );
-    const sentPending = proposals.filter(
+    const sentPendingFromServer = proposals.filter(
       (item) =>
         item.proposal_role === "sent" &&
         App.auth?.isOpenTransferProposal?.(item),
     );
+    const serverSentKeys = new Set(
+      sentPendingFromServer.map((item) =>
+        [
+          item.id,
+          App.transfers.normalizePlayerRatingKey(item.player),
+          App.utils.normalizeText(item.status || ""),
+        ].join("|"),
+      ),
+    );
+    const serverSentPlayerStatusKeys = new Set(
+      sentPendingFromServer.map((item) =>
+        [
+          App.transfers.normalizePlayerRatingKey(item.player),
+          App.utils.normalizeText(item.status || ""),
+        ].join("|"),
+      ),
+    );
+    const localSentPending = App.transfers
+      .getOpenLocalTransferNegotiationItems(session.managerName)
+      .filter((item) => {
+        const playerStatusKey = [
+          App.transfers.normalizePlayerRatingKey(item.player),
+          App.utils.normalizeText(item.status || ""),
+        ].join("|");
+        const key = [
+          item.id,
+          playerStatusKey,
+        ].join("|");
+        return (
+          !serverSentKeys.has(key) &&
+          !serverSentPlayerStatusKeys.has(playerStatusKey)
+        );
+      });
+    const sentPending = [...sentPendingFromServer, ...localSentPending];
     const resolved = proposals
       .filter(
         (item) => item.status && !App.auth?.isOpenTransferProposal?.(item),
@@ -3249,7 +3336,7 @@ Object.assign(App.transfers, {
               <article class="market-player-option market-player-shell ${isContracted ? "is-contracted" : ""}">
                 ${App.transfers.renderPlayerPhoto(player, App.transfers.findEaRatingForMarketPlayer(player))}
                 <span class="market-player-main">
-                  <strong>${App.utils.escapeHtml(player.name || "-")}</strong>
+                  <strong>${App.transfers.renderMarketPlayerName(player.name || "-", query)}</strong>
                   <small>${App.utils.escapeHtml([candidate.position || "", player.age ? `${player.age} anos` : "", player.league, player.club].filter(Boolean).join(" - "))}</small>
                 </span>
                 <span class="market-player-side">

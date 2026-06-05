@@ -465,14 +465,19 @@ App.api = {
       p_show_contracted: Boolean(showContracted),
       p_limit: normalizedLimit,
     };
+    const applyOverrides = (rows = []) =>
+      App.api.applyMarketPlayerOverrides(rows, {
+        showContracted: Boolean(showContracted),
+      });
     const cachedRows = App.api.getRpcCache(
       "local_market_players",
       cachePayload,
       8 * 60 * 1000,
     );
     if (Array.isArray(cachedRows)) {
-      App.api.mergeMarketPlayers(cachedRows);
-      return cachedRows;
+      const refreshedRows = applyOverrides(cachedRows);
+      App.api.mergeMarketPlayers(refreshedRows);
+      return refreshedRows;
     }
 
     const finalizeRows = (rows = []) => {
@@ -490,11 +495,6 @@ App.api = {
     App.state.apiMarketPlayers = Array.isArray(App.state.apiMarketPlayers)
       ? App.state.apiMarketPlayers
       : [];
-
-    const applyOverrides = (rows = []) =>
-      App.api.applyMarketPlayerOverrides(rows, {
-        showContracted: Boolean(showContracted),
-      });
 
     const rpcRowsPromise = App.api
       .rpc(
@@ -576,34 +576,51 @@ App.api = {
     if (normalizedQuery.length < 2) return [];
     const positionAliases =
       App.transfers?.getMarketPositionQueryAliases?.(queryText) || [];
-    const filterParts = positionAliases.length
+    const nameFilterParts = positionAliases.length
+      ? []
+      : [
+          `name.ilike.*${queryText}*`,
+          `normalized_name.ilike.*${normalizedQuery || queryText}*`,
+        ];
+    const broadFilterParts = positionAliases.length
       ? positionAliases.map((alias) => `position.ilike.*${alias}*`)
       : [
           `name.ilike.*${queryText}*`,
           `normalized_name.ilike.*${normalizedQuery || queryText}*`,
           `club.ilike.*${queryText}*`,
+          `league.ilike.*${queryText}*`,
+          `country.ilike.*${queryText}*`,
           `position.ilike.*${queryText}*`,
         ];
-    const filters = queryText
-      ? `&or=(${filterParts
-          .map((item) => encodeURIComponent(item))
-          .join(",")})`
-      : "";
+    const buildFilters = (filterParts = broadFilterParts) =>
+      queryText
+        ? `&or=(${filterParts
+            .map((item) => encodeURIComponent(item))
+            .join(",")})`
+        : "";
 
-    const request = async (select) =>
+    const request = async (select, filterParts) =>
       App.api.fetchWithTimeout(
-        `${App.config.SUPABASE_URL}/rest/v1/players_market?select=${select}${filters}&order=market_value_eur.desc.nullslast,name.asc&limit=${normalizedLimit}`,
+        `${App.config.SUPABASE_URL}/rest/v1/players_market?select=${select}${buildFilters(filterParts)}&order=market_value_eur.desc.nullslast,name.asc&limit=${normalizedLimit}`,
         {
           method: "GET",
           headers: App.api.getSupabaseHeaders(),
         },
         timeoutMs,
       );
+    const runRequest = async (filterParts) => {
+      let response = await request(selectWithAvatar, filterParts);
+      if (!response.ok) response = await request(selectWithoutAvatar, filterParts);
+      if (!response.ok) return [];
+      return await response.json();
+    };
 
-    let response = await request(selectWithAvatar);
-    if (!response.ok) response = await request(selectWithoutAvatar);
-    if (!response.ok) return [];
-    return await response.json();
+    if (nameFilterParts.length) {
+      const nameRows = await runRequest(nameFilterParts);
+      if (nameRows.length) return nameRows;
+    }
+
+    return await runRequest(broadFilterParts);
   },
 
   mergeMarketPlayers(rows = []) {
@@ -668,12 +685,19 @@ App.api = {
         ? true
         : Boolean(options.showContracted);
     const latestMovements = App.api.getLatestMovementByPlayer();
+    const authoritativeTransfersLoaded = App.state.apiLoaded === true;
 
     return players
       .map((player) => {
         const key = App.utils.normalizeText(player.name || "");
         const movement = latestMovements[key];
-        let next = { ...player };
+        let next = authoritativeTransfersLoaded
+          ? {
+              ...player,
+              alreadyContracted: false,
+              is_contracted: false,
+            }
+          : { ...player };
 
         if (movement?.transferType === "cpu_sale" && movement.destination) {
           next = {

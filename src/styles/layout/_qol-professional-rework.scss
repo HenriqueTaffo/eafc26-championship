@@ -468,10 +468,13 @@ button:active {
   gap: 10px;
 }
 
-.command-palette-trigger,
 .status-actions button,
 [data-manual-sync] {
   position: relative;
+  overflow: hidden;
+}
+
+.command-palette-trigger {
   overflow: hidden;
 }
 
@@ -495,6 +498,179 @@ button:active {
 .status-actions button:hover::after,
 [data-manual-sync]:hover::after {
   transform: translateX(120%);
+}
+
+body.auth-unlocked .league-command-dialog {
+  max-height: calc(100vh - 96px);
+}
+
+body.auth-unlocked .league-command-dialog [cmdk-list] {
+  max-height: min(620px, calc(100vh - 160px));
+}
+
+body.auth-unlocked .league-command-dialog [cmdk-group-heading] {
+  padding: 10px 10px 5px;
+}
+
+body.auth-unlocked .league-command-dialog [cmdk-item] {
+  min-height: 48px;
+  padding: 8px 10px;
+}
+
+body.auth-unlocked .market-player-results {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: min(430px, calc(100vh - 260px));
+  padding: 8px;
+  border-radius: 12px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.035), transparent),
+    rgba(2, 7, 9, 0.58);
+}
+
+body.auth-unlocked .market-player-results .market-player-option {
+  position: relative;
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr) minmax(160px, max-content);
+  gap: 10px;
+  align-items: center;
+  min-height: 58px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  overflow: visible;
+  background:
+    linear-gradient(90deg, rgba(37, 224, 189, 0.055), transparent 46%),
+    rgba(4, 10, 12, 0.78);
+  text-align: left;
+}
+
+body.auth-unlocked .market-player-results .market-player-option::after {
+  display: none;
+}
+
+body.auth-unlocked .market-player-results .market-player-option:hover {
+  transform: translateY(-1px);
+  border-color: rgba(56, 216, 193, 0.32);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.24);
+}
+
+body.auth-unlocked .market-player-results .market-player-photo {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+}
+
+body.auth-unlocked .market-player-results .market-player-photo img {
+  object-position: top center;
+}
+
+body.auth-unlocked .market-player-results .market-player-main {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+body.auth-unlocked .market-player-results .market-player-main strong {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--qol-ink);
+  font-size: 0.9rem;
+  line-height: 1.15;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+body.auth-unlocked .market-player-results .market-player-main small {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--qol-muted);
+  font-size: 0.72rem;
+  line-height: 1.25;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+body.auth-unlocked .market-player-results .market-player-match {
+  border-radius: 5px;
+  padding: 0 3px;
+  background: rgba(248, 193, 74, 0.18);
+  color: #ffe9aa;
+}
+
+body.auth-unlocked .market-player-results .market-player-side {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 5px;
+  max-width: min(100%, 340px);
+}
+
+body.auth-unlocked
+  .market-player-results
+  :where(.market-player-overall, .market-player-value, .market-player-status) {
+  display: inline-flex;
+  align-items: center;
+  min-height: 22px;
+  max-width: 100%;
+  border: 1px solid rgba(196, 226, 222, 0.14);
+  border-radius: 999px;
+  padding: 3px 7px;
+  overflow: hidden;
+  font-size: 0.66rem;
+  font-weight: 900;
+  line-height: 1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+body.auth-unlocked .market-player-results .market-player-overall {
+  border-color: rgba(90, 168, 255, 0.24);
+  background: rgba(90, 168, 255, 0.12);
+  color: #cfe4ff;
+}
+
+body.auth-unlocked .market-player-results .market-player-value {
+  border-color: rgba(128, 226, 126, 0.24);
+  background: rgba(128, 226, 126, 0.1);
+  color: #c9fdd0;
+}
+
+body.auth-unlocked .market-player-results .market-player-status {
+  max-width: 190px;
+  border-color: rgba(248, 193, 74, 0.22);
+  background: rgba(248, 193, 74, 0.1);
+  color: #ffe7a8;
+}
+
+body.auth-unlocked .market-player-results .market-player-shell {
+  grid-template-columns:
+    40px minmax(0, 1fr) minmax(170px, 0.62fr)
+    minmax(190px, auto);
+  cursor: default;
+}
+
+body.auth-unlocked
+  .market-player-results
+  .market-player-shell
+  > :where(.market-player-photo, .market-player-main, .market-player-side, .market-player-actions) {
+  grid-column: auto;
+  grid-row: auto;
+}
+
+body.auth-unlocked .market-player-results .market-player-actions {
+  display: flex;
+  flex-wrap: nowrap;
+  justify-content: flex-end;
+  gap: 6px;
+  min-width: 0;
+}
+
+body.auth-unlocked .market-player-results .market-player-actions button {
+  min-height: 28px;
+  padding: 0 8px;
+  font-size: 0.66rem;
+  white-space: nowrap;
 }
 
 @media (max-width: 1180px) {
@@ -535,6 +711,65 @@ button:active {
   .qol-metric-card,
   .qol-action-row {
     min-height: 0;
+  }
+
+  body.auth-unlocked .market-player-results {
+    max-height: min(430px, 62vh);
+    padding: 6px;
+  }
+
+  body.auth-unlocked .market-player-results .market-player-option,
+  body.auth-unlocked .market-player-results .market-player-shell {
+    grid-template-columns: 36px minmax(0, 1fr);
+    gap: 7px 9px;
+    align-items: start;
+    min-height: 0;
+    padding: 8px;
+  }
+
+  body.auth-unlocked .market-player-results .market-player-shell {
+    min-height: 136px;
+  }
+
+  body.auth-unlocked .market-player-results .market-player-photo {
+    grid-row: 1 / span 2;
+    width: 36px;
+    height: 36px;
+    border-radius: 9px;
+  }
+
+  body.auth-unlocked .market-player-results .market-player-main,
+  body.auth-unlocked .market-player-results .market-player-side {
+    grid-column: 2;
+  }
+
+  body.auth-unlocked .market-player-results .market-player-side {
+    justify-content: flex-start;
+    max-width: 100%;
+  }
+
+  body.auth-unlocked
+    .market-player-results
+    :where(.market-player-overall, .market-player-value, .market-player-status) {
+    min-height: 20px;
+    padding: 3px 6px;
+    font-size: 0.62rem;
+  }
+
+  body.auth-unlocked .market-player-results .market-player-actions {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+    padding-top: 7px;
+    border-top: 1px solid rgba(196, 226, 222, 0.1);
+  }
+
+  body.auth-unlocked .market-player-results .market-player-actions button {
+    min-width: 0;
+    padding: 0 6px;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 }
 
