@@ -1,4 +1,4 @@
-import { Suspense, lazy, memo, useLayoutEffect } from "react";
+import { Suspense, lazy, memo, useLayoutEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   ActivityPanel,
@@ -99,9 +99,24 @@ const TransfersRuntime = lazy(() =>
     default: module.TransfersRuntime,
   })),
 );
-const AdvancedTransferTools = lazy(() =>
+const TransferKanbanBoard = lazy(() =>
   import("../views/AdvancedTransferTools.jsx").then((module) => ({
-    default: module.AdvancedTransferTools,
+    default: module.TransferKanbanBoard,
+  })),
+);
+const TransferMarketTable = lazy(() =>
+  import("../views/AdvancedTransferTools.jsx").then((module) => ({
+    default: module.TransferMarketTable,
+  })),
+);
+const TransferProposalAssistant = lazy(() =>
+  import("../views/AdvancedTransferTools.jsx").then((module) => ({
+    default: module.TransferProposalAssistant,
+  })),
+);
+const TransferWorkflowInspector = lazy(() =>
+  import("../views/AdvancedTransferTools.jsx").then((module) => ({
+    default: module.TransferWorkflowInspector,
   })),
 );
 
@@ -837,8 +852,621 @@ function ExperienceView({ isActive = false }) {
   );
 }
 
+const transferWorkspaceTabs = [
+  {
+    id: "central",
+    label: "Central",
+    detail: "Pendencias, janela e resumo da mesa.",
+  },
+  {
+    id: "mercado",
+    label: "Mercado",
+    detail: "Busca, shortlist e comparador.",
+  },
+  {
+    id: "proposta",
+    label: "Proposta",
+    detail: "Montagem e envio da negociacao.",
+  },
+  {
+    id: "negociacoes",
+    label: "Negociacoes",
+    detail: "Recebidas, enviadas e pipeline.",
+  },
+  {
+    id: "historico",
+    label: "Historico",
+    detail: "Movimentacoes aprovadas e filtros.",
+  },
+  {
+    id: "financeiro",
+    label: "Financeiro",
+    detail: "Caixa, folha, limite e regras.",
+  },
+];
+
+function TransferWorkspaceTabs({ activeTab, onChange }) {
+  return (
+    <section className="transfer-workspace-tabs" aria-label="Subtelas de transferencias">
+      {transferWorkspaceTabs.map((tab) => (
+        <button
+          type="button"
+          key={tab.id}
+          className={`transfer-workspace-tab${
+            activeTab === tab.id ? " is-active" : ""
+          }`}
+          data-transfer-tab={tab.id}
+          aria-current={activeTab === tab.id ? "page" : undefined}
+          onClick={() => onChange(tab.id)}
+        >
+          <strong>{tab.label}</strong>
+          <small>{tab.detail}</small>
+        </button>
+      ))}
+    </section>
+  );
+}
+
+function TransferSubviewPanel({ eyebrow, title, detail, children }) {
+  return (
+    <section className="transfer-subview-panel">
+      <header className="transfer-subview-head">
+        <div>
+          <span className="modal-kicker">{eyebrow}</span>
+          <h2>{title}</h2>
+          <p>{detail}</p>
+        </div>
+      </header>
+      <div className="transfer-subview-body">{children}</div>
+    </section>
+  );
+}
+
+function TransferCentralPanel() {
+  return (
+    <TransferSubviewPanel
+      eyebrow="Mesa do tecnico"
+      title="Central de transferencias"
+      detail="Resumo da janela, negociacoes abertas e alertas que pedem decisao."
+    >
+      <section className="summary" id="transferSummary">
+        <TransfersSummary />
+      </section>
+      <section className="countdown-card">
+        <span>Janela de transferencias</span>
+        <strong id="nextTransferCountdown">Calculando...</strong>
+        <p>
+          Janela reaberta ate domingo, 07/06/2026, 23:59 BRT. O limite diario
+          reinicia a meia-noite.
+        </p>
+      </section>
+      <section className="transfer-lock-card" aria-live="polite">
+        <span className="modal-kicker">Mercado travado</span>
+        <h2>Janela de transferencias fechada</h2>
+        <p>
+          As contratacoes ficam bloqueadas ate a liga considerar o app pronto.
+          Historico e orcamento seguem visiveis para conferencia.
+        </p>
+      </section>
+      <section className="transfer-ops-board" id="transferOpsBoard"></section>
+      <section
+        className="transfer-negotiation-hub"
+        id="transferNegotiationHub"
+      ></section>
+    </TransferSubviewPanel>
+  );
+}
+
+function TransferMarketPanel({ onSelectPlayer } = {}) {
+  return (
+    <TransferSubviewPanel
+      eyebrow="Radar de mercado"
+      title="Buscar e comparar alvos"
+      detail="Pesquisa, filtros e comparacao ficam separados da criacao da proposta."
+    >
+      <DeferredViewSection
+        viewId="transfersView"
+        isActive
+        title="Carregando mercado inteligente"
+        detail="Preparando filtros virtuais e tabela de scouting."
+      >
+        <TransferMarketTable onSelectPlayer={onSelectPlayer} />
+      </DeferredViewSection>
+      <section
+        className="transfer-compare-board coach-panel-card"
+        id="transferCompareBoard"
+      ></section>
+    </TransferSubviewPanel>
+  );
+}
+
+function TransferProposalPanel() {
+  return (
+    <TransferSubviewPanel
+      eyebrow="Nova mesa"
+      title="Montar proposta"
+      detail="Use o assistente ou preencha a mesa manualmente antes de enviar."
+    >
+      <DeferredViewSection
+        viewId="transfersView"
+        isActive
+        title="Carregando assistente"
+        detail="Validando formulario de proposta."
+      >
+        <TransferProposalAssistant />
+      </DeferredViewSection>
+      <TransferProposalWorkbench />
+    </TransferSubviewPanel>
+  );
+}
+
+function TransferNegotiationsPanel() {
+  return (
+    <TransferSubviewPanel
+      eyebrow="Pipeline"
+      title="Negociacoes ativas"
+      detail="Propostas recebidas, enviadas, shortlist e evolucao da mesa."
+    >
+      <DeferredViewSection
+        viewId="transfersView"
+        isActive
+        title="Carregando pipeline"
+        detail="Preparando kanban, fluxo e propostas privadas."
+      >
+        <section className="transfer-advanced-pair">
+          <TransferWorkflowInspector />
+          <TransferKanbanBoard />
+        </section>
+      </DeferredViewSection>
+      <section
+        className="transfer-negotiation-hub"
+        id="transferNegotiationHub"
+      ></section>
+    </TransferSubviewPanel>
+  );
+}
+
+function TransferHistoryPanel() {
+  return (
+    <TransferSubviewPanel
+      eyebrow="Arquivo"
+      title="Historico de movimentacoes"
+      detail="Audite compras aprovadas, filtros e recortes recentes da liga."
+    >
+      <section className="controls transfer-history-controls">
+        <input
+          id="transferSearchInput"
+          type="search"
+          placeholder="Buscar jogador, tecnico, destino ou clube..."
+        />
+        <select id="transferOwnerFilter">
+          <option value="all">Todos os tecnicos/destinos</option>
+          <option value="Henrique">Henrique</option>
+          <option value="Willian">Willian</option>
+          <option value="Rafael">Rafael</option>
+          <option value="Renato">Renato</option>
+          <option value="Bruno Silva">Bruno Silva</option>
+        </select>
+        <select id="transferStatusFilter">
+          <option value="all">Todos os status</option>
+          <option value="valid">Validas</option>
+          <option value="sale">Vendas CPU</option>
+          <option value="duplicate">Duplicadas</option>
+        </select>
+      </section>
+      <section className="transfer-insights" id="transferInsights"></section>
+      <section className="table-wrapper transfer-history-shell">
+        <div
+          className="transfer-history-grid transfer-history-grid-head"
+          aria-hidden="true"
+        >
+          <span>Jogador</span>
+          <span>Destino</span>
+          <span>Origem</span>
+          <span>OVR</span>
+          <span>Base/Oferta</span>
+          <span>% Overall</span>
+          <span>Valor</span>
+          <span>Status</span>
+        </div>
+        <div id="transferTable" className="transfer-history-grid-body"></div>
+      </section>
+      <section className="mobile-list" id="transferMobile"></section>
+      <p className="footer-note">
+        Mostrando apenas as 5 movimentacoes aprovadas mais recentes.
+      </p>
+    </TransferSubviewPanel>
+  );
+}
+
+function TransferFinancePanel() {
+  return (
+    <TransferSubviewPanel
+      eyebrow="Controle financeiro"
+      title="Caixa, folha e limites"
+      detail="Leitura financeira da janela antes de assumir novos compromissos."
+    >
+      <section
+        className="transfer-budget-board"
+        id="transferBudgetBoard"
+      ></section>
+      <section className="transfer-ops-board" id="transferOpsBoard"></section>
+      <section className="rule-card transfer-rules-card">
+        <h2>Regras de transferencia</h2>
+        <ul>
+          <li>
+            Orcamento base por jogador: <strong>22 milhoes</strong>.
+          </li>
+          <li>
+            Receita semanal: <strong>+2M</strong> por semana ativa da temporada.
+          </li>
+          <li>
+            Bonus por mando: <strong>+400k</strong> por partida em casa.
+          </li>
+          <li>
+            Bonus por vitoria: <strong>+250k</strong> por vitoria.
+          </li>
+          <li>
+            Bonus de campanha: blocos de 5 jogos rendem ate
+            <strong> +5M</strong> conforme pontuacao.
+          </li>
+          <li>Eventos financeiros podem aumentar ou reduzir o orcamento.</li>
+          <li>Copas geram premiacao automatica por avanco de fase.</li>
+          <li>
+            Limite base: <strong>3 transferencias por dia</strong>. Eventos
+            podem alterar esse limite.
+          </li>
+          <li>Proposta inicial = referencia de mercado + percentual por overall.</li>
+          <li>
+            Salario do jogador: somente com referencia publica. Nao usamos
+            overall para estimar folha.
+          </li>
+        </ul>
+      </section>
+    </TransferSubviewPanel>
+  );
+}
+
+function TransferProposalWorkbench() {
+  return (
+    <section className="transfer-workbench">
+      <section className="form-card submit-card submit-card-transfer">
+        <div className="submit-card-header">
+          <span className="submit-card-icon">⇄</span>
+          <div>
+            <h2>Abrir negociacao</h2>
+            <p>
+              Mercado externo, propostas entre tecnicos e troca de jogador no
+              mesmo fluxo.
+            </p>
+          </div>
+        </div>
+        <form id="transferForm" noValidate>
+          <div className="form-grid">
+            <div
+              className="submit-mode-switch full"
+              aria-label="Tipo de transferencia"
+            >
+              <label>
+                <input
+                  name="transferType"
+                  type="radio"
+                  value="market"
+                  defaultChecked
+                />
+                <span>Mercado externo</span>
+              </label>
+              <label>
+                <input name="transferType" type="radio" value="internal" />
+                <span>Entre tecnicos</span>
+              </label>
+            </div>
+            <label>
+              Comprador
+              <select name="buyer" required>
+                <option value="Henrique">Henrique</option>
+                <option value="Willian">Willian</option>
+                <option value="Rafael">Rafael</option>
+                <option value="Renato">Renato</option>
+                <option value="Bruno Silva">Bruno Silva</option>
+              </select>
+            </label>
+            <label
+              className="internal-transfer-field"
+              data-internal-transfer-field
+              hidden
+            >
+              Vendedor
+              <select name="seller">
+                <option value="">Selecione o vendedor</option>
+                <option value="Henrique">Henrique</option>
+                <option value="Willian">Willian</option>
+                <option value="Rafael">Rafael</option>
+                <option value="Renato">Renato</option>
+                <option value="Bruno Silva">Bruno Silva</option>
+              </select>
+            </label>
+            <label
+              className="internal-transfer-field full"
+              data-internal-transfer-field
+              hidden
+            >
+              Jogador do vendedor
+              <select id="internalTransferPlayer" name="internalPlayer">
+                <option value="">Escolha vendedor e jogador</option>
+              </select>
+            </label>
+            <label className="full" data-market-transfer-field>
+              Buscar jogador no mercado
+              <input
+                id="marketPlayerSearch"
+                type="search"
+                placeholder="Digite nome, clube, liga ou posicao..."
+                autoComplete="off"
+              />
+            </label>
+            <div
+              className="market-player-toolbar full"
+              data-market-transfer-field
+            >
+              <span>
+                Por padrao, jogadores ja contratados ficam escondidos.
+              </span>
+              <label className="market-toggle">
+                <input id="showContractedPlayers" type="checkbox" />
+                <span>Mostrar ja contratados</span>
+              </label>
+            </div>
+            <div
+              className="market-player-results full"
+              id="marketPlayerResults"
+              data-market-transfer-field
+            >
+              <div className="market-empty">
+                Digite o nome, clube, liga ou posicao para buscar jogadores.
+              </div>
+            </div>
+            <div
+              className="transfer-exchange-box full"
+              data-market-transfer-field
+            >
+              <div className="transfer-exchange-copy">
+                <span>Troca na negociacao</span>
+                <strong>Jogador + dinheiro</strong>
+                <small id="transferExchangeHint">
+                  Opcional. O abatimento aparece na previa antes do envio.
+                </small>
+              </div>
+              <label className="transfer-exchange-control">
+                <span>Jogador oferecido</span>
+                <select id="transferExchangePlayer" name="exchangePlayer">
+                  <option value="">Sem jogador na troca</option>
+                </select>
+              </label>
+            </div>
+            <label>
+              Jogador
+              <input
+                name="player"
+                type="text"
+                placeholder="Nome do jogador"
+                required
+              />
+            </label>
+            <label>
+              Clube origem
+              <input
+                name="fromClub"
+                type="text"
+                placeholder="Clube atual"
+                required
+              />
+            </label>
+            <label>
+              Overall EAFC
+              <input
+                name="overall"
+                type="number"
+                min="1"
+                max="99"
+                placeholder="Ex: 82"
+                required
+              />
+            </label>
+            <label className="full">
+              <span id="transferValueLabel">Referencia de mercado</span>
+              <input
+                name="marketValue"
+                type="number"
+                min="0"
+                step="1"
+                inputMode="numeric"
+                placeholder="Ex: 32000000"
+                required
+              />
+            </label>
+            <div
+              className="market-offer-field transfer-offer-composer full"
+              data-market-transfer-field
+              data-offer-composer
+            >
+              <div className="offer-composer-head">
+                <div>
+                  <span>Oferta ao clube</span>
+                  <strong id="transferOfferStrategy">
+                    Defina a abertura da mesa
+                  </strong>
+                </div>
+                <small id="transferOfferReference">
+                  Selecione um jogador para carregar a referencia.
+                </small>
+              </div>
+              <div className="offer-value-row">
+                <label className="offer-input-shell">
+                  <span>Valor ofertado</span>
+                  <div className="currency-input-shell">
+                    <b>€</b>
+                    <input
+                      name="offerValue"
+                      type="text"
+                      inputMode="numeric"
+                      autoComplete="off"
+                      placeholder="1.800.000"
+                      aria-describedby="transferOfferGuidance"
+                    />
+                  </div>
+                </label>
+                <div
+                  className="offer-guidance-strip"
+                  id="transferOfferGuidance"
+                >
+                  <span id="transferOfferGuidanceText">
+                    A oferta inicial pode ficar abaixo ou acima da referencia.
+                  </span>
+                  <div className="offer-strength-meter" aria-hidden="true">
+                    <i id="transferOfferStrength"></i>
+                  </div>
+                </div>
+              </div>
+              <div className="offer-quick-actions">
+                <button type="button" data-offer-multiplier="0.9">
+                  <strong>90%</strong>
+                  <span>Testar baixo</span>
+                </button>
+                <button type="button" data-offer-multiplier="1">
+                  <strong>100%</strong>
+                  <span>Valor base</span>
+                </button>
+                <button type="button" data-offer-multiplier="1.1">
+                  <strong>110%</strong>
+                  <span>Competitivo</span>
+                </button>
+                <button type="button" data-offer-multiplier="1.25">
+                  <strong>125%</strong>
+                  <span>Fechar rapido</span>
+                </button>
+              </div>
+            </div>
+            <label
+              className="transfer-salary-field"
+              data-market-transfer-field
+            >
+              <span>Salario semanal de folha</span>
+              <input
+                name="weeklySalary"
+                type="number"
+                min="1"
+                step="1"
+                inputMode="numeric"
+                placeholder="Auto: Capology ou SalarySport"
+              />
+            </label>
+            <input type="hidden" name="salarySourceName" value="" />
+            <input type="hidden" name="salarySourceUrl" value="" />
+          </div>
+
+          <div className="transfer-live-preview" id="transferFormPreview">
+            <strong>Previa da contratacao</strong>
+            <span>
+              Preencha comprador, jogador, overall e valor para calcular custo
+              final, folha e travas antes de enviar.
+            </span>
+          </div>
+
+          <label className="checkbox-row transfer-confirmation-row">
+            <input
+              name="confirmTransferBuyer"
+              type="checkbox"
+              value="yes"
+              required
+            />
+            <span>
+              Confirmo que o comprador selecionado esta correto para esta
+              negociacao.
+            </span>
+          </label>
+
+          <div className="form-actions">
+            <button className="primary-button" type="submit">
+              Enviar proposta
+            </button>
+            <span className="app-message" id="transferMessage"></span>
+          </div>
+        </form>
+      </section>
+
+      <aside className="transfer-command-stack">
+        <section
+          className="coach-panel-card transfer-deal-card"
+          id="transferDealCenter"
+        ></section>
+        <section
+          className="coach-panel-card transfer-scout-card"
+          id="transferScoutBoard"
+        ></section>
+        <section
+          className="coach-panel-card transfer-shortlist-card"
+          id="transferShortlistBoard"
+        ></section>
+      </aside>
+    </section>
+  );
+}
+
 function TransfersView({ isActive = false }) {
+  const [activeTransferTab, setActiveTransferTab] = useState("central");
   if (!isActive) return <section id="transfersView" className="view"></section>;
+
+  const handleTransferTabChange = (tabId) => {
+    setActiveTransferTab(tabId);
+    window.setTimeout(() => {
+      document
+        .querySelector(".transfer-workspace-tabs")
+        ?.scrollIntoView({ behavior: "auto", block: "start" });
+    }, 0);
+  };
+
+  const renderTransferSubview = () => {
+    switch (activeTransferTab) {
+      case "mercado":
+        return (
+          <TransferMarketPanel
+            onSelectPlayer={() => handleTransferTabChange("proposta")}
+          />
+        );
+      case "proposta":
+        return <TransferProposalPanel />;
+      case "negociacoes":
+        return <TransferNegotiationsPanel />;
+      case "historico":
+        return <TransferHistoryPanel />;
+      case "financeiro":
+        return <TransferFinancePanel />;
+      case "central":
+      default:
+        return <TransferCentralPanel />;
+    }
+  };
+
+  return (
+    <>
+      <section id="transfersView" className="view active">
+        <DeferredViewSection
+          viewId="transfersView"
+          isActive={isActive}
+          title="Carregando mercado"
+          detail="Sincronizando negociacoes, scouting e diagnostico financeiro."
+        >
+          <TransfersRuntime activeSubview={activeTransferTab} />
+        </DeferredViewSection>
+        <TransferWorkspaceTabs
+          activeTab={activeTransferTab}
+          onChange={handleTransferTabChange}
+        />
+        {renderTransferSubview()}
+      </section>
+    </>
+  );
 
   return (
     <>

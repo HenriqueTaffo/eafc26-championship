@@ -508,6 +508,138 @@
   line-height: 1.45;
 }
 
+.transfer-workspace-tabs {
+  position: sticky;
+  top: 0;
+  z-index: 12;
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 6px;
+  margin: 0 0 10px;
+  border: 1px solid var(--workspace-line, rgba(183, 197, 205, 0.13));
+  border-radius: 8px;
+  padding: 6px;
+  background: rgba(4, 7, 9, 0.92);
+  backdrop-filter: blur(8px);
+}
+
+.transfer-workspace-tab {
+  display: grid;
+  align-content: center;
+  gap: 3px;
+  min-width: 0;
+  min-height: 52px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  padding: 7px 8px;
+  background: transparent;
+  color: var(--workspace-muted, #91a0a7);
+  text-align: left;
+}
+
+.transfer-workspace-tab strong,
+.transfer-workspace-tab small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.transfer-workspace-tab strong {
+  color: inherit;
+  font-size: 0.76rem;
+}
+
+.transfer-workspace-tab small {
+  font-size: 0.63rem;
+  line-height: 1.25;
+}
+
+.transfer-workspace-tab:hover {
+  border-color: rgba(45, 212, 191, 0.18);
+  background: rgba(255, 255, 255, 0.045);
+  color: var(--workspace-text, #eef4f2);
+  transform: none;
+}
+
+.transfer-workspace-tab.is-active {
+  border-color: rgba(45, 212, 191, 0.36);
+  background:
+    linear-gradient(180deg, rgba(45, 212, 191, 0.13), transparent),
+    rgba(45, 212, 191, 0.055);
+  color: var(--workspace-text, #eef4f2);
+}
+
+.transfer-subview-panel {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+}
+
+.transfer-subview-head {
+  display: grid;
+  gap: 4px;
+  border: 1px solid var(--workspace-line, rgba(183, 197, 205, 0.13));
+  border-radius: 8px;
+  padding: 12px;
+  background: rgba(12, 15, 17, 0.78);
+}
+
+.transfer-subview-head h2,
+.transfer-subview-head p {
+  margin: 0;
+}
+
+.transfer-subview-head h2 {
+  color: var(--workspace-text, #eef4f2);
+  font-size: clamp(1rem, 1.5vw, 1.35rem);
+}
+
+.transfer-subview-head p {
+  max-width: 78ch;
+  color: var(--workspace-muted, #91a0a7);
+  font-size: 0.82rem;
+}
+
+.transfer-subview-body {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+}
+
+.transfer-advanced-pair {
+  display: grid;
+  grid-template-columns: minmax(240px, 0.36fr) minmax(0, 1fr);
+  gap: 10px;
+  align-items: start;
+}
+
+.transfer-history-controls {
+  margin: 0;
+}
+
+body.auth-unlocked #transfersView .transfer-subview-panel .rule-card {
+  display: block;
+}
+
+body.auth-unlocked #transfersView .transfer-subview-panel .summary,
+body.auth-unlocked #transfersView .transfer-subview-panel .countdown-card,
+body.auth-unlocked #transfersView .transfer-subview-panel .transfer-ops-board,
+body.auth-unlocked
+  #transfersView
+  .transfer-subview-panel
+  .transfer-negotiation-hub,
+body.auth-unlocked
+  #transfersView
+  .transfer-subview-panel
+  .transfer-budget-board,
+body.auth-unlocked #transfersView .transfer-subview-panel .transfer-insights,
+body.auth-unlocked
+  #transfersView
+  .transfer-subview-panel
+  .transfer-history-shell {
+  margin: 0;
+}
+
 @media (max-width: 1180px) {
   .advanced-transfer-body {
     grid-template-columns: 1fr;
@@ -532,6 +664,14 @@
   .advanced-market-header button:nth-child(5),
   .advanced-market-row > div:nth-child(5) {
     display: none;
+  }
+
+  .transfer-workspace-tabs {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .transfer-advanced-pair {
+    grid-template-columns: 1fr;
   }
 }
 
@@ -564,5 +704,16 @@
 
   .transfer-kanban-board {
     grid-template-columns: repeat(5, 220px);
+  }
+
+  .transfer-workspace-tabs {
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(138px, 1fr);
+    grid-template-columns: none;
+    overflow-x: auto;
+  }
+
+  .transfer-workspace-tab {
+    min-height: 48px;
   }
 }

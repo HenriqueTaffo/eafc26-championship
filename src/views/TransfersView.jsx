@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import App from "../../js/app.js";
 import { useAppRuntime } from "./ViewSummaries.jsx";
 
-function TransfersRuntime() {
+function TransfersRuntime({ activeSubview = "" } = {}) {
   const runtimeVersion = useAppRuntime();
   const isActive =
     typeof document !== "undefined" &&
@@ -19,6 +19,12 @@ function TransfersRuntime() {
     if (form) {
       App.forms?.setupTransferPreview?.();
       if (App.state.apiLoaded) App.transfers.populateExchangePlayers(form);
+      if (App.transfers.pendingCandidateForProposal) {
+        App.transfers.loadCandidateIntoForm?.(
+          App.transfers.pendingCandidateForProposal,
+        );
+        App.transfers.pendingCandidateForProposal = null;
+      }
       App.transfers.refreshWorkspace?.(form);
     }
     App.transfers.renderMarketPlayerResults();
@@ -35,7 +41,7 @@ function TransfersRuntime() {
     const photoSyncTimer = window.setTimeout(syncPlayerPhotos, 800);
 
     return () => window.clearTimeout(photoSyncTimer);
-  }, [isActive, runtimeVersion]);
+  }, [activeSubview, isActive, runtimeVersion]);
 
   return null;
 }

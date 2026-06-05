@@ -16,7 +16,6 @@ import {
 } from "@tanstack/react-table";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { zodResolver } from "@hookform/resolvers/zod";
-import Fuse from "fuse.js";
 import { useForm } from "react-hook-form";
 import { useMachine } from "@xstate/react";
 import { z } from "zod";
@@ -131,6 +130,24 @@ function buildMarketRow(player = {}, buyer = "") {
     contracted: Boolean(App.transfers?.isMarketPlayerContracted?.(player)),
     fit,
   };
+}
+
+function getFastMarketSearchRows(query = "", showContracted = false, limit = 18) {
+  const normalized = normalizeText(query);
+  if (normalized.length < 2) return [];
+  const marketPlayers = App.transfers?.getMarketPlayers?.() || [];
+  const ranked =
+    App.transfers?.rankMarketSearchPlayers?.(query, marketPlayers) ||
+    marketPlayers.filter((player) =>
+      normalizeText(
+        [player.name, player.club, player.league, player.position]
+          .filter(Boolean)
+          .join(" "),
+      ).includes(normalized),
+    );
+  return App.api
+    .applyMarketPlayerOverrides(ranked, { showContracted })
+    .slice(0, Math.max(1, Number(limit || 18)));
 }
 
 function useTransferActive() {
@@ -255,7 +272,7 @@ function TransferProposalAssistant() {
   );
 }
 
-function TransferMarketTable() {
+function TransferMarketTable({ onSelectPlayer } = {}) {
   const active = useTransferActive();
   const pushToast = useLeagueUiStore((state) => state.pushToast);
   const parentRef = useRef(null);
@@ -316,14 +333,38 @@ function TransferMarketTable() {
     let cancelled = false;
     const timeoutId = window.setTimeout(async () => {
       setSearching(true);
+      let bestRows = getFastMarketSearchRows(
+        searchSeed,
+        filters.showContracted,
+        60,
+      );
+      if (!cancelled && bestRows.length) {
+        setSearchRows(bestRows);
+      }
+      const fallbackRowsPromise = (
+        App.api?.searchRegionalFallbackPlayers?.(searchSeed, 60, {
+          showContracted: filters.showContracted,
+        }) || Promise.resolve([])
+      )
+        .then((fallbackRows) => {
+          if (!Array.isArray(fallbackRows) || !fallbackRows.length) return [];
+          const nextRows =
+            App.transfers?.consolidateMarketSearchPlayers?.(
+              searchSeed,
+              [...bestRows, ...fallbackRows],
+            ) || fallbackRows;
+          bestRows = nextRows.slice(0, 60);
+          if (!cancelled) setSearchRows(bestRows);
+          return fallbackRows;
+        })
+        .catch(() => []);
       try {
         const rows = await App.transfers.searchMarketPlayers(searchSeed, {
           showContracted: filters.showContracted,
           limit: 60,
         });
         if (!cancelled) {
-          setSearchRows(rows || []);
-          App.react?.notify?.();
+          setSearchRows(rows?.length ? rows : bestRows);
         }
       } catch (error) {
         if (!cancelled) {
@@ -334,6 +375,7 @@ function TransferMarketTable() {
           });
         }
       } finally {
+        await fallbackRowsPromise;
         if (!cancelled) setSearching(false);
       }
     }, 320);
@@ -376,16 +418,6 @@ function TransferMarketTable() {
 
   const rows = useMemo(() => {
     let next = baseRows;
-    const query = String(filters.query || "").trim();
-    if (query.length >= 2 && next.length) {
-      const fuse = new Fuse(next, {
-        keys: ["name", "club", "league", "position"],
-        threshold: 0.32,
-        ignoreLocation: true,
-      });
-      const fuzzy = fuse.search(query).map((item) => item.item);
-      if (fuzzy.length) next = fuzzy;
-    }
     if (!filters.showContracted) next = next.filter((row) => !row.contracted);
     if (filters.position !== "all") {
       next = next.filter((row) => row.position === filters.position);
@@ -404,6 +436,17 @@ function TransferMarketTable() {
 
   const selectPlayer = (row) => {
     if (row.contracted) return;
+    const form = document.getElementById("transferForm");
+    if (!form && typeof onSelectPlayer === "function") {
+      App.transfers.pendingCandidateForProposal = row.candidate;
+      onSelectPlayer(row);
+      pushToast({
+        title: "Jogador selecionado",
+        description: `${row.name} foi enviado para a tela de proposta.`,
+        tone: "market",
+      });
+      return;
+    }
     App.transfers?.selectMarketPlayer?.(row.id);
     App.transfers?.loadCandidateIntoForm?.(row.candidate);
     document
@@ -892,5 +935,11 @@ function AdvancedTransferTools() {
   );
 }
 
-export { AdvancedTransferTools };
+export {
+  AdvancedTransferTools,
+  TransferKanbanBoard,
+  TransferMarketTable,
+  TransferProposalAssistant,
+  TransferWorkflowInspector,
+};
 export default AdvancedTransferTools;
