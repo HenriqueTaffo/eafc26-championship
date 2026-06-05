@@ -4821,11 +4821,15 @@ App.auth = {
     const sourceLabelEscaped = App.utils.escapeDisplay(sourceLabel);
     const proposedValue = Number(item.proposed_value || 0);
     const status = App.utils.normalizeText(item.status || "pending");
+    const proposalStatusClass =
+      status === "accepted" || status === "rejected" ? status : "";
     const statusLabel = App.auth.getTransferProposalStatusLabel(item);
     const displayMeta = App.auth.getTransferProposalDisplayMeta(item);
 
     return `
-      <article class="decision-card transfer-proposal-item proposal-status-${status}">
+      <article class="decision-card transfer-proposal-item${
+        proposalStatusClass ? ` proposal-status-${proposalStatusClass}` : ""
+      }">
         <div class="decision-card-top">
           <span>${isCpuOffer ? "Oferta externa" : "Oferta interna"}</span>
           <b>${statusLabel}</b>
@@ -4888,6 +4892,8 @@ App.auth = {
 
   renderTransferProposalContractEmail(item) {
     const status = App.utils.normalizeText(item.status || "pending");
+    const proposalStatusClass =
+      status === "accepted" || status === "rejected" ? status : "";
     const statusLabel = App.auth.getTransferProposalStatusLabel(item);
     const isSignaturePending = status === "signature_pending";
     const isClosed = App.auth.isTransferProposalClosed(item);
@@ -4922,7 +4928,9 @@ App.auth = {
           : "Mesa aberta";
 
     return `
-      <article class="decision-card decision-email-message transfer-contract-email proposal-status-${status}">
+      <article class="decision-card decision-email-message transfer-contract-email${
+        proposalStatusClass ? ` proposal-status-${proposalStatusClass}` : ""
+      }">
         <div class="transfer-contract-mailbar">
           <span>De: ${sourceLabelEscaped}</span>
           <b>${App.utils.escapeDisplay(statusLabel)}</b>
@@ -5028,6 +5036,8 @@ App.auth = {
 
   renderTransferProposalSummary(item, options = {}) {
     const status = App.utils.normalizeText(item.status || "pending");
+    const summaryStatusClass =
+      status === "accepted" || status === "rejected" ? status : "";
     const statusLabel = App.auth.getTransferProposalStatusLabel(item);
     const isExternal = App.auth.isExternalMarketProposal(item);
     const proposedValue = Number(item.proposed_value || 0);
@@ -5049,7 +5059,11 @@ App.auth = {
           : "Pendente /sem";
       if (options.compact) {
         return `
-          <article class="proposal-summary-item external-market-proposal compact-proposal-summary proposal-status-${status}">
+          <article class="proposal-summary-item external-market-proposal compact-proposal-summary${
+            summaryStatusClass
+              ? ` proposal-status-${summaryStatusClass}`
+              : ""
+          }">
           <span>Mercado externo - ${statusLabel}</span>
           <strong>${App.utils.escapeHtml(item.player)}</strong>
           <small>${App.utils.escapeHtml(sourceLabel)} respondeu. ${App.utils.escapeHtml(App.auth.getTransferProposalStatusHint(item))}</small>
@@ -5063,7 +5077,9 @@ App.auth = {
       `;
       }
       return `
-        <article class="proposal-summary-item external-market-proposal proposal-status-${status}">
+        <article class="proposal-summary-item external-market-proposal${
+          summaryStatusClass ? ` proposal-status-${summaryStatusClass}` : ""
+        }">
           <span>Mercado externo - ${statusLabel}</span>
           <strong>${App.utils.escapeHtml(item.player)}</strong>
           <small>${App.utils.escapeHtml(sourceLabel)} - ${App.utils.escapeHtml(item.response_message || "Resposta comercial recebida.")}</small>
@@ -5127,7 +5143,9 @@ App.auth = {
     }
 
     return `
-      <article class="proposal-summary-item proposal-status-${status}">
+      <article class="proposal-summary-item${
+        summaryStatusClass ? ` proposal-status-${summaryStatusClass}` : ""
+      }">
         <span>${statusLabel}</span>
         <strong>${App.utils.escapeHtml(item.player)}</strong>
         <small>${App.utils.escapeHtml(item.seller)} - ${App.utils.escapeHtml(sourceLabel)} - ${App.utils.formatCurrency(proposedValue)}</small>

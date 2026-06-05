@@ -678,6 +678,20 @@ body.auth-unlocked #playersView .coach-top-row-v54 {
   gap: 10px;
 }
 
+body.auth-unlocked #playersView .coach-dashboard .transfer-status {
+  background: color-mix(
+    in srgb,
+    var(--coach-color, #2563eb) 18%,
+    transparent
+  );
+  color: color-mix(in srgb, var(--coach-color, #2563eb) 12%, #f8fafc);
+  border-color: color-mix(
+    in srgb,
+    var(--coach-color, #2563eb) 45%,
+    rgba(255, 255, 255, .12)
+  );
+}
+
 body.auth-unlocked #playersView .email-office-headline {
   grid-template-columns: repeat(4, minmax(0, 1fr));
 }
