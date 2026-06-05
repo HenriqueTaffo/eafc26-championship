@@ -126,11 +126,6 @@ const TransferNegotiationIntelligence = lazy(() =>
     default: module.TransferNegotiationIntelligence,
   })),
 );
-const TransferProposalAssistant = lazy(() =>
-  import("../views/AdvancedTransferTools.jsx").then((module) => ({
-    default: module.TransferProposalAssistant,
-  })),
-);
 const TransferWorkflowInspector = lazy(() =>
   import("../views/AdvancedTransferTools.jsx").then((module) => ({
     default: module.TransferWorkflowInspector,
@@ -1038,16 +1033,8 @@ function TransferProposalPanel() {
     <TransferSubviewPanel
       eyebrow="Nova mesa"
       title="Montar proposta"
-      detail="Use o assistente ou preencha a mesa manualmente antes de enviar."
+      detail="Preencha a mesa manualmente antes de enviar."
     >
-      <DeferredViewSection
-        viewId="transfersView"
-        isActive
-        title="Carregando assistente"
-        detail="Validando formulario de proposta."
-      >
-        <TransferProposalAssistant />
-      </DeferredViewSection>
       <TransferProposalWorkbench />
     </TransferSubviewPanel>
   );
@@ -1536,7 +1523,7 @@ function TransfersView({ isActive = false }) {
           viewId="transfersView"
           isActive={isActive}
           title="Carregando mercado inteligente"
-          detail="Preparando filtros virtuais, kanban e assistente de proposta."
+          detail="Preparando filtros virtuais, kanban e fluxo de proposta."
         >
           <AdvancedTransferTools />
         </DeferredViewSection>

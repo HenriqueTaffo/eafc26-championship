@@ -1986,13 +1986,6 @@ body.auth-unlocked #transfersView .advanced-transfer-main {
   min-width: 0;
 }
 
-body.auth-unlocked #transfersView .transfer-assistant-card {
-  border-color: rgba(var(--brand-gold-rgb), 0.28);
-  background:
-    linear-gradient(135deg, rgba(var(--brand-gold-rgb), 0.14), transparent 50%),
-    var(--brand-panel);
-}
-
 body.auth-unlocked #transfersView .transfer-market-shell,
 body.auth-unlocked #transfersView .transfer-kanban-card {
   border-color: rgba(var(--workspace-accent-rgb), 0.22);

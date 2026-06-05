@@ -47,15 +47,6 @@ const marketFilterSchema = z.object({
   showContracted: z.boolean().default(false),
 });
 
-const proposalSchema = z.object({
-  buyer: z.string().min(1, "Escolha o comprador."),
-  player: z.string().min(2, "Informe o jogador."),
-  fromClub: z.string().min(2, "Informe o clube de origem."),
-  overall: z.coerce.number().min(1).max(99),
-  marketValue: z.coerce.number().min(1),
-  offerValue: z.coerce.number().min(0).optional(),
-});
-
 const DEFAULT_STAGES = [
   "Prioridade alta",
   "Monitorando",
@@ -197,135 +188,6 @@ function useTransferActive() {
   return (
     typeof document !== "undefined" &&
     document.getElementById("transfersView")?.classList.contains("active")
-  );
-}
-
-function TransferProposalAssistant() {
-  const pushToast = useLeagueUiStore((state) => state.pushToast);
-  const buyers = App.utils?.getHumanBuyers?.() || [
-    "Henrique",
-    "Willian",
-    "Rafael",
-    "Renato",
-    "Bruno Silva",
-  ];
-  const session = App.auth?.getSession?.();
-  const isCommissioner = App.auth?.isCommissioner?.() === true;
-  const sessionBuyer = !isCommissioner ? session?.managerName || "" : "";
-  const form = useForm({
-    resolver: zodResolver(proposalSchema),
-    defaultValues: {
-      buyer: sessionBuyer || buyers[0] || "",
-      player: "",
-      fromClub: "",
-      overall: "",
-      marketValue: "",
-      offerValue: "",
-    },
-  });
-
-  useEffect(() => {
-    if (sessionBuyer) form.setValue("buyer", sessionBuyer);
-  }, [form, sessionBuyer]);
-
-  const fillLegacyForm = (values) => {
-    const target = document.getElementById("transferForm");
-    if (!target) return;
-    const scopedValues = {
-      ...values,
-      buyer: sessionBuyer || values.buyer,
-    };
-    const fields = target.elements;
-    if (fields.buyer) fields.buyer.value = scopedValues.buyer;
-    App.transfers?.syncTransferBuyerScope?.(target);
-    if (fields.player) fields.player.value = scopedValues.player;
-    if (fields.fromClub) fields.fromClub.value = scopedValues.fromClub;
-    if (fields.overall) fields.overall.value = scopedValues.overall;
-    if (fields.marketValue) fields.marketValue.value = scopedValues.marketValue || "";
-    if (fields.offerValue && scopedValues.offerValue) {
-      if (typeof App.transfers?.setTransferOfferInputValue === "function") {
-        App.transfers.setTransferOfferInputValue(target, Number(scopedValues.offerValue));
-      } else {
-        fields.offerValue.value = scopedValues.offerValue;
-      }
-    }
-    App.transfers?.refreshWorkspace?.(target);
-    App.transfers?.renderTransferPreview?.(target);
-    target.scrollIntoView({ behavior: "smooth", block: "center" });
-    pushToast({
-      title: "Formulario preenchido",
-      description: `${scopedValues.player} foi carregado na mesa de negociacao.`,
-      tone: "success",
-    });
-  };
-
-  return (
-    <article className="advanced-tool-card transfer-assistant-card">
-      <div className="advanced-tool-head">
-        <span className="modal-kicker">Assistente validado</span>
-        <h2>Montar proposta sem erro</h2>
-      </div>
-      <form onSubmit={form.handleSubmit(fillLegacyForm)} noValidate>
-        <div className="advanced-form-grid">
-          {isCommissioner ? (
-            <label>
-              Comprador
-              <select {...form.register("buyer")}>
-                {buyers.map((buyer) => (
-                  <option key={buyer} value={buyer}>
-                    {buyer}
-                  </option>
-                ))}
-              </select>
-            </label>
-          ) : (
-            <input type="hidden" {...form.register("buyer")} />
-          )}
-          <label>
-            Jogador
-            <input {...form.register("player")} placeholder="Nome do jogador" />
-          </label>
-          <label>
-            Clube origem
-            <input {...form.register("fromClub")} placeholder="Clube atual" />
-          </label>
-          <label>
-            OVR
-            <input
-              {...form.register("overall")}
-              inputMode="numeric"
-              placeholder="82"
-            />
-          </label>
-          <label>
-            Valor base
-            <input
-              {...form.register("marketValue")}
-              inputMode="numeric"
-              placeholder="32000000"
-            />
-          </label>
-          <label>
-            Oferta
-            <input
-              {...form.register("offerValue")}
-              inputMode="numeric"
-              placeholder="Opcional"
-            />
-          </label>
-        </div>
-        <div className="assistant-errors" aria-live="polite">
-          {Object.values(form.formState.errors)
-            .map((error) => error?.message)
-            .filter(Boolean)
-            .slice(0, 2)
-            .join(" ")}
-        </div>
-        <button className="primary-button" type="submit">
-          Preencher mesa
-        </button>
-      </form>
-    </article>
   );
 }
 
@@ -1136,7 +998,7 @@ function TransferWorkflowInspector() {
       <p>
         {candidate?.player
           ? `${candidate.player} esta em ${workflowLabels[activeState] || activeState}.`
-          : "Escolha um alvo no mercado ou no assistente para ativar a leitura."}
+          : "Escolha um alvo no mercado para ativar a leitura."}
       </p>
     </article>
   );
@@ -1152,14 +1014,13 @@ function AdvancedTransferTools() {
         <span className="modal-kicker">Nova camada operacional</span>
         <h2>Mercado inteligente</h2>
         <p>
-          Busca fuzzy, filtros avancados, tabela virtualizada, shortlist por
-          kanban e proposta validada antes de entrar no fluxo legado.
+          Busca fuzzy, filtros avancados, tabela virtualizada e shortlist por
+          kanban.
         </p>
       </div>
       <div className="advanced-transfer-body">
         <div className="advanced-transfer-sidebar">
           <TransferNegotiationIntelligence />
-          <TransferProposalAssistant />
           <TransferWorkflowInspector />
         </div>
         <div className="advanced-transfer-main">
@@ -1176,7 +1037,6 @@ export {
   TransferKanbanBoard,
   TransferNegotiationIntelligence,
   TransferMarketTable,
-  TransferProposalAssistant,
   TransferWorkflowInspector,
 };
 export default AdvancedTransferTools;
