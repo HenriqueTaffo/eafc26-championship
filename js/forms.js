@@ -403,8 +403,19 @@ App.forms = {
           ? "Proposta enviada. Atualizando pendências do mercado..."
           : "Resposta recebida. Atualizando hub de negociação e e-mails...",
       });
-      if (!isInternal && data.status === "accepted") {
-        await App.api.loadSquadManagementData?.({ force: true });
+      if (session && !App.auth?.isCommissioner?.()) {
+        const privateRefreshes = [
+          App.auth?.loadMyTransferProposals?.(),
+          App.auth?.loadMyTransferSaleListings?.(),
+          App.api?.loadSquadManagementData?.({
+            force: true,
+            hydrateRosterDetails: false,
+          }),
+        ].filter(Boolean);
+
+        await Promise.all(privateRefreshes);
+        App.auth?.renderAll?.();
+        App.transfers?.renderNegotiationHub?.();
       }
       await App.transfers.showNegotiationResultModal?.(
         negotiationEntry,

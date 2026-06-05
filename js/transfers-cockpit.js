@@ -494,6 +494,8 @@ Object.assign(App.transfers, {
       ? "sent"
       : normalizedResultStatus === "rejected"
         ? "rejected"
+        : normalizedResultStatus === "signature_pending"
+          ? "signature_pending"
         : normalizedResultStatus === "accepted"
           ? "approved"
           : "buyer_review";

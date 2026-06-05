@@ -447,9 +447,16 @@ App.main = {
     if (!App.state.apiLoaded) return;
 
     const tasks = [];
+    const deferredTasks = [];
     if (["playersView", "transfersView", "squadView"].includes(viewId)) {
       if (App.api?.loadMarketPlayers) tasks.push(App.api.loadMarketPlayers());
-      if (App.api?.loadSalaryReferences) tasks.push(App.api.loadSalaryReferences());
+      if (App.api?.loadSalaryReferences) {
+        if (viewId === "transfersView") {
+          deferredTasks.push(() => App.api.loadSalaryReferences());
+        } else {
+          tasks.push(App.api.loadSalaryReferences());
+        }
+      }
     }
     if (viewId === "playersView" && App.api?.loadMedicalCenterData) {
       tasks.push(App.api.loadMedicalCenterData({ silent: true }));
@@ -463,23 +470,57 @@ App.main = {
       );
     }
     if (
-      ["transfersView", "experienceView"].includes(viewId) &&
+      viewId === "experienceView" &&
       App.api?.loadExperienceData
     ) {
       tasks.push(App.api.loadExperienceData());
+    } else if (viewId === "transfersView" && App.api?.loadExperienceData) {
+      deferredTasks.push(() => App.api.loadExperienceData());
     }
     if (
-      ["transfersView", "experienceView"].includes(viewId) &&
+      viewId === "experienceView" &&
       App.api?.loadManagerOnboarding
     ) {
       tasks.push(App.api.loadManagerOnboarding());
+    } else if (viewId === "transfersView" && App.api?.loadManagerOnboarding) {
+      deferredTasks.push(() => App.api.loadManagerOnboarding());
     }
 
-    if (!tasks.length) return;
+    const runDeferredTasks = () => {
+      if (!deferredTasks.length) return;
+      App.api
+        .mapWithConcurrency(deferredTasks, 1, (task) =>
+          Promise.resolve()
+            .then(() => task?.())
+            .catch((error) => {
+              console.warn("Preload secundario indisponivel:", error);
+              return null;
+            }),
+        )
+        .then(() => {
+          if (!document.getElementById(viewId)?.classList.contains("active"))
+            return;
+          App.react?.notify?.();
+        });
+    };
+
+    if (!tasks.length) {
+      if ("requestIdleCallback" in window) {
+        window.requestIdleCallback(runDeferredTasks, { timeout: 6500 });
+      } else {
+        window.setTimeout(runDeferredTasks, 4500);
+      }
+      return;
+    }
 
     Promise.allSettled(tasks).then(() => {
       if (!document.getElementById(viewId)?.classList.contains("active")) return;
       App.react?.notify?.();
+      if ("requestIdleCallback" in window) {
+        window.requestIdleCallback(runDeferredTasks, { timeout: 6500 });
+      } else {
+        window.setTimeout(runDeferredTasks, 4500);
+      }
     });
   },
 

@@ -19,6 +19,9 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { useMachine } from "@xstate/react";
 import { z } from "zod";
+import Decimal from "decimal.js-light";
+import { mean, quantileSorted } from "simple-statistics";
+import * as Comlink from "comlink";
 import App from "../../js/app.js";
 import { useLeagueUiStore } from "../state/useLeagueUiStore.js";
 import { InlineLoader, LoadingState } from "./LoadingState.jsx";
@@ -78,6 +81,18 @@ function formatMarketFacetLabel(value = "") {
     .filter(Boolean)
     .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
     .join(" ");
+}
+
+function safeMean(values = []) {
+  const clean = values.filter((value) => Number.isFinite(value) && value > 0);
+  return clean.length ? mean(clean) : 0;
+}
+
+function safeQuantile(values = [], percentile = 0.5) {
+  const clean = values
+    .filter((value) => Number.isFinite(value) && value > 0)
+    .sort((a, b) => a - b);
+  return clean.length ? quantileSorted(clean, percentile) : 0;
 }
 
 function getPlayerId(player = {}, fallback = "") {
@@ -268,6 +283,151 @@ function TransferProposalAssistant() {
           Preencher mesa
         </button>
       </form>
+    </article>
+  );
+}
+
+function TransferNegotiationIntelligence() {
+  useAppRuntime();
+  const [workerStats, setWorkerStats] = useState(null);
+  const session = App.auth?.getSession?.();
+  const managerName = session?.managerName || "";
+  const marketPlayers = App.transfers?.getMarketPlayers?.() || [];
+  const compare = App.transfers?.getCompareCandidates?.() || [];
+  const proposals = Array.isArray(App.auth?.myTransferProposals)
+    ? App.auth.myTransferProposals
+    : [];
+  const openProposals = proposals.filter((item) =>
+    App.auth?.isOpenTransferProposal?.(item),
+  );
+  const finance = managerName
+    ? App.transfers?.getBudgetInfoByBuyer?.()?.[managerName]
+    : null;
+  const budget = new Decimal(
+    Number(finance?.remainingBudget ?? finance?.availableBudget ?? 0) || 0,
+  );
+  const values = marketPlayers.map((player) =>
+    Number(player.market_value_eur || player.marketValue || 0),
+  );
+  const salaryValues = marketPlayers.map((player) =>
+    Number(player.weeklySalary || player.weekly_salary_eur || 0),
+  );
+  const marketSignature = marketPlayers
+    .slice(0, 24)
+    .map(
+      (player) =>
+        `${player.id || player.name}:${player.market_value_eur || player.marketValue || 0}:${
+          player.weeklySalary || player.weekly_salary_eur || 0
+        }`,
+    )
+    .join("|");
+  useEffect(() => {
+    if (typeof Worker === "undefined" || !marketPlayers.length) {
+      setWorkerStats(null);
+      return undefined;
+    }
+    let cancelled = false;
+    const worker = new Worker(
+      new URL("../workers/market-intelligence.worker.js", import.meta.url),
+      { type: "module" },
+    );
+    const api = Comlink.wrap(worker);
+    api
+      .summarizeMarket(
+        marketPlayers.slice(0, 1000).map((player) => ({
+          marketValue: player.market_value_eur || player.marketValue || 0,
+          weeklySalary: player.weeklySalary || player.weekly_salary_eur || 0,
+        })),
+      )
+      .then((result) => {
+        if (!cancelled) setWorkerStats(result);
+      })
+      .catch(() => {
+        if (!cancelled) setWorkerStats(null);
+      });
+    return () => {
+      cancelled = true;
+      worker.terminate();
+    };
+  }, [marketPlayers.length, marketSignature]);
+
+  const medianValue = Number(workerStats?.medianValue || safeQuantile(values, 0.5));
+  const upperValue = Number(workerStats?.upperValue || safeQuantile(values, 0.75));
+  const avgSalary = Number(workerStats?.avgSalary || safeMean(salaryValues));
+  const target = compare[0] || null;
+  const targetValue = Number(target?.marketValue || 0);
+  const conservativeOffer = targetValue
+    ? new Decimal(targetValue).mul(1.05).toNumber()
+    : upperValue;
+  const aggressiveOffer = targetValue
+    ? new Decimal(targetValue).mul(1.18).toNumber()
+    : upperValue
+      ? new Decimal(upperValue).mul(1.1).toNumber()
+      : 0;
+  const budgetAfterAggressive = budget.minus(aggressiveOffer);
+  const budgetTone = !finance
+    ? "neutral"
+    : budgetAfterAggressive.isNegative()
+      ? "danger"
+      : budgetAfterAggressive.lt(2000000)
+        ? "warning"
+        : "success";
+
+  return (
+    <article className={`transfer-intelligence-card tone-${budgetTone}`}>
+      <div className="advanced-tool-head">
+        <span className="modal-kicker">Mesa inteligente</span>
+        <h2>Recomendacao da janela</h2>
+      </div>
+      <div className="transfer-intelligence-grid">
+        <span>
+          <small>Mediana mercado</small>
+          <strong>{formatMoney(medianValue)}</strong>
+        </span>
+        <span>
+          <small>75 percentil</small>
+          <strong>{formatMoney(upperValue)}</strong>
+        </span>
+        <span>
+          <small>Folha media</small>
+          <strong>{avgSalary ? `${formatMoney(avgSalary)}/sem` : "Pendente"}</strong>
+        </span>
+        <span>
+          <small>Mesas abertas</small>
+          <strong>{openProposals.length}</strong>
+        </span>
+      </div>
+      <div className="transfer-intelligence-callout">
+        <strong>
+          {target
+            ? `Atacar ${target.player}`
+            : "Selecione um alvo no comparador"}
+        </strong>
+        <p>
+          {target
+            ? `Faixa sugerida: ${formatMoney(conservativeOffer)} a ${formatMoney(
+                aggressiveOffer,
+              )}. Saldo apos teto: ${formatMoney(
+                budgetAfterAggressive.toNumber(),
+              )}.`
+            : "Adicione ate 3 nomes no comparador para gerar faixa de oferta e risco de caixa."}
+        </p>
+      </div>
+      <div className="transfer-intelligence-actions">
+        <button
+          type="button"
+          onClick={() => App.main?.switchToView?.("transfersView")}
+        >
+          Abrir mercado
+        </button>
+        <button
+          type="button"
+          className="ghost-button"
+          onClick={() => App.main?.switchToView?.("playersView")}
+        >
+          Ver contratos
+        </button>
+      </div>
     </article>
   );
 }
@@ -923,6 +1083,7 @@ function AdvancedTransferTools() {
       </div>
       <div className="advanced-transfer-body">
         <div className="advanced-transfer-sidebar">
+          <TransferNegotiationIntelligence />
           <TransferProposalAssistant />
           <TransferWorkflowInspector />
         </div>
@@ -938,6 +1099,7 @@ function AdvancedTransferTools() {
 export {
   AdvancedTransferTools,
   TransferKanbanBoard,
+  TransferNegotiationIntelligence,
   TransferMarketTable,
   TransferProposalAssistant,
   TransferWorkflowInspector,

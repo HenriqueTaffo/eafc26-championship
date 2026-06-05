@@ -4296,12 +4296,97 @@ App.transfers = {
     const request = (async () => {
       const aliases = App.transfers.sortMarketSearchAliases(query);
       const primaryAlias = aliases[0] || query;
-      const groups = await App.api
-        .loadMarketPlayers(primaryAlias, showContracted, resultLimit, {
-          rpcTimeoutMs: 6000,
-          directTimeoutMs: 4000,
+      const renderKey = `${normalized}|${showContracted ? "all" : "available"}`;
+      const applyOverrides = (rows = []) =>
+        App.api.applyMarketPlayerOverrides(rows, { showContracted });
+      const refreshFromRows = (rows = []) => {
+        if (!rows.length) return;
+        const freshRanked = App.transfers
+          .consolidateMarketSearchPlayers(
+            query,
+            App.api.applyMarketPlayerOverrides(rows, { showContracted }),
+          )
+          .slice(0, resultLimit);
+        if (!freshRanked.length) return;
+        remember(freshRanked);
+        App.api.mergeMarketPlayers(freshRanked);
+        App.react?.notify?.();
+        const target = document.getElementById("marketPlayerResults");
+        const legacyInput = document.getElementById("marketPlayerSearch");
+        if (
+          target?.dataset.marketRenderKey === renderKey &&
+          App.utils.normalizeText(legacyInput?.value || "") === normalized
+        ) {
+          target.dataset.marketRenderReady = "false";
+          App.transfers.renderMarketPlayerResults();
+        }
+      };
+      const scheduleFullMarketRefresh = () => {
+        const runRefresh = () => {
+          App.api
+            .loadMarketPlayers(primaryAlias, showContracted, resultLimit, {
+              rpcTimeoutMs: 6500,
+              directTimeoutMs: 4500,
+            })
+            .then(refreshFromRows)
+            .catch(() => {});
+        };
+        if ("requestIdleCallback" in window) {
+          window.requestIdleCallback(runRefresh, { timeout: 1800 });
+        } else {
+          window.setTimeout(runRefresh, 750);
+        }
+      };
+
+      const directRowsPromise = App.api
+        .fetchMarketPlayersDirect(primaryAlias, resultLimit, {
+          timeoutMs: Number(searchOptions.directTimeoutMs || 2600),
         })
+        .then(applyOverrides)
         .catch(() => []);
+      const fallbackRowsPromise = App.api
+        .searchRegionalFallbackPlayers(primaryAlias, resultLimit, {
+          showContracted,
+        })
+        .then(applyOverrides)
+        .catch(() => []);
+      const ratingFallbackPromise = App.transfers
+        .searchEaRatingsCached(primaryAlias, Math.min(resultLimit, 8))
+        .then((ratings) =>
+          App.transfers.buildSyntheticMarketPlayersFromRatings(
+            query,
+            ratings,
+            resultLimit,
+          ),
+        )
+        .catch(() => []);
+      const firstRows = await Promise.any(
+        [directRowsPromise, fallbackRowsPromise, ratingFallbackPromise].map(
+          (source) =>
+            source.then((rows) => {
+              if (rows.length) return rows;
+              throw new Error("empty-market-source");
+            }),
+        ),
+      ).catch(() => []);
+      scheduleFullMarketRefresh();
+      const groups = firstRows.length
+        ? firstRows
+        : await Promise.all([
+            directRowsPromise,
+            fallbackRowsPromise,
+            ratingFallbackPromise,
+          ]).then(([directRows, fallbackRows, ratingRows]) =>
+            App.api.mergeMarketSearchRows(
+              App.api.mergeMarketSearchRows(
+                directRows,
+                fallbackRows,
+                resultLimit,
+              ),
+              ratingRows,
+              resultLimit,
+            ),
+          );
       let ranked = App.transfers.consolidateMarketSearchPlayers(
         query,
         App.api.applyMarketPlayerOverrides(groups, { showContracted }),
@@ -4313,17 +4398,27 @@ App.transfers = {
       ) {
         const secondaryGroups = await Promise.all(
           aliases.slice(1, 3).map((alias) =>
-            App.api
-              .loadMarketPlayers(
+            Promise.any([
+              App.api.fetchMarketPlayersDirect(
                 alias,
-                showContracted,
                 Math.min(resultLimit, 18),
                 {
-                  rpcTimeoutMs: 5000,
-                  directTimeoutMs: 3500,
+                  timeoutMs: 2200,
                 },
-              )
-              .catch(() => []),
+              ),
+              App.api.searchRegionalFallbackPlayers(
+                alias,
+                Math.min(resultLimit, 18),
+                {
+                  showContracted,
+                },
+              ),
+            ].map((source) =>
+              source.then((rows) => {
+                if (rows.length) return rows;
+                throw new Error("empty-market-source");
+              }),
+            )).catch(() => []),
           ),
         );
         ranked = App.transfers.consolidateMarketSearchPlayers(
@@ -4334,18 +4429,6 @@ App.transfers = {
           ),
         );
       }
-
-      const fallbackEnhanced = await App.api
-        .augmentMarketPlayersWithFallback(ranked, query, {
-          limit: resultLimit,
-          showContracted,
-        })
-        .catch(() => ranked);
-
-      ranked = App.transfers.consolidateMarketSearchPlayers(
-        query,
-        App.api.applyMarketPlayerOverrides(fallbackEnhanced, { showContracted }),
-      );
 
       if (ranked.length) {
         App.api.mergeMarketPlayers(ranked);

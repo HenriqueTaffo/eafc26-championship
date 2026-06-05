@@ -487,8 +487,17 @@ App.api = {
       return nextRows;
     };
 
-    try {
-      const data = await App.api.rpc(
+    App.state.apiMarketPlayers = Array.isArray(App.state.apiMarketPlayers)
+      ? App.state.apiMarketPlayers
+      : [];
+
+    const applyOverrides = (rows = []) =>
+      App.api.applyMarketPlayerOverrides(rows, {
+        showContracted: Boolean(showContracted),
+      });
+
+    const rpcRowsPromise = App.api
+      .rpc(
         "app_search_market_players",
         {
           p_query: query || "",
@@ -496,59 +505,61 @@ App.api = {
           p_limit: normalizedLimit,
         },
         rpcTimeoutMs,
-      );
+      )
+      .then((data) => applyOverrides(Array.isArray(data) ? data : []))
+      .catch((rpcError) => {
+        console.warn("Catalogo elegivel de mercado indisponivel:", rpcError);
+        return [];
+      });
 
-      const rows = App.api.applyMarketPlayerOverrides(
-        Array.isArray(data) ? data : [],
-        { showContracted: Boolean(showContracted) },
-      );
-      return finalizeRows(rows);
-    } catch (rpcError) {
-      console.warn("Catalogo elegivel de mercado indisponivel:", rpcError);
-      App.state.apiMarketPlayers = Array.isArray(App.state.apiMarketPlayers)
-        ? App.state.apiMarketPlayers
-        : [];
+    const directRowsPromise = App.api
+      .fetchMarketPlayersDirect(query, normalizedLimit, {
+        timeoutMs: directTimeoutMs,
+      })
+      .then(applyOverrides)
+      .catch((directError) => {
+        console.warn("Busca direta de mercado indisponivel:", directError);
+        return [];
+      });
 
-      const directRowsPromise = App.api
-        .fetchMarketPlayersDirect(query, normalizedLimit, {
-          timeoutMs: directTimeoutMs,
-        })
-        .catch((directError) => {
-          console.warn("Busca direta de mercado indisponivel:", directError);
-          return [];
-        });
-      const fallbackRowsPromise = App.api
-        .searchRegionalFallbackPlayers(query, normalizedLimit, {
-          showContracted: Boolean(showContracted),
-        })
-        .catch((fallbackError) => {
-          console.warn("Fallback regional de mercado indisponivel:", fallbackError);
-          return [];
-        });
+    const fallbackRowsPromise = App.api
+      .searchRegionalFallbackPlayers(query, normalizedLimit, {
+        showContracted: Boolean(showContracted),
+      })
+      .then(applyOverrides)
+      .catch((fallbackError) => {
+        console.warn("Fallback regional de mercado indisponivel:", fallbackError);
+        return [];
+      });
 
-      const applyOverrides = (rows = []) =>
-        App.api.applyMarketPlayerOverrides(rows, {
-          showContracted: Boolean(showContracted),
-        });
+    const rowSources = [
+      directRowsPromise,
+      fallbackRowsPromise,
+      rpcRowsPromise,
+    ];
+    rowSources.forEach((source) => {
+      source.then((rows) => {
+        if (rows.length) finalizeRows(rows);
+      });
+    });
 
-      const firstRows = applyOverrides(
-        await Promise.race([directRowsPromise, fallbackRowsPromise]),
-      );
-      if (firstRows.length) {
-        return finalizeRows(firstRows);
-      }
+    const firstRows = await Promise.any(
+      rowSources.map((source) =>
+        source.then((rows) => {
+          if (rows.length) return rows;
+          throw new Error("empty-market-source");
+        }),
+      ),
+    ).catch(() => []);
+    if (firstRows.length) return finalizeRows(firstRows);
 
-      const [directRows, fallbackRows] = await Promise.all([
-        directRowsPromise,
-        fallbackRowsPromise,
-      ]);
-      const mergedRows = App.api.mergeMarketSearchRows(
-        applyOverrides(directRows),
-        applyOverrides(fallbackRows),
-        normalizedLimit,
-      );
-      return mergedRows.length ? finalizeRows(mergedRows) : [];
-    }
+    const [directRows, fallbackRows, rpcRows] = await Promise.all(rowSources);
+    const mergedRows = App.api.mergeMarketSearchRows(
+      App.api.mergeMarketSearchRows(directRows, fallbackRows, normalizedLimit),
+      rpcRows,
+      normalizedLimit,
+    );
+    return mergedRows.length ? finalizeRows(mergedRows) : [];
   },
   async fetchMarketPlayersDirect(query = "", limit = 12, options = {}) {
     const selectWithAvatar =

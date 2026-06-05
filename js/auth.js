@@ -98,8 +98,7 @@ App.auth = {
 
   isExternalTransferContractEmail(item = {}) {
     return (
-      item.proposal_role === "sent" &&
-      App.auth.isExternalMarketProposal(item)
+      item.proposal_role === "sent" && App.auth.isExternalMarketProposal(item)
     );
   },
 
@@ -113,7 +112,9 @@ App.auth = {
     const status = App.utils.normalizeText(item.status || "pending");
     return (
       !App.auth.isOpenTransferProposal(item) &&
-      ["accepted", "rejected", "expired", "cancelled", "voided"].includes(status)
+      ["accepted", "rejected", "expired", "cancelled", "voided"].includes(
+        status,
+      )
     );
   },
 
@@ -149,7 +150,8 @@ App.auth = {
 
   getTransferProposalStatusHint(item = {}) {
     const status = App.utils.normalizeText(item.status || "pending");
-    const signatureDeadline = item.signature_expires_at || item.signature_expires;
+    const signatureDeadline =
+      item.signature_expires_at || item.signature_expires;
     if (status === "accepted") {
       return "Contrato validado. A movimentaÃƒÂ§ÃƒÂ£o foi registrada na liga.";
     }
@@ -178,8 +180,7 @@ App.auth = {
 
   getTransferProposalTimeline(item = {}, options = {}) {
     const isInternal =
-      options.forceInternal ||
-      !App.auth.isExternalMarketProposal(item);
+      options.forceInternal || !App.auth.isExternalMarketProposal(item);
     const auditTimeline = Array.isArray(item.operation_audit_timeline)
       ? item.operation_audit_timeline
       : [];
@@ -203,8 +204,12 @@ App.auth = {
           .sort((a, b) => {
             const aWhen = a.when ? new Date(a.when).getTime() : NaN;
             const bWhen = b.when ? new Date(b.when).getTime() : NaN;
-            const aValue = Number.isNaN(aWhen) ? Number.MAX_SAFE_INTEGER : aWhen;
-            const bValue = Number.isNaN(bWhen) ? Number.MAX_SAFE_INTEGER : bWhen;
+            const aValue = Number.isNaN(aWhen)
+              ? Number.MAX_SAFE_INTEGER
+              : aWhen;
+            const bValue = Number.isNaN(bWhen)
+              ? Number.MAX_SAFE_INTEGER
+              : bWhen;
             return aValue - bValue;
           })
       : App.transfers?.buildTransferNegotiationStages
@@ -214,18 +219,21 @@ App.auth = {
         : [];
     const fallback = [
       {
-        title: item.proposal_type === "external_market" ? "Mesa aberta" : "NegociaÃƒÂ§ÃƒÂ£o interna",
+        title:
+          item.proposal_type === "external_market"
+            ? "Mesa aberta"
+            : "NegociaÃƒÂ§ÃƒÂ£o interna",
         detail: App.auth.getTransferProposalStatusHint(item),
         tone: "watch",
       },
     ];
     const items = Array.isArray(stages) ? stages : [];
-    const normalizedItems = items.length
-      ? items
-      : fallback;
+    const normalizedItems = items.length ? items : fallback;
 
     const maxItems = Number(options.maxItems || 3);
-    const compact = options.compact ? " transfer-negotiation-stage-list--compact" : "";
+    const compact = options.compact
+      ? " transfer-negotiation-stage-list--compact"
+      : "";
 
     return `
       <div class="transfer-proposal-timeline">
@@ -235,7 +243,9 @@ App.auth = {
             .slice(-Math.max(1, maxItems))
             .map((stage) => {
               const title = App.utils.escapeHtml(stage.title || "Etapa");
-              const detail = App.utils.escapeHtml(stage.detail || App.auth.getTransferProposalStatusHint(item));
+              const detail = App.utils.escapeHtml(
+                stage.detail || App.auth.getTransferProposalStatusHint(item),
+              );
               const tone = App.utils.escapeHtml(stage.tone || "live");
               const when = stage.when
                 ? `<small class="transfer-negotiation-date">${App.utils.formatDateTime(
@@ -282,7 +292,11 @@ App.auth = {
       { key: "medic", sender: "Departamento mÃƒÂ©dico", folder: "Elenco" },
       { key: "imprensa", sender: "ComunicaÃƒÂ§ÃƒÂ£o", folder: "Imprensa" },
       { key: "patro", sender: "Comercial", folder: "Comercial" },
-      { key: "torcida", sender: "RelaÃƒÂ§ÃƒÂµes com torcedores", folder: "Clube" },
+      {
+        key: "torcida",
+        sender: "RelaÃƒÂ§ÃƒÂµes com torcedores",
+        folder: "Clube",
+      },
     ];
     const matched = senders.find(
       (item) => normalized.includes(item.key) || text.includes(item.key),
@@ -428,12 +442,14 @@ App.auth = {
   },
 
   getEmailMailboxFilters() {
-    return App.auth.getEmailOfficeState().filters || {
-      view: "action",
-      folder: "all",
-      query: "",
-      selectedKey: "",
-    };
+    return (
+      App.auth.getEmailOfficeState().filters || {
+        view: "action",
+        folder: "all",
+        query: "",
+        selectedKey: "",
+      }
+    );
   },
 
   setEmailMailboxFilters(nextFilters = {}) {
@@ -456,7 +472,9 @@ App.auth = {
   },
 
   getSponsorshipCurrentContract(offer = {}, activeContracts = []) {
-    const categoryKey = App.utils.normalizeText(offer.category || "PatrocÃƒÂ­nio");
+    const categoryKey = App.utils.normalizeText(
+      offer.category || "PatrocÃƒÂ­nio",
+    );
     return (
       activeContracts.find(
         (item) =>
@@ -470,9 +488,14 @@ App.auth = {
     const active = Array.isArray(data.active) ? data.active : [];
     const current = App.auth.getSponsorshipCurrentContract(offer, active);
     const offerTotal = App.auth.getSponsorshipTotalValue(offer);
-    const currentTotal = current ? App.auth.getSponsorshipTotalValue(current) : 0;
+    const currentTotal = current
+      ? App.auth.getSponsorshipTotalValue(current)
+      : 0;
     const terminationFee = Number(
-      offer.terminationFee || offer.termination_fee || current?.termination_fee || 0,
+      offer.terminationFee ||
+        offer.termination_fee ||
+        current?.termination_fee ||
+        0,
     );
     const netGain = offerTotal - currentTotal - terminationFee;
     const signingBonus = Number(offer.signingBonus || offer.signing_bonus || 0);
@@ -531,7 +554,9 @@ App.auth = {
     const offerTotal = App.auth.getSponsorshipTotalValue(offer);
     const rewardValue = Number(offer.rewardValue || offer.reward_value || 0);
     const signingBonus = Number(offer.signingBonus || offer.signing_bonus || 0);
-    const terminationFee = Number(offer.terminationFee || offer.termination_fee || 0);
+    const terminationFee = Number(
+      offer.terminationFee || offer.termination_fee || 0,
+    );
 
     return (
       netGain > 0 ||
@@ -562,7 +587,9 @@ App.auth = {
       })
       .sort((a, b) => Number(b.inboxScore || 0) - Number(a.inboxScore || 0))
       .filter((offer) => {
-        const categoryKey = App.utils.normalizeText(offer.category || "PatrocÃƒÂ­nio");
+        const categoryKey = App.utils.normalizeText(
+          offer.category || "PatrocÃƒÂ­nio",
+        );
         const count = categoryCounts.get(categoryKey) || 0;
         if (count >= categoryLimit) return false;
         categoryCounts.set(categoryKey, count + 1);
@@ -617,7 +644,7 @@ App.auth = {
     const scope = result.scope || {};
     const isCommissioner = Boolean(
       scope.membershipRole === "commissioner" ||
-        result?.manager?.isCommissioner,
+      result?.manager?.isCommissioner,
     );
 
     return {
@@ -790,36 +817,38 @@ App.auth = {
   },
 
   bindManagerAvatarControls(root = document) {
-    const scope = root?.querySelectorAll
-      ? root
-      : document;
+    const scope = root?.querySelectorAll ? root : document;
 
-    scope.querySelectorAll?.("[data-manager-avatar-trigger]").forEach((button) => {
-      if (button.dataset.bound === "true") return;
-      button.dataset.bound = "true";
-      button.addEventListener("click", () => {
-        const owner = button.dataset.managerAvatarTrigger;
-        const escapedOwner =
-          globalThis.CSS?.escape?.(owner) ||
-          String(owner || "").replace(/["\\]/g, "\\$&");
-        const input = document.querySelector(
-          `[data-manager-avatar-input="${escapedOwner}"]`,
-        );
-        input?.click();
+    scope
+      .querySelectorAll?.("[data-manager-avatar-trigger]")
+      .forEach((button) => {
+        if (button.dataset.bound === "true") return;
+        button.dataset.bound = "true";
+        button.addEventListener("click", () => {
+          const owner = button.dataset.managerAvatarTrigger;
+          const escapedOwner =
+            globalThis.CSS?.escape?.(owner) ||
+            String(owner || "").replace(/["\\]/g, "\\$&");
+          const input = document.querySelector(
+            `[data-manager-avatar-input="${escapedOwner}"]`,
+          );
+          input?.click();
+        });
       });
-    });
 
-    scope.querySelectorAll?.("[data-manager-avatar-remove]").forEach((button) => {
-      if (button.dataset.bound === "true") return;
-      button.dataset.bound = "true";
-      button.addEventListener("click", () => {
-        const owner = button.dataset.managerAvatarRemove;
-        if (!owner) return;
-        App.auth.removeManagerAvatar(owner);
-        App.auth.renderAll();
-        App.main?.renderCurrentView?.();
+    scope
+      .querySelectorAll?.("[data-manager-avatar-remove]")
+      .forEach((button) => {
+        if (button.dataset.bound === "true") return;
+        button.dataset.bound = "true";
+        button.addEventListener("click", () => {
+          const owner = button.dataset.managerAvatarRemove;
+          if (!owner) return;
+          App.auth.removeManagerAvatar(owner);
+          App.auth.renderAll();
+          App.main?.renderCurrentView?.();
+        });
       });
-    });
 
     scope.querySelectorAll?.("[data-manager-avatar-input]").forEach((input) => {
       if (input.dataset.bound === "true") return;
@@ -860,7 +889,11 @@ App.auth = {
 
     return `
       <span class="club-badge fallback login-success-club-badge">
-        <span>${App.utils.escapeHtml(String(session.clubName || "").slice(0, 3).toUpperCase())}</span>
+        <span>${App.utils.escapeHtml(
+          String(session.clubName || "")
+            .slice(0, 3)
+            .toUpperCase(),
+        )}</span>
       </span>
     `;
   },
@@ -924,7 +957,9 @@ App.auth = {
     const minDuration = 2050;
     const elapsed = Date.now() - startedAt;
     if (elapsed < minDuration) {
-      await new Promise((resolve) => setTimeout(resolve, minDuration - elapsed));
+      await new Promise((resolve) =>
+        setTimeout(resolve, minDuration - elapsed),
+      );
     }
     App.auth.loginTransitionSession = null;
     App.auth.loginTransitionSnapshotHtml = "";
@@ -935,25 +970,43 @@ App.auth = {
     if (!App.auth.isLoggedIn()) return;
 
     if (App.auth.isCommissioner()) {
-      await Promise.all([
-        App.governance?.loadData?.(),
-        App.auth.loadPublicNews(),
-      ]);
+      await App.api.mapWithConcurrency(
+        [() => App.governance?.loadData?.(), () => App.auth.loadPublicNews()],
+        2,
+        (task) =>
+          Promise.resolve()
+            .then(() => task?.())
+            .catch((error) => {
+              console.warn("Carga de sessao indisponivel:", error);
+              return null;
+            }),
+      );
     } else {
-      await Promise.all([
-        App.auth.loadMyDecisions(),
-        App.auth.loadMyTransferProposals(),
-        App.auth.loadMyTransferTargets(),
-        App.auth.loadMyTransferSaleListings(),
-        App.auth.loadMySponsorships(),
-        App.api?.loadMedicalCenterData?.(),
-        App.api?.loadSquadManagementData?.({
-          force: true,
-          hydrateRosterDetails: false,
-        }),
-        App.auth.loadMyQoL(),
-        App.auth.loadPublicNews(),
-      ]);
+      await App.api.mapWithConcurrency(
+        [
+          () => App.auth.loadMyDecisions(),
+          () => App.auth.loadMyTransferProposals(),
+          () => App.auth.loadMyTransferTargets(),
+          () => App.auth.loadMyTransferSaleListings(),
+          () => App.auth.loadMySponsorships(),
+          () => App.api?.loadMedicalCenterData?.(),
+          () =>
+            App.api?.loadSquadManagementData?.({
+              force: true,
+              hydrateRosterDetails: false,
+            }),
+          () => App.auth.loadMyQoL(),
+          () => App.auth.loadPublicNews(),
+        ],
+        2,
+        (task) =>
+          Promise.resolve()
+            .then(() => task?.())
+            .catch((error) => {
+              console.warn("Carga de sessao indisponivel:", error);
+              return null;
+            }),
+      );
     }
 
     App.auth.renderAll();
@@ -1050,7 +1103,8 @@ App.auth = {
       }
     }
 
-    if (!result.ok) throw new Error(result.message || "Login nÃƒÂ£o autorizado.");
+    if (!result.ok)
+      throw new Error(result.message || "Login nÃƒÂ£o autorizado.");
 
     const session = App.auth.buildSessionFromLogin(result, accessCode);
     const transitionStartedAt = App.auth.startLoginSuccessTransition(session);
@@ -1074,10 +1128,11 @@ App.auth = {
           () => App.auth.loadMyTransferSaleListings(),
           () => App.auth.loadMySponsorships(),
           () => App.api?.loadMedicalCenterData?.(),
-          () => App.api?.loadSquadManagementData?.({
-            force: true,
-            hydrateRosterDetails: false,
-          }),
+          () =>
+            App.api?.loadSquadManagementData?.({
+              force: true,
+              hydrateRosterDetails: false,
+            }),
           () => App.auth.loadMyQoL(),
         );
       }
@@ -1089,17 +1144,26 @@ App.auth = {
       App.main?.renderCurrentView?.();
 
       const runBackgroundTasks = () => {
-        Promise.allSettled(backgroundTasks.map((task) => task?.())).then(() => {
-          App.auth.renderAll();
-          App.react?.notify?.();
-          App.main?.renderCurrentView?.();
-          App.main?.markSynced?.("Dados privados sincronizados");
-        });
+        App.api
+          .mapWithConcurrency(backgroundTasks, 2, (task) =>
+            Promise.resolve()
+              .then(() => task?.())
+              .catch((error) => {
+                console.warn("Carga privada em segundo plano indisponivel:", error);
+                return null;
+              }),
+          )
+          .then(() => {
+            App.auth.renderAll();
+            App.react?.notify?.();
+            App.main?.renderCurrentView?.();
+            App.main?.markSynced?.("Dados privados sincronizados");
+          });
       };
       if ("requestIdleCallback" in window) {
-        window.requestIdleCallback(runBackgroundTasks, { timeout: 1500 });
+        window.requestIdleCallback(runBackgroundTasks, { timeout: 7000 });
       } else {
-        window.setTimeout(runBackgroundTasks, 600);
+        window.setTimeout(runBackgroundTasks, 5000);
       }
     } catch (error) {
       App.auth.loginTransitionSession = null;
@@ -1212,7 +1276,10 @@ App.auth = {
       App.auth.myTransferTargetsLoaded = true;
       return App.auth.myTransferTargets;
     } catch (error) {
-      console.warn("Alvos privados indisponÃƒÂ­veis, usando cache local:", error);
+      console.warn(
+        "Alvos privados indisponÃƒÂ­veis, usando cache local:",
+        error,
+      );
       return App.auth.myTransferTargets || [];
     }
   },
@@ -1418,9 +1485,13 @@ App.auth = {
         .map((item) => Number(item.id))
         .filter((value) => Number.isFinite(value) && value > 0);
       let auditTimeline = [];
-      if (proposalIds.length && typeof App.api.getTransferNegotiationAuditTimeline === "function") {
+      if (
+        proposalIds.length &&
+        typeof App.api.getTransferNegotiationAuditTimeline === "function"
+      ) {
         try {
-          const resultTimeline = await App.api.getTransferNegotiationAuditTimeline(proposalIds);
+          const resultTimeline =
+            await App.api.getTransferNegotiationAuditTimeline(proposalIds);
           auditTimeline = Array.isArray(resultTimeline) ? resultTimeline : [];
         } catch (timelineError) {
           console.warn(
@@ -1775,7 +1846,9 @@ App.auth = {
       throw new Error(App.auth.getSponsorshipSigningLockMessage());
     const session = App.auth.getSession();
     if (!session)
-      throw new Error("FaÃƒÂ§a login como tÃƒÂ©cnico antes de assinar patrocÃƒÂ­nio.");
+      throw new Error(
+        "FaÃƒÂ§a login como tÃƒÂ©cnico antes de assinar patrocÃƒÂ­nio.",
+      );
 
     const result = await App.api.rpc(
       "app_accept_sponsorship",
@@ -1809,16 +1882,22 @@ App.auth = {
       : [];
     const accepted = offers.find((item) => String(item.id) === String(offerId));
     if (!accepted) {
-      App.auth.setEmailsArchived(App.auth.getEmailKey("sponsor", offerId), true);
+      App.auth.setEmailsArchived(
+        App.auth.getEmailKey("sponsor", offerId),
+        true,
+      );
       return;
     }
 
-    const categoryKey = App.utils.normalizeText(accepted.category || "PatrocÃƒÂ­nio");
+    const categoryKey = App.utils.normalizeText(
+      accepted.category || "PatrocÃƒÂ­nio",
+    );
     const keys = offers
       .filter(
         (item) =>
           String(item.id) === String(offerId) ||
-          App.utils.normalizeText(item.category || "PatrocÃƒÂ­nio") === categoryKey,
+          App.utils.normalizeText(item.category || "PatrocÃƒÂ­nio") ===
+            categoryKey,
       )
       .map((item) => App.auth.getEmailKey("sponsor", item.id));
     App.auth.setEmailsArchived(keys, true);
@@ -1845,7 +1924,10 @@ App.auth = {
       App.auth.renderAll();
       return result;
     } catch (error) {
-      console.warn("GeraÃƒÂ§ÃƒÂ£o automÃƒÂ¡tica de e-mails indisponÃƒÂ­vel:", error);
+      console.warn(
+        "GeraÃƒÂ§ÃƒÂ£o automÃƒÂ¡tica de e-mails indisponÃƒÂ­vel:",
+        error,
+      );
       return null;
     } finally {
       App.auth.autoDecisionRunning = false;
@@ -1886,7 +1968,9 @@ App.auth = {
   async generateDecision() {
     const session = App.auth.getSession();
     if (!session)
-      throw new Error("FaÃƒÂ§a login como tÃƒÂ©cnico antes de sortear e-mails.");
+      throw new Error(
+        "FaÃƒÂ§a login como tÃƒÂ©cnico antes de sortear e-mails.",
+      );
 
     const result = await App.api.rpc(
       "app_generate_my_decision_event",
@@ -1898,7 +1982,9 @@ App.auth = {
     );
 
     if (!result.ok)
-      throw new Error(result.message || "NÃƒÂ£o foi possÃƒÂ­vel gerar decisÃƒÂ£o.");
+      throw new Error(
+        result.message || "NÃƒÂ£o foi possÃƒÂ­vel gerar decisÃƒÂ£o.",
+      );
 
     await App.auth.loadMyDecisions();
     await App.auth.loadPublicNews();
@@ -1910,7 +1996,9 @@ App.auth = {
   async answerDecision(decisionId, choice) {
     const session = App.auth.getSession();
     if (!session)
-      throw new Error("FaÃƒÂ§a login como tÃƒÂ©cnico antes de responder e-mails.");
+      throw new Error(
+        "FaÃƒÂ§a login como tÃƒÂ©cnico antes de responder e-mails.",
+      );
 
     const result = await App.api.rpc(
       "app_answer_decision_event",
@@ -1924,7 +2012,9 @@ App.auth = {
     );
 
     if (!result.ok)
-      throw new Error(result.message || "NÃƒÂ£o foi possÃƒÂ­vel aplicar a decisÃƒÂ£o.");
+      throw new Error(
+        result.message || "NÃƒÂ£o foi possÃƒÂ­vel aplicar a decisÃƒÂ£o.",
+      );
 
     await App.api.loadApiData({
       variant: "chaos",
@@ -1988,7 +2078,11 @@ App.auth = {
     return result;
   },
 
-  async answerExternalTransferProposal(proposalId, decision, counterValue = null) {
+  async answerExternalTransferProposal(
+    proposalId,
+    decision,
+    counterValue = null,
+  ) {
     const session = App.auth.getSession();
     if (!session)
       throw new Error(
@@ -2282,8 +2376,7 @@ App.auth = {
 
     const received = App.auth.myTransferProposals.filter(
       (item) =>
-        item.proposal_role !== "sent" &&
-        App.auth.isOpenTransferProposal(item),
+        item.proposal_role !== "sent" && App.auth.isOpenTransferProposal(item),
     );
     const sentAll = App.auth.myTransferProposals.filter(
       (item) =>
@@ -2415,9 +2508,8 @@ App.auth = {
             Number(a.signingBonus || a.signing_bonus || 0),
       );
     const rank =
-      categoryOffers.findIndex(
-        (item) => String(item.id) === String(offer.id),
-      ) + 1;
+      categoryOffers.findIndex((item) => String(item.id) === String(offer.id)) +
+      1;
     const leader = categoryOffers[0] || offer;
     const leaderDelta = Math.max(
       0,
@@ -2442,9 +2534,7 @@ App.auth = {
   renderSponsorshipEmailCard(offer = {}, offers = []) {
     const cadence = App.auth.getSponsorshipCadence(offer);
     const totalValue = App.auth.getSponsorshipTotalValue(offer);
-    const signingBonus = Number(
-      offer.signingBonus || offer.signing_bonus || 0,
-    );
+    const signingBonus = Number(offer.signingBonus || offer.signing_bonus || 0);
     const rewardValue = Number(offer.rewardValue || offer.reward_value || 0);
     const maxClaims = Number(offer.maxClaims || offer.max_claims || 0);
     const terminationFee = Number(
@@ -2465,10 +2555,10 @@ App.auth = {
       offer.isReplacement && offer.commercialReason
         ? offer.commercialReason
         : competition.leaderDelta > 0
-        ? `Fica ${App.utils.formatCurrency(competition.leaderDelta)} abaixo da lider.`
-        : competition.count > 1
-          ? "Esta e a melhor proposta financeira da categoria."
-          : "Sem concorrente direto nesta categoria.";
+          ? `Fica ${App.utils.formatCurrency(competition.leaderDelta)} abaixo da lider.`
+          : competition.count > 1
+            ? "Esta e a melhor proposta financeira da categoria."
+            : "Sem concorrente direto nesta categoria.";
 
     return `
       <article class="decision-card decision-email-message sponsor-email-message priority-normal">
@@ -2621,7 +2711,12 @@ App.auth = {
     `;
   },
 
-  buildCoachEmailItems(owner = "", pending = [], sponsorshipOffers = [], transferEmails = []) {
+  buildCoachEmailItems(
+    owner = "",
+    pending = [],
+    sponsorshipOffers = [],
+    transferEmails = [],
+  ) {
     const sponsorOfferPool = sponsorshipOffers;
     const medicalCases = App.players.getActiveInjuriesForCoach(owner);
     const medicalPlan = App.players.getMedicalPlanForCoach(owner);
@@ -2635,7 +2730,9 @@ App.auth = {
       const isClosed = state === "closed";
       const status = App.utils.normalizeText(item.status || "pending");
       const key = App.auth.getEmailKey("transfer", item.id);
-      const previewValue = Number(item.proposed_value || item.cash_offer_value || 0);
+      const previewValue = Number(
+        item.proposed_value || item.cash_offer_value || 0,
+      );
       const direction = item.proposal_role === "sent" ? "Enviada" : "Recebida";
       return {
         key,
@@ -2692,21 +2789,32 @@ App.auth = {
         badge: competition.label,
         tone: offer.isReplacement ? "high" : "normal",
         state: "open",
-        sortValue: offer.createdAt || offer.created_at ? new Date(offer.createdAt || offer.created_at).getTime() : 0,
+        sortValue:
+          offer.createdAt || offer.created_at
+            ? new Date(offer.createdAt || offer.created_at).getTime()
+            : 0,
         archived: App.auth.isEmailArchived(key),
         read: App.auth.isEmailRead(key),
         deleted: App.auth.isEmailDeleted(key),
-        detailHtml: App.auth.renderSponsorshipEmailCard(offer, sponsorOfferPool),
+        detailHtml: App.auth.renderSponsorshipEmailCard(
+          offer,
+          sponsorOfferPool,
+        ),
       };
     });
 
     const medicalItems = medicalCases.map((event) => {
-      const playerName = String(event.JogadorAfetado || event.Titulo || "Jogador");
+      const playerName = String(
+        event.JogadorAfetado || event.Titulo || "Jogador",
+      );
       const playerKey = App.utils
         .normalizeText(playerName)
         .replace(/[^a-z0-9]+/g, "-");
       const meta = App.players.getMedicalCaseMeta(event, medicalPlan);
-      const key = App.auth.getEmailKey("medical", `${event.Id || event.id || playerKey}`);
+      const key = App.auth.getEmailKey(
+        "medical",
+        `${event.Id || event.id || playerKey}`,
+      );
       const availability = meta.availability || {};
       return {
         key,
@@ -2754,7 +2862,12 @@ App.auth = {
       };
     });
 
-    return [...transferItems, ...medicalItems, ...sponsorItems, ...decisionItems].sort((a, b) => {
+    return [
+      ...transferItems,
+      ...medicalItems,
+      ...sponsorItems,
+      ...decisionItems,
+    ].sort((a, b) => {
       const statePriority = { open: 0, closed: 1 };
       const stateDiff =
         (statePriority[a.state] ?? 0) - (statePriority[b.state] ?? 0);
@@ -2774,8 +2887,11 @@ App.auth = {
     const readClass = item.read ? "is-read" : "is-unread";
     const archivedClass = item.archived ? "is-archived" : "";
     const deletedClass = item.deleted ? "is-deleted" : "";
-    const state =
-      item.deleted ? "trash" : item.state === "closed" ? "closed" : "open";
+    const state = item.deleted
+      ? "trash"
+      : item.state === "closed"
+        ? "closed"
+        : "open";
     const stateLabel =
       state === "trash"
         ? "Lixeira"
@@ -2794,6 +2910,7 @@ App.auth = {
         <button type="button" class="email-thread-button" data-email-open-thread="${App.utils.escapeHtml(item.key)}">
           <span class="email-thread-topline">
             <span class="email-thread-folder">${App.utils.escapeDisplay(item.folder || "Inbox")}</span>
+            <span class="email-thread-sender">${App.utils.escapeDisplay(item.sender || "Remetente")}</span>
             ${
               item.badge
                 ? `<span class="email-thread-badge">${App.utils.escapeDisplay(item.badge)}</span>`
@@ -2805,7 +2922,6 @@ App.auth = {
             <small>${App.utils.escapeDisplay(item.preview || "")}</small>
           </span>
           <span class="email-thread-meta">
-            <span class="email-thread-sender">${App.utils.escapeDisplay(item.sender || "Remetente")}</span>
             <span class="email-thread-state">${App.utils.escapeDisplay(stateLabel)}</span>
           </span>
         </button>
@@ -2814,8 +2930,11 @@ App.auth = {
   },
 
   renderEmailPreview(item = {}) {
-    const state =
-      item.deleted ? "trash" : item.state === "closed" ? "closed" : "open";
+    const state = item.deleted
+      ? "trash"
+      : item.state === "closed"
+        ? "closed"
+        : "open";
     const stateLabel =
       state === "trash"
         ? "Na lixeira"
@@ -2839,11 +2958,7 @@ App.auth = {
         <div class="email-preview-head">
           <div class="email-preview-kicker">
             <span>${App.utils.escapeDisplay(item.folder || "Inbox")}</span>
-            ${
-              item.badge
-                ? `<b>${App.utils.escapeDisplay(item.badge)}</b>`
-                : ""
-            }
+            ${item.badge ? `<b>${App.utils.escapeDisplay(item.badge)}</b>` : ""}
           </div>
           <strong>${App.utils.escapeDisplay(item.subject || "Sem assunto")}</strong>
           <p>${App.utils.escapeDisplay(item.preview || "Sem resumo disponivel.")}</p>
@@ -2869,7 +2984,9 @@ App.auth = {
   renderEmailMailbox(items = []) {
     const filters = App.auth.getEmailMailboxFilters();
     const inboxItems = items.filter((item) => !item.archived && !item.deleted);
-    const archivedItems = items.filter((item) => item.archived && !item.deleted);
+    const archivedItems = items.filter(
+      (item) => item.archived && !item.deleted,
+    );
     const trashItems = items.filter((item) => item.deleted);
     const actionItems = inboxItems.filter(
       (item) =>
@@ -2946,8 +3063,12 @@ App.auth = {
       null;
 
     return `
-      <div class="email-office-layout">
+      <div class="email-office-layout email-gmail-layout">
         <aside class="email-sidebar">
+          <div class="email-sidebar-brand">
+            <span>Escritorio</span>
+            <strong>${visibleItems.length}</strong>
+          </div>
           <div class="email-sidebar-block">
             <div class="email-sidebar-heading">
               <strong>Fila</strong>
@@ -3019,12 +3140,27 @@ App.auth = {
                 .join("")}
             </div>
           </div>
+        </aside>
 
-          <div class="email-sidebar-block email-bulk-panel">
-            <div class="email-sidebar-heading">
-              <strong>Lote</strong>
-              <span>visiveis</span>
+        <section class="email-list-pane">
+          <div class="email-office-toolbar">
+            <label class="email-toolbar-field email-toolbar-field-search">
+              <span>Buscar e-mail</span>
+              <input
+                type="search"
+                value="${App.utils.escapeHtml(filters.query || "")}"
+                placeholder="Assunto, remetente ou pasta"
+                autocomplete="off"
+                data-email-filter-search
+              />
+            </label>
+            <div class="email-toolbar-status">
+              <strong>${visibleItems.length}</strong>
+              <span>${visibleItems.length === 1 ? "mensagem" : "mensagens"}</span>
             </div>
+          </div>
+
+          <div class="email-list-actions">
             <div class="email-bulk-toolbar">
               <label>
                 <input type="checkbox" data-email-select-all />
@@ -3036,20 +3172,22 @@ App.auth = {
               <button type="button" data-email-bulk-action="delete">Apagar</button>
             </div>
           </div>
-        </aside>
 
-        <section class="email-list-pane">
-          <div class="email-office-toolbar">
-            <label class="email-toolbar-field email-toolbar-field-search">
-              <span>Buscar</span>
-              <input
-                type="search"
-                value="${App.utils.escapeHtml(filters.query || "")}"
-                placeholder="Assunto, remetente ou pasta"
-                autocomplete="off"
-                data-email-filter-search
-              />
-            </label>
+          <div class="email-category-tabs" role="list" aria-label="Categorias do escritorio">
+            ${folderOptions
+              .map(
+                (option) => `
+              <button
+                type="button"
+                class="email-category-tab ${selectedFolder === option.value ? "is-active" : ""}"
+                data-email-filter-folder-button="${App.utils.escapeHtml(option.value)}"
+              >
+                <strong>${App.utils.escapeDisplay(option.label)}</strong>
+                <span>${option.count}</span>
+              </button>
+            `,
+              )
+              .join("")}
           </div>
 
           <div class="email-list-header">
@@ -3083,7 +3221,9 @@ App.auth = {
               <div>
                 <strong>Nenhum e-mail nessa visao</strong>
                 <p>${
-                  normalizedQuery || selectedFolder !== "all" || selectedView !== "action"
+                  normalizedQuery ||
+                  selectedFolder !== "all" ||
+                  selectedView !== "action"
                     ? "Ajuste busca ou pasta para reencontrar a fila do escritorio."
                     : "Novas mensagens entram aqui quando a diretoria, o mercado ou o DM abrirem um assunto."
                 }</p>
@@ -3244,7 +3384,6 @@ App.auth = {
         }
       </article>
     `;
-
   },
 
   renderCoachTransferProposalCard(ownerName) {
@@ -3258,8 +3397,7 @@ App.auth = {
 
     const pending = App.auth.myTransferProposals.filter(
       (item) =>
-        item.proposal_role !== "sent" &&
-        App.auth.isOpenTransferProposal(item),
+        item.proposal_role !== "sent" && App.auth.isOpenTransferProposal(item),
     );
     if (!pending.length) return "";
 
@@ -3299,10 +3437,7 @@ App.auth = {
       : [];
     const visibleRewards = rewards.slice(0, 5);
     const hiddenRewards = Math.max(0, rewards.length - visibleRewards.length);
-    const activeCount = Math.max(
-      active.length,
-      Number(data?.activeCount || 0),
-    );
+    const activeCount = Math.max(active.length, Number(data?.activeCount || 0));
     const maxActive = Math.max(
       activeCount,
       Number(data?.maxActiveContracts ?? 3) || 3,
@@ -3950,8 +4085,7 @@ App.auth = {
     const claimsUsed = Number(item.claims_used || item.claimsUsed || 0);
     const maxClaims = Number(item.max_claims || item.maxClaims || 0);
     const intervalMs = intervalDays * 24 * 60 * 60 * 1000;
-    const anchorAt =
-      payoutStartAt || new Date(signedAt.getTime() + intervalMs);
+    const anchorAt = payoutStartAt || new Date(signedAt.getTime() + intervalMs);
     const lastPaymentAt =
       App.auth.parseSponsorshipDate(
         item.last_installment_at || item.lastInstallmentAt,
@@ -4006,6 +4140,14 @@ App.auth = {
     office.dataset.emailOfficeBound = "true";
 
     const rerenderOffice = () => App.main?.renderCurrentView?.();
+    const scrollPreviewIntoViewOnMobile = () => {
+      if (!window.matchMedia?.("(max-width: 860px)")?.matches) return;
+      window.setTimeout(() => {
+        document
+          .querySelector("#playersView .email-preview-pane")
+          ?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 0);
+    };
 
     office.addEventListener("click", (event) => {
       if (event.target.closest?.("[data-email-select]")) {
@@ -4047,6 +4189,7 @@ App.auth = {
         App.auth.setEmailsRead(key, true);
         App.auth.setEmailMailboxFilters({ selectedKey: key });
         rerenderOffice();
+        scrollPreviewIntoViewOnMobile();
         return;
       }
 
@@ -4098,11 +4241,9 @@ App.auth = {
     office.addEventListener("change", (event) => {
       const selectAll = event.target.closest?.("[data-email-select-all]");
       if (selectAll) {
-        office
-          .querySelectorAll("[data-email-select]")
-          .forEach((input) => {
-            input.checked = selectAll.checked;
-          });
+        office.querySelectorAll("[data-email-select]").forEach((input) => {
+          input.checked = selectAll.checked;
+        });
       }
     });
   },
@@ -4148,8 +4289,7 @@ App.auth = {
           const target = event.currentTarget;
           const proposalId = target.dataset.proposalId;
           const decision = target.dataset.decision;
-          const isExternal =
-            target.dataset.proposalType === "external_market";
+          const isExternal = target.dataset.proposalType === "external_market";
           const currentOffer = Number(target.dataset.proposalCounterValue || 0);
           let counterValue = null;
           const sourceLabel =
@@ -4164,7 +4304,9 @@ App.auth = {
           if (decision === "counter") {
             const suggestion = Math.max(currentOffer, 1000000);
             const modalResult = await App.ui.openActionModal({
-              kicker: isExternal ? "Contrato de transferencia" : "Negociacao externa",
+              kicker: isExternal
+                ? "Contrato de transferencia"
+                : "Negociacao externa",
               title: isExternal ? "Renegociar termos" : "Enviar contraoferta",
               message: isExternal
                 ? `${sourceLabel} pediu ${offerLabel} por ${playerLabel}. Informe o novo valor para responder por e-mail.`
@@ -4248,11 +4390,11 @@ App.auth = {
           }
 
           try {
-            App.ui.setButtonLoading(
-              target,
-              decision === "counter" ? "Enviando" : "Aplicando",
-            );
-            if (isExternal) {
+          App.ui.setButtonLoading(
+            target,
+            decision === "counter" ? "Enviando" : "Aplicando",
+          );
+          if (isExternal) {
               await App.auth.answerExternalTransferProposal(
                 proposalId,
                 decision,
@@ -4283,9 +4425,9 @@ App.auth = {
               ],
             });
           } finally {
-            App.ui.clearButtonLoading(target);
-          }
-        });
+          App.ui.clearButtonLoading(target);
+        }
+      });
       });
 
     App.auth.bindSponsorshipButtons(root);
@@ -4324,8 +4466,7 @@ App.auth = {
         }
 
         const offerId = target.dataset.sponsorOffer;
-        const isReplacement =
-          target.dataset.sponsorReplacement === "true";
+        const isReplacement = target.dataset.sponsorReplacement === "true";
         const fee = Number(target.dataset.sponsorFee || 0);
         const signingBonus = Number(target.dataset.sponsorSigning || 0);
         const rewardValue = Number(target.dataset.sponsorReward || 0);
@@ -4350,7 +4491,9 @@ App.auth = {
               message,
               tone: "info",
               cancelLabel: "Cancelar",
-              confirmLabel: isReplacement ? "Aceitar troca" : "Aceitar proposta",
+              confirmLabel: isReplacement
+                ? "Aceitar troca"
+                : "Aceitar proposta",
               confirmVariant: "primary",
             })
           : confirm(message);
@@ -4364,7 +4507,8 @@ App.auth = {
             await App.ui.openActionModal({
               kicker: "PatrocÃƒÂ­nio nÃƒÂ£o aplicado",
               title: "NÃƒÂ£o consegui assinar",
-              message: error.message || "Tente novamente depois de sincronizar.",
+              message:
+                error.message || "Tente novamente depois de sincronizar.",
               tone: "danger",
               actions: [
                 {
@@ -4386,7 +4530,9 @@ App.auth = {
   },
 
   getTransferProposalDisplayMeta(item = {}) {
-    const proposedValue = Number(item.proposed_value || item.cash_offer_value || 0);
+    const proposedValue = Number(
+      item.proposed_value || item.cash_offer_value || 0,
+    );
     const referenceValue = Number(item.reference_value || 0);
     const cashValue = Number(item.cash_offer_value || proposedValue || 0);
     const marketValue = Math.max(referenceValue, proposedValue, cashValue, 0);
@@ -4531,10 +4677,10 @@ App.auth = {
       : isSignaturePending
         ? "Aguardando assinatura no escritório"
         : status === "buyer_review"
-        ? isCounter
-          ? "Contraproposta recebida"
-          : "Base financeira aceita"
-        : "Mesa aberta";
+          ? isCounter
+            ? "Contraproposta recebida"
+            : "Base financeira aceita"
+          : "Mesa aberta";
 
     return `
       <article class="decision-card decision-email-message transfer-contract-email proposal-status-${status}">
@@ -4586,15 +4732,16 @@ App.auth = {
         </div>
         ${App.auth.getTransferProposalTimeline(item, { maxItems: 4 })}
 
-        ${isClosed
-          ? `<div class="decision-options email-response-actions transfer-contract-actions">
+        ${
+          isClosed
+            ? `<div class="decision-options email-response-actions transfer-contract-actions">
               <span class="proposal-status-hint">${App.utils.escapeDisplay(App.auth.getTransferProposalStatusHint(item))}</span>
             </div>`
-          : isSignaturePending
-          ? `<div class="decision-options email-response-actions transfer-contract-actions">
+            : isSignaturePending
+              ? `<div class="decision-options email-response-actions transfer-contract-actions">
               <span class="proposal-status-hint">A proposta entrou em etapa de assinatura e ser\u00e1 conclu\u00edda automaticamente no prazo da liga.</span>
             </div>`
-          : `<div class="decision-options email-response-actions transfer-contract-actions">
+              : `<div class="decision-options email-response-actions transfer-contract-actions">
               <button
                 type="button"
                 data-transfer-proposal-answer
@@ -4753,7 +4900,9 @@ App.auth = {
   renderDecisionCard(item) {
     const meta = App.auth.getDecisionEmailMeta(item);
     const statusLabel =
-      item.status === "pending" ? "NÃƒÂ£o respondido" : item.status || "arquivado";
+      item.status === "pending"
+        ? "NÃƒÂ£o respondido"
+        : item.status || "arquivado";
 
     return `
       <article class="decision-card decision-email-message priority-${meta.tone}">
@@ -4911,7 +5060,9 @@ App.auth = {
     const target = document.getElementById("managerNotificationCenter");
     if (!target) return;
 
-    const notifications = App.auth.dedupeNotifications(App.auth.myNotifications);
+    const notifications = App.auth.dedupeNotifications(
+      App.auth.myNotifications,
+    );
     const unread = notifications.filter((item) => !item.is_read);
     const favorites = App.auth.myFavorites || [];
     const unreadLabel =
@@ -5140,5 +5291,3 @@ App.auth = {
 };
 
 document.addEventListener("DOMContentLoaded", () => App.auth.init());
-
-

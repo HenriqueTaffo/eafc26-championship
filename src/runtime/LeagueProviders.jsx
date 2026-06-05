@@ -1,7 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { persistQueryClient } from "@tanstack/react-query-persist-client";
+import { createSyncStoragePersister } from "@tanstack/query-sync-storage-persister";
 import { createClient } from "@supabase/supabase-js";
 import * as Toast from "@radix-ui/react-toast";
+import { ErrorBoundary } from "react-error-boundary";
+import { set as setIdbValue } from "idb-keyval";
 import clsx from "clsx";
 import App from "../../js/app.js";
 import { useLeagueUiStore } from "../state/useLeagueUiStore.js";
@@ -17,6 +21,47 @@ const queryClient = new QueryClient({
     },
   },
 });
+
+if (typeof window !== "undefined") {
+  const storagePersister = createSyncStoragePersister({
+    storage: window.localStorage,
+    key: "4linhas-query-cache-v1",
+    throttleTime: 1200,
+  });
+
+  persistQueryClient({
+    queryClient,
+    persister: storagePersister,
+    maxAge: 1000 * 60 * 30,
+    dehydrateOptions: {
+      shouldDehydrateQuery: (query) =>
+        query.state.status === "success" &&
+        !String(query.queryKey?.[0] || "").includes("session"),
+    },
+  });
+
+  import("web-vitals")
+    .then(({ onCLS, onFCP, onINP, onLCP, onTTFB }) => {
+      const reportVital = (metric) => {
+        window.__leagueVitals = window.__leagueVitals || [];
+        window.__leagueVitals.push({
+          name: metric.name,
+          value: Math.round(Number(metric.value || 0)),
+          rating: metric.rating,
+          at: Date.now(),
+        });
+        if (window.__leagueVitals.length > 20) window.__leagueVitals.shift();
+        setIdbValue("4linhas-latest-vitals", window.__leagueVitals).catch(
+          () => {},
+        );
+      };
+
+      [onCLS, onFCP, onINP, onLCP, onTTFB].forEach((subscribe) =>
+        subscribe(reportVital),
+      );
+    })
+    .catch(() => {});
+}
 
 const REALTIME_TABLES = [
   "matches",
@@ -266,6 +311,33 @@ function LeagueRealtimeBridge() {
   return null;
 }
 
+function LeagueErrorFallback({ error, resetErrorBoundary }) {
+  return (
+    <section className="league-error-boundary" role="alert">
+      <span>Falha isolada</span>
+      <strong>Este painel encontrou um problema.</strong>
+      <p>
+        A aplicacao continua ativa. Tente recarregar os dados ou volte para a
+        tela anterior.
+      </p>
+      <small>{error?.message || "Erro sem detalhe disponivel."}</small>
+      <div>
+        <button type="button" onClick={resetErrorBoundary}>
+          Tentar novamente
+        </button>
+        <button
+          type="button"
+          onClick={() =>
+            App.api?.loadApiData?.({ showLoader: false, force: true })
+          }
+        >
+          Sincronizar dados
+        </button>
+      </div>
+    </section>
+  );
+}
+
 export function LeagueProviders({ children }) {
   const providerValue = useMemo(() => queryClient, []);
 
@@ -274,7 +346,12 @@ export function LeagueProviders({ children }) {
       <LeagueRealtimeBridge />
       <ToastViewport />
       <LeagueCommandPalette />
-      {children}
+      <ErrorBoundary
+        FallbackComponent={LeagueErrorFallback}
+        onError={(error) => console.error("League UI boundary:", error)}
+      >
+        {children}
+      </ErrorBoundary>
     </QueryClientProvider>
   );
 }

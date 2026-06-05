@@ -1,6 +1,11 @@
 import { Suspense, lazy, memo, useLayoutEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
+  Group as PanelGroup,
+  Panel,
+  Separator as PanelResizeHandle,
+} from "react-resizable-panels";
+import {
   ActivityPanel,
   AttentionPanel,
   FullStandingsRows,
@@ -36,6 +41,13 @@ import {
 } from "lucide-react";
 import App from "../../js/app.js";
 import { LoadingState } from "../views/LoadingState.jsx";
+import {
+  CommissionerOpsQoLPanel,
+  LeagueQoLPanel,
+  OfficeQoLPanel,
+  SquadQoLPanel,
+  TodayCommandCenter,
+} from "../views/QualityOfLifePanels.jsx";
 import { useScopedManagerSession } from "../features/session/useScopedManagerSession";
 import {
   getWorkspaceRouteByPath,
@@ -107,6 +119,11 @@ const TransferKanbanBoard = lazy(() =>
 const TransferMarketTable = lazy(() =>
   import("../views/AdvancedTransferTools.jsx").then((module) => ({
     default: module.TransferMarketTable,
+  })),
+);
+const TransferNegotiationIntelligence = lazy(() =>
+  import("../views/AdvancedTransferTools.jsx").then((module) => ({
+    default: module.TransferNegotiationIntelligence,
   })),
 );
 const TransferProposalAssistant = lazy(() =>
@@ -374,6 +391,8 @@ function ShellChrome({ activeRoute }) {
             </button>
           </div>
         </section>
+
+        <TodayCommandCenter activeRoute={activeRoute} />
       </section>
     </>
   );
@@ -388,6 +407,8 @@ function StandingsView({ isActive = false }) {
         <section className="summary home-summary" id="standingsSummary">
           <StandingsSummary />
         </section>
+
+        <LeagueQoLPanel />
 
         <RoundCenter />
 
@@ -513,6 +534,7 @@ function CalendarView({ isActive = false }) {
         <section className="summary" id="calendarSummary">
           <CalendarSummary />
         </section>
+        <LeagueQoLPanel />
         <section className="controls">
           <input
             id="calendarSearchInput"
@@ -585,6 +607,7 @@ function CupsView({ isActive = false }) {
         <section className="summary" id="cupsSummary">
           <CupsSummary />
         </section>
+        <LeagueQoLPanel />
         <section className="controls">
           <input
             id="cupsSearchInput"
@@ -665,6 +688,7 @@ function PlayersView({ isActive = false }) {
         <section className="summary" id="playersSummary">
           <PlayersSummary />
         </section>
+        <OfficeQoLPanel />
         <section className="controls">
           <input
             id="playersSearchInput"
@@ -710,6 +734,7 @@ function SquadView({ isActive = false }) {
         <section className="summary squad-summary" id="squadSummary">
           <SquadSummary />
         </section>
+        <SquadQoLPanel />
         <DeferredViewSection
           viewId="squadView"
           isActive={isActive}
@@ -732,6 +757,7 @@ function EventsView({ isActive = false }) {
         <section className="summary events-summary-v45" id="eventsSummary">
           <EventsSummary />
         </section>
+        <LeagueQoLPanel />
         <section className="countdown-card events-command-card">
           <div>
             <span>Central de Eventos</span>
@@ -824,6 +850,7 @@ function ExperienceView({ isActive = false }) {
         <section className="summary" id="experienceSummary">
           <ExperienceSummary />
         </section>
+        <CommissionerOpsQoLPanel />
         <section className="submit-hero experience-hero">
           <div>
             <span className="modal-kicker">Sala de análise</span>
@@ -932,6 +959,14 @@ function TransferCentralPanel() {
       <section className="summary" id="transferSummary">
         <TransfersSummary />
       </section>
+      <DeferredViewSection
+        viewId="transfersView"
+        isActive
+        title="Carregando inteligencia de mercado"
+        detail="Lendo orçamento, propostas abertas e referencia de valores."
+      >
+        <TransferNegotiationIntelligence />
+      </DeferredViewSection>
       <section className="countdown-card">
         <span>Janela de transferencias</span>
         <strong id="nextTransferCountdown">Calculando...</strong>
@@ -967,15 +1002,33 @@ function TransferMarketPanel({ onSelectPlayer } = {}) {
       <DeferredViewSection
         viewId="transfersView"
         isActive
-        title="Carregando mercado inteligente"
-        detail="Preparando filtros virtuais e tabela de scouting."
+        title="Carregando inteligencia de mercado"
+        detail="Calculando referencias de valor sem travar a pesquisa."
       >
-        <TransferMarketTable onSelectPlayer={onSelectPlayer} />
+        <TransferNegotiationIntelligence />
       </DeferredViewSection>
-      <section
-        className="transfer-compare-board coach-panel-card"
-        id="transferCompareBoard"
-      ></section>
+      <PanelGroup
+        className="workspace-resizable-panels"
+        orientation="horizontal"
+      >
+        <Panel defaultSize={68} minSize={45}>
+          <DeferredViewSection
+            viewId="transfersView"
+            isActive
+            title="Carregando mercado inteligente"
+            detail="Preparando filtros virtuais e tabela de scouting."
+          >
+            <TransferMarketTable onSelectPlayer={onSelectPlayer} />
+          </DeferredViewSection>
+        </Panel>
+        <PanelResizeHandle className="workspace-panel-resize-handle" />
+        <Panel defaultSize={32} minSize={24}>
+          <section
+            className="transfer-compare-board coach-panel-card"
+            id="transferCompareBoard"
+          ></section>
+        </Panel>
+      </PanelGroup>
     </TransferSubviewPanel>
   );
 }
@@ -1909,6 +1962,7 @@ function CommissionerView({ isActive = false }) {
         >
           <CommissionerSummary />
         </section>
+        <CommissionerOpsQoLPanel />
         <section className="submit-hero commissioner-hero">
           <div>
             <span className="modal-kicker">GovernanÃ§a da liga</span>
@@ -1951,6 +2005,8 @@ function SubmitView({ isActive = false }) {
             <a href="#cpuSimulationForm">CPU x CPU</a>
           </div>
         </section>
+
+        <CommissionerOpsQoLPanel />
 
         <section className="submit-form-grid">
           <section className="form-card submit-card submit-card-result">

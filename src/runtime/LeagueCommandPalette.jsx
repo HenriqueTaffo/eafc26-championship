@@ -174,6 +174,63 @@ export function LeagueCommandPalette() {
           });
         },
       },
+      {
+        id: "action-today-center",
+        type: "Acao",
+        title: "Abrir central hoje",
+        detail: "Mostra fila urgente, proximo contexto e caixa disponivel",
+        action: () => {
+          document
+            .querySelector(".today-command-center")
+            ?.scrollIntoView({ behavior: "smooth", block: "start" });
+        },
+      },
+      {
+        id: "action-system-health",
+        type: "Acao",
+        title: "Ver saude do sistema",
+        detail: "Abre inteligencia e mostra auditoria, vitals e filas",
+        view: "experienceView",
+        action: () => {
+          requestAnimationFrame(() => {
+            document
+              .querySelector(".ops-qol-panel")
+              ?.scrollIntoView({ behavior: "smooth", block: "start" });
+          });
+        },
+      },
+      {
+        id: "action-weekly-close",
+        type: "Acao",
+        title: "Fechamento semanal",
+        detail: "Vai para resultados, CPU x CPU e rotinas oficiais",
+        view: "submitView",
+      },
+      {
+        id: "action-clear-local-cache",
+        type: "Acao",
+        title: "Limpar cache local",
+        detail: "Remove cache de queries e pesquisas locais desta sessao",
+        action: async () => {
+          try {
+            localStorage.removeItem("4linhas-query-cache-v1");
+            App.api?.rpcMemoryCache?.clear?.();
+            App.transfers.marketSearchCache = {};
+            App.transfers.eaRatingSearchCache = {};
+            pushToast({
+              title: "Cache local limpo",
+              description: "Sincronize novamente para recarregar os dados.",
+              tone: "success",
+            });
+          } catch (error) {
+            pushToast({
+              title: "Cache nao limpo",
+              description: error?.message || "O navegador bloqueou a acao.",
+              tone: "danger",
+            });
+          }
+        },
+      },
     ];
 
     return [...NAV_COMMANDS, ...actions, ...runtimeItems]
