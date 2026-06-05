@@ -688,7 +688,7 @@ App.transfers = {
     const override = App.transfers.manualMarketValues[key];
     if (override !== undefined) return Number(override);
     const directValue = Number(player?.market_value_eur || player?.marketValue || 0);
-    if (directValue > 0 && App.transfers.hasVerifiedTransfermarktValue(player)) {
+    if (directValue > 0) {
       return directValue;
     }
     return 0;
@@ -1460,12 +1460,45 @@ App.transfers = {
   isMarketPlayerContracted(player) {
     const playerKey = App.transfers.normalizePlayerRatingKey(player?.name);
     if (!playerKey) return false;
+    if (App.api?.getLatestMovementByPlayer) {
+      const latestMovements = App.api.getLatestMovementByPlayer();
+      const clubKey = App.transfers.normalizePlayerRatingKey(
+        player?.club || player?.original_club || player?.fromClub || player?.originalClub || "",
+      );
+      const contractMovement =
+        (clubKey
+          ? latestMovements[`${playerKey}|${clubKey}`]
+          : null) ||
+        latestMovements[playerKey];
+
+      if (contractMovement?.buyer) {
+        return App.utils
+          .getHumanBuyers()
+          .some(
+            (owner) =>
+              App.utils.normalizeText(owner) ===
+              App.utils.normalizeText(contractMovement.buyer),
+          );
+      }
+    }
+
     const latest = App.transfers
       .getAllTransfers()
-      .filter(
-        (transfer) =>
-          App.transfers.normalizePlayerRatingKey(transfer.player) === playerKey,
-      )
+      .filter((transfer) => {
+        const transferPlayerKey = App.transfers.normalizePlayerRatingKey(
+          transfer.player,
+        );
+        if (transferPlayerKey !== playerKey) return false;
+        const transferClub = App.transfers.normalizePlayerRatingKey(
+          transfer.fromClub || transfer.club || "",
+        );
+        const playerClub = App.transfers.normalizePlayerRatingKey(
+          player?.club || player?.fromClub || player?.original_club || "",
+        );
+
+        if (!playerClub || !transferClub) return true;
+        return transferClub === playerClub;
+      })
       .sort((a, b) => {
         const timeA = new Date(a.timestamp || 0).getTime();
         const timeB = new Date(b.timestamp || 0).getTime();

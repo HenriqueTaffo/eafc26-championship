@@ -220,10 +220,20 @@ App.forms = {
   },
 
   async handleTransferSubmit(event) {
+    if (event.defaultPrevented) return;
     event.preventDefault();
-    const form = event.currentTarget;
-    const button = form.querySelector("button");
+    const form =
+      event.currentTarget instanceof window.HTMLFormElement
+        ? event.currentTarget
+        : event.target instanceof window.HTMLFormElement
+          ? event.target
+          : event.target?.closest?.("form#transferForm");
+
+    if (!form) return;
+    const button = form.querySelector("button[type='submit']");
     const message = document.getElementById("transferMessage");
+    if (!button || form.id !== "transferForm") return;
+
     App.transfers.syncTransferBuyerScope?.(form);
     const payload = Object.fromEntries(new FormData(form).entries());
 
@@ -695,6 +705,16 @@ App.forms = {
     App.transfers.syncTransferBuyerScope?.(transferForm);
     App.transfers.syncInternalTransferFields(transferForm);
     App.transfers.refreshWorkspace(transferForm);
+    App.forms.bindTransferSubmitHandlers?.();
+  },
+
+  bindTransferSubmitHandlers() {
+    const transferForms = document.querySelectorAll("form#transferForm");
+    transferForms.forEach((form) => {
+      if (form.dataset.transferSubmitHandlerBound === "true") return;
+      form.dataset.transferSubmitHandlerBound = "true";
+      form.addEventListener("submit", App.forms.handleTransferSubmit);
+    });
   },
 
   setupForms() {
@@ -720,10 +740,26 @@ App.forms = {
     document.addEventListener("keydown", (event) => {
       if (event.key === "Escape") App.calendar.closeResultModal();
     });
+    App.forms.bindTransferSubmitHandlers();
 
-    document
-      .getElementById("transferForm")
-      ?.addEventListener("submit", App.forms.handleTransferSubmit);
+    if (!document.body?.dataset?.transferSubmitHandlerBound) {
+      document.body.dataset.transferSubmitHandlerBound = "true";
+      document.addEventListener(
+        "submit",
+        (event) => {
+          if (event.defaultPrevented) return;
+          const form =
+            event.target && event.target instanceof window.HTMLFormElement
+              ? event.target
+              : event.target?.closest?.("form#transferForm");
+          if (!form || form.id !== "transferForm") return;
+
+          App.forms.handleTransferSubmit(event);
+        },
+        true,
+      );
+    }
+
     const cpuSimulationForm = document.getElementById("cpuSimulationForm");
     if (cpuSimulationForm) {
       cpuSimulationForm.addEventListener(

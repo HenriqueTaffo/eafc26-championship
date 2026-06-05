@@ -27,6 +27,24 @@ App.api = {
     );
   },
 
+  getTransferMovementKey(item = {}) {
+    const player = App.utils.normalizeText(
+      item.Jogador || item.player || item.player_name || "",
+    );
+    if (!player) return "";
+
+    const club = App.utils.normalizeText(
+      item.ClubeOrigem ||
+        item.fromClub ||
+        item.club ||
+        item.ClubeDestino ||
+        item.Destino ||
+        item.destination_club ||
+        "",
+    );
+    return club ? `${player}|${club}` : player;
+  },
+
   isApprovedTransfer(item = {}) {
     return ["aprovado", "approved"].includes(
       App.utils.normalizeText(item.Status || item.status),
@@ -655,6 +673,7 @@ App.api = {
     const movements = {};
 
     (App.state.apiTransfers || []).forEach((row, index) => {
+      if (App.api.isRejectedTransferStatus(row.Status || row.status)) return;
       const playerName = row.Jogador || row.player || row.player_name || "";
       const key = App.utils.normalizeText(playerName);
       if (!key) return;
@@ -663,9 +682,7 @@ App.api = {
         row.Timestamp || row.created_at || row.createdAt || 0,
       ).getTime();
       const score = Number.isNaN(time) ? index : time * 1000 + index;
-      if (movements[key] && movements[key].score > score) return;
-
-      movements[key] = {
+      const movement = {
         buyer: row.Comprador || row.buyer || row.buyer_id || "",
         destination:
           row.ClubeDestino || row.Destino || row.destination_club || "",
@@ -674,6 +691,18 @@ App.api = {
           row.TipoTransferencia || row.transfer_type || row.transferType || "",
         ),
       };
+
+      if (!movements[key] || movements[key].score > score) {
+        movements[key] = movement;
+      }
+
+      const detailedKey = App.api.getTransferMovementKey(row);
+      if (
+        detailedKey &&
+        (!movements[detailedKey] || movements[detailedKey].score > score)
+      ) {
+        movements[detailedKey] = movement;
+      }
     });
 
     return movements;
@@ -690,7 +719,9 @@ App.api = {
     return players
       .map((player) => {
         const key = App.utils.normalizeText(player.name || "");
-        const movement = latestMovements[key];
+        const movement =
+          latestMovements[App.api.getTransferMovementKey(player)] ||
+          latestMovements[key];
         let next = authoritativeTransfersLoaded
           ? {
               ...player,
