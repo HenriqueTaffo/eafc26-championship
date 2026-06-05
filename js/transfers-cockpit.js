@@ -3181,9 +3181,21 @@ Object.assign(App.transfers, {
     target.setAttribute("aria-busy", "true");
     App.dom.setHtml(
       target,
-      App.ui?.skeletonRows
-        ? App.ui.skeletonRows(4, "market-player-skeleton")
-        : `<div class="market-empty">Buscando jogadores no mercado...</div>`,
+      App.ui?.loadingState
+        ? App.ui.loadingState(
+            "Buscando jogadores",
+            "Consultando mercado, salarios e disponibilidade.",
+            { className: "market-player-skeleton", skeleton: 4 },
+          )
+        : `
+          <div class="app-loading-state market-player-skeleton" role="status" aria-live="polite" aria-busy="true">
+            <span class="app-loading-spinner" aria-hidden="true"></span>
+            <span class="app-loading-copy">
+              <strong>Buscando jogadores</strong>
+              <small>Consultando mercado, salarios e disponibilidade.</small>
+            </span>
+          </div>
+        `,
     );
 
     const renderRequest = (async () => {
@@ -3412,7 +3424,8 @@ Object.assign(App.transfers, {
         );
         const stage = button.dataset.transferShortlistStage || "Monitorando";
         try {
-          button.disabled = true;
+          App.ui.setButtonLoading(button, "Salvando");
+          App.ui.loadingMessage(message, "Atualizando shortlist");
           await App.transfers.pinCandidate(candidate, stage);
           App.utils.setMessage(
             message,
@@ -3422,7 +3435,7 @@ Object.assign(App.transfers, {
         } catch (error) {
           App.utils.setMessage(message, error.message, "error");
         } finally {
-          button.disabled = false;
+          App.ui.clearButtonLoading(button);
         }
         App.transfers.renderShortlistBoard();
         App.transfers.renderDealCenter();
@@ -3434,14 +3447,15 @@ Object.assign(App.transfers, {
 
       if (button.hasAttribute("data-transfer-shortlist-remove")) {
         try {
-          button.disabled = true;
+          App.ui.setButtonLoading(button, "Removendo");
+          App.ui.loadingMessage(message, "Removendo da shortlist");
           await App.transfers.removeShortlistTarget(
             button.dataset.transferShortlistRemove,
           );
         } catch (error) {
           App.utils.setMessage(message, error.message, "error");
         } finally {
-          button.disabled = false;
+          App.ui.clearButtonLoading(button);
         }
         App.transfers.renderShortlistBoard();
         App.transfers.renderDealCenter();
@@ -3489,6 +3503,8 @@ Object.assign(App.transfers, {
         const message = document.getElementById("transferMessage");
         try {
           field.disabled = true;
+          field.setAttribute("aria-busy", "true");
+          App.ui.loadingMessage(message, "Movendo shortlist");
           await App.transfers.updateShortlistStage(
             field.dataset.transferShortlistStatus,
             field.value,
@@ -3502,6 +3518,7 @@ Object.assign(App.transfers, {
           App.utils.setMessage(message, error.message, "error");
         } finally {
           field.disabled = false;
+          field.removeAttribute("aria-busy");
         }
         App.transfers.renderShortlistBoard();
         App.transfers.renderDealCenter();

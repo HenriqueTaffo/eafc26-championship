@@ -22,6 +22,7 @@ import { useMachine } from "@xstate/react";
 import { z } from "zod";
 import App from "../../js/app.js";
 import { useLeagueUiStore } from "../state/useLeagueUiStore.js";
+import { InlineLoader, LoadingState } from "./LoadingState.jsx";
 import {
   resolveTransferWorkflowState,
   transferWorkflowMachine,
@@ -532,7 +533,11 @@ function TransferMarketTable() {
           <h2>Mercado avancado</h2>
         </div>
         <small>
-          {searching ? "Buscando..." : `${rows.length} jogador(es) filtrados`}
+          {searching ? (
+            <InlineLoader label="Buscando mercado" />
+          ) : (
+            `${rows.length} jogador(es) filtrados`
+          )}
         </small>
       </div>
       <form className="advanced-market-filters" noValidate>
@@ -619,7 +624,14 @@ function TransferMarketTable() {
             })}
           </div>
         </div>
-        {!rows.length ? (
+        {searching && !rows.length ? (
+          <LoadingState
+            className="advanced-empty"
+            title="Buscando jogadores"
+            detail="Consultando mercado, filtros e fallback regional."
+            skeleton={3}
+          />
+        ) : !rows.length ? (
           <div className="advanced-empty">
             Busque por nome, clube, liga ou posicao, ou selecione uma liga para carregar o mercado.
           </div>
@@ -756,7 +768,7 @@ function TransferKanbanBoard() {
         </div>
         <small>
           {moving
-            ? "Salvando..."
+            ? <InlineLoader label="Salvando etapa" />
             : `${targets.length} alvo(s) / ${proposals.length} proposta(s)`}
         </small>
       </div>

@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import App from "../../js/app.js";
 import { HtmlFragment } from "./HtmlFragment.jsx";
+import { LoadingState } from "./LoadingState.jsx";
 import { useAppRuntime } from "./ViewSummaries.jsx";
 
 function getPlayersViewModel() {
@@ -105,15 +106,13 @@ function PlayersGrid() {
   if (!App.state.apiLoaded) {
     return (
       <section className="player-grid" id="playersGrid">
-        <article className="coach-panel-card">
-          <div className="home-panel-header">
-            <h2>Sincronizando escritório</h2>
-          </div>
-          <p className="calendar-muted">
-            Carregando dados oficiais da liga antes de exibir saldo, campanha e
-            transferências.
-          </p>
-        </article>
+        <LoadingState
+          as="article"
+          className="coach-panel-card"
+          title="Sincronizando escritorio"
+          detail="Carregando saldo, campanha e transferencias."
+          skeleton={3}
+        />
       </section>
     );
   }

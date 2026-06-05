@@ -34,6 +34,7 @@ import {
   WalletCards,
 } from "lucide-react";
 import App from "../../js/app.js";
+import { LoadingState } from "../views/LoadingState.jsx";
 import {
   getWorkspaceRouteByPath,
   getWorkspaceRoutesForGroup,
@@ -128,22 +129,13 @@ function ViewLoadingPlaceholder({
   detail = "Preparando a tela selecionada...",
 }) {
   return (
-    <section className="app-skeleton-stack view-loading-placeholder" aria-live="polite">
-      <div className="home-panel-header">
-        <h2>{title}</h2>
-      </div>
-      <p className="calendar-muted">{detail}</p>
-      <div className="app-skeleton-row">
-        <i></i>
-        <b></b>
-        <em></em>
-      </div>
-      <div className="app-skeleton-row">
-        <i></i>
-        <b></b>
-        <em></em>
-      </div>
-    </section>
+    <LoadingState
+      as="section"
+      className="view-loading-placeholder"
+      title={title}
+      detail={detail}
+      skeleton={2}
+    />
   );
 }
 

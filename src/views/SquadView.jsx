@@ -11,6 +11,7 @@ import {
 } from "@dnd-kit/core";
 import App from "../../js/app.js";
 import { useLeagueUiStore } from "../state/useLeagueUiStore.js";
+import { InlineLoader, LoadingState } from "./LoadingState.jsx";
 import { useAppRuntime } from "./ViewSummaries.jsx";
 import { TeamBadge } from "./SharedClubComponents.jsx";
 
@@ -1079,14 +1080,13 @@ function SquadManagementView() {
   if (!App.state.apiLoaded || App.state.apiSquadManagementLoading) {
     return (
       <section className="squad-shell">
-        <article className="coach-panel-card">
-          <div className="home-panel-header">
-            <h2>Carregando elenco</h2>
-          </div>
-          <p className="calendar-muted">
-            Sincronizando ratings, folha salarial e formacoes salvas.
-          </p>
-        </article>
+        <LoadingState
+          as="article"
+          className="coach-panel-card"
+          title="Carregando elenco"
+          detail="Sincronizando ratings, folha salarial e formacoes salvas."
+          skeleton={3}
+        />
       </section>
     );
   }
@@ -1246,7 +1246,7 @@ function SquadManagementView() {
                 onClick={saveLineup}
                 disabled={saving}
               >
-                {saving ? "Salvando..." : "Salvar"}
+                {saving ? <InlineLoader label="Salvando" /> : "Salvar"}
               </button>
             </div>
           </div>

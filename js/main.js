@@ -393,7 +393,7 @@ App.main = {
       button.dataset.bound = "true";
       button.addEventListener("click", async () => {
         try {
-          button.disabled = true;
+          App.ui.setButtonLoading(button, "Sincronizando");
           App.main.markSyncing("Sincronizando manualmente...");
           await App.api.loadApiData({
             showLoader: false,
@@ -402,7 +402,7 @@ App.main = {
         } catch (error) {
           App.main.markSynced("Falha ao sincronizar");
         } finally {
-          button.disabled = false;
+          App.ui.clearButtonLoading(button);
         }
       });
     });

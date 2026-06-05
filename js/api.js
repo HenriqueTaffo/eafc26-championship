@@ -1392,14 +1392,11 @@ App.api = {
 
     App.dom.setHtml(
       container,
-      `
-      <div class="sim-preview-shell is-loading">
-        <div class="sim-preview-title">
-          <strong>${week ? `Analisando semana ${week}` : "Mapa de pendências"}</strong>
-          <span>Consultando o banco oficial...</span>
-        </div>
-      </div>
-    `,
+      App.ui.loadingState(
+        week ? `Analisando semana ${week}` : "Mapa de pendencias",
+        "Consultando o banco oficial.",
+        { className: "sim-preview-shell is-loading", compact: true, skeleton: 2 },
+      ),
     );
 
     const audit = await App.api.loadMatchAudit(week || null);

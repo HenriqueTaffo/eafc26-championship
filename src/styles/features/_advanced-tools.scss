@@ -355,6 +355,14 @@
   text-align: center;
 }
 
+.advanced-empty.app-loading-state {
+  justify-items: start;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  text-align: left;
+}
+
 .transfer-kanban-board {
   display: grid;
   grid-template-columns: repeat(5, minmax(170px, 1fr));

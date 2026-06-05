@@ -511,7 +511,8 @@ App.calendar = {
 
     if (!window.confirm(confirmation)) return;
 
-    if (button) button.disabled = true;
+    App.ui.setButtonLoading(button, "Desfazendo");
+    App.ui.loadingMessage(message, "Desfazendo resultado");
     App.main.showLoader({
       variant: "match",
       title: "Desfazendo resultado",
@@ -548,7 +549,7 @@ App.calendar = {
       App.utils.setMessage(message, error.message, "error");
     } finally {
       App.main.hideLoader();
-      if (button) button.disabled = false;
+      App.ui.clearButtonLoading(button);
     }
   },
 

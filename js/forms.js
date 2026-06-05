@@ -124,8 +124,8 @@ App.forms = {
     const payload = Object.fromEntries(new FormData(form).entries());
     const session = App.auth?.getSession ? App.auth.getSession() : null;
 
-    button.disabled = true;
-    App.utils.setMessage(message, "Enviando resultado...", "warning");
+    App.ui.setButtonLoading(button, "Enviando");
+    App.ui.loadingMessage(message, "Enviando resultado");
     App.main.showLoader({
       variant: "match",
       title: "Registrando resultado",
@@ -162,7 +162,7 @@ App.forms = {
       );
     } finally {
       App.main.hideLoader();
-      button.disabled = false;
+      App.ui.clearButtonLoading(button);
     }
   },
 
@@ -174,8 +174,8 @@ App.forms = {
     const payload = Object.fromEntries(new FormData(form).entries());
     const session = App.auth?.getSession ? App.auth.getSession() : null;
 
-    button.disabled = true;
-    App.utils.setMessage(message, "Salvando resultado...", "warning");
+    App.ui.setButtonLoading(button, "Salvando");
+    App.ui.loadingMessage(message, "Salvando resultado");
     App.main.showLoader({
       variant: "match",
       title: "Salvando placar",
@@ -215,7 +215,7 @@ App.forms = {
       );
     } finally {
       App.main.hideLoader();
-      button.disabled = false;
+      App.ui.clearButtonLoading(button);
     }
   },
 
@@ -236,8 +236,8 @@ App.forms = {
       return;
     }
 
-    button.disabled = true;
-    App.utils.setMessage(message, "Enviando transferência...", "warning");
+    App.ui.setButtonLoading(button, "Enviando");
+    App.ui.loadingMessage(message, "Enviando transferencia");
     App.main.showLoader({
       variant: "market",
       title: "Processando transferência",
@@ -340,12 +340,13 @@ App.forms = {
         throw new Error("Negociação cancelada antes do envio.");
       }
 
-      App.utils.setMessage(
+      App.ui.loadingMessage(
         message,
-        isInternal
-          ? "Enviando e-mail ao vendedor..."
-          : "Abrindo mesa de negociação...",
-        "warning",
+        isInternal ? "Enviando e-mail ao vendedor" : "Abrindo negociacao",
+      );
+      App.ui.setButtonLoading(
+        button,
+        isInternal ? "Enviando" : "Negociando",
       );
       App.main.showLoader({
         variant: "market",
@@ -417,7 +418,7 @@ App.forms = {
       );
     } finally {
       App.main.hideLoader();
-      button.disabled = false;
+      App.ui.clearButtonLoading(button);
     }
   },
 
@@ -428,12 +429,8 @@ App.forms = {
     const message = document.getElementById("cpuSimulationMessage");
     const payload = Object.fromEntries(new FormData(form).entries());
 
-    button.disabled = true;
-    App.utils.setMessage(
-      message,
-      "Simulando jogos CPU x CPU... Isso deve levar poucos segundos.",
-      "warning",
-    );
+    App.ui.setButtonLoading(button, "Simulando");
+    App.ui.loadingMessage(message, "Simulando jogos CPU x CPU");
     App.main.showLoader({
       variant: "chaos",
       title: "Simulando CPU x CPU",
@@ -475,7 +472,7 @@ App.forms = {
       );
     } finally {
       App.main.hideLoader();
-      button.disabled = false;
+      App.ui.clearButtonLoading(button);
     }
   },
 
@@ -494,7 +491,7 @@ App.forms = {
     App.dom.setHtml(
       container,
       `
-      ${App.ui.summaryCard("Status Supabase", App.state.apiLoaded ? "Conectado" : "Carregando")}
+      ${App.ui.summaryCard("Status Supabase", App.state.apiLoaded ? "Conectado" : App.ui.inlineLoader("Carregando"))}
       ${App.ui.summaryCard("Resultados", approvedResults)}
       ${App.ui.summaryCard("Eventos", events)}
     `,
@@ -593,7 +590,8 @@ App.forms = {
         const message = document.getElementById("transferMessage");
         const preview = App.transfers.getTransferPreview(transferForm);
         try {
-          button.disabled = true;
+          App.ui.setButtonLoading(button, "Registrando");
+          App.ui.loadingMessage(message, "Registrando leilao automatico");
           await App.transfers.createAutoAuctionFromPreview(preview);
           App.utils.setMessage(
             message,
@@ -603,7 +601,7 @@ App.forms = {
         } catch (error) {
           App.utils.setMessage(message, error.message, "error");
         } finally {
-          button.disabled = false;
+          App.ui.clearButtonLoading(button);
         }
       });
 

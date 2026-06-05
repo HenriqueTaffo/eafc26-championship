@@ -1415,7 +1415,11 @@ App.players = {
     target.classList.add("is-visible");
     App.dom.setHtml(
       target,
-      `<div class="market-empty">Buscando jogadores no mercado...</div>`,
+      App.ui.loadingState(
+        "Buscando jogadores",
+        "Consultando mercado e ratings disponiveis.",
+        { compact: true, skeleton: 2 },
+      ),
     );
 
     const players = await App.api
@@ -2421,7 +2425,7 @@ App.players = {
         if (!confirmed) return;
 
         try {
-          button.disabled = true;
+          App.ui.setButtonLoading(button, "Contratando");
           App.main?.showLoader?.({
             variant: "market",
             title: "Atualizando DM",
@@ -2479,7 +2483,7 @@ App.players = {
           }
         } finally {
           App.main?.hideLoader?.();
-          if (button.isConnected) button.disabled = false;
+          if (button.isConnected) App.ui.clearButtonLoading(button);
         }
       });
     });
@@ -2517,7 +2521,10 @@ App.players = {
         if (!confirmed) return;
 
         try {
-          button.disabled = true;
+          App.ui.setButtonLoading(
+            button,
+            isManagedReturn ? "Liberando" : "Tratando",
+          );
           App.main?.showLoader?.({
             variant: isManagedReturn ? "info" : "market",
             title: isManagedReturn ? "Liberando retorno" : "Tratando lesão",
@@ -2593,7 +2600,7 @@ App.players = {
           }
         } finally {
           App.main?.hideLoader?.();
-          if (button.isConnected) button.disabled = false;
+          if (button.isConnected) App.ui.clearButtonLoading(button);
         }
       });
     });
@@ -2623,10 +2630,7 @@ App.players = {
         event.preventDefault();
         const button = form.querySelector("button[type='submit']");
         try {
-          if (button) {
-            button.disabled = true;
-            button.textContent = "Salvando...";
-          }
+          App.ui.setButtonLoading(button, "Salvando");
           await App.auth.upsertTransferSaleListing({
             player: form.elements.player.value,
             askingPrice: form.elements.askingPrice.value,
@@ -2637,10 +2641,7 @@ App.players = {
         } catch (error) {
           alert(error.message);
         } finally {
-          if (button) {
-            button.disabled = false;
-            button.textContent = "Colocar na lista";
-          }
+          App.ui.clearButtonLoading(button, "Colocar na lista");
         }
       });
     });
@@ -2653,7 +2654,7 @@ App.players = {
         button.addEventListener("click", async () => {
           if (!confirm("Remover este jogador da lista de venda?")) return;
           try {
-            button.disabled = true;
+            App.ui.setButtonLoading(button, "Removendo");
             await App.auth.deleteTransferSaleListing(
               button.dataset.removeSaleListing,
             );
@@ -2661,7 +2662,7 @@ App.players = {
           } catch (error) {
             alert(error.message);
           } finally {
-            button.disabled = false;
+            if (button.isConnected) App.ui.clearButtonLoading(button);
           }
         });
       });

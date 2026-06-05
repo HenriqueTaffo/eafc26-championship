@@ -2171,8 +2171,7 @@ App.auth = {
         const form = event.currentTarget;
         const button = form.querySelector("button[type='submit']");
         try {
-          button.disabled = true;
-          button.textContent = "Entrando...";
+          App.ui.setButtonLoading(button, "Entrando");
           await App.auth.login(
             form.elements.managerName.value,
             form.elements.accessCode.value,
@@ -2180,8 +2179,7 @@ App.auth = {
         } catch (error) {
           alert(error.message);
         } finally {
-          button.disabled = false;
-          button.textContent = "Entrar";
+          App.ui.clearButtonLoading(button, "Entrar");
         }
       });
   },
@@ -3344,10 +3342,15 @@ App.auth = {
 
         ${
           isLoadingPortfolio
-            ? `<div class="sponsor-market-note sponsor-contracts-note">
-                <strong>Carregando carteira comercial</strong>
-                <span>Buscando contratos ativos, pagamentos e propostas do clube.</span>
-              </div>`
+            ? App.ui.loadingState(
+                "Carregando carteira comercial",
+                "Buscando contratos ativos, pagamentos e propostas do clube.",
+                {
+                  className: "sponsor-market-note sponsor-contracts-note",
+                  compact: true,
+                  skeleton: 2,
+                },
+              )
             : ""
         }
 
@@ -4123,12 +4126,12 @@ App.auth = {
           return;
 
         try {
-          target.disabled = true;
+          App.ui.setButtonLoading(target, "Enviando");
           await App.auth.answerDecision(decisionId, choice);
         } catch (error) {
           alert(error.message);
         } finally {
-          target.disabled = false;
+          App.ui.clearButtonLoading(target);
         }
       });
     });
@@ -4245,7 +4248,10 @@ App.auth = {
           }
 
           try {
-            target.disabled = true;
+            App.ui.setButtonLoading(
+              target,
+              decision === "counter" ? "Enviando" : "Aplicando",
+            );
             if (isExternal) {
               await App.auth.answerExternalTransferProposal(
                 proposalId,
@@ -4277,7 +4283,7 @@ App.auth = {
               ],
             });
           } finally {
-            target.disabled = false;
+            App.ui.clearButtonLoading(target);
           }
         });
       });
@@ -4351,7 +4357,7 @@ App.auth = {
         if (!confirmed) return;
 
         try {
-          target.disabled = true;
+          App.ui.setButtonLoading(target, "Assinando");
           await App.auth.acceptSponsorship(offerId);
         } catch (error) {
           if (App.ui?.openActionModal) {
@@ -4373,7 +4379,7 @@ App.auth = {
             alert(error.message);
           }
         } finally {
-          if (target.isConnected) target.disabled = false;
+          if (target.isConnected) App.ui.clearButtonLoading(target);
         }
       });
     });

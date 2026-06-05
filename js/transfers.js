@@ -4646,9 +4646,21 @@ App.transfers = {
     target.setAttribute("aria-busy", "true");
     App.dom.setHtml(
       target,
-      App.ui?.skeletonRows
-        ? App.ui.skeletonRows(4, "market-player-skeleton")
-        : `<div class="market-empty">Buscando jogadores no mercado...</div>`,
+      App.ui?.loadingState
+        ? App.ui.loadingState(
+            "Buscando jogadores",
+            "Consultando mercado, salarios e disponibilidade.",
+            { className: "market-player-skeleton", skeleton: 4 },
+          )
+        : `
+          <div class="app-loading-state market-player-skeleton" role="status" aria-live="polite" aria-busy="true">
+            <span class="app-loading-spinner" aria-hidden="true"></span>
+            <span class="app-loading-copy">
+              <strong>Buscando jogadores</strong>
+              <small>Consultando mercado, salarios e disponibilidade.</small>
+            </span>
+          </div>
+        `,
     );
 
     const renderRequest = (async () => {

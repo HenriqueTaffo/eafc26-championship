@@ -4,6 +4,7 @@ import {
   TeamBadge,
   TeamIdentity,
 } from "./SharedClubComponents.jsx";
+import { InlineLoader, LoadingState } from "./LoadingState.jsx";
 import { useAppRuntime } from "./ViewSummaries.jsx";
 
 function ViewButton({ target, className = "", children }) {
@@ -64,7 +65,7 @@ function HomeStandingsRows() {
   if (!App.state.apiLoaded) {
     return (
       <LoadingRow colSpan={8}>
-        Sincronizando dados oficiais da liga...
+        <InlineLoader label="Sincronizando dados oficiais da liga..." />
       </LoadingRow>
     );
   }
@@ -283,7 +284,7 @@ function FullStandingsRows() {
   if (!App.state.apiLoaded) {
     return (
       <LoadingRow colSpan={11}>
-        Sincronizando dados oficiais da liga...
+        <InlineLoader label="Sincronizando dados oficiais da liga..." />
       </LoadingRow>
     );
   }
@@ -324,11 +325,13 @@ function StandingsMobileList() {
   if (!App.state.apiLoaded) {
     return (
       <section className="mobile-list" id="standingsMobile">
-        <article className="calendar-card standings-mobile-card">
-          <p className="calendar-muted">
-            Sincronizando dados oficiais da liga...
-          </p>
-        </article>
+        <LoadingState
+          as="article"
+          className="calendar-card standings-mobile-card"
+          title="Sincronizando tabela"
+          detail="Buscando jogos, pontos e saldo de gols."
+          skeleton={2}
+        />
       </section>
     );
   }

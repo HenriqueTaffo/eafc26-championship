@@ -20,6 +20,12 @@ $shadow-soft: 0 14px 38px rgba(15, 23, 42, 0.1);
   }
 }
 
+@keyframes app-loading-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 :root {
   --app-font-family:
     "ethnocentric", "Ethnocentric Rg", "Ethnocentric", "Bank Gothic",
@@ -3124,6 +3130,84 @@ body.auth-login-success .manager-login-success-copy {
 .app-skeleton-stack {
   display: grid;
   gap: 10px;
+}
+
+.app-loading-state {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 12px;
+  align-items: center;
+  min-width: 0;
+  border: 1px solid rgba(148, 163, 184, 0.14);
+  border-radius: $radius;
+  padding: 14px;
+  background:
+    linear-gradient(115deg, rgba(45, 212, 191, 0.08), transparent 36%),
+    rgba(2, 6, 23, 0.36);
+  color: $ink;
+}
+
+.app-loading-state.is-compact {
+  border: 0;
+  padding: 0;
+  background: transparent;
+}
+
+.app-loading-spinner {
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  border: 2px solid rgba(148, 163, 184, 0.28);
+  border-top-color: rgba(45, 212, 191, 0.95);
+  border-radius: 999px;
+  animation: app-loading-spin 0.8s linear infinite;
+}
+
+.app-loading-copy {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.app-loading-copy strong,
+.app-inline-loader span:last-child {
+  color: $ink;
+}
+
+.app-loading-copy small {
+  color: $muted;
+}
+
+.app-loading-skeleton {
+  grid-column: 1 / -1;
+  display: grid;
+  gap: 10px;
+  margin-top: 2px;
+}
+
+.app-inline-loader {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  color: $muted;
+  font-size: 0.88rem;
+}
+
+.app-inline-loader .app-loading-spinner {
+  flex: 0 0 auto;
+  width: 14px;
+  height: 14px;
+  border-width: 2px;
+}
+
+button .app-inline-loader {
+  justify-content: center;
+  color: inherit;
+}
+
+button .app-inline-loader span:last-child {
+  color: inherit;
 }
 
 .app-skeleton-row {

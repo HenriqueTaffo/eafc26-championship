@@ -1113,7 +1113,8 @@ App.governance = {
         const session = App.auth?.getSession?.();
         if (!session) return;
         try {
-          button.disabled = true;
+          App.ui.setButtonLoading(button, "Executando");
+          App.ui.loadingMessage(message, "Executando auditoria");
           const result = await App.api.rpc(
             "app_run_audit_action",
             {
@@ -1136,7 +1137,7 @@ App.governance = {
         } catch (error) {
           App.utils.setMessage(message, error.message, "error");
         } finally {
-          button.disabled = false;
+          App.ui.clearButtonLoading(button);
         }
       });
     });
@@ -1160,18 +1161,10 @@ App.governance = {
           return;
 
         const button = form.querySelector("button");
-        const originalText = button?.textContent || "Desfazer";
 
         try {
-          if (button) {
-            button.disabled = true;
-            button.textContent = "Desfazendo...";
-          }
-          App.utils.setMessage(
-            message,
-            `Desfazendo transferência de ${player}...`,
-            "warning",
-          );
+          App.ui.setButtonLoading(button, "Desfazendo");
+          App.ui.loadingMessage(message, `Desfazendo transferencia de ${player}`);
           App.main?.showLoader?.({
             variant: "market",
             title: "Desfazendo transferência",
@@ -1205,10 +1198,7 @@ App.governance = {
           App.utils.setMessage(message, error.message, "error");
         } finally {
           App.main?.hideLoader?.();
-          if (button) {
-            button.disabled = false;
-            button.textContent = originalText;
-          }
+          App.ui.clearButtonLoading(button, "Desfazer");
         }
       });
     });
@@ -1220,13 +1210,10 @@ App.governance = {
         event.preventDefault();
         const payload = Object.fromEntries(new FormData(form).entries());
         const button = form.querySelector("button");
-        const originalText = button?.textContent || "Gerar propostas";
 
         try {
-          if (button) {
-            button.disabled = true;
-            button.textContent = "Gerando...";
-          }
+          App.ui.setButtonLoading(button, "Gerando");
+          App.ui.loadingMessage(message, "Gerando propostas CPU");
           const result = await App.governance.runAction(
             "app_generate_cpu_transfer_proposals",
             {
@@ -1243,10 +1230,7 @@ App.governance = {
         } catch (error) {
           App.utils.setMessage(message, error.message, "error");
         } finally {
-          if (button) {
-            button.disabled = false;
-            button.textContent = originalText;
-          }
+          App.ui.clearButtonLoading(button, "Gerar propostas");
         }
       });
     });

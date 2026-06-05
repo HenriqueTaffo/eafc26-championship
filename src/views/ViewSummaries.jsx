@@ -1,6 +1,7 @@
 import { BadgeCheck, Crown, Shield, Users2 } from "lucide-react";
 import { useSyncExternalStore } from "react";
 import App from "../../js/app.js";
+import { InlineLoader } from "./LoadingState.jsx";
 
 export function useAppRuntime() {
   return useSyncExternalStore(
@@ -10,11 +11,17 @@ export function useAppRuntime() {
   );
 }
 
-function SummaryCard({ label, value, detail = "", className = "" }) {
+function SummaryCard({
+  label,
+  value,
+  detail = "",
+  className = "",
+  loading = false,
+}) {
   return (
     <article className={["summary-card", className].filter(Boolean).join(" ")}>
       <span>{label}</span>
-      <strong>{value}</strong>
+      <strong>{loading ? <InlineLoader label={value} /> : value}</strong>
       {detail ? <small>{detail}</small> : null}
     </article>
   );
@@ -59,16 +66,19 @@ export function StandingsSummary() {
                 label="Liga"
                 value="Sincronizando"
                 detail="Buscando jogos aprovados"
+                loading
               />
               <SummaryCard
                 label="Classificação"
                 value="Aguarde"
                 detail="Calculando tabela"
+                loading
               />
               <SummaryCard
                 label="Mercado"
                 value="Aguarde"
                 detail="Carregando orçamentos"
+                loading
               />
               <SummaryCard
                 label="Times"
@@ -211,16 +221,19 @@ export function PlayersSummary() {
                 label="Dados"
                 value="Sincronizando"
                 detail="Buscando campanha e orçamento"
+                loading
               />
               <SummaryCard
                 label="Transferências"
                 value="Aguarde"
                 detail="Carregando mercado"
+                loading
               />
               <SummaryCard
                 label="Alertas"
                 value="Aguarde"
                 detail="Calculando escritório"
+                loading
               />
             </>
           );

@@ -52,6 +52,62 @@ App.ui = {
     `;
   },
 
+  loadingState(title = "Carregando", detail = "", options = {}) {
+    const classes = [
+      "app-loading-state",
+      options.compact ? "is-compact" : "",
+      options.className || "",
+    ]
+      .filter(Boolean)
+      .join(" ");
+    const skeleton = options.skeleton
+      ? App.ui.skeletonRows(Number(options.skeleton), "app-loading-skeleton")
+      : "";
+
+    return `
+      <div class="${App.utils.escapeHtml(classes)}" role="status" aria-live="polite" aria-busy="true">
+        <span class="app-loading-spinner" aria-hidden="true"></span>
+        <span class="app-loading-copy">
+          <strong>${App.utils.escapeDisplay(title)}</strong>
+          ${detail ? `<small>${App.utils.escapeDisplay(detail)}</small>` : ""}
+        </span>
+        ${skeleton}
+      </div>
+    `;
+  },
+
+  inlineLoader(label = "Carregando", className = "") {
+    const classes = ["app-inline-loader", className].filter(Boolean).join(" ");
+    return `
+      <span class="${App.utils.escapeHtml(classes)}" role="status" aria-live="polite" aria-busy="true">
+        <span class="app-loading-spinner" aria-hidden="true"></span>
+        <span>${App.utils.escapeDisplay(label)}</span>
+      </span>
+    `;
+  },
+
+  loadingMessage(element, label = "Carregando", type = "warning") {
+    if (!element) return;
+    App.dom.setHtml(element, App.ui.inlineLoader(label));
+    element.className = `app-message ${type}`.trim();
+  },
+
+  setButtonLoading(button, label = "Carregando") {
+    if (!button) return;
+    if (!button.dataset.originalHtml) {
+      button.dataset.originalHtml = button.innerHTML;
+    }
+    button.disabled = true;
+    App.dom.setHtml(button, App.ui.inlineLoader(label));
+  },
+
+  clearButtonLoading(button, fallback = "") {
+    if (!button) return;
+    button.disabled = false;
+    App.dom.setHtml(button, button.dataset.originalHtml || fallback);
+    delete button.dataset.originalHtml;
+  },
+
   getActionModal() {
     let modal = document.getElementById("appActionModal");
     if (modal) return modal;
