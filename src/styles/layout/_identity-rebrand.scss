@@ -237,22 +237,32 @@ body.auth-unlocked .app-action-modal-button {
 }
 
 body.auth-unlocked .primary-button,
+body.auth-unlocked .mini-action-button:not(.danger),
 body.auth-unlocked .cup-action,
 body.auth-unlocked .home-link,
 body.auth-unlocked button[type="submit"] {
-  border: 1px solid rgba(var(--workspace-accent-rgb), 0.48);
+  border: 1px solid rgba(var(--workspace-accent-rgb), 0.48) !important;
   border-radius: var(--brand-radius-sm);
   background: linear-gradient(
     135deg,
-    color-mix(in srgb, var(--workspace-warm) 26%, var(--workspace-accent) 74%) 0%,
+    color-mix(in srgb, var(--workspace-accent) 72%, #f8fafc 28%) 0%,
     var(--workspace-accent) 58%,
-    color-mix(in srgb, var(--workspace-accent) 72%, var(--workspace-warm) 28%) 100%
-  );
-  color: #04100e;
+    color-mix(in srgb, var(--workspace-accent) 78%, #0b1220 22%) 100%
+  ) !important;
+  color: #04100e !important;
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.34),
-    0 12px 30px rgba(var(--workspace-accent-rgb), 0.12);
+    0 12px 30px rgba(var(--workspace-accent-rgb), 0.12) !important;
   font-weight: 950;
+}
+
+body.auth-unlocked .mini-action-button.danger {
+  border-color: rgba(248, 113, 113, 0.58) !important;
+  background:
+    linear-gradient(135deg, rgba(185, 28, 28, 0.94), rgba(239, 68, 68, 0.9))
+    !important;
+  color: #fee2e2 !important;
+  box-shadow: 0 12px 28px rgba(185, 28, 28, 0.2) !important;
 }
 
 body.auth-unlocked .workspace-nav {
@@ -2063,8 +2073,8 @@ body.auth-unlocked #transfersView .currency-input-shell:focus-within {
 body.auth-unlocked #transfersView .offer-strength-meter i {
   background: linear-gradient(
     90deg,
-    color-mix(in srgb, var(--workspace-warm) 26%, var(--workspace-accent) 74%),
-    var(--workspace-accent)
+    color-mix(in srgb, var(--workspace-accent) 72%, #f8fafc 28%),
+    color-mix(in srgb, var(--workspace-accent) 78%, #0b1220 22%)
   );
 }
 
