@@ -2134,6 +2134,74 @@ App.players = {
     `;
   },
 
+  getCoachThemeStyle(team = {}) {
+    const club = App.clubs?.getClubByTeamName?.(team.team) || {};
+    const ownerFallback =
+      App.data.ownerColors?.[team.owner] || club.CorPrimaria || "#2563eb";
+    const parseColor =
+      App.auth?.parseHexColor || ((value, fallback) => value || fallback);
+    const toRgb = App.auth?.toRgbTriplet || (() => "37, 99, 235");
+    const withAlpha =
+      App.auth?.withAlpha ||
+      ((value, alpha) => `rgba(37, 99, 235, ${alpha})`);
+    const primary = parseColor(club.CorPrimaria, ownerFallback);
+    const secondary = parseColor(club.CorSecundaria, "#ffffff");
+    const primaryRgb = toRgb(primary);
+    const secondaryRgb = toRgb(secondary);
+    const accentSoft = withAlpha(primary, 0.08);
+    const accentLine = withAlpha(primary, 0.24);
+    const accentLineStrong = withAlpha(primary, 0.38);
+    const warmSoft = withAlpha(secondary, 0.12);
+
+    return [
+      `--coach-color:${primary}`,
+      `--coach-accent:${primary}`,
+      `--coach-warm:${secondary}`,
+      `--coach-color-rgb:${primaryRgb}`,
+      `--coach-warm-rgb:${secondaryRgb}`,
+      `--workspace-accent:${primary}`,
+      `--workspace-warm:${secondary}`,
+      `--workspace-accent-rgb:${primaryRgb}`,
+      `--workspace-warm-rgb:${secondaryRgb}`,
+      `--workspace-line:${accentLine}`,
+      `--workspace-line-strong:${accentLineStrong}`,
+      `--workspace-line-soft:${accentSoft}`,
+      `--workspace-accent-soft:${accentSoft}`,
+      `--workspace-accent-border:${accentLineStrong}`,
+      `--brand-teal:${primary}`,
+      `--brand-blue:${primary}`,
+      `--brand-gold:${secondary}`,
+      `--brand-violet:${secondary}`,
+      `--brand-teal-rgb:${primaryRgb}`,
+      `--brand-blue-rgb:${primaryRgb}`,
+      `--brand-gold-rgb:${secondaryRgb}`,
+      `--brand-line:${accentLine}`,
+      `--brand-line-strong:${accentLineStrong}`,
+      `--brand-line-warm:${withAlpha(secondary, 0.3)}`,
+      `--brand-teal-soft:${accentSoft}`,
+      `--brand-blue-soft:${accentSoft}`,
+      `--brand-gold-soft:${warmSoft}`,
+      `--brand-violet-soft:${warmSoft}`,
+      `--brand-glow:0 0 34px ${withAlpha(primary, 0.16)}`,
+      `--brand-focus:0 0 0 3px ${withAlpha(primary, 0.16)}, 0 0 0 1px ${withAlpha(primary, 0.35)}`,
+      `--ds-teal:${primary}`,
+      `--ds-sky:${secondary}`,
+      `--ds-amber:${secondary}`,
+      `--ds-line:${accentLine}`,
+      `--ds-line-strong:${accentLineStrong}`,
+      `--ds-line-soft:${accentSoft}`,
+      `--ds-teal-soft:${accentSoft}`,
+      `--ds-sky-soft:${warmSoft}`,
+      `--ds-amber-soft:${warmSoft}`,
+      `--qol-teal:${primary}`,
+      `--qol-cyan:${primary}`,
+      `--qol-amber:${secondary}`,
+      `--interactive-ring:0 0 0 3px ${withAlpha(primary, 0.18)}`,
+      `--interactive-glow-accent:0 14px 34px ${withAlpha(primary, 0.12)}`,
+      `--interactive-glow-strong:0 0 0 1px ${withAlpha(primary, 0.28)}, 0 18px 44px rgba(0, 0, 0, 0.34), 0 0 34px ${withAlpha(primary, 0.14)}`,
+    ].join(";");
+  },
+
   renderCoachDashboard(activeTeam, standings, budgetInfo) {
     const standing = standings.find((item) =>
       App.utils.sameTeamName(item.team, activeTeam.team),
@@ -2163,7 +2231,7 @@ App.players = {
       : false;
     const events = App.players.getCoachEvents(activeTeam.owner);
     const injuries = App.players.getActiveInjuriesForCoach(activeTeam.owner);
-    const color = App.data.ownerColors[activeTeam.owner] || "#2563eb";
+    const coachThemeStyle = App.players.getCoachThemeStyle(activeTeam);
     const alerts = App.players.getCoachAlerts(
       activeTeam,
       standing,
@@ -2272,7 +2340,7 @@ App.players = {
       : "";
 
     return `
-      <section class="coach-dashboard" style="--coach-color:${color}">
+      <section class="coach-dashboard" style="${coachThemeStyle}">
         <article class="coach-hero-card">
           <div class="coach-hero-main">
             <div class="coach-hero-avatar-stack">
@@ -2362,7 +2430,7 @@ App.players = {
           ${ranking
             .map(
               (item, index) => `
-            <article class="coach-podium-card rank-${index + 1}" style="--coach-color:${App.data.ownerColors[item.team.owner] || "#2563eb"}">
+            <article class="coach-podium-card rank-${index + 1}" style="${App.players.getCoachThemeStyle(item.team)}">
               <span class="rank-number">${index + 1}</span>
               ${App.clubs.getTeamBadgeHtml(item.team.team, "small")}
               <div>

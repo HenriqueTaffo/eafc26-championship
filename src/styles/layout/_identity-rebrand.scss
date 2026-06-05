@@ -240,9 +240,14 @@ body.auth-unlocked .primary-button,
 body.auth-unlocked .cup-action,
 body.auth-unlocked .home-link,
 body.auth-unlocked button[type="submit"] {
-  border: 1px solid rgba(var(--brand-gold-rgb), 0.48);
+  border: 1px solid rgba(var(--workspace-accent-rgb), 0.48);
   border-radius: var(--brand-radius-sm);
-  background: linear-gradient(135deg, #f9d76a 0%, #25e0bd 58%, #5aa8ff 100%);
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--workspace-warm) 26%, var(--workspace-accent) 74%) 0%,
+    var(--workspace-accent) 58%,
+    color-mix(in srgb, var(--workspace-accent) 72%, var(--workspace-warm) 28%) 100%
+  );
   color: #04100e;
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.34),
@@ -2012,6 +2017,63 @@ body.auth-unlocked #transfersView .market-player-shell {
   background:
     linear-gradient(135deg, rgba(var(--workspace-accent-rgb), 0.07), transparent 54%),
     rgba(5, 10, 14, 0.76);
+}
+
+body.auth-unlocked #transfersView .submit-card-icon {
+  border-color: rgba(var(--workspace-accent-rgb), 0.24);
+  background: rgba(var(--workspace-accent-rgb), 0.12);
+  color: color-mix(in srgb, var(--workspace-accent) 34%, #f8fafc);
+}
+
+body.auth-unlocked #transfersView .submit-mode-switch input:checked + span {
+  border-color: rgba(var(--workspace-accent-rgb), 0.24);
+  background: rgba(var(--workspace-accent-rgb), 0.14);
+  box-shadow: inset 0 0 0 1px rgba(var(--workspace-accent-rgb), 0.18);
+  color: var(--brand-text-strong);
+}
+
+body.auth-unlocked #transfersView .transfer-exchange-box {
+  border-color: rgba(var(--workspace-accent-rgb), 0.18);
+  background:
+    linear-gradient(90deg, rgba(var(--workspace-accent-rgb), 0.08), transparent 58%),
+    rgba(2, 6, 23, 0.18);
+}
+
+body.auth-unlocked #transfersView .transfer-exchange-copy span,
+body.auth-unlocked #transfersView .transfer-exchange-control span,
+body.auth-unlocked #transfersView .offer-composer-head span,
+body.auth-unlocked #transfersView .currency-input-shell b {
+  color: color-mix(in srgb, var(--workspace-accent) 42%, #f8fafc);
+}
+
+body.auth-unlocked #transfersView .transfer-offer-composer {
+  border-color: rgba(var(--workspace-accent-rgb), 0.22);
+  background:
+    radial-gradient(circle at 12% 0%, rgba(var(--workspace-accent-rgb), 0.15), transparent 34%),
+    linear-gradient(135deg, rgba(var(--workspace-accent-rgb), 0.18), rgba(2, 6, 23, 0.72));
+}
+
+body.auth-unlocked #transfersView .currency-input-shell:focus-within {
+  border-color: rgba(var(--workspace-accent-rgb), 0.68);
+  box-shadow:
+    0 0 0 3px rgba(var(--workspace-accent-rgb), 0.15),
+    0 16px 34px rgba(0, 0, 0, 0.2);
+}
+
+body.auth-unlocked #transfersView .offer-strength-meter i {
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--workspace-warm) 26%, var(--workspace-accent) 74%),
+    var(--workspace-accent)
+  );
+}
+
+body.auth-unlocked #transfersView .offer-quick-actions button {
+  border-color: rgba(var(--workspace-accent-rgb), 0.24);
+  background:
+    linear-gradient(135deg, rgba(var(--workspace-accent-rgb), 0.12), transparent 64%),
+    rgba(2, 6, 23, 0.48);
+  color: color-mix(in srgb, var(--workspace-accent) 38%, #f8fafc);
 }
 
 body.auth-unlocked #squadView .squad-roster-row,

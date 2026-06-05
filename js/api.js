@@ -2390,6 +2390,7 @@ App.api = {
       );
       App.state.apiEvents = data.events || [];
       App.state.apiClubs = data.clubs || [];
+      App.auth?.applyClubTheme?.();
       App.state.apiBudgets = App.api.reconcileApiBudgets(data, {});
       if (Array.isArray(data.eventSlots) && data.eventSlots.length) {
         App.config.eventSlots = data.eventSlots.map(Number);
