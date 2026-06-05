@@ -1,4 +1,5 @@
 import { Suspense, lazy, memo, useLayoutEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   ActivityPanel,
   AttentionPanel,
@@ -35,6 +36,7 @@ import {
 } from "lucide-react";
 import App from "../../js/app.js";
 import { LoadingState } from "../views/LoadingState.jsx";
+import { useScopedManagerSession } from "../features/session/useScopedManagerSession";
 import {
   getWorkspaceRouteByPath,
   getWorkspaceRoutesForGroup,
@@ -215,7 +217,9 @@ function GlobalLoader() {
 }
 
 function WorkspaceNavigation({ activePath }) {
-  const session = App.auth?.getSession?.() || null;
+  const navigate = useNavigate();
+  const scopedSession = useScopedManagerSession();
+  const session = App.auth?.getSession?.() || scopedSession || null;
   const isCommissioner = Boolean(
     session?.isCommissioner || App.auth?.isCommissioner?.(),
   );
@@ -256,11 +260,7 @@ function WorkspaceNavigation({ activePath }) {
                   aria-current={isActive ? "page" : undefined}
                   onClick={() => {
                     App.main?.switchToView?.(item.viewId, { syncRoute: false });
-                    window.clearTimeout(App.main.pendingRouteSyncId);
-                    App.main.pendingRouteSyncId = window.setTimeout(
-                      () => App.main?.syncRouteForView?.(item.viewId),
-                      90,
-                    );
+                    navigate(item.path);
                   }}
                 >
                   <span className="workspace-nav-tab-icon" aria-hidden="true">

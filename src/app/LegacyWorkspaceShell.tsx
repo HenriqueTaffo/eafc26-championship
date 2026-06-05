@@ -27,21 +27,26 @@ export function LegacyWorkspaceShell() {
       return;
     }
 
-    const callback = () => legacyApp.main?.switchToView?.(route.viewId);
+    const callback = () => {
+      const legacySession = legacyApp.auth?.getSession?.();
+      if (isLoggedIn && !legacySession?.managerId) return false;
+
+      legacyApp.main?.switchToView?.(route.viewId, { syncRoute: false });
+      return document.querySelector(".view.active")?.id === route.viewId;
+    };
 
     if (typeof window !== "undefined") {
       const frameId = window.requestAnimationFrame(callback);
-      const settleId = window.setTimeout(
-        () => {
+      const settleIds = [isLoggedIn ? 240 : 180, 750, 1500].map((delay) =>
+        window.setTimeout(() => {
           if (document.querySelector(".view.active")?.id !== route.viewId) {
             callback();
           }
-        },
-        isLoggedIn ? 240 : 180,
+        }, delay),
       );
       return () => {
         window.cancelAnimationFrame(frameId);
-        window.clearTimeout(settleId);
+        settleIds.forEach((settleId) => window.clearTimeout(settleId));
       };
     }
 

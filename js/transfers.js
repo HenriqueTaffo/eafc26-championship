@@ -4297,7 +4297,10 @@ App.transfers = {
       const aliases = App.transfers.sortMarketSearchAliases(query);
       const primaryAlias = aliases[0] || query;
       const groups = await App.api
-        .loadMarketPlayers(primaryAlias, showContracted, resultLimit)
+        .loadMarketPlayers(primaryAlias, showContracted, resultLimit, {
+          rpcTimeoutMs: 6000,
+          directTimeoutMs: 4000,
+        })
         .catch(() => []);
       let ranked = App.transfers.consolidateMarketSearchPlayers(
         query,
@@ -4311,7 +4314,15 @@ App.transfers = {
         const secondaryGroups = await Promise.all(
           aliases.slice(1, 3).map((alias) =>
             App.api
-              .loadMarketPlayers(alias, showContracted, Math.min(resultLimit, 18))
+              .loadMarketPlayers(
+                alias,
+                showContracted,
+                Math.min(resultLimit, 18),
+                {
+                  rpcTimeoutMs: 5000,
+                  directTimeoutMs: 3500,
+                },
+              )
               .catch(() => []),
           ),
         );

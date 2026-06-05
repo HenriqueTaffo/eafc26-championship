@@ -8,6 +8,8 @@ App.api = {
   regionalMarketFallbackRows: null,
   regionalMarketFallbackFuse: null,
   regionalMarketFallbackPromise: null,
+  marketSearchRpcTimeoutMs: 8000,
+  marketSearchDirectTimeoutMs: 5000,
 
   getTransferStateKey(item = {}) {
     return [
@@ -266,7 +268,7 @@ App.api = {
       const data = await App.api.rpc(
         "app_market_catalog_meta",
         {},
-        30000,
+        App.api.marketSearchRpcTimeoutMs,
         { cacheTtlMs: 15 * 60 * 1000 },
       );
       return {
@@ -433,7 +435,12 @@ App.api = {
     }
   },
 
-  async loadMarketPlayers(query = "", showContracted = false, limit = 12) {
+  async loadMarketPlayers(
+    query = "",
+    showContracted = false,
+    limit = 12,
+    options = {},
+  ) {
     const normalizedQuery = App.utils.normalizeText(query || "");
     if (normalizedQuery.length < 2) {
       return Array.isArray(App.state.apiMarketPlayers)
@@ -443,6 +450,16 @@ App.api = {
         : [];
     }
     const normalizedLimit = Math.max(1, Math.min(Number(limit || 12), 50));
+    const rpcTimeoutMs = Math.max(
+      1000,
+      Number(options.rpcTimeoutMs || App.api.marketSearchRpcTimeoutMs || 8000),
+    );
+    const directTimeoutMs = Math.max(
+      1000,
+      Number(
+        options.directTimeoutMs || App.api.marketSearchDirectTimeoutMs || 5000,
+      ),
+    );
     const cachePayload = {
       p_query: normalizedQuery,
       p_show_contracted: Boolean(showContracted),
@@ -478,7 +495,7 @@ App.api = {
           p_show_contracted: Boolean(showContracted),
           p_limit: normalizedLimit,
         },
-        30000,
+        rpcTimeoutMs,
       );
 
       const rows = App.api.applyMarketPlayerOverrides(
@@ -491,31 +508,58 @@ App.api = {
       App.state.apiMarketPlayers = Array.isArray(App.state.apiMarketPlayers)
         ? App.state.apiMarketPlayers
         : [];
-      const directRows = await App.api
-        .fetchMarketPlayersDirect(query, normalizedLimit)
-        .catch(() => []);
-      const directRowsWithOverrides = App.api.applyMarketPlayerOverrides(
-        directRows,
-        { showContracted: Boolean(showContracted) },
-      );
-      if (directRowsWithOverrides.length) {
-        return finalizeRows(directRowsWithOverrides);
-      }
 
-      const fallbackRows = await App.api
+      const directRowsPromise = App.api
+        .fetchMarketPlayersDirect(query, normalizedLimit, {
+          timeoutMs: directTimeoutMs,
+        })
+        .catch((directError) => {
+          console.warn("Busca direta de mercado indisponivel:", directError);
+          return [];
+        });
+      const fallbackRowsPromise = App.api
         .searchRegionalFallbackPlayers(query, normalizedLimit, {
           showContracted: Boolean(showContracted),
         })
-        .catch(() => []);
-      return fallbackRows.length ? finalizeRows(fallbackRows) : [];
+        .catch((fallbackError) => {
+          console.warn("Fallback regional de mercado indisponivel:", fallbackError);
+          return [];
+        });
+
+      const applyOverrides = (rows = []) =>
+        App.api.applyMarketPlayerOverrides(rows, {
+          showContracted: Boolean(showContracted),
+        });
+
+      const firstRows = applyOverrides(
+        await Promise.race([directRowsPromise, fallbackRowsPromise]),
+      );
+      if (firstRows.length) {
+        return finalizeRows(firstRows);
+      }
+
+      const [directRows, fallbackRows] = await Promise.all([
+        directRowsPromise,
+        fallbackRowsPromise,
+      ]);
+      const mergedRows = App.api.mergeMarketSearchRows(
+        applyOverrides(directRows),
+        applyOverrides(fallbackRows),
+        normalizedLimit,
+      );
+      return mergedRows.length ? finalizeRows(mergedRows) : [];
     }
   },
-  async fetchMarketPlayersDirect(query = "", limit = 12) {
+  async fetchMarketPlayersDirect(query = "", limit = 12, options = {}) {
     const selectWithAvatar =
       "id,name,club,league,country,position,age,market_value_eur,transfermarkt_url,avatar_url,source,last_synced_at";
     const selectWithoutAvatar =
       "id,name,club,league,country,position,age,market_value_eur,transfermarkt_url,source,last_synced_at";
     const normalizedLimit = Math.max(1, Math.min(Number(limit || 12), 200));
+    const timeoutMs = Math.max(
+      1000,
+      Number(options.timeoutMs || App.api.marketSearchDirectTimeoutMs || 5000),
+    );
     const queryText = String(query || "").trim();
     const normalizedQuery = App.utils.normalizeText(queryText);
     if (normalizedQuery.length < 2) return [];
@@ -542,7 +586,7 @@ App.api = {
           method: "GET",
           headers: App.api.getSupabaseHeaders(),
         },
-        30000,
+        timeoutMs,
       );
 
     let response = await request(selectWithAvatar);
@@ -1051,12 +1095,13 @@ App.api = {
     }
   },
 
-  async loadSponsorshipRewardTotals() {
+  async loadSponsorshipRewardTotals(options = {}) {
+    const timeoutMs = Math.max(1000, Number(options.timeoutMs || 30000));
     try {
       const totals = await App.api.rpc(
         "app_get_sponsorship_reward_totals",
         {},
-        30000,
+        timeoutMs,
       );
       return totals && typeof totals === "object" && !Array.isArray(totals)
         ? totals
@@ -1067,12 +1112,13 @@ App.api = {
     }
   },
 
-  async loadBudgetReconciliation() {
+  async loadBudgetReconciliation(options = {}) {
+    const timeoutMs = Math.max(1000, Number(options.timeoutMs || 30000));
     try {
       const budgets = await App.api.rpc(
         "app_get_budget_reconciliation",
         {},
-        30000,
+        timeoutMs,
       );
       return budgets && typeof budgets === "object" && !Array.isArray(budgets)
         ? budgets
@@ -1948,12 +1994,25 @@ App.api = {
       showLoader = true,
       force = false,
       cacheTtlMs = 0,
+      waitForRouteHydration = false,
+      maxBlockingLoaderMs = 0,
       variant = App.main?.getDefaultLoaderVariant
         ? App.main.getDefaultLoaderVariant()
         : "match",
       title = "Atualizando dados",
       message = "Aguarde enquanto os dados mais recentes são consultados.",
     } = options;
+    let loaderReleased = false;
+    let loaderReleaseTimer = null;
+    const releaseLoader = () => {
+      if (!showLoader || loaderReleased || !App.main?.hideLoader) return;
+      if (loaderReleaseTimer) {
+        clearTimeout(loaderReleaseTimer);
+        loaderReleaseTimer = null;
+      }
+      App.main.hideLoader();
+      loaderReleased = true;
+    };
 
     const now = Date.now();
     if (
@@ -1969,6 +2028,12 @@ App.api = {
 
     if (showLoader && App.main?.showLoader) {
       App.main.showLoader({ variant, title, message });
+      if (maxBlockingLoaderMs > 0) {
+        loaderReleaseTimer = setTimeout(() => {
+          releaseLoader();
+          App.main?.markSynced?.("Sincronizando em segundo plano...");
+        }, maxBlockingLoaderMs);
+      }
     }
 
     try {
@@ -1987,12 +2052,15 @@ App.api = {
       if (data.dailyTransferLimit !== undefined)
         App.config.baseDailyTransferLimit = Number(data.dailyTransferLimit);
 
-      const [budgetReconciliation, sponsorshipRewardTotals] = await Promise.all(
-        [
-          App.api.loadBudgetReconciliation(),
-          App.api.loadSponsorshipRewardTotals(),
-        ],
-      );
+      const budgetHydrationPromise = Promise.all([
+        App.api.loadBudgetReconciliation({ timeoutMs: 8000 }),
+        App.api.loadSponsorshipRewardTotals({ timeoutMs: 8000 }),
+      ]).then(([budgetReconciliation, sponsorshipRewardTotals]) => {
+        App.state.apiBudgets =
+          budgetReconciliation ||
+          App.api.reconcileApiBudgets(data, sponsorshipRewardTotals);
+        return App.state.apiBudgets;
+      });
 
       App.state.apiResults = data.results || [];
       App.state.apiTransfers = (data.transfers || []).filter(
@@ -2001,9 +2069,7 @@ App.api = {
       );
       App.state.apiEvents = data.events || [];
       App.state.apiClubs = data.clubs || [];
-      App.state.apiBudgets =
-        budgetReconciliation ||
-        App.api.reconcileApiBudgets(data, sponsorshipRewardTotals);
+      App.state.apiBudgets = App.api.reconcileApiBudgets(data, {});
       if (Array.isArray(data.eventSlots) && data.eventSlots.length) {
         App.config.eventSlots = data.eventSlots.map(Number);
       }
@@ -2013,9 +2079,13 @@ App.api = {
       App.state.lastApiLoadAt = Date.now();
       App.main.renderCurrentView();
       App.main?.markSynced?.();
+      releaseLoader();
 
       const activeView = document.querySelector(".view.active")?.id;
-      const requiredLoads = [App.api.loadMatches()];
+      const requiredLoads = [
+        budgetHydrationPromise,
+        App.api.loadMatches(),
+      ].filter(Boolean);
       if (
         activeView === "playersView" ||
         activeView === "transfersView" ||
@@ -2034,10 +2104,30 @@ App.api = {
           }),
         );
       }
-      await Promise.all(requiredLoads);
-
-      App.main.renderCurrentView();
-      App.main?.markSynced?.();
+      const routeHydrationPromise = Promise.allSettled(requiredLoads).then(
+        (results) => {
+          results.forEach((result) => {
+            if (result.status === "rejected") {
+              console.warn(
+                "Carga complementar da tela indisponivel:",
+                result.reason,
+              );
+            }
+          });
+          App.main.renderCurrentView();
+          App.main?.markSynced?.();
+          return results;
+        },
+      );
+      const trackedRouteHydrationPromise = routeHydrationPromise.finally(() => {
+        if (App.state.routeHydrationPromise === trackedRouteHydrationPromise) {
+          App.state.routeHydrationPromise = null;
+        }
+      });
+      App.state.routeHydrationPromise = trackedRouteHydrationPromise;
+      if (waitForRouteHydration) {
+        await routeHydrationPromise;
+      }
 
       if (!options.skipBackgroundRefresh) {
         const runHydration = () => {
@@ -2080,9 +2170,7 @@ App.api = {
       App.utils.setMessage(resultMessage, errorMessage, "error");
       throw error;
     } finally {
-      if (showLoader && App.main?.hideLoader) {
-        App.main.hideLoader();
-      }
+      releaseLoader();
     }
   },
 

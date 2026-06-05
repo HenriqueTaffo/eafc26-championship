@@ -419,10 +419,10 @@ App.main = {
       `.tab-button[data-view="${targetViewId}"]`,
     );
     const view = document.getElementById(targetViewId);
-    if (!button || !view) return;
+    if (!view) return;
 
     const isAlreadyActive =
-      button.classList.contains("active") &&
+      (!button || button.classList.contains("active")) &&
       view.classList.contains("active") &&
       document.querySelector(".view.active")?.id === targetViewId;
     if (isAlreadyActive) {
@@ -437,7 +437,7 @@ App.main = {
     document
       .querySelectorAll(".view")
       .forEach((item) => item.classList.remove("active"));
-    button.classList.add("active");
+    button?.classList.add("active");
     view.classList.add("active");
     if (syncRoute) App.main.syncRouteForView(targetViewId);
     App.main.preloadViewData(targetViewId);
@@ -779,6 +779,7 @@ App.main = {
 
     const initialLoad = App.api.loadApiData({
       force: true,
+      maxBlockingLoaderMs: 9000,
       variant: "match",
       title: "Carregando dados da liga",
       message:

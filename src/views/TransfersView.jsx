@@ -13,14 +13,15 @@ function TransfersRuntime() {
 
     App.transfers.renderBudgetBoard();
     App.transfers.renderInsights();
-    App.transfers.renderMarketPlayerResults();
     App.transfers.bindWorkspaceEvents?.();
 
     const form = document.getElementById("transferForm");
     if (form) {
+      App.forms?.setupTransferPreview?.();
       if (App.state.apiLoaded) App.transfers.populateExchangePlayers(form);
       App.transfers.refreshWorkspace?.(form);
     }
+    App.transfers.renderMarketPlayerResults();
 
     App.transfers.syncTransferWindowLock();
     App.transfers.renderWorkspace?.(form);
