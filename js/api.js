@@ -5,6 +5,16 @@ App.api = {
   reversedTransferKeys: ["rafael|ayoze perez|villarreal club de futbol s.a.d."],
   pendingRpcRequests: new Map(),
   rpcMemoryCache: new Map(),
+  rpcCircuitState: {},
+  rpcInFlightCount: {},
+  rpcConcurrencyLimits: {
+    app_search_market_players: 3,
+    app_search_ea_player_ratings: 4,
+  },
+  rpcBackoffMs: {
+    app_search_market_players: 12000,
+    app_search_ea_player_ratings: 9000,
+  },
   regionalMarketFallbackRows: null,
   regionalMarketFallbackFuse: null,
   regionalMarketFallbackPromise: null,
@@ -55,6 +65,68 @@ App.api = {
     return ["aprovado", "approved"].includes(
       App.utils.normalizeText(item.Status || item.status),
     );
+  },
+
+  getRpcCircuitState(functionName) {
+    const state = App.api.rpcCircuitState?.[functionName];
+    if (state) return state;
+    const fallbackState = {
+      failures: 0,
+      blockedUntil: 0,
+      lastErrorAt: 0,
+      lastError: "",
+    };
+    App.api.rpcCircuitState[functionName] = fallbackState;
+    return fallbackState;
+  },
+
+  isRpcBackoffActive(functionName = "") {
+    const state = App.api.getRpcCircuitState(functionName);
+    return Number(state.blockedUntil || 0) > Date.now();
+  },
+
+  markRpcSuccess(functionName = "") {
+    const state = App.api.getRpcCircuitState(functionName);
+    state.failures = 0;
+    state.blockedUntil = 0;
+  },
+
+  markRpcFailure(functionName = "", error = null) {
+    const message = error?.message || "Erro desconhecido";
+    const state = App.api.getRpcCircuitState(functionName);
+    const baseDelayMs = Number(
+      App.api.rpcBackoffMs?.[functionName] || App.api.rpcBackoffMs?.default || 10000,
+    );
+    const failureCount = Number(state.failures || 0) + 1;
+    const exponent = Math.max(0, failureCount - 1);
+    state.failures = failureCount;
+    state.lastError = message;
+    state.lastErrorAt = Date.now();
+    state.blockedUntil = Date.now() + Math.min(120000, baseDelayMs * 2 ** exponent);
+  },
+
+  canLogRpcFailure(functionName = "") {
+    const state = App.api.getRpcCircuitState(functionName);
+    const now = Date.now();
+    if (!state.lastLogAt || now - Number(state.lastLogAt || 0) > 9000) {
+      state.lastLogAt = now;
+      return true;
+    }
+    return false;
+  },
+
+  markRpcInflightStart(functionName = "") {
+    App.api.rpcInFlightCount[functionName] =
+      Number(App.api.rpcInFlightCount[functionName] || 0) + 1;
+  },
+
+  markRpcInflightEnd(functionName = "") {
+    const nextValue = Math.max(
+      0,
+      Number(App.api.rpcInFlightCount[functionName] || 0) - 1,
+    );
+    if (nextValue > 0) App.api.rpcInFlightCount[functionName] = nextValue;
+    else delete App.api.rpcInFlightCount[functionName];
   },
 
   async fetchWithTimeout(url, options = {}, timeoutMs = 45000) {
@@ -148,43 +220,78 @@ App.api = {
       return App.api.pendingRpcRequests.get(requestKey);
     }
 
+    const concurrencyLimit = Number(
+      App.api.rpcConcurrencyLimits?.[functionName] || 8,
+    );
+    if (
+      App.api.isRpcBackoffActive(functionName) &&
+      App.api.rpcMemoryCache &&
+      !App.api.getRpcCache(functionName, payload, cacheTtlMs)
+    ) {
+      throw new Error("Servico temporariamente indisponivel.");
+    }
+
+    if (
+      App.api.rpcInFlightCount[functionName] &&
+      App.api.rpcInFlightCount[functionName] >= concurrencyLimit
+    ) {
+      throw new Error("Demasiadas chamadas simultaneas para esta consulta.");
+    }
+
     const request = (async () => {
-      const response = await App.api.fetchWithTimeout(
-        `${App.config.SUPABASE_URL}/rest/v1/rpc/${functionName}`,
-        {
-          method: "POST",
-          headers: App.api.getSupabaseHeaders(),
-          body: JSON.stringify(payload),
-        },
-        timeoutMs,
-      );
-
-      const text = await response.text();
-      let data = null;
-
+      App.api.markRpcInflightStart(functionName);
       try {
-        data = text ? JSON.parse(text) : null;
+        const response = await App.api.fetchWithTimeout(
+          `${App.config.SUPABASE_URL}/rest/v1/rpc/${functionName}`,
+          {
+            method: "POST",
+            headers: App.api.getSupabaseHeaders(),
+            body: JSON.stringify(payload),
+          },
+          timeoutMs,
+        );
+
+        const text = await response.text();
+        let data = null;
+
+        try {
+          data = text ? JSON.parse(text) : null;
+        } catch (error) {
+          data = text;
+        }
+
+        if (!response.ok) {
+          const message =
+            data?.message ||
+            data?.hint ||
+            data?.details ||
+            text ||
+            `Erro Supabase ${response.status}`;
+          throw new Error(message);
+        }
+
+        App.api.markRpcSuccess(functionName);
+        return App.api.setRpcCache(functionName, payload, data, cacheTtlMs);
       } catch (error) {
-        data = text;
+        App.api.markRpcFailure(functionName, error);
+        throw error;
+      } finally {
+        App.api.markRpcInflightEnd(functionName);
       }
-
-      if (!response.ok) {
-        const message =
-          data?.message ||
-          data?.hint ||
-          data?.details ||
-          text ||
-          `Erro Supabase ${response.status}`;
-        throw new Error(message);
-      }
-
-      return App.api.setRpcCache(functionName, payload, data, cacheTtlMs);
     })().finally(() => {
       App.api.pendingRpcRequests.delete(requestKey);
     });
 
     App.api.pendingRpcRequests.set(requestKey, request);
     return request;
+  },
+
+  isRateLimitedMarketQuery() {
+    return App.api.isRpcBackoffActive("app_search_market_players");
+  },
+
+  isRateLimitedRatingsQuery() {
+    return App.api.isRpcBackoffActive("app_search_ea_player_ratings");
   },
 
   getTransfermarktPlayerId(value = "") {
@@ -358,7 +465,7 @@ App.api = {
 
   matchesMarketQuery(item = {}, normalizedQuery = "") {
     if (!normalizedQuery) return true;
-    return App.utils.normalizeText(
+    const haystack = App.utils.normalizeText(
       [
         item.name,
         item.club,
@@ -369,7 +476,55 @@ App.api = {
       ]
         .filter(Boolean)
         .join(" "),
-    ).includes(normalizedQuery);
+    );
+    if (haystack.includes(normalizedQuery)) return true;
+
+    const compactQuery = App.api.getCompactMarketSearchKey(normalizedQuery);
+    if (compactQuery.length < 5) return false;
+    return App.api.getCompactMarketSearchKey(haystack).includes(compactQuery);
+  },
+
+  getCompactMarketSearchKey(value = "") {
+    return App.utils.normalizeText(value).replace(/[^a-z0-9]+/g, "");
+  },
+
+  getCompactMarketSearchAliases(query = "") {
+    const queryText = String(query || "").trim();
+    const normalized = App.utils
+      .normalizeText(queryText)
+      .replace(/[^a-z0-9]+/g, " ")
+      .trim();
+    if (!normalized || normalized.includes(" ")) return [];
+
+    const compact = App.api.getCompactMarketSearchKey(normalized);
+    if (compact.length < 6 || compact.length > 24) return [];
+
+    const playerAliases =
+      typeof App.transfers?.getPlayerSearchAliases === "function"
+        ? App.transfers
+            .getPlayerSearchAliases(queryText)
+            .filter(
+              (alias) =>
+                alias &&
+                App.api.getCompactMarketSearchKey(alias) === compact &&
+                App.utils.normalizeText(alias) !== normalized,
+            )
+        : [];
+    if (playerAliases.length) return [...new Set(playerAliases)].slice(0, 3);
+
+    const minSplitIndex = /^(da|de|di|do|du|mc|st)/.test(compact) ? 2 : 3;
+    const aliases = [];
+    for (let index = minSplitIndex; index <= compact.length - 3; index += 1) {
+      aliases.push(`${compact.slice(0, index)} ${compact.slice(index)}`);
+    }
+
+    return aliases
+      .sort(
+        (left, right) =>
+          Math.abs(left.indexOf(" ") - compact.length / 2) -
+          Math.abs(right.indexOf(" ") - compact.length / 2),
+      )
+      .slice(0, 3);
   },
 
   mergeMarketSearchRows(rows = [], extraRows = [], limit = 12) {
@@ -408,6 +563,11 @@ App.api = {
     );
     const fuzzy = fuse
       .search(query, { limit: Math.max(Number(limit || 12) * 4, 24) })
+      .filter(
+        (entry) =>
+          Number(entry.score || 0) <= 0.28 ||
+          App.api.matchesMarketQuery(entry.item, normalizedQuery),
+      )
       .map((entry) => entry.item);
 
     const merged = App.api.mergeMarketSearchRows(
@@ -520,21 +680,31 @@ App.api = {
       ? App.state.apiMarketPlayers
       : [];
 
-    const rpcRowsPromise = App.api
-      .rpc(
-        "app_search_market_players",
-        {
-          p_query: query || "",
-          p_show_contracted: Boolean(showContracted),
-          p_limit: normalizedLimit,
-        },
-        rpcTimeoutMs,
-      )
-      .then((data) => applyOverrides(Array.isArray(data) ? data : []))
-      .catch((rpcError) => {
-        console.warn("Catalogo elegivel de mercado indisponivel:", rpcError);
-        return [];
-      });
+    const shouldLoadRpc =
+      !options.skipRpc &&
+      !App.api.isRateLimitedMarketQuery() &&
+      normalizedQuery.length >= 4;
+    const loadRpcRows = () =>
+      App.api
+        .rpc(
+          "app_search_market_players",
+          {
+            p_query: query || "",
+            p_show_contracted: Boolean(showContracted),
+            p_limit: normalizedLimit,
+          },
+          rpcTimeoutMs,
+        )
+        .then((data) => applyOverrides(Array.isArray(data) ? data : []))
+        .catch((rpcError) => {
+          if (App.api.canLogRpcFailure("app_search_market_players")) {
+            console.warn(
+              "Catalogo elegivel de mercado indisponivel:",
+              rpcError,
+            );
+          }
+          return [];
+        });
 
     const directRowsPromise = App.api
       .fetchMarketPlayersDirect(query, normalizedLimit, {
@@ -542,7 +712,12 @@ App.api = {
       })
       .then(applyOverrides)
       .catch((directError) => {
-        console.warn("Busca direta de mercado indisponivel:", directError);
+        if (
+          directError?.name !== "AbortError" &&
+          App.api.canLogRpcFailure("market_players_direct")
+        ) {
+          console.warn("Busca direta de mercado indisponivel:", directError);
+        }
         return [];
       });
 
@@ -552,38 +727,64 @@ App.api = {
       })
       .then(applyOverrides)
       .catch((fallbackError) => {
-        console.warn("Fallback regional de mercado indisponivel:", fallbackError);
+        if (
+          fallbackError?.name !== "AbortError" &&
+          App.api.canLogRpcFailure("market_players_fallback")
+        ) {
+          console.warn(
+            "Fallback regional de mercado indisponivel:",
+            fallbackError,
+          );
+        }
         return [];
       });
 
-    const rowSources = [
-      directRowsPromise,
-      fallbackRowsPromise,
-      rpcRowsPromise,
-    ];
-    rowSources.forEach((source) => {
-      source.then((rows) => {
-        if (rows.length) finalizeRows(rows);
-      });
-    });
+    const rowSources = [directRowsPromise, fallbackRowsPromise];
+    const softRaceTimeoutMs = App.api.isRateLimitedMarketQuery()
+      ? 900
+      : query.length < 4
+        ? 1200
+        : 1800;
 
-    const firstRows = await Promise.any(
-      rowSources.map((source) =>
-        source.then((rows) => {
-          if (rows.length) return rows;
-          throw new Error("empty-market-source");
-        }),
+    const waitForFirstSource = (sources = []) =>
+      Promise.any(
+        sources.map((source) =>
+          source.then((rows) => {
+            if (rows.length) return rows;
+            throw new Error("empty-market-source");
+          }),
+        ),
+      );
+
+    const fastMarketRows = await Promise.race([
+      waitForFirstSource(rowSources.filter(Boolean)),
+      new Promise((resolve) =>
+        setTimeout(() => resolve([]), Number(softRaceTimeoutMs || 900)),
       ),
-    ).catch(() => []);
+    ]).catch(() => []);
+    if (fastMarketRows.length) return finalizeRows(fastMarketRows);
+
+    const firstRows = await waitForFirstSource(rowSources).catch(() => []);
     if (firstRows.length) return finalizeRows(firstRows);
 
-    const [directRows, fallbackRows, rpcRows] = await Promise.all(rowSources);
+    const [directRows, fallbackRows] = await Promise.all([
+      directRowsPromise,
+      fallbackRowsPromise,
+    ]);
     const mergedRows = App.api.mergeMarketSearchRows(
-      App.api.mergeMarketSearchRows(directRows, fallbackRows, normalizedLimit),
-      rpcRows,
+      directRows,
+      fallbackRows,
       normalizedLimit,
     );
-    return mergedRows.length ? finalizeRows(mergedRows) : [];
+    if (mergedRows.length) return finalizeRows(mergedRows);
+
+    if (shouldLoadRpc) {
+      const rpcRows = await loadRpcRows();
+      return rpcRows.length ? finalizeRows(rpcRows) : [];
+    }
+
+    return [];
+
   },
   async fetchMarketPlayersDirect(query = "", limit = 12, options = {}) {
     const selectWithAvatar =
@@ -598,15 +799,23 @@ App.api = {
     const queryText = String(query || "").trim();
     const normalizedQuery = App.utils.normalizeText(queryText);
     if (normalizedQuery.length < 2) return [];
+    const useStrictFilters = normalizedQuery.length <= 3;
     const positionAliases =
       App.transfers?.getMarketPositionQueryAliases?.(queryText) || [];
+    const compactNameAliases = App.api.getCompactMarketSearchAliases(queryText);
     const nameFilterParts = positionAliases.length
       ? []
       : [
           `name.ilike.*${queryText}*`,
           `normalized_name.ilike.*${normalizedQuery || queryText}*`,
+          ...compactNameAliases.flatMap((alias) => [
+            `name.ilike.*${alias}*`,
+            `normalized_name.ilike.*${App.utils.normalizeText(alias)}*`,
+          ]),
         ];
-    const broadFilterParts = positionAliases.length
+    const broadFilterParts = useStrictFilters
+      ? nameFilterParts
+      : positionAliases.length
       ? positionAliases.map((alias) => `position.ilike.*${alias}*`)
       : [
           `name.ilike.*${queryText}*`,
@@ -916,25 +1125,40 @@ App.api = {
       ),
     ]
       .filter((name) => !App.transfers?.getRatingForPlayerName?.(name)?.overall)
-      .slice(0, Math.max(1, Number(maxNames || 24)));
+      .slice(
+        0,
+        Math.max(
+          1,
+          Math.min(
+            Number(maxNames || 24),
+            App.api.isRateLimitedRatingsQuery() ? 6 : 12,
+          ),
+        ),
+      );
     if (!uniqueNames.length) return App.state.apiRatings || [];
 
-    const groups = await App.api.mapWithConcurrency(uniqueNames, 2, (name) => {
+    const concurrency = App.api.isRateLimitedRatingsQuery() ? 1 : 2;
+    const groups = await App.api.mapWithConcurrency(uniqueNames, concurrency, (name) => {
       const aliases = App.transfers?.getPlayerSearchAliases
         ? App.transfers.getPlayerSearchAliases(name)
         : [name];
       const normalizedAlias = App.transfers?.normalizePlayerRatingKey
         ? App.transfers.normalizePlayerRatingKey(name)
         : App.utils.normalizeText(name);
+      const maxAliases = App.api.isRateLimitedRatingsQuery() ? 1 : 2;
       const searchAliases = [
         ...new Set([...aliases, normalizedAlias].filter(Boolean)),
-      ].slice(0, 2);
+      ].slice(0, maxAliases);
       return Promise.all(
         searchAliases.map((alias) => {
           if (App.transfers?.searchEaRatingsCached) {
-            return App.transfers.searchEaRatingsCached(alias, limitPerName);
+            return App.transfers
+              .searchEaRatingsCached(alias, limitPerName)
+              .catch(() => []);
           }
-          return App.api.searchEaRatings(alias, limitPerName).catch(() => []);
+          return App.api
+            .searchEaRatings(alias, limitPerName)
+            .catch(() => []);
         }),
       );
     });
@@ -955,12 +1179,24 @@ App.api = {
             includeTrustedFuzzy: false,
           }),
       )
-      .slice(0, Math.max(1, Number(maxNames || 40)));
+      .slice(
+        0,
+        Math.max(
+          1,
+          Math.min(
+            Number(maxNames || 40),
+            App.api.isRateLimitedMarketQuery() ? 8 : 20,
+          ),
+        ),
+      );
     if (!uniqueNames.length) return App.state.apiMarketPlayers || [];
 
-    const groups = await App.api.mapWithConcurrency(uniqueNames, 3, (name) =>
+    const groups = await App.api.mapWithConcurrency(uniqueNames, 1, (name) =>
       App.api
-        .loadMarketPlayers(name, true, limitPerName)
+        .loadMarketPlayers(name, true, limitPerName, {
+          skipRpc: App.api.isRateLimitedMarketQuery(),
+          directTimeoutMs: 3000,
+        })
         .catch(() => []),
     );
 
@@ -991,15 +1227,21 @@ App.api = {
     const common = [() => App.auth?.loadPublicNews?.()];
 
     if (shouldHydrateTransferLookups) {
+      const maxMarketHydrationNames = App.api.isRateLimitedMarketQuery() ? 5 : 10;
+      const maxRatingHydrationNames = App.api.isRateLimitedRatingsQuery() ? 6 : 12;
       common.push(() =>
         names.length
-          ? App.api.loadMarketPlayersForNames(names, 2, 10)
+          ? App.api.loadMarketPlayersForNames(names, 2, maxMarketHydrationNames)
           : App.state.apiMarketPlayers || [],
       );
       common.push(() => App.api.loadEaRatings("", 24));
       common.push(() =>
         names.length
-          ? App.api.loadRatingsForPlayerNames(names, 2, 12)
+          ? App.api.loadRatingsForPlayerNames(
+              names,
+              2,
+              maxRatingHydrationNames,
+            )
           : App.state.apiEaRatings || [],
       );
     }

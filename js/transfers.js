@@ -635,6 +635,8 @@ App.transfers = {
       "theo hérnandez": ["Theo Hernandez"],
       "marcos llorente": ["Marcos Llorente Moreno"],
       shaqiri: ["Xherdan Shaqiri"],
+      ricohenry: ["Rico Henry"],
+      gonzaloplata: ["Gonzalo Plata"],
       "nicolas pepe": ["Nicolas Pépé"],
       "nicolas pépé": ["Nicolas Pepe"],
     };
@@ -4510,22 +4512,23 @@ App.transfers = {
           App.transfers.renderMarketPlayerResults();
         }
       };
-      const scheduleFullMarketRefresh = () => {
-        const runRefresh = () => {
-          App.api
-            .loadMarketPlayers(primaryAlias, showContracted, resultLimit, {
-              rpcTimeoutMs: 6500,
-              directTimeoutMs: 4500,
-            })
-            .then(refreshFromRows)
-            .catch(() => {});
-        };
-        if ("requestIdleCallback" in window) {
-          window.requestIdleCallback(runRefresh, { timeout: 1800 });
-        } else {
-          window.setTimeout(runRefresh, 750);
-        }
+    const scheduleFullMarketRefresh = () => {
+      if (App.api?.isRateLimitedMarketQuery?.()) return;
+      const runRefresh = () => {
+        App.api
+          .loadMarketPlayers(primaryAlias, showContracted, resultLimit, {
+            rpcTimeoutMs: 3800,
+            directTimeoutMs: 2600,
+          })
+          .then(refreshFromRows)
+          .catch(() => {});
       };
+      if ("requestIdleCallback" in window) {
+        window.requestIdleCallback(runRefresh, { timeout: 1800 });
+      } else {
+        window.setTimeout(runRefresh, 750);
+      }
+    };
       const scheduleDelay = (delayMs = 0) =>
         new Promise((resolve) => {
           const timer =
@@ -4642,7 +4645,10 @@ App.transfers = {
 
       if (
         aliases.length > 1 &&
-        !App.transfers.hasReliableMarketCoverage(query, ranked)
+        aliases[0].length >= 5 &&
+        normalized.length >= 5 &&
+        !App.transfers.hasReliableMarketCoverage(query, ranked) &&
+        !App.api?.isRateLimitedMarketQuery?.()
       ) {
         const secondaryGroups = await Promise.all(
           aliases.slice(1, 3).map((alias) =>
@@ -4701,7 +4707,7 @@ App.transfers = {
       ),
     ]
       .filter((name) => !App.transfers.getRatingForPlayerName(name)?.overall)
-      .slice(0, 8);
+      .slice(0, App.api?.isRateLimitedRatingsQuery?.() ? 5 : 8);
     if (!names.length) return;
 
     const hydrationKey = `${renderKey}|${names
@@ -4714,7 +4720,7 @@ App.transfers = {
     App.transfers.marketRatingHydrationKeys.add(hydrationKey);
 
     App.api
-      .loadRatingsForPlayerNames(names, 2, 8)
+      .loadRatingsForPlayerNames(names, 2, App.api?.isRateLimitedRatingsQuery?.() ? 5 : 8)
       .then(() => {
         if (App.transfers.marketSearchRequestId !== requestId) return;
         const target = document.getElementById("marketPlayerResults");
@@ -4730,6 +4736,7 @@ App.transfers = {
   async searchEaRatingsCached(query = "", limit = 2) {
     const normalized = App.utils.normalizeText(query);
     if (!normalized) return [];
+    if (App.api?.isRateLimitedRatingsQuery?.()) return [];
 
     const cacheKey = `${normalized}|${Number(limit || 2)}`;
     const cached = App.transfers.eaRatingSearchCache?.[cacheKey];
