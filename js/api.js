@@ -27,6 +27,12 @@ App.api = {
     );
   },
 
+  isRejectedTransferStatus(status) {
+    return ["recusado", "rejeitado", "rejected"].includes(
+      App.utils.normalizeText(status),
+    );
+  },
+
   getTransferMovementKey(item = {}) {
     const player = App.utils.normalizeText(
       item.Jogador || item.player || item.player_name || "",
@@ -671,9 +677,16 @@ App.api = {
 
   getLatestMovementByPlayer() {
     const movements = {};
+    const isRejectedTransferStatus =
+      typeof App.api.isRejectedTransferStatus === "function"
+        ? App.api.isRejectedTransferStatus
+        : typeof App.transfers?.isRejectedTransferStatus === "function"
+          ? App.transfers.isRejectedTransferStatus
+          : null;
 
     (App.state.apiTransfers || []).forEach((row, index) => {
-      if (App.api.isRejectedTransferStatus(row.Status || row.status)) return;
+      const normalizedStatus = row.Status || row.status;
+      if (isRejectedTransferStatus?.(normalizedStatus)) return;
       const playerName = row.Jogador || row.player || row.player_name || "";
       const key = App.utils.normalizeText(playerName);
       if (!key) return;
