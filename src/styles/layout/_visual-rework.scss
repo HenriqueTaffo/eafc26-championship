@@ -2,8 +2,8 @@
 body.auth-unlocked {
   color: var(--ds-text);
   background:
-    linear-gradient(90deg, rgba(56, 216, 193, 0.04) 1px, transparent 1px),
-    linear-gradient(180deg, rgba(96, 165, 250, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(var(--workspace-accent-rgb), 0.04) 1px, transparent 1px),
+    linear-gradient(180deg, rgba(var(--workspace-warm-rgb), 0.035) 1px, transparent 1px),
     linear-gradient(180deg, #091112 0%, #070909 44%, #050607 100%);
   background-size:
     112px 112px,
@@ -147,7 +147,7 @@ body.auth-unlocked .workspace-nav-tab-copy small {
 body.auth-unlocked .workspace-nav-tab:hover,
 body.auth-unlocked .workspace-nav-tab.active,
 body.auth-unlocked .workspace-nav-tab[aria-current="page"] {
-  border-color: rgba(56, 216, 193, 0.3);
+  border-color: rgba(var(--workspace-accent-rgb), 0.3);
   background: var(--ds-teal-soft);
   color: var(--ds-text-strong);
   transform: none;
@@ -185,7 +185,7 @@ body.auth-unlocked .global-search input:focus,
 body.auth-unlocked input:focus,
 body.auth-unlocked select:focus,
 body.auth-unlocked textarea:focus {
-  border-color: rgba(56, 216, 193, 0.58);
+  border-color: rgba(var(--workspace-accent-rgb), 0.58);
   box-shadow: var(--ds-focus);
 }
 
@@ -240,7 +240,7 @@ body.auth-unlocked :is(.summary-card, .transfer-ops-card) {
 body.auth-unlocked .summary-card {
   position: relative;
   overflow: hidden;
-  border-left: 3px solid rgba(56, 216, 193, 0.74);
+  border-left: 3px solid rgba(var(--workspace-accent-rgb), 0.74);
 }
 
 body.auth-unlocked .summary-card::before,
@@ -275,7 +275,7 @@ body.auth-unlocked .primary-button,
 body.auth-unlocked .cup-action,
 body.auth-unlocked .home-link,
 body.auth-unlocked button[type="submit"] {
-  border: 1px solid rgba(56, 216, 193, 0.34);
+  border: 1px solid rgba(var(--workspace-accent-rgb), 0.34);
   border-radius: var(--ds-radius-sm);
   background: linear-gradient(135deg, var(--ds-amber), var(--ds-teal));
   color: #06110f;
@@ -349,7 +349,7 @@ body.auth-unlocked .app-skeleton-stack {
   min-height: 110px;
   border-style: dashed;
   background:
-    linear-gradient(180deg, rgba(96, 165, 250, 0.035), transparent),
+    linear-gradient(180deg, rgba(var(--workspace-warm-rgb), 0.035), transparent),
     rgba(8, 12, 15, 0.72);
 }
 
@@ -385,7 +385,7 @@ body.auth-unlocked #eventsView .countdown-card strong {
   grid-column: 2;
   grid-row: 1 / span 2;
   padding: 8px 10px;
-  border: 1px solid rgba(96, 165, 250, 0.26);
+  border: 1px solid rgba(var(--workspace-warm-rgb), 0.26);
   border-radius: var(--ds-radius-sm);
   background: var(--ds-sky-soft);
   color: #dbeafe;
@@ -601,9 +601,9 @@ body.auth-unlocked .global-search-results {
     min-height: 96px;
     padding: 16px 18px;
     overflow: hidden;
-    border-color: rgba(56, 216, 193, 0.2);
+    border-color: rgba(var(--workspace-accent-rgb), 0.2);
     background:
-      linear-gradient(135deg, rgba(56, 216, 193, 0.09), transparent 42%),
+      linear-gradient(135deg, rgba(var(--workspace-accent-rgb), 0.09), transparent 42%),
       linear-gradient(180deg, rgba(255, 255, 255, 0.035), transparent),
       rgba(8, 13, 15, 0.96);
   }
@@ -746,8 +746,8 @@ body.auth-unlocked .global-search-results {
   body.auth-unlocked .workspace-nav-tab:hover,
   body.auth-unlocked .workspace-nav-tab.active,
   body.auth-unlocked .workspace-nav-tab[aria-current="page"] {
-    border-color: rgba(56, 216, 193, 0.34);
-    background: rgba(56, 216, 193, 0.1);
+    border-color: rgba(var(--workspace-accent-rgb), 0.34);
+    background: rgba(var(--workspace-accent-rgb), 0.1);
   }
 
   body.auth-unlocked .app-status-bar {

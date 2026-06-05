@@ -33,12 +33,251 @@ App.auth = {
     }
 
     App.auth.syncAuthGate();
+    App.auth.applyClubTheme();
     App.auth.renderAll();
     App.auth.bootstrapSessionState();
   },
 
   getSession() {
     return App.auth.currentSession;
+  },
+
+  resolveSessionClub(session = null) {
+    const activeSession = session || App.auth.getSession();
+    if (!activeSession || activeSession.isCommissioner) return "";
+    if (activeSession.clubName) return String(activeSession.clubName).trim();
+
+    const managerName = String(activeSession.managerName || "").trim();
+    if (!managerName) return "";
+
+    if (Array.isArray(App.data?.teams) && App.utils?.normalizeText) {
+      const normalizedManager = App.utils.normalizeText(managerName);
+      const team = App.data.teams.find(
+        (item) =>
+          item?.status === "Nosso" &&
+          App.utils.normalizeText(item.owner) === normalizedManager,
+      );
+      if (team?.team) return String(team.team).trim();
+    }
+
+    return "";
+  },
+
+  parseHexColor(value, fallback = "#2dd4bf") {
+    const raw = String(value || "").trim();
+    if (!raw) return fallback;
+
+    const rgbMatch = raw.match(
+      /^rgba?\((\s*\d+\s*),(\s*\d+\s*),(\s*\d+\s*)(?:,\s*[\d.]+\s*)?\)$/i,
+    );
+    if (rgbMatch) {
+      const toSafe = (part) => {
+        const num = Number(part);
+        return Number.isFinite(num) ? Math.max(0, Math.min(255, num)) : 0;
+      };
+      const r = toSafe(rgbMatch[1]).toString(16).padStart(2, "0");
+      const g = toSafe(rgbMatch[2]).toString(16).padStart(2, "0");
+      const b = toSafe(rgbMatch[3]).toString(16).padStart(2, "0");
+      return `#${r}${g}${b}`.toUpperCase();
+    }
+
+    const normalized = raw.toLowerCase();
+    const shorthand = normalized.match(/^#([0-9a-f]{3})$/i);
+    if (shorthand) {
+      return `#${shorthand[1]
+        .split("")
+        .map((char) => `${char}${char}`)
+        .join("")}`.toUpperCase();
+    }
+
+    if (/^#[0-9a-f]{6}$/i.test(normalized)) return normalized.toUpperCase();
+    if (/^#[0-9a-f]{8}$/i.test(normalized)) return normalized.slice(0, 7).toUpperCase();
+
+    return fallback;
+  },
+
+  parseRgbFromHex(hexColor) {
+    const raw = App.auth.parseHexColor(hexColor);
+    const value = raw.replace("#", "");
+    if (!value || value.length !== 6) return null;
+    const r = Number.parseInt(value.slice(0, 2), 16);
+    const g = Number.parseInt(value.slice(2, 4), 16);
+    const b = Number.parseInt(value.slice(4, 6), 16);
+    return { r, g, b };
+  },
+
+  toRgbTriplet(hexColor) {
+    const rgb = App.auth.parseRgbFromHex(hexColor);
+    if (!rgb) return "45, 212, 191";
+    return `${rgb.r}, ${rgb.g}, ${rgb.b}`;
+  },
+
+  withAlpha(hexColor, alpha = 1) {
+    const rgb = App.auth.parseRgbFromHex(hexColor);
+    if (!rgb) return `rgba(255, 255, 255, ${alpha})`;
+    return `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${alpha})`;
+  },
+
+  getManagerClubTheme(session = null) {
+    const clubName = App.auth.resolveSessionClub(session);
+    if (!clubName || !App.clubs?.getClubByTeamName) return null;
+
+    const club = App.clubs.getClubByTeamName(clubName);
+    if (!club) return null;
+
+    const accent = App.auth.parseHexColor(club.CorPrimaria, "#2dd4bf");
+    const warm = App.auth.parseHexColor(club.CorSecundaria, "#f5c451");
+
+    return {
+      primary: accent,
+      secondary: warm,
+      accent,
+      warm,
+      workspaceLine: App.auth.withAlpha(accent, 0.18),
+      workspaceLineStrong: App.auth.withAlpha(accent, 0.34),
+      workspacePanelOverlay: App.auth.withAlpha(accent, 0.06),
+      brandLine: App.auth.withAlpha(accent, 0.16),
+      brandLineStrong: App.auth.withAlpha(warm, 0.26),
+      brandLineWarm: App.auth.withAlpha(warm, 0.32),
+      brandFocus: `0 0 0 3px ${App.auth.withAlpha(warm, 0.16)}, 0 0 0 1px ${App.auth.withAlpha(accent, 0.35)}`,
+      brandGlow: `0 0 34px ${App.auth.withAlpha(accent, 0.16)}`,
+      brandShadow: `0 20px 48px rgba(0, 0, 0, 0.34), 0 0 0 1px ${App.auth.withAlpha(accent, 0.03)}`,
+      brandShadowSoft: `0 14px 34px rgba(0, 0, 0, 0.24), 0 1px 0 ${App.auth.withAlpha(accent, 0.04)}`,
+      brandTealSoft: App.auth.withAlpha(accent, 0.14),
+      brandGoldSoft: App.auth.withAlpha(warm, 0.14),
+      brandBlueSoft: App.auth.withAlpha(accent, 0.13),
+      brandVioletSoft: App.auth.withAlpha(warm, 0.12),
+    };
+  },
+
+  applyClubTheme(session = null) {
+    const root = document?.documentElement;
+    if (!root) return;
+    const theme = App.auth.getManagerClubTheme(session);
+
+    if (!theme) {
+      [
+        "--workspace-accent-rgb",
+        "--workspace-warm-rgb",
+        "--workspace-accent",
+        "--workspace-warm",
+        "--workspace-line",
+        "--workspace-line-strong",
+        "--workspace-line-soft",
+        "--workspace-accent-soft",
+        "--workspace-accent-border",
+        "--brand-teal",
+        "--brand-blue",
+        "--brand-gold",
+        "--brand-violet",
+        "--brand-line",
+        "--brand-line-strong",
+        "--brand-line-warm",
+        "--brand-focus",
+        "--brand-glow",
+        "--brand-shadow",
+        "--brand-shadow-soft",
+        "--brand-teal-soft",
+        "--brand-gold-soft",
+        "--brand-blue-soft",
+        "--brand-violet-soft",
+        "--brand-teal-rgb",
+        "--brand-gold-rgb",
+        "--brand-blue-rgb",
+        "--club-primary",
+        "--club-secondary",
+        "--club-primary-rgb",
+        "--club-secondary-rgb",
+        "--ds-teal",
+        "--ds-sky",
+        "--ds-amber",
+        "--ds-line",
+        "--ds-line-strong",
+        "--ds-line-soft",
+        "--ds-text",
+        "--ds-text-strong",
+        "--ds-muted",
+        "--ds-subtle",
+        "--ds-teal-soft",
+        "--ds-sky-soft",
+        "--ds-amber-soft",
+        "--ds-focus",
+        "--qol-teal",
+        "--qol-cyan",
+        "--qol-amber",
+        "--qol-red",
+        "--qol-green",
+        "--qol-violet",
+        "--interactive-ring",
+        "--interactive-glow-accent",
+        "--interactive-glow-strong",
+      ].forEach((property) => root.style.removeProperty(property));
+      return;
+    }
+
+    root.style.setProperty("--workspace-accent", theme.accent);
+    root.style.setProperty("--workspace-warm", theme.warm);
+    root.style.setProperty("--workspace-accent-rgb", App.auth.toRgbTriplet(theme.accent));
+    root.style.setProperty("--workspace-warm-rgb", App.auth.toRgbTriplet(theme.warm));
+    root.style.setProperty("--workspace-line", theme.workspaceLine);
+    root.style.setProperty("--workspace-line-strong", theme.workspaceLineStrong);
+    root.style.setProperty("--workspace-line-soft", theme.workspacePanelOverlay);
+    root.style.setProperty("--workspace-accent-soft", theme.workspacePanelOverlay);
+    root.style.setProperty("--workspace-accent-border", theme.workspaceLineStrong);
+
+    root.style.setProperty("--brand-teal", theme.accent);
+    root.style.setProperty("--brand-blue", theme.accent);
+    root.style.setProperty("--brand-gold", theme.warm);
+    root.style.setProperty("--brand-violet", theme.warm);
+    root.style.setProperty("--brand-line", theme.brandLine);
+    root.style.setProperty("--brand-line-strong", theme.brandLineStrong);
+    root.style.setProperty("--brand-line-warm", theme.brandLineWarm);
+    root.style.setProperty("--brand-focus", theme.brandFocus);
+    root.style.setProperty("--brand-glow", theme.brandGlow);
+    root.style.setProperty("--brand-shadow", theme.brandShadow);
+    root.style.setProperty("--brand-shadow-soft", theme.brandShadowSoft);
+    root.style.setProperty("--brand-teal-soft", theme.brandTealSoft);
+    root.style.setProperty("--brand-gold-soft", theme.brandGoldSoft);
+    root.style.setProperty("--brand-blue-soft", theme.brandBlueSoft);
+    root.style.setProperty("--brand-violet-soft", theme.brandVioletSoft);
+    root.style.setProperty("--brand-teal-rgb", App.auth.toRgbTriplet(theme.accent));
+    root.style.setProperty("--brand-gold-rgb", App.auth.toRgbTriplet(theme.warm));
+    root.style.setProperty("--brand-blue-rgb", App.auth.toRgbTriplet(theme.accent));
+    root.style.setProperty("--club-primary", theme.primary);
+    root.style.setProperty("--club-secondary", theme.secondary);
+    root.style.setProperty("--club-primary-rgb", App.auth.toRgbTriplet(theme.primary));
+    root.style.setProperty("--club-secondary-rgb", App.auth.toRgbTriplet(theme.secondary));
+
+    root.style.setProperty("--ds-teal", theme.accent);
+    root.style.setProperty("--ds-sky", theme.warm);
+    root.style.setProperty("--ds-amber", theme.warm);
+    root.style.setProperty("--ds-line", theme.workspaceLine);
+    root.style.setProperty("--ds-line-strong", theme.workspaceLineStrong);
+    root.style.setProperty("--ds-line-soft", theme.workspacePanelOverlay);
+    root.style.setProperty("--ds-text", "#eef4f2");
+    root.style.setProperty("--ds-text-strong", "#ffffff");
+    root.style.setProperty("--ds-muted", "#9aa8ad");
+    root.style.setProperty("--ds-subtle", "#72868e");
+    root.style.setProperty("--ds-teal-soft", theme.workspacePanelOverlay);
+    root.style.setProperty("--ds-sky-soft", App.auth.withAlpha(theme.warm, 0.13));
+    root.style.setProperty("--ds-amber-soft", App.auth.withAlpha(theme.warm, 0.14));
+    root.style.setProperty("--ds-focus", `0 0 0 3px ${App.auth.withAlpha(theme.accent, 0.18)}`);
+
+    root.style.setProperty("--qol-teal", theme.accent);
+    root.style.setProperty("--qol-cyan", theme.accent);
+    root.style.setProperty("--qol-amber", theme.warm);
+    root.style.setProperty("--qol-green", "#5ee38b");
+    root.style.setProperty("--qol-red", "#f05252");
+    root.style.setProperty("--qol-violet", theme.warm);
+    root.style.setProperty("--interactive-ring", `0 0 0 3px ${App.auth.withAlpha(theme.accent, 0.18)}`);
+    root.style.setProperty(
+      "--interactive-glow-accent",
+      `0 14px 34px ${App.auth.withAlpha(theme.accent, 0.12)}`,
+    );
+    root.style.setProperty(
+      "--interactive-glow-strong",
+      `0 0 0 1px ${App.auth.withAlpha(theme.accent, 0.28)}, 0 18px 44px rgba(0, 0, 0, 0.34), 0 0 34px ${App.auth.withAlpha(theme.accent, 0.14)}`
+    );
   },
 
   syncAuthGate() {
@@ -617,6 +856,7 @@ App.auth = {
 
   persistSession(session) {
     App.auth.currentSession = session;
+    App.auth.applyClubTheme(session);
     try {
       sessionStorage.setItem(App.auth.storageKey, JSON.stringify(session));
       localStorage.removeItem(App.auth.legacyStorageKey);
@@ -1229,6 +1469,7 @@ App.auth = {
     App.auth.myFavorites = [];
     App.auth.myNotifications = [];
     App.auth.clearStoredSession();
+    App.auth.applyClubTheme(null);
     App.auth.renderAll();
     App.main?.renderCurrentView?.();
   },

@@ -12,6 +12,13 @@
   --workspace-muted: #91a0a7;
   --workspace-accent: #2dd4bf;
   --workspace-warm: #f5c451;
+  --workspace-accent-rgb: 45, 212, 191;
+  --workspace-warm-rgb: 245, 196, 81;
+  --brand-teal-rgb: 45, 212, 191;
+  --brand-gold-rgb: 245, 196, 81;
+  --brand-blue-rgb: 96, 165, 250;
+  --club-primary-rgb: 45, 212, 191;
+  --club-secondary-rgb: 245, 196, 81;
 }
 
 body.auth-unlocked,
@@ -243,8 +250,8 @@ body.auth-unlocked .workspace-nav-tab:focus-visible {
 }
 
 body.auth-unlocked .workspace-nav-tab.active {
-  border-color: rgba(45, 212, 191, 0.34);
-  background: rgba(45, 212, 191, 0.1);
+  border-color: rgba(var(--workspace-accent-rgb), 0.34);
+  background: rgba(var(--workspace-accent-rgb), 0.1);
   box-shadow: none;
 }
 
@@ -801,7 +808,7 @@ body.auth-unlocked #playersView .email-filter-button.is-active,
 body.auth-unlocked #playersView .email-folder-button.is-active,
 body.auth-unlocked #playersView .email-focus-card:hover,
 body.auth-unlocked #playersView .email-thread-item.is-selected {
-  border-color: rgba(45, 212, 191, 0.34);
+  border-color: rgba(var(--workspace-accent-rgb), 0.34);
   background: rgba(14, 37, 42, 0.82);
 }
 

@@ -12,7 +12,7 @@
   --brand-panel-soft: rgba(17, 27, 32, 0.68);
   --brand-line: rgba(196, 226, 222, 0.17);
   --brand-line-strong: rgba(211, 238, 231, 0.3);
-  --brand-line-warm: rgba(246, 200, 78, 0.32);
+  --brand-line-warm: rgba(var(--brand-gold-rgb), 0.32);
   --brand-text: #eef7f4;
   --brand-text-strong: #ffffff;
   --brand-muted: #a6b8bf;
@@ -23,9 +23,9 @@
   --brand-coral: #ff6b6b;
   --brand-violet: #b994ff;
   --brand-green: #80e27e;
-  --brand-teal-soft: rgba(37, 224, 189, 0.13);
-  --brand-gold-soft: rgba(246, 200, 78, 0.14);
-  --brand-blue-soft: rgba(90, 168, 255, 0.13);
+  --brand-teal-soft: rgba(var(--workspace-accent-rgb), 0.13);
+  --brand-gold-soft: rgba(var(--brand-gold-rgb), 0.14);
+  --brand-blue-soft: rgba(var(--brand-blue-rgb), 0.13);
   --brand-coral-soft: rgba(255, 107, 107, 0.13);
   --brand-violet-soft: rgba(185, 148, 255, 0.14);
   --brand-radius: 8px;
@@ -34,9 +34,9 @@
     0 20px 48px rgba(0, 0, 0, 0.34), 0 0 0 1px rgba(255, 255, 255, 0.03);
   --brand-shadow-soft:
     0 14px 34px rgba(0, 0, 0, 0.24), 0 1px 0 rgba(255, 255, 255, 0.04);
-  --brand-glow: 0 0 34px rgba(37, 224, 189, 0.16);
+  --brand-glow: 0 0 34px rgba(var(--workspace-accent-rgb), 0.16);
   --brand-focus:
-    0 0 0 3px rgba(246, 200, 78, 0.18), 0 0 0 1px rgba(37, 224, 189, 0.35);
+    0 0 0 3px rgba(var(--brand-gold-rgb), 0.18), 0 0 0 1px rgba(var(--workspace-accent-rgb), 0.35);
 }
 
 body.auth-unlocked {
@@ -44,16 +44,16 @@ body.auth-unlocked {
   background:
     linear-gradient(
       90deg,
-      rgba(246, 200, 78, 0.07) 0 1px,
+      rgba(var(--brand-gold-rgb), 0.07) 0 1px,
       transparent 1px 72px
     ),
     linear-gradient(
       180deg,
-      rgba(37, 224, 189, 0.045) 0 1px,
+      rgba(var(--workspace-accent-rgb), 0.045) 0 1px,
       transparent 1px 72px
     ),
-    linear-gradient(135deg, rgba(246, 200, 78, 0.12), transparent 24%),
-    linear-gradient(220deg, rgba(90, 168, 255, 0.11), transparent 34%),
+    linear-gradient(135deg, rgba(var(--brand-gold-rgb), 0.12), transparent 24%),
+    linear-gradient(220deg, rgba(var(--brand-blue-rgb), 0.11), transparent 34%),
     linear-gradient(180deg, #081216 0%, #05070a 52%, #030405 100%);
   background-attachment: fixed;
 }
@@ -68,7 +68,7 @@ body.auth-unlocked::before {
     linear-gradient(
       115deg,
       transparent 0 38%,
-      rgba(37, 224, 189, 0.055) 38% 39%,
+      rgba(var(--workspace-accent-rgb), 0.055) 38% 39%,
       transparent 39% 100%
     ),
     linear-gradient(180deg, rgba(255, 255, 255, 0.045), transparent 22% 100%);
@@ -109,7 +109,7 @@ body.auth-unlocked
   border-radius: var(--brand-radius);
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.075), transparent 42%),
-    linear-gradient(135deg, rgba(37, 224, 189, 0.1), transparent 38%),
+    linear-gradient(135deg, rgba(var(--workspace-accent-rgb), 0.1), transparent 38%),
     var(--brand-panel);
   box-shadow: var(--brand-shadow-soft);
 }
@@ -133,8 +133,8 @@ body.auth-unlocked .league-hero-brand {
   min-height: 92px;
   padding: 16px 18px;
   background:
-    linear-gradient(90deg, rgba(246, 200, 78, 0.18), transparent 28%),
-    linear-gradient(135deg, rgba(37, 224, 189, 0.12), transparent 48%),
+    linear-gradient(90deg, rgba(var(--brand-gold-rgb), 0.18), transparent 28%),
+    linear-gradient(135deg, rgba(var(--workspace-accent-rgb), 0.12), transparent 48%),
     linear-gradient(180deg, rgba(16, 26, 31, 0.98), rgba(7, 12, 16, 0.95));
 }
 
@@ -157,7 +157,7 @@ body.auth-unlocked .app-status-bar::before {
 body.auth-unlocked .league-brand-wordmark {
   width: 132px;
   filter: drop-shadow(0 10px 20px rgba(0, 0, 0, 0.3))
-    drop-shadow(0 0 12px rgba(246, 200, 78, 0.1));
+    drop-shadow(0 0 12px rgba(var(--brand-gold-rgb), 0.1));
 }
 
 body.auth-unlocked .league-brand-meta,
@@ -182,7 +182,7 @@ body.auth-unlocked .league-route-title {
   font-size: 1.34rem;
   font-weight: 900;
   line-height: 1;
-  text-shadow: 0 0 24px rgba(37, 224, 189, 0.16);
+  text-shadow: 0 0 24px rgba(var(--workspace-accent-rgb), 0.16);
 }
 
 body.auth-unlocked .league-hero-copy p,
@@ -199,7 +199,7 @@ body.auth-unlocked .manager-session-card.manager-login-shell {
   min-height: 92px;
   padding: 13px 15px;
   background:
-    linear-gradient(90deg, rgba(90, 168, 255, 0.14), transparent 42%),
+    linear-gradient(90deg, rgba(var(--brand-blue-rgb), 0.14), transparent 42%),
     linear-gradient(180deg, rgba(255, 255, 255, 0.06), transparent),
     var(--brand-panel);
 }
@@ -209,8 +209,8 @@ body.auth-unlocked .manager-custom-avatar,
 body.auth-unlocked .login-success-club-badge {
   border-radius: var(--brand-radius);
   box-shadow:
-    inset 0 0 0 1px rgba(37, 224, 189, 0.28),
-    0 0 22px rgba(37, 224, 189, 0.12);
+    inset 0 0 0 1px rgba(var(--workspace-accent-rgb), 0.28),
+    0 0 22px rgba(var(--workspace-accent-rgb), 0.12);
 }
 
 body.auth-unlocked .manager-session-card span {
@@ -240,13 +240,13 @@ body.auth-unlocked .primary-button,
 body.auth-unlocked .cup-action,
 body.auth-unlocked .home-link,
 body.auth-unlocked button[type="submit"] {
-  border: 1px solid rgba(246, 200, 78, 0.48);
+  border: 1px solid rgba(var(--brand-gold-rgb), 0.48);
   border-radius: var(--brand-radius-sm);
   background: linear-gradient(135deg, #f9d76a 0%, #25e0bd 58%, #5aa8ff 100%);
   color: #04100e;
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.34),
-    0 12px 30px rgba(37, 224, 189, 0.12);
+    0 12px 30px rgba(var(--workspace-accent-rgb), 0.12);
   font-weight: 950;
 }
 
@@ -255,7 +255,7 @@ body.auth-unlocked .workspace-nav {
   gap: 8px;
   padding: 8px;
   background:
-    linear-gradient(90deg, rgba(246, 200, 78, 0.08), transparent 22%),
+    linear-gradient(90deg, rgba(var(--brand-gold-rgb), 0.08), transparent 22%),
     linear-gradient(180deg, rgba(255, 255, 255, 0.07), transparent),
     rgba(5, 10, 13, 0.94);
   backdrop-filter: blur(24px);
@@ -286,19 +286,19 @@ body.auth-unlocked .workspace-nav-group {
 
 body.auth-unlocked .workspace-nav-group:nth-of-type(1) {
   background:
-    linear-gradient(90deg, rgba(246, 200, 78, 0.06), transparent 62%),
+    linear-gradient(90deg, rgba(var(--brand-gold-rgb), 0.06), transparent 62%),
     rgba(255, 255, 255, 0.025);
 }
 
 body.auth-unlocked .workspace-nav-group:nth-of-type(2) {
   background:
-    linear-gradient(90deg, rgba(37, 224, 189, 0.06), transparent 62%),
+    linear-gradient(90deg, rgba(var(--workspace-accent-rgb), 0.06), transparent 62%),
     rgba(255, 255, 255, 0.025);
 }
 
 body.auth-unlocked .workspace-nav-group:nth-of-type(3) {
   background:
-    linear-gradient(90deg, rgba(90, 168, 255, 0.06), transparent 62%),
+    linear-gradient(90deg, rgba(var(--brand-blue-rgb), 0.06), transparent 62%),
     rgba(255, 255, 255, 0.025);
 }
 
@@ -325,14 +325,14 @@ body.auth-unlocked .workspace-nav-tab-icon {
 
 body.auth-unlocked .workspace-nav-tab.active,
 body.auth-unlocked .workspace-nav-tab[aria-current="page"] {
-  border-color: rgba(37, 224, 189, 0.46);
+  border-color: rgba(var(--workspace-accent-rgb), 0.46);
   background:
-    linear-gradient(90deg, rgba(37, 224, 189, 0.2), transparent 82%),
+    linear-gradient(90deg, rgba(var(--workspace-accent-rgb), 0.2), transparent 82%),
     rgba(255, 255, 255, 0.05);
   color: var(--brand-text-strong);
   box-shadow:
     inset 0 0 0 1px rgba(255, 255, 255, 0.03),
-    0 0 26px rgba(37, 224, 189, 0.12);
+    0 0 26px rgba(var(--workspace-accent-rgb), 0.12);
 }
 
 body.auth-unlocked .workspace-nav-tab.active .workspace-nav-tab-icon,
@@ -366,7 +366,7 @@ body.auth-unlocked textarea {
 }
 
 body.auth-unlocked :where(input, select, textarea):focus {
-  border-color: rgba(37, 224, 189, 0.64);
+  border-color: rgba(var(--workspace-accent-rgb), 0.64);
   box-shadow: var(--brand-focus);
 }
 
@@ -391,7 +391,7 @@ body.auth-unlocked input[type="checkbox"] {
     rgba(5, 11, 14, 0.92);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.08),
-    0 0 0 1px rgba(37, 224, 189, 0.08);
+    0 0 0 1px rgba(var(--workspace-accent-rgb), 0.08);
   color-scheme: dark;
   line-height: 1;
   vertical-align: middle;
@@ -412,24 +412,24 @@ body.auth-unlocked input[type="checkbox"]::after {
 }
 
 body.auth-unlocked input[type="checkbox"]:hover {
-  border-color: rgba(246, 200, 78, 0.62);
+  border-color: rgba(var(--brand-gold-rgb), 0.62);
   background:
-    linear-gradient(180deg, rgba(246, 200, 78, 0.12), transparent),
+    linear-gradient(180deg, rgba(var(--brand-gold-rgb), 0.12), transparent),
     rgba(8, 18, 20, 0.96);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.1),
-    0 0 0 2px rgba(246, 200, 78, 0.12),
-    0 0 18px rgba(37, 224, 189, 0.14);
+    0 0 0 2px rgba(var(--brand-gold-rgb), 0.12),
+    0 0 18px rgba(var(--workspace-accent-rgb), 0.14);
 }
 
 body.auth-unlocked input[type="checkbox"]:checked {
-  border-color: rgba(246, 200, 78, 0.78);
+  border-color: rgba(var(--brand-gold-rgb), 0.78);
   background:
     linear-gradient(135deg, var(--brand-gold), var(--brand-teal) 62%), #06120f;
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.28),
-    0 0 0 2px rgba(37, 224, 189, 0.16),
-    0 0 22px rgba(37, 224, 189, 0.18);
+    0 0 0 2px rgba(var(--workspace-accent-rgb), 0.16),
+    0 0 22px rgba(var(--workspace-accent-rgb), 0.18);
 }
 
 body.auth-unlocked input[type="checkbox"]:checked::after {
@@ -469,8 +469,8 @@ body.auth-unlocked #playersView .email-thread-check {
   height: auto;
   min-height: 100%;
   padding-top: 20px;
-  border-right: 1px solid rgba(56, 216, 193, 0.14);
-  background: linear-gradient(180deg, rgba(37, 224, 189, 0.045), transparent);
+  border-right: 1px solid rgba(var(--workspace-accent-rgb), 0.14);
+  background: linear-gradient(180deg, rgba(var(--workspace-accent-rgb), 0.045), transparent);
 }
 
 body.auth-unlocked #playersView .email-thread-check input {
@@ -505,7 +505,7 @@ body.auth-unlocked #playersView .email-thread-check > span {
     rgba(5, 11, 14, 0.92);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.08),
-    0 0 0 1px rgba(37, 224, 189, 0.08);
+    0 0 0 1px rgba(var(--workspace-accent-rgb), 0.08);
   pointer-events: none;
   transition:
     background-color var(--motion-base) var(--motion-ease),
@@ -529,25 +529,25 @@ body.auth-unlocked #playersView .email-thread-check > span::after {
 }
 
 body.auth-unlocked #playersView .email-thread-check:hover > span {
-  border-color: rgba(246, 200, 78, 0.62);
+  border-color: rgba(var(--brand-gold-rgb), 0.62);
   background:
-    linear-gradient(180deg, rgba(246, 200, 78, 0.12), transparent),
+    linear-gradient(180deg, rgba(var(--brand-gold-rgb), 0.12), transparent),
     rgba(8, 18, 20, 0.96);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.1),
-    0 0 0 2px rgba(246, 200, 78, 0.12),
-    0 0 18px rgba(37, 224, 189, 0.14);
+    0 0 0 2px rgba(var(--brand-gold-rgb), 0.12),
+    0 0 18px rgba(var(--workspace-accent-rgb), 0.14);
   transform: scale(1.06);
 }
 
 body.auth-unlocked #playersView .email-thread-check input:checked + span {
-  border-color: rgba(246, 200, 78, 0.78);
+  border-color: rgba(var(--brand-gold-rgb), 0.78);
   background:
     linear-gradient(135deg, var(--brand-gold), var(--brand-teal) 62%), #06120f;
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.28),
-    0 0 0 2px rgba(37, 224, 189, 0.16),
-    0 0 22px rgba(37, 224, 189, 0.18);
+    0 0 0 2px rgba(var(--workspace-accent-rgb), 0.16),
+    0 0 22px rgba(var(--workspace-accent-rgb), 0.18);
 }
 
 body.auth-unlocked
@@ -560,9 +560,9 @@ body.auth-unlocked
 }
 
 body.auth-unlocked #playersView .email-thread-item:has(input:checked) {
-  border-color: rgba(246, 200, 78, 0.5);
+  border-color: rgba(var(--brand-gold-rgb), 0.5);
   background:
-    linear-gradient(90deg, rgba(246, 200, 78, 0.14), transparent 74%),
+    linear-gradient(90deg, rgba(var(--brand-gold-rgb), 0.14), transparent 74%),
     rgba(9, 23, 24, 0.9);
 }
 
@@ -620,7 +620,7 @@ body.auth-unlocked
   border-radius: var(--brand-radius);
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.06), transparent 44%),
-    linear-gradient(135deg, rgba(37, 224, 189, 0.045), transparent 42%),
+    linear-gradient(135deg, rgba(var(--workspace-accent-rgb), 0.045), transparent 42%),
     var(--brand-panel);
   box-shadow: var(--brand-shadow-soft);
 }
@@ -662,8 +662,8 @@ body.auth-unlocked
   height: 2px;
   background: linear-gradient(
     90deg,
-    rgba(246, 200, 78, 0.72),
-    rgba(37, 224, 189, 0.54),
+    rgba(var(--brand-gold-rgb), 0.72),
+    rgba(var(--workspace-accent-rgb), 0.54),
     transparent
   );
 }
@@ -677,21 +677,21 @@ body.auth-unlocked .summary-card {
   padding: 16px;
   border-left: 0;
   background:
-    linear-gradient(135deg, rgba(246, 200, 78, 0.13), transparent 46%),
+    linear-gradient(135deg, rgba(var(--brand-gold-rgb), 0.13), transparent 46%),
     linear-gradient(180deg, rgba(255, 255, 255, 0.06), transparent),
     var(--brand-panel-raised);
 }
 
 body.auth-unlocked .summary-card:nth-child(2n) {
   background:
-    linear-gradient(135deg, rgba(37, 224, 189, 0.13), transparent 46%),
+    linear-gradient(135deg, rgba(var(--workspace-accent-rgb), 0.13), transparent 46%),
     linear-gradient(180deg, rgba(255, 255, 255, 0.06), transparent),
     var(--brand-panel-raised);
 }
 
 body.auth-unlocked .summary-card:nth-child(3n) {
   background:
-    linear-gradient(135deg, rgba(90, 168, 255, 0.13), transparent 46%),
+    linear-gradient(135deg, rgba(var(--brand-blue-rgb), 0.13), transparent 46%),
     linear-gradient(180deg, rgba(255, 255, 255, 0.06), transparent),
     var(--brand-panel-raised);
 }
@@ -715,9 +715,9 @@ body.auth-unlocked .summary-card strong {
 }
 
 body.auth-unlocked .round-center-card {
-  border-color: rgba(90, 168, 255, 0.25);
+  border-color: rgba(var(--brand-blue-rgb), 0.25);
   background:
-    linear-gradient(100deg, rgba(90, 168, 255, 0.22), transparent 42%),
+    linear-gradient(100deg, rgba(var(--brand-blue-rgb), 0.22), transparent 42%),
     linear-gradient(180deg, rgba(255, 255, 255, 0.08), transparent), #101936;
 }
 
@@ -735,9 +735,9 @@ body.auth-unlocked .home-news-item {
 }
 
 body.auth-unlocked .round-manager-card.pending {
-  border-color: rgba(246, 200, 78, 0.48);
+  border-color: rgba(var(--brand-gold-rgb), 0.48);
   background:
-    linear-gradient(135deg, rgba(246, 200, 78, 0.16), transparent 58%),
+    linear-gradient(135deg, rgba(var(--brand-gold-rgb), 0.16), transparent 58%),
     rgba(7, 13, 17, 0.72);
 }
 
@@ -746,9 +746,9 @@ body.auth-unlocked .round-manager-card.done {
 }
 
 body.auth-unlocked .home-cup-card {
-  border-color: rgba(246, 200, 78, 0.36);
+  border-color: rgba(var(--brand-gold-rgb), 0.36);
   background:
-    linear-gradient(90deg, rgba(246, 200, 78, 0.18), transparent 45%),
+    linear-gradient(90deg, rgba(var(--brand-gold-rgb), 0.18), transparent 45%),
     var(--brand-panel);
 }
 
@@ -772,7 +772,7 @@ body.auth-unlocked .app-skeleton-stack {
       rgba(255, 255, 255, 0.03) 0 1px,
       transparent 1px 18px
     ),
-    linear-gradient(115deg, rgba(37, 224, 189, 0.08), transparent 34%),
+    linear-gradient(115deg, rgba(var(--workspace-accent-rgb), 0.08), transparent 34%),
     linear-gradient(180deg, rgba(255, 255, 255, 0.035), transparent),
     rgba(6, 12, 16, 0.72);
 }
@@ -790,9 +790,9 @@ body.auth-unlocked .app-skeleton-stack::before {
   height: 3px;
   background: linear-gradient(
     90deg,
-    rgba(246, 200, 78, 0.7),
-    rgba(37, 224, 189, 0.5),
-    rgba(90, 168, 255, 0.35)
+    rgba(var(--brand-gold-rgb), 0.7),
+    rgba(var(--workspace-accent-rgb), 0.5),
+    rgba(var(--brand-blue-rgb), 0.35)
   );
 }
 
@@ -803,7 +803,7 @@ body.auth-unlocked table {
 
 body.auth-unlocked th {
   color: var(--brand-gold);
-  background: rgba(246, 200, 78, 0.055);
+  background: rgba(var(--brand-gold-rgb), 0.055);
 }
 
 body.auth-unlocked td {
@@ -815,7 +815,7 @@ body.auth-unlocked tbody tr:nth-child(2n) td {
 }
 
 body.auth-unlocked tbody tr:hover td {
-  background: rgba(37, 224, 189, 0.055);
+  background: rgba(var(--workspace-accent-rgb), 0.055);
 }
 
 body.auth-unlocked .badge,
@@ -840,10 +840,10 @@ body.auth-unlocked #transfersView .countdown-card,
 body.auth-unlocked #experienceView .submit-hero,
 body.auth-unlocked #commissionerView .submit-hero,
 body.auth-unlocked #submitView .submit-hero {
-  border-color: rgba(37, 224, 189, 0.24);
+  border-color: rgba(var(--workspace-accent-rgb), 0.24);
   background:
-    linear-gradient(90deg, rgba(37, 224, 189, 0.18), transparent 44%),
-    linear-gradient(135deg, rgba(246, 200, 78, 0.1), transparent 56%),
+    linear-gradient(90deg, rgba(var(--workspace-accent-rgb), 0.18), transparent 44%),
+    linear-gradient(135deg, rgba(var(--brand-gold-rgb), 0.1), transparent 56%),
     var(--brand-panel-raised);
   box-shadow: var(--brand-shadow);
 }
@@ -864,18 +864,18 @@ body.auth-unlocked #playersView .sponsor-email-card {
 body.auth-unlocked #playersView .email-thread-item {
   border-color: rgba(196, 226, 222, 0.15);
   background:
-    linear-gradient(90deg, rgba(37, 224, 189, 0.05), transparent 72%),
+    linear-gradient(90deg, rgba(var(--workspace-accent-rgb), 0.05), transparent 72%),
     rgba(4, 9, 12, 0.72);
 }
 
 body.auth-unlocked #playersView .email-thread-item.is-selected {
-  border-color: rgba(37, 224, 189, 0.62);
+  border-color: rgba(var(--workspace-accent-rgb), 0.62);
   background:
-    linear-gradient(90deg, rgba(37, 224, 189, 0.22), transparent 72%),
+    linear-gradient(90deg, rgba(var(--workspace-accent-rgb), 0.22), transparent 72%),
     rgba(9, 23, 24, 0.9);
   box-shadow:
     inset 4px 0 0 var(--brand-teal),
-    0 0 34px rgba(37, 224, 189, 0.14);
+    0 0 34px rgba(var(--workspace-accent-rgb), 0.14);
 }
 
 body.auth-unlocked #playersView .email-thread-item::before {
@@ -897,9 +897,9 @@ body.auth-unlocked #playersView .email-folder-button {
 
 body.auth-unlocked #playersView .email-filter-button.is-active,
 body.auth-unlocked #playersView .email-folder-button.is-active {
-  border-color: rgba(37, 224, 189, 0.5);
+  border-color: rgba(var(--workspace-accent-rgb), 0.5);
   background:
-    linear-gradient(90deg, rgba(37, 224, 189, 0.22), transparent 80%),
+    linear-gradient(90deg, rgba(var(--workspace-accent-rgb), 0.22), transparent 80%),
     rgba(8, 24, 24, 0.9);
 }
 
@@ -915,7 +915,7 @@ body.auth-unlocked #playersView .email-gmail-layout {
   align-items: start;
   gap: 0;
   min-height: 680px;
-  border: 1px solid rgba(37, 224, 189, 0.18);
+  border: 1px solid rgba(var(--workspace-accent-rgb), 0.18);
   border-radius: 18px;
   overflow: hidden;
   background:
@@ -942,7 +942,7 @@ body.auth-unlocked #playersView .email-gmail-layout .email-sidebar {
   padding: 14px 12px;
   border-right: 1px solid rgba(196, 226, 222, 0.13);
   background:
-    linear-gradient(180deg, rgba(37, 224, 189, 0.075), transparent 34%),
+    linear-gradient(180deg, rgba(var(--workspace-accent-rgb), 0.075), transparent 34%),
     rgba(6, 13, 16, 0.82);
 }
 
@@ -952,11 +952,11 @@ body.auth-unlocked #playersView .email-sidebar-brand {
   justify-content: space-between;
   gap: 10px;
   min-height: 42px;
-  border: 1px solid rgba(37, 224, 189, 0.2);
+  border: 1px solid rgba(var(--workspace-accent-rgb), 0.2);
   border-radius: 999px;
   padding: 0 13px;
   background:
-    linear-gradient(90deg, rgba(37, 224, 189, 0.14), transparent 76%),
+    linear-gradient(90deg, rgba(var(--workspace-accent-rgb), 0.14), transparent 76%),
     rgba(255, 255, 255, 0.035);
 }
 
@@ -1050,8 +1050,8 @@ body.auth-unlocked
   .email-gmail-layout
   :where(.email-filter-button, .email-folder-button).is-active {
   background:
-    linear-gradient(90deg, rgba(37, 224, 189, 0.24), rgba(246, 200, 78, 0.08)),
-    rgba(37, 224, 189, 0.12);
+    linear-gradient(90deg, rgba(var(--workspace-accent-rgb), 0.24), rgba(var(--brand-gold-rgb), 0.08)),
+    rgba(var(--workspace-accent-rgb), 0.12);
   color: #ffffff;
   box-shadow: inset 3px 0 0 var(--brand-teal);
 }
@@ -1076,7 +1076,7 @@ body.auth-unlocked #playersView .email-gmail-layout .email-focus-card {
   border-radius: 12px;
   padding: 10px;
   background:
-    linear-gradient(90deg, rgba(37, 224, 189, 0.08), transparent 72%),
+    linear-gradient(90deg, rgba(var(--workspace-accent-rgb), 0.08), transparent 72%),
     rgba(255, 255, 255, 0.025);
 }
 
@@ -1191,10 +1191,10 @@ body.auth-unlocked
   .email-gmail-layout
   .email-toolbar-field
   input:focus {
-  border-color: rgba(37, 224, 189, 0.48);
+  border-color: rgba(var(--workspace-accent-rgb), 0.48);
   background: rgba(9, 20, 22, 0.98);
   box-shadow:
-    0 0 0 3px rgba(37, 224, 189, 0.12),
+    0 0 0 3px rgba(var(--workspace-accent-rgb), 0.12),
     0 12px 34px rgba(0, 0, 0, 0.18);
 }
 
@@ -1250,7 +1250,7 @@ body.auth-unlocked
   .email-list-actions
   .email-bulk-toolbar
   button:hover {
-  border-color: rgba(37, 224, 189, 0.18);
+  border-color: rgba(var(--workspace-accent-rgb), 0.18);
   background: rgba(255, 255, 255, 0.055);
   color: var(--brand-text-strong);
   transform: none;
@@ -1350,8 +1350,8 @@ body.auth-unlocked #playersView .email-category-tab:hover {
 body.auth-unlocked #playersView .email-category-tab.is-active {
   color: var(--brand-teal);
   background:
-    linear-gradient(180deg, rgba(37, 224, 189, 0.12), transparent),
-    rgba(37, 224, 189, 0.035);
+    linear-gradient(180deg, rgba(var(--workspace-accent-rgb), 0.12), transparent),
+    rgba(var(--workspace-accent-rgb), 0.035);
 }
 
 body.auth-unlocked #playersView .email-category-tab.is-active::before {
@@ -1360,7 +1360,7 @@ body.auth-unlocked #playersView .email-category-tab.is-active::before {
 }
 
 body.auth-unlocked #playersView .email-category-tab.is-active span {
-  background: rgba(37, 224, 189, 0.14);
+  background: rgba(var(--workspace-accent-rgb), 0.14);
   color: var(--brand-text-strong);
 }
 
@@ -1414,7 +1414,7 @@ body.auth-unlocked
   #playersView
   .email-gmail-layout
   .email-thread-item.priority-high {
-  box-shadow: inset 3px 0 0 rgba(246, 200, 78, 0.86);
+  box-shadow: inset 3px 0 0 rgba(var(--brand-gold-rgb), 0.86);
 }
 
 body.auth-unlocked
@@ -1422,7 +1422,7 @@ body.auth-unlocked
   .email-gmail-layout
   .email-thread-item.is-unread {
   background:
-    linear-gradient(90deg, rgba(37, 224, 189, 0.065), transparent 72%),
+    linear-gradient(90deg, rgba(var(--workspace-accent-rgb), 0.065), transparent 72%),
     rgba(8, 17, 20, 0.95);
 }
 
@@ -1436,11 +1436,11 @@ body.auth-unlocked
   .email-thread-item.is-selected {
   border-color: transparent;
   background:
-    linear-gradient(90deg, rgba(37, 224, 189, 0.22), transparent 58%),
+    linear-gradient(90deg, rgba(var(--workspace-accent-rgb), 0.22), transparent 58%),
     var(--email-row-selected);
   box-shadow:
     inset 4px 0 0 var(--brand-teal),
-    inset 0 -1px 0 rgba(37, 224, 189, 0.18);
+    inset 0 -1px 0 rgba(var(--workspace-accent-rgb), 0.18);
 }
 
 body.auth-unlocked
@@ -1448,14 +1448,14 @@ body.auth-unlocked
   .email-gmail-layout
   .email-thread-item:has(input:checked) {
   background:
-    linear-gradient(90deg, rgba(246, 200, 78, 0.16), transparent 58%),
+    linear-gradient(90deg, rgba(var(--brand-gold-rgb), 0.16), transparent 58%),
     rgba(22, 24, 17, 0.94);
 }
 
 body.auth-unlocked #playersView .email-gmail-layout .email-thread-item:hover {
   background: var(--email-row-hover);
   box-shadow:
-    inset 0 0 0 1px rgba(37, 224, 189, 0.22),
+    inset 0 0 0 1px rgba(var(--workspace-accent-rgb), 0.22),
     0 10px 26px rgba(0, 0, 0, 0.2);
   transform: none;
 }
@@ -1572,8 +1572,8 @@ body.auth-unlocked #playersView .email-gmail-layout .email-thread-badge {
   justify-self: start;
   min-height: 19px;
   padding: 0 7px;
-  border-color: rgba(37, 224, 189, 0.18);
-  background: rgba(37, 224, 189, 0.08);
+  border-color: rgba(var(--workspace-accent-rgb), 0.18);
+  background: rgba(var(--workspace-accent-rgb), 0.08);
   color: var(--brand-muted);
   font-size: 0.58rem;
 }
@@ -1592,9 +1592,9 @@ body.auth-unlocked
   .email-gmail-layout
   .priority-high
   .email-thread-state {
-  border-color: rgba(246, 200, 78, 0.24);
+  border-color: rgba(var(--brand-gold-rgb), 0.24);
   color: rgba(255, 232, 166, 0.9);
-  background: rgba(246, 200, 78, 0.075);
+  background: rgba(var(--brand-gold-rgb), 0.075);
 }
 
 body.auth-unlocked
@@ -1621,7 +1621,7 @@ body.auth-unlocked #playersView .email-gmail-layout .email-preview-pane {
   background:
     radial-gradient(
       circle at 78% 10%,
-      rgba(37, 224, 189, 0.1),
+      rgba(var(--workspace-accent-rgb), 0.1),
       transparent 34%
     ),
     rgba(5, 10, 13, 0.7);
@@ -1924,7 +1924,7 @@ body.auth-unlocked
 
 body.auth-unlocked #calendarView .calendar-month-card {
   background:
-    linear-gradient(90deg, rgba(90, 168, 255, 0.12), transparent 42%),
+    linear-gradient(90deg, rgba(var(--brand-blue-rgb), 0.12), transparent 42%),
     var(--brand-panel);
 }
 
@@ -1935,14 +1935,14 @@ body.auth-unlocked #calendarView .calendar-day-cell {
 }
 
 body.auth-unlocked #calendarView .calendar-day-cell.has-events {
-  border-color: rgba(90, 168, 255, 0.25);
+  border-color: rgba(var(--brand-blue-rgb), 0.25);
   background:
-    linear-gradient(135deg, rgba(90, 168, 255, 0.11), transparent 52%),
+    linear-gradient(135deg, rgba(var(--brand-blue-rgb), 0.11), transparent 52%),
     var(--brand-panel);
 }
 
 body.auth-unlocked #calendarView .calendar-event-card.pending {
-  border-color: rgba(246, 200, 78, 0.34);
+  border-color: rgba(var(--brand-gold-rgb), 0.34);
 }
 
 body.auth-unlocked #calendarView .calendar-event-card.done {
@@ -1955,7 +1955,7 @@ body.auth-unlocked #eventsView .event-card-v45 {
 
 body.auth-unlocked #eventsView .event-icon {
   background:
-    linear-gradient(135deg, rgba(246, 200, 78, 0.22), rgba(37, 224, 189, 0.16)),
+    linear-gradient(135deg, rgba(var(--brand-gold-rgb), 0.22), rgba(var(--workspace-accent-rgb), 0.16)),
     rgba(255, 255, 255, 0.045);
 }
 
@@ -1972,15 +1972,15 @@ body.auth-unlocked #transfersView .advanced-transfer-main {
 }
 
 body.auth-unlocked #transfersView .transfer-assistant-card {
-  border-color: rgba(246, 200, 78, 0.28);
+  border-color: rgba(var(--brand-gold-rgb), 0.28);
   background:
-    linear-gradient(135deg, rgba(246, 200, 78, 0.14), transparent 50%),
+    linear-gradient(135deg, rgba(var(--brand-gold-rgb), 0.14), transparent 50%),
     var(--brand-panel);
 }
 
 body.auth-unlocked #transfersView .transfer-market-shell,
 body.auth-unlocked #transfersView .transfer-kanban-card {
-  border-color: rgba(37, 224, 189, 0.22);
+  border-color: rgba(var(--workspace-accent-rgb), 0.22);
 }
 
 body.auth-unlocked #transfersView .transfer-kanban-column,
@@ -2000,9 +2000,9 @@ body.auth-unlocked #transfersView .preview-offer-card {
 }
 
 body.auth-unlocked #transfersView .transfer-ops-alert {
-  border-color: rgba(246, 200, 78, 0.25);
+  border-color: rgba(var(--brand-gold-rgb), 0.25);
   background:
-    linear-gradient(90deg, rgba(246, 200, 78, 0.13), transparent 70%),
+    linear-gradient(90deg, rgba(var(--brand-gold-rgb), 0.13), transparent 70%),
     rgba(14, 11, 5, 0.58);
 }
 
@@ -2010,7 +2010,7 @@ body.auth-unlocked #transfersView .market-player-option,
 body.auth-unlocked #transfersView .market-player-shell {
   border-color: rgba(196, 226, 222, 0.16);
   background:
-    linear-gradient(135deg, rgba(37, 224, 189, 0.07), transparent 54%),
+    linear-gradient(135deg, rgba(var(--workspace-accent-rgb), 0.07), transparent 54%),
     rgba(5, 10, 14, 0.76);
 }
 
@@ -2029,7 +2029,7 @@ body.auth-unlocked #squadView .squad-availability-card {
 body.auth-unlocked #commissionerView .commissioner-card,
 body.auth-unlocked #experienceView .experience-card,
 body.auth-unlocked #submitView .submit-card {
-  border-color: rgba(90, 168, 255, 0.2);
+  border-color: rgba(var(--brand-blue-rgb), 0.2);
 }
 
 body.auth-unlocked .coach-empty-state,
@@ -2040,7 +2040,7 @@ body.auth-unlocked .next-game-empty {
   border-color: rgba(196, 226, 222, 0.18);
   border-style: dashed;
   background:
-    linear-gradient(135deg, rgba(90, 168, 255, 0.06), transparent 42%),
+    linear-gradient(135deg, rgba(var(--brand-blue-rgb), 0.06), transparent 42%),
     rgba(4, 8, 11, 0.62);
   color: var(--brand-muted);
 }
@@ -2058,8 +2058,8 @@ body.auth-unlocked .status-pill.pending,
 body.auth-unlocked .events-status-pill.pending,
 body.auth-unlocked .transfer-pill.is-watch,
 body.auth-unlocked .transfer-pill.is-warning {
-  border-color: rgba(246, 200, 78, 0.38);
-  background: rgba(246, 200, 78, 0.13);
+  border-color: rgba(var(--brand-gold-rgb), 0.38);
+  background: rgba(var(--brand-gold-rgb), 0.13);
   color: #ffefba;
 }
 
@@ -2092,9 +2092,9 @@ body.auth-unlocked :where(button, a[href], summary, [role="button"]) {
   body.auth-unlocked .secondary-button:hover,
   body.auth-unlocked .ghost-button:hover,
   body.auth-unlocked .workspace-nav-tab:hover {
-    border-color: rgba(37, 224, 189, 0.42);
+    border-color: rgba(var(--workspace-accent-rgb), 0.42);
     background:
-      linear-gradient(90deg, rgba(37, 224, 189, 0.14), transparent 78%),
+      linear-gradient(90deg, rgba(var(--workspace-accent-rgb), 0.14), transparent 78%),
       rgba(255, 255, 255, 0.055);
     box-shadow: var(--brand-glow);
   }

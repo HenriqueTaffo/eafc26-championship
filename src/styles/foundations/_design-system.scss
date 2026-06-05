@@ -23,13 +23,13 @@
 
   --ds-teal: #38d8c1;
   --ds-sky: #60a5fa;
-  --ds-amber: #f5c451;
+  --ds-amber: var(--workspace-warm, #f5c451);
   --ds-lime: #a3e635;
   --ds-red: #fb7185;
   --ds-violet: #a78bfa;
 
-  --ds-teal-soft: rgba(56, 216, 193, 0.13);
-  --ds-sky-soft: rgba(96, 165, 250, 0.13);
+  --ds-teal-soft: rgba(var(--workspace-accent-rgb), 0.13);
+  --ds-sky-soft: rgba(var(--workspace-warm-rgb), 0.13);
   --ds-amber-soft: rgba(245, 196, 81, 0.14);
   --ds-lime-soft: rgba(163, 230, 53, 0.13);
   --ds-red-soft: rgba(251, 113, 133, 0.13);
@@ -40,7 +40,7 @@
   --ds-radius-md: 8px;
   --ds-shadow-1: 0 1px 0 rgba(255, 255, 255, 0.04);
   --ds-shadow-2: 0 18px 42px rgba(0, 0, 0, 0.24);
-  --ds-focus: 0 0 0 3px rgba(56, 216, 193, 0.18);
+  --ds-focus: 0 0 0 3px rgba(var(--workspace-accent-rgb), 0.18);
 
   --ds-space-1: 4px;
   --ds-space-2: 8px;
@@ -58,8 +58,8 @@ html {
 body {
   font-family: var(--ds-font-sans);
   background:
-    linear-gradient(90deg, rgba(56, 216, 193, 0.04) 1px, transparent 1px),
-    linear-gradient(180deg, rgba(96, 165, 250, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(var(--workspace-accent-rgb), 0.04) 1px, transparent 1px),
+    linear-gradient(180deg, rgba(var(--workspace-warm-rgb), 0.035) 1px, transparent 1px),
     linear-gradient(180deg, #091112 0%, var(--ds-bg) 42%, #060708 100%);
   background-size:
     96px 96px,
@@ -74,7 +74,7 @@ body.auth-unlocked *:not(svg):not(path) {
 }
 
 ::selection {
-  background: rgba(56, 216, 193, 0.28);
+  background: rgba(var(--workspace-accent-rgb), 0.28);
   color: var(--ds-text-strong);
 }
 
@@ -87,8 +87,8 @@ body.auth-unlocked *:not(svg):not(path) {
   min-height: 100vh;
   padding: 32px;
   background:
-    linear-gradient(90deg, rgba(56, 216, 193, 0.04) 1px, transparent 1px),
-    linear-gradient(180deg, rgba(96, 165, 250, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(var(--workspace-accent-rgb), 0.04) 1px, transparent 1px),
+    linear-gradient(180deg, rgba(var(--workspace-warm-rgb), 0.035) 1px, transparent 1px),
     var(--ds-bg);
   background-size: 80px 80px;
   color: var(--ds-text);
@@ -163,7 +163,7 @@ body.auth-unlocked *:not(svg):not(path) {
 }
 
 .ds-button-primary {
-  border-color: rgba(56, 216, 193, 0.36);
+  border-color: rgba(var(--workspace-accent-rgb), 0.36);
   background: linear-gradient(135deg, var(--ds-amber), var(--ds-teal));
   color: #07100f;
 }
@@ -207,7 +207,7 @@ body.auth-unlocked *:not(svg):not(path) {
 }
 
 .ds-badge-info {
-  border-color: rgba(96, 165, 250, 0.28);
+  border-color: rgba(var(--workspace-warm-rgb), 0.28);
   background: var(--ds-sky-soft);
   color: #bfdbfe;
 }
@@ -364,7 +364,7 @@ body.auth-unlocked *:not(svg):not(path) {
 }
 
 .ds-alert-info {
-  border-color: rgba(96, 165, 250, 0.26);
+  border-color: rgba(var(--workspace-warm-rgb), 0.26);
   background: var(--ds-sky-soft);
 }
 

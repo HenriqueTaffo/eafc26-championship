@@ -4,9 +4,9 @@
   --qol-panel: rgba(9, 13, 18, 0.82);
   --qol-panel-strong: rgba(13, 19, 27, 0.94);
   --qol-line: rgba(255, 255, 255, 0.12);
-  --qol-teal: #2dd4bf;
+  --qol-teal: var(--workspace-accent);
   --qol-cyan: #38bdf8;
-  --qol-amber: #f8c14a;
+  --qol-amber: var(--workspace-warm);
   --qol-red: #f05252;
   --qol-green: #5ee38b;
   --qol-violet: #a78bfa;
@@ -26,7 +26,7 @@
   pointer-events: none;
   z-index: -2;
   background:
-    linear-gradient(115deg, rgba(45, 212, 191, 0.14), transparent 28%),
+    linear-gradient(115deg, rgba(var(--workspace-accent-rgb), 0.14), transparent 28%),
     linear-gradient(245deg, rgba(248, 193, 74, 0.1), transparent 34%),
     linear-gradient(180deg, rgba(7, 9, 12, 0.2), rgba(7, 9, 12, 0.92)),
     repeating-linear-gradient(
@@ -130,7 +130,7 @@
 .qol-metric-card:hover,
 .qol-action-row:hover {
   transform: translateY(-3px);
-  border-color: rgba(45, 212, 191, 0.34);
+  border-color: rgba(var(--workspace-accent-rgb), 0.34);
   box-shadow: 0 18px 42px rgba(0, 0, 0, 0.28);
 }
 
@@ -163,7 +163,7 @@ button:active {
   inset: 0;
   pointer-events: none;
   background:
-    linear-gradient(90deg, rgba(45, 212, 191, 0.18), transparent 34%),
+    linear-gradient(90deg, rgba(var(--workspace-accent-rgb), 0.18), transparent 34%),
     linear-gradient(270deg, rgba(248, 193, 74, 0.12), transparent 42%);
   opacity: 0.62;
 }
@@ -233,9 +233,9 @@ button:active {
 .qol-action-strip button,
 .transfer-intelligence-actions button,
 .league-error-boundary button {
-  border: 1px solid rgba(45, 212, 191, 0.34);
+  border: 1px solid rgba(var(--workspace-accent-rgb), 0.34);
   border-radius: 999px;
-  background: rgba(45, 212, 191, 0.14);
+  background: rgba(var(--workspace-accent-rgb), 0.14);
   color: var(--qol-ink);
   font-weight: 800;
   padding: 0.72rem 1rem;
@@ -279,7 +279,7 @@ button:active {
   height: 38px;
   border-radius: 12px;
   color: var(--qol-teal);
-  background: rgba(45, 212, 191, 0.12);
+  background: rgba(var(--workspace-accent-rgb), 0.12);
 }
 
 .qol-metric-card small,
@@ -416,8 +416,8 @@ button:active {
 .transfer-intelligence-callout {
   padding: 14px;
   border-radius: 14px;
-  border: 1px solid rgba(45, 212, 191, 0.22);
-  background: rgba(45, 212, 191, 0.08);
+  border: 1px solid rgba(var(--workspace-accent-rgb), 0.22);
+  background: rgba(var(--workspace-accent-rgb), 0.08);
 }
 
 .workspace-resizable-panels {
@@ -429,7 +429,7 @@ button:active {
   width: 10px;
   border-radius: 999px;
   background:
-    linear-gradient(180deg, transparent, rgba(45, 212, 191, 0.4), transparent),
+    linear-gradient(180deg, transparent, rgba(var(--workspace-accent-rgb), 0.4), transparent),
     rgba(255, 255, 255, 0.06);
   transition: background-color 180ms var(--qol-ease), transform 180ms var(--qol-ease);
 }
@@ -540,7 +540,7 @@ body.auth-unlocked .market-player-results .market-player-option {
   border-radius: 10px;
   overflow: visible;
   background:
-    linear-gradient(90deg, rgba(37, 224, 189, 0.055), transparent 46%),
+    linear-gradient(90deg, rgba(var(--workspace-accent-rgb), 0.055), transparent 46%),
     rgba(4, 10, 12, 0.78);
   text-align: left;
 }
@@ -551,7 +551,7 @@ body.auth-unlocked .market-player-results .market-player-option::after {
 
 body.auth-unlocked .market-player-results .market-player-option:hover {
   transform: translateY(-1px);
-  border-color: rgba(56, 216, 193, 0.32);
+  border-color: rgba(var(--workspace-accent-rgb), 0.32);
   box-shadow: 0 10px 24px rgba(0, 0, 0, 0.24);
 }
 
@@ -625,8 +625,8 @@ body.auth-unlocked
 }
 
 body.auth-unlocked .market-player-results .market-player-overall {
-  border-color: rgba(90, 168, 255, 0.24);
-  background: rgba(90, 168, 255, 0.12);
+  border-color: rgba(var(--brand-blue-rgb), 0.24);
+  background: rgba(var(--brand-blue-rgb), 0.12);
   color: #cfe4ff;
 }
 

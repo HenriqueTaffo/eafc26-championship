@@ -7,7 +7,7 @@
   align-items: center;
   gap: 8px;
   min-height: 36px;
-  border: 1px solid rgba(45, 212, 191, 0.26);
+  border: 1px solid rgba(var(--workspace-accent-rgb), 0.26);
   border-radius: 8px;
   padding: 0 10px;
   background: rgba(8, 12, 14, 0.92);
@@ -68,7 +68,7 @@
 
 .league-command-dialog [cmdk-group-heading] {
   padding: 9px 10px 6px;
-  color: #2dd4bf;
+  color: var(--workspace-accent);
   font-size: 0.64rem;
   font-weight: 900;
   text-transform: uppercase;
@@ -87,7 +87,7 @@
 }
 
 .league-command-dialog [cmdk-item][data-selected="true"] {
-  background: rgba(45, 212, 191, 0.12);
+  background: rgba(var(--workspace-accent-rgb), 0.12);
 }
 
 .league-command-dialog [cmdk-item] > span {
@@ -318,7 +318,7 @@
 .fit-pill {
   display: inline-flex;
   max-width: 100%;
-  border: 1px solid rgba(45, 212, 191, 0.24);
+  border: 1px solid rgba(var(--workspace-accent-rgb), 0.24);
   border-radius: 999px;
   padding: 4px 7px;
   color: #a7f3d0;
@@ -333,7 +333,7 @@
 
 .fit-pill.tone-ready,
 .fit-pill.tone-live {
-  border-color: rgba(45, 212, 191, 0.35);
+  border-color: rgba(var(--workspace-accent-rgb), 0.35);
   color: #99f6e4;
 }
 
@@ -389,8 +389,8 @@
 }
 
 .kanban-column.is-over {
-  border-color: rgba(45, 212, 191, 0.48);
-  background: rgba(45, 212, 191, 0.08);
+  border-color: rgba(var(--workspace-accent-rgb), 0.48);
+  background: rgba(var(--workspace-accent-rgb), 0.08);
 }
 
 .kanban-column header {
@@ -496,8 +496,8 @@
 }
 
 .workflow-steps span.is-active {
-  border-color: rgba(45, 212, 191, 0.42);
-  background: rgba(45, 212, 191, 0.1);
+  border-color: rgba(var(--workspace-accent-rgb), 0.42);
+  background: rgba(var(--workspace-accent-rgb), 0.1);
   color: var(--workspace-text, #eef4f2);
 }
 
@@ -555,17 +555,17 @@
 }
 
 .transfer-workspace-tab:hover {
-  border-color: rgba(45, 212, 191, 0.18);
+  border-color: rgba(var(--workspace-accent-rgb), 0.18);
   background: rgba(255, 255, 255, 0.045);
   color: var(--workspace-text, #eef4f2);
   transform: none;
 }
 
 .transfer-workspace-tab.is-active {
-  border-color: rgba(45, 212, 191, 0.36);
+  border-color: rgba(var(--workspace-accent-rgb), 0.36);
   background:
-    linear-gradient(180deg, rgba(45, 212, 191, 0.13), transparent),
-    rgba(45, 212, 191, 0.055);
+    linear-gradient(180deg, rgba(var(--workspace-accent-rgb), 0.13), transparent),
+    rgba(var(--workspace-accent-rgb), 0.055);
   color: var(--workspace-text, #eef4f2);
 }
 

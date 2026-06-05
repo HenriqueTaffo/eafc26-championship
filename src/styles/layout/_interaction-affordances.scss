@@ -5,12 +5,12 @@
   --motion-slow: 260ms;
   --motion-ease: cubic-bezier(0.22, 1, 0.36, 1);
   --motion-press: cubic-bezier(0.3, 0, 0.2, 1);
-  --interactive-ring: 0 0 0 3px rgba(56, 216, 193, 0.18);
+  --interactive-ring: 0 0 0 3px rgba(var(--workspace-accent-rgb), 0.18);
   --interactive-glow: 0 12px 30px rgba(0, 0, 0, 0.26);
-  --interactive-glow-accent: 0 14px 34px rgba(45, 212, 191, 0.12);
+  --interactive-glow-accent: 0 14px 34px rgba(var(--workspace-accent-rgb), 0.12);
   --interactive-glow-strong:
-    0 0 0 1px rgba(56, 216, 193, 0.28), 0 18px 44px rgba(0, 0, 0, 0.34),
-    0 0 34px rgba(56, 216, 193, 0.14);
+    0 0 0 1px rgba(var(--workspace-accent-rgb), 0.28), 0 18px 44px rgba(0, 0, 0, 0.34),
+    0 0 34px rgba(var(--workspace-accent-rgb), 0.14);
 }
 
 body :where(button:not(:disabled), a[href], summary, [role="button"]) {
@@ -90,14 +90,14 @@ body :where(button svg, a[href] svg, summary svg, [role="button"] svg) {
   0%,
   100% {
     box-shadow:
-      0 0 0 0 rgba(56, 216, 193, 0),
-      0 0 0 1px rgba(56, 216, 193, 0.18);
+      0 0 0 0 rgba(var(--workspace-accent-rgb), 0),
+      0 0 0 1px rgba(var(--workspace-accent-rgb), 0.18);
   }
 
   50% {
     box-shadow:
-      0 0 0 5px rgba(56, 216, 193, 0.08),
-      0 0 0 1px rgba(56, 216, 193, 0.34);
+      0 0 0 5px rgba(var(--workspace-accent-rgb), 0.08),
+      0 0 0 1px rgba(var(--workspace-accent-rgb), 0.34);
   }
 }
 
@@ -195,7 +195,7 @@ body.auth-unlocked
   ):not(:disabled) {
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.16),
-    0 0 0 0 rgba(56, 216, 193, 0);
+    0 0 0 0 rgba(var(--workspace-accent-rgb), 0);
 }
 
 body.auth-unlocked :where(input, select, textarea):not(:disabled):hover {
@@ -204,7 +204,7 @@ body.auth-unlocked :where(input, select, textarea):not(:disabled):hover {
 }
 
 body.auth-unlocked :where(input, select, textarea):not(:disabled):focus {
-  border-color: rgba(56, 216, 193, 0.58);
+  border-color: rgba(var(--workspace-accent-rgb), 0.58);
   background-color: rgba(3, 7, 9, 0.82);
 }
 
@@ -267,8 +267,8 @@ body.auth-unlocked .attention-item::after {
   right: 12px;
   width: 7px;
   height: 7px;
-  border-top: 2px solid rgba(56, 216, 193, 0.9);
-  border-right: 2px solid rgba(56, 216, 193, 0.9);
+  border-top: 2px solid rgba(var(--workspace-accent-rgb), 0.9);
+  border-right: 2px solid rgba(var(--workspace-accent-rgb), 0.9);
   transform: translate(-4px, -50%) rotate(45deg);
 }
 
@@ -326,7 +326,7 @@ body.auth-unlocked #playersView .email-thread-item::before {
   background: linear-gradient(
     180deg,
     rgba(245, 196, 81, 0.92),
-    rgba(56, 216, 193, 0.82)
+    rgba(var(--workspace-accent-rgb), 0.82)
   );
   transform: scaleY(0.74);
   transform-origin: center;
@@ -351,8 +351,8 @@ body.auth-unlocked #playersView .email-thread-item::after {
 body.auth-unlocked #playersView .email-thread-item.is-selected {
   box-shadow:
     inset 4px 0 0 var(--ds-teal),
-    0 0 0 1px rgba(56, 216, 193, 0.18),
-    0 0 24px rgba(56, 216, 193, 0.08);
+    0 0 0 1px rgba(var(--workspace-accent-rgb), 0.18),
+    0 0 24px rgba(var(--workspace-accent-rgb), 0.08);
 }
 
 body.auth-unlocked #playersView .email-thread-item.is-read:not(.is-selected) {
@@ -396,19 +396,19 @@ body.auth-unlocked
     .email-folder-button.is-active,
     .email-thread-item.is-selected
   ) {
-  border-color: rgba(56, 216, 193, 0.42);
+  border-color: rgba(var(--workspace-accent-rgb), 0.42);
   background:
-    linear-gradient(90deg, rgba(56, 216, 193, 0.12), transparent 82%),
+    linear-gradient(90deg, rgba(var(--workspace-accent-rgb), 0.12), transparent 82%),
     rgba(14, 37, 42, 0.82);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.04),
-    0 0 0 1px rgba(56, 216, 193, 0.08);
+    0 0 0 1px rgba(var(--workspace-accent-rgb), 0.08);
 }
 
 body.auth-unlocked #playersView .email-thread-item.is-unread:not(.is-selected) {
-  border-color: rgba(56, 216, 193, 0.18);
+  border-color: rgba(var(--workspace-accent-rgb), 0.18);
   background:
-    linear-gradient(90deg, rgba(56, 216, 193, 0.055), transparent 82%),
+    linear-gradient(90deg, rgba(var(--workspace-accent-rgb), 0.055), transparent 82%),
     rgba(255, 255, 255, 0.024);
 }
 
@@ -479,14 +479,14 @@ body.auth-unlocked .app-action-modal-card {
     background: linear-gradient(
       135deg,
       rgba(245, 196, 81, 0.98),
-      rgba(56, 216, 193, 0.98) 58%,
+      rgba(var(--workspace-accent-rgb), 0.98) 58%,
       rgba(125, 211, 252, 0.9)
     );
     box-shadow:
       inset 0 1px 0 rgba(255, 255, 255, 0.18),
-      0 0 0 2px rgba(56, 216, 193, 0.24),
+      0 0 0 2px rgba(var(--workspace-accent-rgb), 0.24),
       0 16px 38px rgba(0, 0, 0, 0.34),
-      0 0 30px rgba(56, 216, 193, 0.18);
+      0 0 30px rgba(var(--workspace-accent-rgb), 0.18);
     color: #02100d;
     filter: brightness(1.05) saturate(1.16);
     transform: translateY(-3px);
@@ -501,8 +501,8 @@ body.auth-unlocked .app-action-modal-card {
       .email-bulk-toolbar button,
       .email-thread-row-actions button
     ):not(:disabled):hover {
-    border-color: rgba(56, 216, 193, 0.38);
-    background: rgba(56, 216, 193, 0.095);
+    border-color: rgba(var(--workspace-accent-rgb), 0.38);
+    background: rgba(var(--workspace-accent-rgb), 0.095);
     color: #f8fffd;
     box-shadow: var(--interactive-glow-strong);
     transform: translateY(-2px);
@@ -526,15 +526,15 @@ body.auth-unlocked .app-action-modal-card {
     background: linear-gradient(
       135deg,
       rgba(245, 196, 81, 0.98),
-      rgba(56, 216, 193, 0.98) 58%,
+      rgba(var(--workspace-accent-rgb), 0.98) 58%,
       rgba(125, 211, 252, 0.92)
     );
     color: #02100d;
     box-shadow:
       inset 0 1px 0 rgba(255, 255, 255, 0.2),
-      0 0 0 2px rgba(56, 216, 193, 0.28),
+      0 0 0 2px rgba(var(--workspace-accent-rgb), 0.28),
       0 18px 46px rgba(0, 0, 0, 0.36),
-      0 0 34px rgba(56, 216, 193, 0.2);
+      0 0 34px rgba(var(--workspace-accent-rgb), 0.2);
     filter: brightness(1.06) saturate(1.18);
     transform: translateY(-3px);
   }
@@ -553,9 +553,9 @@ body.auth-unlocked .app-action-modal-card {
     :where(.secondary-button, .ghost-button, .app-action-modal-button):not(
       :disabled
     ):hover {
-    border-color: rgba(56, 216, 193, 0.45);
+    border-color: rgba(var(--workspace-accent-rgb), 0.45);
     background:
-      linear-gradient(90deg, rgba(56, 216, 193, 0.13), transparent 76%),
+      linear-gradient(90deg, rgba(var(--workspace-accent-rgb), 0.13), transparent 76%),
       rgba(255, 255, 255, 0.045);
     color: #f8fffd;
     box-shadow: var(--interactive-glow-strong);
@@ -583,9 +583,9 @@ body.auth-unlocked .app-action-modal-card {
       [data-market-player-select],
       [data-coach-owner]
     ):not(:disabled):hover {
-    border-color: rgba(56, 216, 193, 0.36);
+    border-color: rgba(var(--workspace-accent-rgb), 0.36);
     background:
-      linear-gradient(90deg, rgba(56, 216, 193, 0.115), transparent 88%),
+      linear-gradient(90deg, rgba(var(--workspace-accent-rgb), 0.115), transparent 88%),
       rgba(255, 255, 255, 0.035);
     color: var(--ds-text-strong);
     box-shadow: var(--interactive-glow-accent);
@@ -598,7 +598,7 @@ body.auth-unlocked .app-action-modal-card {
     ):not(.email-folder-button):not(.email-focus-card):not(
       .market-player-option
     ):hover {
-    border-color: rgba(56, 216, 193, 0.42);
+    border-color: rgba(var(--workspace-accent-rgb), 0.42);
     box-shadow: var(--interactive-glow-accent);
     filter: saturate(1.05);
     transform: translateY(-2px);
@@ -622,7 +622,7 @@ body.auth-unlocked .app-action-modal-card {
 
   body.auth-unlocked input[type="range"]:not(:disabled):hover {
     accent-color: var(--ds-amber);
-    filter: drop-shadow(0 0 8px rgba(56, 216, 193, 0.24));
+    filter: drop-shadow(0 0 8px rgba(var(--workspace-accent-rgb), 0.24));
   }
 
   body.auth-unlocked
@@ -665,8 +665,8 @@ body.auth-unlocked .app-action-modal-card {
 
   body.auth-unlocked .workspace-nav-tab:hover .workspace-nav-tab-icon {
     color: var(--ds-teal);
-    background: rgba(56, 216, 193, 0.12);
-    box-shadow: 0 0 0 1px rgba(56, 216, 193, 0.22);
+    background: rgba(var(--workspace-accent-rgb), 0.12);
+    box-shadow: 0 0 0 1px rgba(var(--workspace-accent-rgb), 0.22);
     transform: translateY(-1px) scale(1.04);
   }
 
@@ -676,16 +676,16 @@ body.auth-unlocked .app-action-modal-card {
   body.auth-unlocked .market-player-option:hover strong,
   body.auth-unlocked .attention-item:hover strong {
     color: #ffffff;
-    text-shadow: 0 0 18px rgba(56, 216, 193, 0.16);
+    text-shadow: 0 0 18px rgba(var(--workspace-accent-rgb), 0.16);
   }
 
   body.auth-unlocked #playersView .email-thread-item:hover,
   body.auth-unlocked
     #playersView
     .email-thread-item:has(.email-thread-button:hover) {
-    border-color: rgba(56, 216, 193, 0.58);
+    border-color: rgba(var(--workspace-accent-rgb), 0.58);
     background:
-      linear-gradient(90deg, rgba(56, 216, 193, 0.18), transparent 74%),
+      linear-gradient(90deg, rgba(var(--workspace-accent-rgb), 0.18), transparent 74%),
       rgba(255, 255, 255, 0.052);
     box-shadow: var(--interactive-glow-strong);
     transform: translateY(-3px);
@@ -723,15 +723,15 @@ body.auth-unlocked .app-action-modal-card {
     #playersView
     .email-thread-item:has(.email-thread-button:hover)
     .email-thread-state {
-    border-color: rgba(56, 216, 193, 0.32);
+    border-color: rgba(var(--workspace-accent-rgb), 0.32);
     color: var(--ds-teal);
-    background: rgba(56, 216, 193, 0.09);
+    background: rgba(var(--workspace-accent-rgb), 0.09);
     transform: translateX(2px);
   }
 
   body.auth-unlocked
     :where(.sponsor-email-card, .email-preview-card):has(button:hover) {
-    border-color: rgba(56, 216, 193, 0.28);
+    border-color: rgba(var(--workspace-accent-rgb), 0.28);
     box-shadow: var(--interactive-glow-accent);
   }
 
@@ -749,7 +749,7 @@ body.auth-unlocked .app-action-modal-card {
       .event-card,
       .commissioner-card
     ):has(button:not(:disabled):hover) {
-    border-color: rgba(56, 216, 193, 0.3);
+    border-color: rgba(var(--workspace-accent-rgb), 0.3);
     box-shadow: var(--interactive-glow-accent);
   }
 
@@ -757,7 +757,7 @@ body.auth-unlocked .app-action-modal-card {
     #calendarView
     .calendar-day-cell.has-events:has(button:not(:disabled):hover) {
     background:
-      linear-gradient(135deg, rgba(56, 216, 193, 0.08), transparent 48%),
+      linear-gradient(135deg, rgba(var(--workspace-accent-rgb), 0.08), transparent 48%),
       var(--workspace-panel);
   }
 
