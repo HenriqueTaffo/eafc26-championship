@@ -4825,9 +4825,24 @@ App.transfers = {
 
   consolidateMarketSearchPlayers(query = "", players = []) {
     const groups = new Map();
+    const buildConsolidationKey = (player = {}) => {
+      const identityKey =
+        (typeof App.api?.getMarketPlayerIdentityKey === "function" &&
+          App.api.getMarketPlayerIdentityKey(player)) ||
+        "";
+      if (identityKey) return identityKey;
+
+      const playerName = App.transfers.normalizePlayerRatingKey(
+        player.name || player.player || "",
+      );
+      const playerClub = App.transfers.normalizePlayerRatingKey(
+        player.original_club || player.club || "",
+      );
+      return [playerName, playerClub].filter(Boolean).join("|") || "";
+    };
 
     [...(players || [])].forEach((player) => {
-      const key = App.transfers.normalizePlayerRatingKey(player.name || "");
+      const key = buildConsolidationKey(player);
       if (!key) return;
       if (!groups.has(key)) groups.set(key, []);
       groups.get(key).push(player);

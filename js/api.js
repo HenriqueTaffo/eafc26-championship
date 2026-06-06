@@ -892,6 +892,23 @@ App.api = {
         : typeof App.transfers?.isRejectedTransferStatus === "function"
           ? App.transfers.isRejectedTransferStatus
           : null;
+    const isMovementMoreRecent = (candidate, current) => {
+      if (!current) return true;
+
+      if (candidate.timestampMs !== null && current.timestampMs === null) {
+        return true;
+      }
+      if (candidate.timestampMs === null && current.timestampMs !== null) {
+        return false;
+      }
+      if (candidate.timestampMs !== null && current.timestampMs !== null) {
+        if (candidate.timestampMs !== current.timestampMs) {
+          return candidate.timestampMs > current.timestampMs;
+        }
+      }
+
+      return candidate.sequence > current.sequence;
+    };
 
     (App.state.apiTransfers || []).forEach((row, index) => {
       const normalizedStatus = row.Status || row.status;
@@ -903,25 +920,26 @@ App.api = {
       const time = new Date(
         row.Timestamp || row.created_at || row.createdAt || 0,
       ).getTime();
-      const score = Number.isNaN(time) ? index : time * 1000 + index;
       const movement = {
         buyer: row.Comprador || row.buyer || row.buyer_id || "",
         destination:
           row.ClubeDestino || row.Destino || row.destination_club || "",
-        score,
+        timestampMs: Number.isNaN(time) ? null : time,
+        sequence: index,
         transferType: App.utils.normalizeText(
           row.TipoTransferencia || row.transfer_type || row.transferType || "",
         ),
       };
 
-      if (!movements[key] || movements[key].score > score) {
+      if (!movements[key] || isMovementMoreRecent(movement, movements[key])) {
         movements[key] = movement;
       }
 
       const detailedKey = App.api.getTransferMovementKey(row);
       if (
         detailedKey &&
-        (!movements[detailedKey] || movements[detailedKey].score > score)
+        (!movements[detailedKey] ||
+          isMovementMoreRecent(movement, movements[detailedKey]))
       ) {
         movements[detailedKey] = movement;
       }
