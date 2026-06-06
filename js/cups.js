@@ -40,7 +40,7 @@ App.cups = {
             { home: "Leicester City", away: "Bolton Wanderers" },
             { home: "Ipswich Town", away: "Reading" },
             { home: "Blackburn Rovers", away: "Wigan Athletic" },
-            { home: "Bristol City", away: "Barnsley" }
+            { home: "Wrexham", away: "Preston North End" }
           ]},
           { phase: "Oitavas", week: 7, entrants: [
             "Manchester City",
