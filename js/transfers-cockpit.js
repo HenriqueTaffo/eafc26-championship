@@ -232,13 +232,44 @@ function sanitizeCandidate(candidate = {}) {
     marketValue: Number(candidate.marketValue || 0) || 0,
     offerValue: Number(candidate.offerValue || candidate.finalValue || 0) || 0,
     finalValue: Number(candidate.finalValue || 0) || 0,
-    weeklySalary: Number(candidate.weeklySalary || 0) || 0,
+    weeklySalary:
+      Number(
+        App.transfers.parseTransferMoneyInput(candidate.weeklySalary || 0),
+      ) || 0,
     salarySourceName: String(candidate.salarySourceName || "").trim(),
     salarySourceUrl: String(candidate.salarySourceUrl || "").trim(),
     age: Number(candidate.age || 0) || 0,
     source: String(candidate.source || "market").trim(),
     note: String(candidate.note || "").trim(),
   };
+}
+
+function getCandidateSalaryReference(candidate = {}) {
+  const playerName = candidate.player || candidate.name || "";
+  return (
+    App.transfers.getSalaryReferenceFromItem?.({
+      ...candidate,
+      player: playerName,
+      name: playerName,
+      fromClub: candidate.fromClub || candidate.club || "",
+      club: candidate.club || candidate.fromClub || "",
+      marketValue: candidate.marketValue,
+      overall: candidate.overall,
+    }) || {}
+  );
+}
+
+function getCandidateWeeklySalary(candidate = {}) {
+  return Number(
+    candidate.weeklySalary ||
+      getCandidateSalaryReference(candidate).weeklySalary ||
+      0,
+  );
+}
+
+function formatCandidateWeeklySalary(candidate = {}) {
+  const weeklySalary = getCandidateWeeklySalary(candidate);
+  return weeklySalary ? `${App.utils.formatCurrency(weeklySalary)}/sem` : "";
 }
 
 function renderWorkspacePill(label = "", tone = "") {
@@ -515,7 +546,10 @@ Object.assign(App.transfers, {
       overall: Number(payload.overall || preview?.overall || 0),
       value,
       totalCost: value,
-      weeklySalary: Number(preview?.weeklySalary || payload.weeklySalary || 0),
+      weeklySalary: Number(
+        preview?.weeklySalary ||
+          App.transfers.parseTransferMoneyInput(payload.weeklySalary || 0),
+      ),
       tradeInPlayer: payload.tradeInPlayer || preview?.exchangePlayer?.player || "",
       tradeInCredit: Number(payload.tradeInCredit || preview?.exchangeCredit || 0),
       referenceValue: Number(data.referenceValue || preview?.marketValue || 0),
@@ -691,8 +725,24 @@ Object.assign(App.transfers, {
       : isInternal
         ? "Aguardando técnico"
         : "Em análise";
-    const weeklySalary = Number(preview?.weeklySalary || payload.weeklySalary || 0);
+    const weeklySalary = Number(
+      preview?.weeklySalary ||
+        App.transfers.parseTransferMoneyInput(payload.weeklySalary || 0),
+    );
     const referenceValue = Number(preview?.marketValue || payload.marketValue || 0);
+    const weeklySalaryForDisplay =
+      weeklySalary ||
+      getCandidateWeeklySalary({
+        player: payload.player || preview?.player || "",
+        name: payload.player || preview?.player || "",
+        fromClub: payload.fromClub || preview?.fromClub || "",
+        club: payload.fromClub || preview?.fromClub || "",
+        overall: Number(payload.overall || preview?.overall || 0),
+        marketValue: referenceValue,
+        league: payload.league || preview?.league || "",
+        position: payload.position || preview?.position || "",
+        age: Number(payload.age || preview?.age || 0),
+      });
     const sellerExpectationValue = Number(preview?.sellerExpectationValue || 0);
     const tradeLabel =
       !isInternal && preview?.exchangePlayer
@@ -756,7 +806,9 @@ Object.assign(App.transfers, {
         : []),
       {
         label: "Folha semanal",
-        value: weeklySalary ? `${App.utils.formatCurrency(weeklySalary)}/sem` : "Pendente",
+        value: weeklySalaryForDisplay
+          ? `${App.utils.formatCurrency(weeklySalaryForDisplay)}/sem`
+          : "",
         detail: "Impacto recorrente no orçamento",
       },
     ];
@@ -1119,11 +1171,15 @@ Object.assign(App.transfers, {
       overall,
       marketValue,
       offerValue: Number(
-        form.elements.offerValue?.value || preview?.finalValue || 0,
+        App.transfers.parseTransferMoneyInput(
+          form.elements.offerValue?.value || preview?.finalValue || 0,
+        ),
       ),
       finalValue: Number(preview?.finalValue || 0),
       weeklySalary: Number(
-        preview?.weeklySalary || form.elements.weeklySalary?.value || 0,
+        preview?.weeklySalary ||
+          App.transfers.getWeeklySalaryInputValue(form) ||
+          0,
       ),
       salarySourceName:
         preview?.salarySourceName || form.elements.salarySourceName?.value || "",
@@ -1724,9 +1780,19 @@ Object.assign(App.transfers, {
       },
       {
         label: "Folha semanal",
-        value: preview.salaryReferenceMissing
-          ? "Pendente"
-          : App.utils.formatCurrency(preview.weeklySalary),
+        value: App.utils.formatCurrency(
+          Number(
+            preview.weeklySalary ||
+              App.transfers.getSalaryReferenceFromItem({
+                ...preview,
+                player: preview.player || preview.name || "",
+                name: preview.player || preview.name || "",
+                fromClub: preview.fromClub || preview.club || "",
+                club: preview.club || preview.fromClub || "",
+              })?.weeklySalary ||
+              0,
+          ),
+        ),
         unit: "/sem",
         tone: preview.salaryReferenceMissing ? "danger" : "",
       },
@@ -2710,7 +2776,7 @@ Object.assign(App.transfers, {
           </article>
           <article>
             <span>Folha semanal</span>
-            <strong>${candidate.weeklySalary ? `${App.utils.formatCurrency(candidate.weeklySalary)}/sem` : "Pendente"}</strong>
+            <strong>${formatCandidateWeeklySalary(candidate)}</strong>
             <small>entra no teto salarial</small>
           </article>
           <article>
@@ -3316,6 +3382,9 @@ Object.assign(App.transfers, {
             const candidate = App.transfers.buildCandidateFromMarketPlayer(player);
             const salaryReference = App.transfers.getSalaryReferenceFromItem({
               ...player,
+              ...candidate,
+              player: player.name || candidate.player,
+              name: player.name || candidate.player,
               overall: candidate.overall,
               marketValue: candidate.marketValue,
             });
@@ -3342,7 +3411,7 @@ Object.assign(App.transfers, {
                 <span class="market-player-side">
                   ${candidate.overall ? `<span class="market-player-overall">OVR ${candidate.overall}</span>` : ""}
                   <span class="market-player-value">${App.utils.escapeHtml(App.transfers.formatMarketValueDisplay(candidate.marketValue))}</span>
-                  ${salaryReference.ok ? `<span class="market-player-status">${App.utils.escapeHtml(App.transfers.getSalaryReferenceLabel(salaryReference))} ${App.utils.formatCurrency(salaryReference.weeklySalary)}/sem</span>` : `<span class="market-player-status">Folha pendente</span>`}
+                  ${salaryReference.ok ? `<span class="market-player-status">${App.utils.escapeHtml(App.transfers.getSalaryReferenceLabel(salaryReference))} ${App.utils.formatCurrency(salaryReference.weeklySalary)}/sem</span>` : ""}
                   <span class="market-player-status">${App.utils.escapeHtml(fit.label)}</span>
                   ${shortlist ? `<span class="market-player-status">Shortlist: ${App.utils.escapeHtml(normalizeStage(shortlist.priority))}</span>` : ""}
                   ${isContracted ? `<span class="market-player-status">Ja contratado</span>` : ""}

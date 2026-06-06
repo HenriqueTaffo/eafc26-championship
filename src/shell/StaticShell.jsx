@@ -1394,11 +1394,10 @@ function TransferProposalWorkbench() {
               <span>Salario semanal de folha</span>
               <input
                 name="weeklySalary"
-                type="number"
-                min="1"
-                step="1"
+                type="text"
                 inputMode="numeric"
-                placeholder="Auto: Capology ou SalarySport"
+                autoComplete="off"
+                placeholder="Auto: € 17.000 /sem"
               />
             </label>
             <input type="hidden" name="salarySourceName" value="" />
@@ -1784,11 +1783,10 @@ function TransfersView({ isActive = false }) {
                   <span>Salario semanal de folha</span>
                   <input
                     name="weeklySalary"
-                    type="number"
-                    min="1"
-                    step="1"
+                    type="text"
                     inputMode="numeric"
-                    placeholder="Auto: Capology ou SalarySport"
+                    autoComplete="off"
+                    placeholder="Auto: € 17.000 /sem"
                   />
                 </label>
                 <input type="hidden" name="salarySourceName" value="" />

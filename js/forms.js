@@ -236,6 +236,7 @@ App.forms = {
 
     App.transfers.syncTransferBuyerScope?.(form);
     const payload = Object.fromEntries(new FormData(form).entries());
+    payload.weeklySalary = App.transfers.getWeeklySalaryInputValue(form);
 
     if (App.transfers?.isTransferWindowLocked?.()) {
       App.utils.setMessage(
@@ -595,6 +596,14 @@ App.forms = {
         App.transfers.parseTransferMoneyInput(
           transferForm.elements.offerValue?.value,
         ),
+      );
+      App.transfers.refreshWorkspace(transferForm);
+    });
+
+    transferForm.elements.weeklySalary?.addEventListener("blur", () => {
+      App.transfers.setWeeklySalaryInputValue(
+        transferForm,
+        App.transfers.getWeeklySalaryInputValue(transferForm),
       );
       App.transfers.refreshWorkspace(transferForm);
     });

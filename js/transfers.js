@@ -1284,6 +1284,12 @@ App.transfers = {
     return amount.toLocaleString("pt-BR");
   },
 
+  formatWeeklySalaryInputValue(value) {
+    const amount = Math.round(App.transfers.parseTransferMoneyInput(value));
+    if (!amount) return "";
+    return `${App.utils.formatCurrency(amount)} /sem`;
+  },
+
   setTransferOfferInputValue(fieldOrForm, value) {
     const field = fieldOrForm?.elements?.offerValue || fieldOrForm;
     if (!field) return;
@@ -1293,6 +1299,19 @@ App.transfers = {
     );
     field.value = rounded ? App.transfers.formatTransferMoneyInput(rounded) : "";
     field.dataset.rawValue = rounded ? String(rounded) : "";
+  },
+
+  getWeeklySalaryInputValue(fieldOrForm) {
+    const field = fieldOrForm?.elements?.weeklySalary || fieldOrForm;
+    return App.transfers.parseTransferMoneyInput(field?.value || "");
+  },
+
+  setWeeklySalaryInputValue(fieldOrForm, value) {
+    const field = fieldOrForm?.elements?.weeklySalary || fieldOrForm;
+    if (!field) return;
+
+    const amount = Math.round(App.transfers.parseTransferMoneyInput(value));
+    field.value = amount ? App.transfers.formatWeeklySalaryInputValue(amount) : "";
   },
 
   getExternalOfferVerdict(preview = {}) {
@@ -3413,8 +3432,9 @@ App.transfers = {
       return;
     }
     if (form.elements.weeklySalary) {
-      form.elements.weeklySalary.value = Math.round(
-        Number(reference.weeklySalary || 0),
+      App.transfers.setWeeklySalaryInputValue(
+        form,
+        Math.round(Number(reference.weeklySalary || 0)),
       );
     }
     if (form.elements.salarySourceName) {
@@ -3494,10 +3514,10 @@ App.transfers = {
       if (form.dataset.salaryQuotePending !== key) return null;
       const shouldApplyQuote =
         Number(quote?.weeklySalary || 0) > 0 &&
-        App.transfers.isPublicSalaryUrl(
+        (App.transfers.isPublicSalaryUrl(
           quote?.salarySourceUrl || quote?.sourceUrl || "",
-        ) &&
-        !App.transfers.isRegulatorySalaryReference(quote);
+        ) ||
+          App.transfers.isEstimatedSalaryReference(quote));
       if (shouldApplyQuote) {
         App.transfers.applySalaryReferenceToForm(form, quote);
       } else {
@@ -3776,7 +3796,7 @@ App.transfers = {
       fromClub,
       overall,
       marketValue,
-      weeklySalary: Number(form.elements.weeklySalary?.value || 0),
+      weeklySalary: App.transfers.getWeeklySalaryInputValue(form),
       salarySourceName: form.elements.salarySourceName?.value || "",
       salarySourceUrl: form.elements.salarySourceUrl?.value || "",
     };

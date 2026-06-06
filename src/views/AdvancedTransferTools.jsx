@@ -127,6 +127,9 @@ function buildMarketRow(player = {}, buyer = "") {
   const salaryReference =
     App.transfers?.getSalaryReferenceFromItem?.({
       ...player,
+      ...candidate,
+      player: player.name || candidate.player,
+      name: player.name || candidate.player,
       overall: candidate.overall,
       marketValue: candidate.marketValue,
     }) || {};
@@ -614,12 +617,23 @@ function TransferMarketTable({ onSelectPlayer } = {}) {
       {
         accessorKey: "weeklySalary",
         header: "Folha",
-        cell: ({ row }) =>
-          row.original.weeklySalary
-            ? `${formatMoney(row.original.weeklySalary)}/sem`
-            : row.original.ratingOnly
-              ? "Sem referencia"
-              : "Pendente",
+        cell: ({ row }) => {
+          const fallbackReference =
+            App.transfers?.getSalaryReferenceFromItem?.({
+              ...row.original.raw,
+              ...row.original.candidate,
+              player: row.original.name,
+              name: row.original.name,
+              fromClub: row.original.club,
+              club: row.original.club,
+            }) || {};
+          const weeklySalary = Number(
+            row.original.weeklySalary ||
+              fallbackReference.weeklySalary ||
+              0,
+          );
+          return weeklySalary ? `${formatMoney(weeklySalary)}/sem` : "";
+        },
       },
       {
         id: "fit",
