@@ -279,7 +279,9 @@ App.main = {
           .querySelectorAll(".view")
           .forEach((view) => view.classList.remove("active"));
         button.classList.add("active");
-        document.getElementById(button.dataset.view)?.classList.add("active");
+        const nextView = document.getElementById(button.dataset.view);
+        nextView?.classList.add("active");
+        App.motion?.enterView?.(nextView);
         App.main.renderCurrentView();
       });
     });
@@ -333,9 +335,7 @@ App.main = {
   },
 
   canAccessView(viewId) {
-    if (
-      ["commissionerView", "submitView", "experienceView"].includes(viewId)
-    ) {
+    if (["commissionerView", "submitView", "experienceView"].includes(viewId)) {
       return App.auth?.isCommissioner?.() === true;
     }
     return true;
@@ -439,6 +439,7 @@ App.main = {
       .forEach((item) => item.classList.remove("active"));
     button?.classList.add("active");
     view.classList.add("active");
+    App.motion?.enterView?.(view);
     if (syncRoute) App.main.syncRouteForView(targetViewId);
     App.main.preloadViewData(targetViewId);
   },
@@ -469,18 +470,12 @@ App.main = {
         }),
       );
     }
-    if (
-      viewId === "experienceView" &&
-      App.api?.loadExperienceData
-    ) {
+    if (viewId === "experienceView" && App.api?.loadExperienceData) {
       tasks.push(App.api.loadExperienceData());
     } else if (viewId === "transfersView" && App.api?.loadExperienceData) {
       deferredTasks.push(() => App.api.loadExperienceData());
     }
-    if (
-      viewId === "experienceView" &&
-      App.api?.loadManagerOnboarding
-    ) {
+    if (viewId === "experienceView" && App.api?.loadManagerOnboarding) {
       tasks.push(App.api.loadManagerOnboarding());
     } else if (viewId === "transfersView" && App.api?.loadManagerOnboarding) {
       deferredTasks.push(() => App.api.loadManagerOnboarding());
@@ -514,7 +509,8 @@ App.main = {
     }
 
     Promise.allSettled(tasks).then(() => {
-      if (!document.getElementById(viewId)?.classList.contains("active")) return;
+      if (!document.getElementById(viewId)?.classList.contains("active"))
+        return;
       App.react?.notify?.();
       if ("requestIdleCallback" in window) {
         window.requestIdleCallback(runDeferredTasks, { timeout: 6500 });

@@ -1,0 +1,465 @@
+:root {
+  --app-motion-ease: cubic-bezier(0.2, 0.82, 0.18, 1);
+  --app-motion-spring: cubic-bezier(0.18, 0.9, 0.22, 1.12);
+  --app-motion-distance: 14px;
+  --app-motion-delay: 34ms;
+}
+
+@keyframes motion-login-form-commit {
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+
+  to {
+    opacity: 0.2;
+    transform: translateY(-8px) scale(0.985);
+  }
+}
+
+@keyframes motion-login-brand-commit {
+  0% {
+    transform: translateY(0) scale(1);
+  }
+
+  55% {
+    transform: translateY(-4px) scale(1.03);
+  }
+
+  100% {
+    transform: translateY(-1px) scale(0.995);
+  }
+}
+
+@keyframes motion-login-submit-track {
+  from {
+    transform: translateX(-120%) skewX(-18deg);
+    opacity: 0;
+  }
+
+  30% {
+    opacity: 0.42;
+  }
+
+  to {
+    transform: translateX(120%) skewX(-18deg);
+    opacity: 0;
+  }
+}
+
+@keyframes motion-success-card-arrive {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.96);
+  }
+
+  68% {
+    opacity: 1;
+    transform: translateY(-2px) scale(1.012);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes motion-success-crest-pop {
+  from {
+    opacity: 0;
+    transform: rotateY(-74deg) scale(0.82);
+  }
+
+  62% {
+    opacity: 1;
+    transform: rotateY(6deg) scale(1.08);
+  }
+
+  to {
+    opacity: 1;
+    transform: rotateY(0deg) scale(1);
+  }
+}
+
+@keyframes motion-success-club-face {
+  from {
+    opacity: 0;
+    transform: rotateY(160deg) scale(0.92);
+  }
+
+  to {
+    opacity: 1;
+    transform: rotateY(180deg) scale(1);
+  }
+}
+
+@keyframes motion-success-copy-rise {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes motion-shell-unlock {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+    filter: saturate(0.86);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    filter: saturate(1);
+  }
+}
+
+@keyframes motion-view-enter {
+  from {
+    opacity: 0;
+    transform: translateY(var(--app-motion-distance));
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes motion-card-enter {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.985);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes motion-nav-scan {
+  from {
+    transform: translateX(-38%) scaleX(0.35);
+    opacity: 0;
+  }
+
+  42% {
+    opacity: 1;
+  }
+
+  to {
+    transform: translateX(0) scaleX(1);
+    opacity: 1;
+  }
+}
+
+@keyframes motion-status-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(var(--workspace-accent-rgb), 0);
+  }
+
+  50% {
+    box-shadow: 0 0 0 5px rgba(var(--workspace-accent-rgb), 0.1);
+  }
+}
+
+@keyframes motion-squad-pop {
+  from {
+    opacity: 0;
+    transform: translateY(8px) rotateX(-8deg) scale(0.98);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) rotateX(0deg) scale(1);
+  }
+}
+
+.manager-login-card.is-login-submitting {
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.manager-login-card.is-login-submitting .manager-login-brand {
+  animation: motion-login-brand-commit 520ms var(--app-motion-spring) both;
+}
+
+.manager-login-card.is-login-submitting .manager-login-form-panel {
+  animation: motion-login-form-commit 420ms var(--app-motion-ease) both;
+}
+
+.manager-login-card.is-login-submitting .manager-login-submit {
+  position: relative;
+  overflow: hidden;
+  box-shadow:
+    0 0 0 1px rgba(var(--workspace-accent-rgb), 0.34),
+    0 0 34px rgba(var(--workspace-accent-rgb), 0.2);
+}
+
+.manager-login-card.is-login-submitting .manager-login-submit::after {
+  content: "";
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.42),
+    transparent
+  );
+  animation: motion-login-submit-track 820ms var(--app-motion-ease) infinite;
+}
+
+body.auth-login-success .manager-login-card:not(.manager-login-success-card),
+body.auth-login-success .manager-session-card:not(.manager-login-success-card),
+body.auth-login-success .manager-login-transition-ghost {
+  display: none !important;
+}
+
+body.auth-login-success .manager-login-panel {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  display: grid;
+  width: 100% !important;
+  max-width: none;
+  min-height: 100vh;
+  padding: clamp(18px, 4vw, 48px);
+  place-items: center;
+  background:
+    radial-gradient(
+      circle at 50% 34%,
+      rgba(var(--workspace-accent-rgb), 0.18),
+      transparent 34%
+    ),
+    linear-gradient(135deg, rgba(4, 9, 12, 0.96), rgba(3, 12, 12, 0.94)),
+    #04090c;
+}
+
+body.auth-login-success .manager-login-transition-shell {
+  width: min(760px, 100%);
+}
+
+body.auth-login-success .manager-login-success-card.manager-login-shell {
+  animation: motion-success-card-arrive 720ms var(--app-motion-spring) both;
+}
+
+body.auth-login-success .manager-login-success-mark {
+  transform-origin: center;
+  animation: motion-success-crest-pop 820ms var(--app-motion-spring) 120ms both;
+}
+
+body.auth-login-success .manager-login-success-emblem {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  width: 100%;
+  height: 100%;
+  padding: 14px;
+  place-items: center;
+  border-radius: 14px;
+  background:
+    radial-gradient(
+      circle at 50% 44%,
+      rgba(var(--workspace-accent-rgb), 0.2),
+      transparent 58%
+    ),
+    rgba(2, 6, 23, 0.86);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 18px 34px rgba(0, 0, 0, 0.26);
+}
+
+body.auth-login-success .manager-login-success-card .manager-login-flip-card {
+  animation: motion-success-club-face 520ms var(--app-motion-spring) 90ms both !important;
+}
+
+body.auth-login-success .manager-login-success-copy {
+  animation-delay: 360ms !important;
+}
+
+body.auth-login-success .manager-login-success-copy strong,
+body.auth-login-success .manager-login-success-copy small {
+  display: block;
+  animation: motion-success-copy-rise 520ms var(--app-motion-ease) both;
+}
+
+body.auth-login-success .manager-login-success-copy strong {
+  animation-delay: 260ms;
+}
+
+body.auth-login-success .manager-login-success-copy small {
+  animation-delay: 340ms;
+}
+
+body.auth-unlock-entering
+  :where(.shell-top-cluster, .workspace-nav-group, .app-status-bar) {
+  animation: motion-shell-unlock 680ms var(--app-motion-ease) both;
+}
+
+body.auth-unlock-entering .workspace-nav-group:nth-of-type(2) {
+  animation-delay: 70ms;
+}
+
+body.auth-unlock-entering .workspace-nav-group:nth-of-type(3) {
+  animation-delay: 120ms;
+}
+
+body.auth-unlock-entering .app-status-bar {
+  animation-delay: 160ms;
+}
+
+body.auth-unlocked .view.motion-view-enter {
+  animation: motion-view-enter 520ms var(--app-motion-ease) both;
+}
+
+body.auth-unlocked .view.motion-view-enter .motion-stagger-item,
+body.auth-unlock-entering .motion-stagger-item {
+  animation: motion-card-enter 560ms var(--app-motion-ease) both;
+  animation-delay: calc(var(--motion-index, 0) * var(--app-motion-delay));
+}
+
+body.auth-unlocked .workspace-nav-tab {
+  position: relative;
+  overflow: hidden;
+}
+
+body.auth-unlocked .workspace-nav-tab::after {
+  content: "";
+  pointer-events: none;
+  position: absolute;
+  right: 10px;
+  bottom: 5px;
+  left: 10px;
+  height: 2px;
+  border-radius: 999px;
+  background: linear-gradient(
+    90deg,
+    rgba(var(--brand-gold-rgb), 0.92),
+    rgba(var(--workspace-accent-rgb), 0.88)
+  );
+  opacity: 0;
+  transform: scaleX(0.36);
+  transform-origin: left;
+  transition:
+    opacity 180ms var(--app-motion-ease),
+    transform 220ms var(--app-motion-ease);
+}
+
+body.auth-unlocked .workspace-nav-tab.active::after,
+body.auth-unlocked .workspace-nav-tab[aria-current="page"]::after {
+  opacity: 1;
+  transform: scaleX(1);
+}
+
+body.auth-unlocked .workspace-nav-tab.motion-nav-active::after {
+  animation: motion-nav-scan 520ms var(--app-motion-ease) both;
+}
+
+body.auth-unlocked .transfer-subview-nav button,
+body.auth-unlocked [data-transfer-tab] {
+  position: relative;
+  overflow: hidden;
+}
+
+body.auth-unlocked .transfer-subview-nav button::after,
+body.auth-unlocked [data-transfer-tab]::after {
+  content: "";
+  pointer-events: none;
+  position: absolute;
+  right: 12px;
+  bottom: 5px;
+  left: 12px;
+  height: 2px;
+  border-radius: 999px;
+  background: rgba(var(--workspace-accent-rgb), 0.84);
+  opacity: 0;
+  transform: scaleX(0.4);
+  transform-origin: left;
+  transition:
+    opacity 180ms var(--app-motion-ease),
+    transform 220ms var(--app-motion-ease);
+}
+
+body.auth-unlocked .transfer-subview-nav button.is-active::after,
+body.auth-unlocked [data-transfer-tab].is-active::after {
+  opacity: 1;
+  transform: scaleX(1);
+}
+
+body.auth-unlocked
+  #transfersView.motion-view-enter
+  :where(
+    .transfer-timeline-item,
+    .transfer-hub-card-body,
+    .transfer-deal-alert
+  ) {
+  animation-name: motion-card-enter;
+}
+
+body.auth-unlocked
+  #transfersView
+  :where(
+    .transfer-deal-status,
+    .transfer-pill.is-success,
+    .transfer-pill.is-ready,
+    .sponsor-cadence-badge
+  ) {
+  animation: motion-status-pulse 2.4s var(--app-motion-ease) infinite;
+}
+
+body.auth-unlocked
+  #squadView.motion-view-enter
+  :where(.squad-slot, .squad-roster-row) {
+  transform-origin: center top;
+  animation-name: motion-squad-pop;
+}
+
+body.auth-unlocked
+  #calendarView.motion-view-enter
+  :where(
+    .calendar-event-card.done,
+    .calendar-event-card.pending,
+    .calendar-week-card
+  ) {
+  animation-name: motion-card-enter;
+}
+
+body.auth-unlocked
+  #playersView.motion-view-enter
+  :where(.email-thread-item, .sponsor-email-message, .sponsor-active-item) {
+  animation-name: motion-card-enter;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .manager-login-card.is-login-submitting .manager-login-brand,
+  .manager-login-card.is-login-submitting .manager-login-form-panel,
+  .manager-login-card.is-login-submitting .manager-login-submit::after,
+  body.auth-login-success .manager-login-success-card.manager-login-shell,
+  body.auth-login-success .manager-login-success-mark,
+  body.auth-login-success .manager-login-success-copy strong,
+  body.auth-login-success .manager-login-success-copy small,
+  body.auth-unlock-entering
+    :where(.shell-top-cluster, .workspace-nav-group, .app-status-bar),
+  body.auth-unlocked .view.motion-view-enter,
+  body.auth-unlocked .view.motion-view-enter .motion-stagger-item,
+  body.auth-unlock-entering .motion-stagger-item,
+  body.auth-unlocked .workspace-nav-tab.motion-nav-active::after,
+  body.auth-unlocked
+    #transfersView
+    :where(
+      .transfer-deal-status,
+      .transfer-pill.is-success,
+      .transfer-pill.is-ready,
+      .sponsor-cadence-badge
+    ) {
+    animation: none !important;
+  }
+}

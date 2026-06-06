@@ -22,6 +22,7 @@ App.auth = {
   autoCpuOfferRunning: false,
   loginTransitionSession: null,
   loginTransitionSnapshotHtml: "",
+  loginTransitionRenderedAt: 0,
 
   init() {
     try {
@@ -91,7 +92,8 @@ App.auth = {
     }
 
     if (/^#[0-9a-f]{6}$/i.test(normalized)) return normalized.toUpperCase();
-    if (/^#[0-9a-f]{8}$/i.test(normalized)) return normalized.slice(0, 7).toUpperCase();
+    if (/^#[0-9a-f]{8}$/i.test(normalized))
+      return normalized.slice(0, 7).toUpperCase();
 
     return fallback;
   },
@@ -217,13 +219,31 @@ App.auth = {
 
     root.style.setProperty("--workspace-accent", theme.accent);
     root.style.setProperty("--workspace-warm", theme.warm);
-    root.style.setProperty("--workspace-accent-rgb", App.auth.toRgbTriplet(theme.accent));
-    root.style.setProperty("--workspace-warm-rgb", App.auth.toRgbTriplet(theme.warm));
+    root.style.setProperty(
+      "--workspace-accent-rgb",
+      App.auth.toRgbTriplet(theme.accent),
+    );
+    root.style.setProperty(
+      "--workspace-warm-rgb",
+      App.auth.toRgbTriplet(theme.warm),
+    );
     root.style.setProperty("--workspace-line", theme.workspaceLine);
-    root.style.setProperty("--workspace-line-strong", theme.workspaceLineStrong);
-    root.style.setProperty("--workspace-line-soft", theme.workspacePanelOverlay);
-    root.style.setProperty("--workspace-accent-soft", theme.workspacePanelOverlay);
-    root.style.setProperty("--workspace-accent-border", theme.workspaceLineStrong);
+    root.style.setProperty(
+      "--workspace-line-strong",
+      theme.workspaceLineStrong,
+    );
+    root.style.setProperty(
+      "--workspace-line-soft",
+      theme.workspacePanelOverlay,
+    );
+    root.style.setProperty(
+      "--workspace-accent-soft",
+      theme.workspacePanelOverlay,
+    );
+    root.style.setProperty(
+      "--workspace-accent-border",
+      theme.workspaceLineStrong,
+    );
 
     root.style.setProperty("--brand-teal", theme.accent);
     root.style.setProperty("--brand-blue", theme.accent);
@@ -240,13 +260,28 @@ App.auth = {
     root.style.setProperty("--brand-gold-soft", theme.brandGoldSoft);
     root.style.setProperty("--brand-blue-soft", theme.brandBlueSoft);
     root.style.setProperty("--brand-violet-soft", theme.brandVioletSoft);
-    root.style.setProperty("--brand-teal-rgb", App.auth.toRgbTriplet(theme.accent));
-    root.style.setProperty("--brand-gold-rgb", App.auth.toRgbTriplet(theme.warm));
-    root.style.setProperty("--brand-blue-rgb", App.auth.toRgbTriplet(theme.accent));
+    root.style.setProperty(
+      "--brand-teal-rgb",
+      App.auth.toRgbTriplet(theme.accent),
+    );
+    root.style.setProperty(
+      "--brand-gold-rgb",
+      App.auth.toRgbTriplet(theme.warm),
+    );
+    root.style.setProperty(
+      "--brand-blue-rgb",
+      App.auth.toRgbTriplet(theme.accent),
+    );
     root.style.setProperty("--club-primary", theme.primary);
     root.style.setProperty("--club-secondary", theme.secondary);
-    root.style.setProperty("--club-primary-rgb", App.auth.toRgbTriplet(theme.primary));
-    root.style.setProperty("--club-secondary-rgb", App.auth.toRgbTriplet(theme.secondary));
+    root.style.setProperty(
+      "--club-primary-rgb",
+      App.auth.toRgbTriplet(theme.primary),
+    );
+    root.style.setProperty(
+      "--club-secondary-rgb",
+      App.auth.toRgbTriplet(theme.secondary),
+    );
 
     root.style.setProperty("--ds-teal", theme.accent);
     root.style.setProperty("--ds-sky", theme.warm);
@@ -259,9 +294,18 @@ App.auth = {
     root.style.setProperty("--ds-muted", "#9aa8ad");
     root.style.setProperty("--ds-subtle", "#72868e");
     root.style.setProperty("--ds-teal-soft", theme.workspacePanelOverlay);
-    root.style.setProperty("--ds-sky-soft", App.auth.withAlpha(theme.warm, 0.13));
-    root.style.setProperty("--ds-amber-soft", App.auth.withAlpha(theme.warm, 0.14));
-    root.style.setProperty("--ds-focus", `0 0 0 3px ${App.auth.withAlpha(theme.accent, 0.18)}`);
+    root.style.setProperty(
+      "--ds-sky-soft",
+      App.auth.withAlpha(theme.warm, 0.13),
+    );
+    root.style.setProperty(
+      "--ds-amber-soft",
+      App.auth.withAlpha(theme.warm, 0.14),
+    );
+    root.style.setProperty(
+      "--ds-focus",
+      `0 0 0 3px ${App.auth.withAlpha(theme.accent, 0.18)}`,
+    );
 
     root.style.setProperty("--qol-teal", theme.accent);
     root.style.setProperty("--qol-cyan", theme.accent);
@@ -269,14 +313,17 @@ App.auth = {
     root.style.setProperty("--qol-green", "#5ee38b");
     root.style.setProperty("--qol-red", "#f05252");
     root.style.setProperty("--qol-violet", theme.warm);
-    root.style.setProperty("--interactive-ring", `0 0 0 3px ${App.auth.withAlpha(theme.accent, 0.18)}`);
+    root.style.setProperty(
+      "--interactive-ring",
+      `0 0 0 3px ${App.auth.withAlpha(theme.accent, 0.18)}`,
+    );
     root.style.setProperty(
       "--interactive-glow-accent",
       `0 14px 34px ${App.auth.withAlpha(theme.accent, 0.12)}`,
     );
     root.style.setProperty(
       "--interactive-glow-strong",
-      `0 0 0 1px ${App.auth.withAlpha(theme.accent, 0.28)}, 0 18px 44px rgba(0, 0, 0, 0.34), 0 0 34px ${App.auth.withAlpha(theme.accent, 0.14)}`
+      `0 0 0 1px ${App.auth.withAlpha(theme.accent, 0.28)}, 0 18px 44px rgba(0, 0, 0, 0.34), 0 0 34px ${App.auth.withAlpha(theme.accent, 0.14)}`,
     );
   },
 
@@ -342,9 +389,12 @@ App.auth = {
   },
 
   isOpenTransferProposal(item = {}) {
-    return ["pending", "buyer_review", "player_terms", "signature_pending"].includes(
-      App.utils.normalizeText(item.status || "pending"),
-    );
+    return [
+      "pending",
+      "buyer_review",
+      "player_terms",
+      "signature_pending",
+    ].includes(App.utils.normalizeText(item.status || "pending"));
   },
 
   isTransferProposalClosed(item = {}) {
@@ -401,7 +451,10 @@ App.auth = {
         : "Assinatura em andamento no escrit\u00f3rio da liga.";
     }
     if (status === "player_terms") {
-      return item.player_terms_message || "Clube vendedor aceitou a venda. Negocie salario e termos pessoais com o jogador.";
+      return (
+        item.player_terms_message ||
+        "Clube vendedor aceitou a venda. Negocie salario e termos pessoais com o jogador."
+      );
     }
     if (status === "rejected") {
       return "NegociaÃƒÂ§ÃƒÂ£o encerrada sem assinatura.";
@@ -1160,13 +1213,8 @@ App.auth = {
         <div class="manager-login-success-stage">
           <span class="manager-login-mascot-stage manager-login-avatar-large manager-login-brand-mark manager-login-success-mark" aria-hidden="true">
             <span class="manager-login-mascot-ring"></span>
-            <span class="manager-login-flip-card">
-              <span class="manager-login-face manager-login-face-front manager-login-brand-face">
-                <img class="brand-icon-img" src="${App.config.getAssetUrl("assets/4linhas-icon-teal.png", App.config.assetVersion)}" alt="" loading="eager" />
-              </span>
-              <span class="manager-login-face manager-login-face-back manager-login-club-face">
-                ${App.auth.getLoginSuccessClubHtml(session)}
-              </span>
+            <span class="manager-login-success-emblem manager-login-club-face">
+              ${App.auth.getLoginSuccessClubHtml(session)}
             </span>
           </span>
           <div class="manager-login-success-copy">
@@ -1178,11 +1226,13 @@ App.auth = {
       </div>
       `,
     );
+    App.auth.loginTransitionRenderedAt = Date.now();
   },
 
   startLoginSuccessTransition(session = {}) {
     App.auth.loginTransitionSnapshotHtml = "";
     App.auth.loginTransitionSession = session;
+    App.auth.loginTransitionRenderedAt = 0;
     App.auth.syncAuthGate();
     App.auth.renderLoginSuccessPanel(session);
     return Date.now();
@@ -1190,14 +1240,21 @@ App.auth = {
 
   async finishLoginSuccessTransition(startedAt = Date.now()) {
     const minDuration = 2050;
+    const minVisibleDuration = 3000;
+    const renderedAt = App.auth.loginTransitionRenderedAt || startedAt;
     const elapsed = Date.now() - startedAt;
-    if (elapsed < minDuration) {
-      await new Promise((resolve) =>
-        setTimeout(resolve, minDuration - elapsed),
-      );
+    const visibleElapsed = Date.now() - renderedAt;
+    const remaining = Math.max(
+      minDuration - elapsed,
+      minVisibleDuration - visibleElapsed,
+      0,
+    );
+    if (remaining > 0) {
+      await new Promise((resolve) => setTimeout(resolve, remaining));
     }
     App.auth.loginTransitionSession = null;
     App.auth.loginTransitionSnapshotHtml = "";
+    App.auth.loginTransitionRenderedAt = 0;
     App.auth.syncAuthGate();
   },
 
@@ -1377,6 +1434,7 @@ App.auth = {
       App.auth.renderAll();
       App.auth.openSessionHome();
       App.main?.renderCurrentView?.();
+      App.motion?.unlockShell?.();
 
       const runBackgroundTasks = () => {
         App.api
@@ -1384,7 +1442,10 @@ App.auth = {
             Promise.resolve()
               .then(() => task?.())
               .catch((error) => {
-                console.warn("Carga privada em segundo plano indisponivel:", error);
+                console.warn(
+                  "Carga privada em segundo plano indisponivel:",
+                  error,
+                );
                 return null;
               }),
           )
@@ -1403,6 +1464,7 @@ App.auth = {
     } catch (error) {
       App.auth.loginTransitionSession = null;
       App.auth.loginTransitionSnapshotHtml = "";
+      App.auth.loginTransitionRenderedAt = 0;
       App.auth.syncAuthGate();
       App.auth.renderAll();
       throw error;
@@ -1455,6 +1517,7 @@ App.auth = {
     App.auth.currentSession = null;
     App.auth.loginTransitionSession = null;
     App.auth.loginTransitionSnapshotHtml = "";
+    App.auth.loginTransitionRenderedAt = 0;
     App.auth.myDecisions = [];
     App.auth.myTransferProposals = [];
     App.auth.myTransferTargets = [];
@@ -2347,14 +2410,14 @@ App.auth = {
               ? "Contrato em assinatura"
               : result.status === "player_terms"
                 ? "Termos do jogador"
-              : "Contrato fechado"
+                : "Contrato fechado"
             : "Negociacao encerrada",
       message:
         decision === "accepted" && result.status === "signature_pending"
           ? "Transferencia aceita, aguarde assinatura da liga para registro."
           : result.status === "player_terms"
             ? "Clube vendedor aceitou. Agora a mesa segue com jogador e agente."
-          : "Atualizando propostas, mercado, orçamentos e painel dos técnicos...",
+            : "Atualizando propostas, mercado, orçamentos e painel dos técnicos...",
     });
 
     if (decision === "accepted" || result.status === "accepted") {
@@ -2505,14 +2568,19 @@ App.auth = {
         const form = event.currentTarget;
         const button = form.querySelector("button[type='submit']");
         try {
+          form.classList.add("is-login-submitting");
           App.ui.setButtonLoading(button, "Entrando");
           await App.auth.login(
             form.elements.managerName.value,
             form.elements.accessCode.value,
           );
         } catch (error) {
+          form.classList.remove("is-login-submitting");
           alert(error.message);
         } finally {
+          if (document.body.contains(form)) {
+            form.classList.remove("is-login-submitting");
+          }
           App.ui.clearButtonLoading(button, "Entrar");
         }
       });
@@ -4533,8 +4601,7 @@ App.auth = {
           const proposalStatus = App.utils.normalizeText(
             target.dataset.proposalStatus || "",
           );
-          const isPlayerTerms =
-            isExternal && proposalStatus === "player_terms";
+          const isPlayerTerms = isExternal && proposalStatus === "player_terms";
           const currentOffer = Number(target.dataset.proposalCounterValue || 0);
           let counterValue = null;
           const sourceLabel =
@@ -4566,10 +4633,9 @@ App.auth = {
                   ? `${sourceLabel} pediu ${offerLabel}/sem para ${playerLabel}. Informe sua oferta salarial semanal.`
                   : `${sourceLabel} pediu ${offerLabel} por ${playerLabel}. Informe o novo valor para responder por e-mail.`
                 : `${sourceLabel} ofereceu ${offerLabel} por ${playerLabel}. Informe o novo valor para a CPU avaliar.`,
-              detail:
-                isPlayerTerms
-                  ? "Se a proposta ficar distante do pedido, o jogador pode responder com novo valor ou encerrar a negociacao."
-                  : "A resposta volta para a mesa. Se ficar distante do pedido, o clube pode encerrar a negociacao.",
+              detail: isPlayerTerms
+                ? "Se a proposta ficar distante do pedido, o jogador pode responder com novo valor ou encerrar a negociacao."
+                : "A resposta volta para a mesa. Se ficar distante do pedido, o clube pode encerrar a negociacao.",
               tone: "market",
               fields: [
                 {
@@ -4661,11 +4727,11 @@ App.auth = {
           }
 
           try {
-          App.ui.setButtonLoading(
-            target,
-            decision === "counter" ? "Enviando" : "Aplicando",
-          );
-          if (isExternal) {
+            App.ui.setButtonLoading(
+              target,
+              decision === "counter" ? "Enviando" : "Aplicando",
+            );
+            if (isExternal) {
               await App.auth.answerExternalTransferProposal(
                 proposalId,
                 decision,
@@ -4696,9 +4762,9 @@ App.auth = {
               ],
             });
           } finally {
-          App.ui.clearButtonLoading(target);
-        }
-      });
+            App.ui.clearButtonLoading(target);
+          }
+        });
       });
 
     App.auth.bindSponsorshipButtons(root);
@@ -4956,11 +5022,11 @@ App.auth = {
         ? "Aguardando assinatura no escritório"
         : isPlayerTerms
           ? "Termos pessoais do jogador"
-        : status === "buyer_review"
-          ? isCounter
-            ? "Contraproposta recebida"
-            : "Base financeira aceita"
-          : "Mesa aberta";
+          : status === "buyer_review"
+            ? isCounter
+              ? "Contraproposta recebida"
+              : "Base financeira aceita"
+            : "Mesa aberta";
 
     return `
       <article class="decision-card decision-email-message transfer-contract-email${
@@ -5100,9 +5166,7 @@ App.auth = {
       if (options.compact) {
         return `
           <article class="proposal-summary-item external-market-proposal compact-proposal-summary${
-            summaryStatusClass
-              ? ` proposal-status-${summaryStatusClass}`
-              : ""
+            summaryStatusClass ? ` proposal-status-${summaryStatusClass}` : ""
           }">
           <span>Mercado externo - ${statusLabel}</span>
           <strong>${App.utils.escapeHtml(item.player)}</strong>

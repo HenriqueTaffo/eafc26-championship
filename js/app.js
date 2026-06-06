@@ -39,7 +39,11 @@ App.dom = App.dom || {
   },
 
   sanitizeElementAttributes(element, attributeNames = null) {
-    if (!element || element.nodeType !== Node.ELEMENT_NODE || !App.utils?.polishUiText)
+    if (
+      !element ||
+      element.nodeType !== Node.ELEMENT_NODE ||
+      !App.utils?.polishUiText
+    )
       return;
 
     const allowedNames = attributeNames || [
@@ -95,9 +99,9 @@ App.dom = App.dom || {
     }
 
     if (typeof root.querySelectorAll === "function") {
-      root.querySelectorAll("*").forEach((element) =>
-        App.dom.sanitizeElementAttributes(element),
-      );
+      root
+        .querySelectorAll("*")
+        .forEach((element) => App.dom.sanitizeElementAttributes(element));
     }
 
     return root;
@@ -159,6 +163,7 @@ App.dom = App.dom || {
     if (!target) return;
     target.replaceChildren(App.dom.fragmentFromHtml(html));
     window.requestAnimationFrame(() => {
+      App.motion?.applyStagger?.(target);
       App.transfers?.syncPlayerPhotoLoadStates?.(target);
     });
   },
@@ -166,6 +171,120 @@ App.dom = App.dom || {
   clear(target) {
     if (!target) return;
     target.replaceChildren();
+  },
+};
+
+App.motion = App.motion || {
+  timers: new WeakMap(),
+  bodyTimer: null,
+  navTimer: null,
+  staggerSelector: [
+    ".summary-card",
+    ".home-panel",
+    ".home-cup-card",
+    ".calendar-card",
+    ".calendar-month-card",
+    ".calendar-week-card",
+    ".calendar-event-card",
+    ".coach-panel-card",
+    ".decision-card",
+    ".email-thread-item",
+    ".sponsor-email-message",
+    ".sponsor-active-item",
+    ".submit-card",
+    ".commissioner-card",
+    ".experience-card",
+    ".transfer-deal-card",
+    ".transfer-scout-card",
+    ".transfer-shortlist-card",
+    ".transfer-hub-card",
+    ".transfer-ops-card",
+    ".transfer-compare-card",
+    ".transfer-negotiation-card",
+    ".transfer-movement-card",
+    ".transfer-insight-card",
+    ".transfer-kanban-card",
+    ".transfer-timeline-item",
+    ".transfer-deal-alert",
+    ".transfer-hub-card-body",
+    ".squad-roster-row",
+    ".squad-slot",
+    ".market-player-option",
+    ".qol-metric-card",
+    ".qol-action-row",
+  ].join(","),
+
+  prefersReducedMotion() {
+    return Boolean(
+      window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches,
+    );
+  },
+
+  applyStagger(root = document) {
+    if (!root || App.motion.prefersReducedMotion()) return;
+    const candidates = [];
+    if (
+      root.nodeType === Node.ELEMENT_NODE &&
+      root.matches?.(App.motion.staggerSelector)
+    ) {
+      candidates.push(root);
+    }
+    if (typeof root.querySelectorAll === "function") {
+      candidates.push(...root.querySelectorAll(App.motion.staggerSelector));
+    }
+
+    candidates.slice(0, 90).forEach((element, index) => {
+      element.classList.add("motion-stagger-item");
+      element.style.setProperty("--motion-index", String(Math.min(index, 14)));
+    });
+  },
+
+  enterView(view) {
+    if (!view || App.motion.prefersReducedMotion()) return;
+
+    const previousTimer = App.motion.timers.get(view);
+    if (previousTimer) window.clearTimeout(previousTimer);
+
+    App.motion.applyStagger(view);
+    view.classList.remove("motion-view-enter");
+    void view.offsetWidth;
+    view.classList.add("motion-view-enter");
+
+    document.body?.classList.add("is-view-transitioning");
+    App.motion.syncNavigation();
+
+    const timer = window.setTimeout(() => {
+      view.classList.remove("motion-view-enter");
+      document.body?.classList.remove("is-view-transitioning");
+      App.motion.timers.delete(view);
+    }, 760);
+    App.motion.timers.set(view, timer);
+  },
+
+  unlockShell() {
+    if (App.motion.prefersReducedMotion()) return;
+    window.clearTimeout(App.motion.bodyTimer);
+    document.body?.classList.add("auth-unlock-entering");
+    App.motion.applyStagger(document);
+    App.motion.syncNavigation();
+    App.motion.bodyTimer = window.setTimeout(() => {
+      document.body?.classList.remove("auth-unlock-entering");
+    }, 960);
+  },
+
+  syncNavigation() {
+    if (App.motion.prefersReducedMotion()) return;
+    const activeTab = document.querySelector(
+      ".workspace-nav-tab.active, .workspace-nav-tab[aria-current='page']",
+    );
+    if (!activeTab) return;
+    window.clearTimeout(App.motion.navTimer);
+    activeTab.classList.remove("motion-nav-active");
+    void activeTab.offsetWidth;
+    activeTab.classList.add("motion-nav-active");
+    App.motion.navTimer = window.setTimeout(() => {
+      activeTab.classList.remove("motion-nav-active");
+    }, 620);
   },
 };
 
