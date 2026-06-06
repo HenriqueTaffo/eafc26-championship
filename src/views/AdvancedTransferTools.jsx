@@ -96,6 +96,20 @@ function getPlayerId(player = {}, fallback = "") {
 }
 
 function buildMarketRow(player = {}, buyer = "") {
+  const sourceText = String(
+    [
+      player.source,
+      player.syntheticSource,
+      player.marketValueSource,
+    ]
+      .filter(Boolean)
+      .join(" "),
+  ).toLowerCase();
+  const ratingOnly = Boolean(
+    player.isRatingOnly ||
+      sourceText.includes("ea_rating") ||
+      sourceText.includes("ea rating"),
+  );
   const candidate = App.transfers?.buildCandidateFromMarketPlayer?.(player) || {
     player: player.name || "",
     club: player.club || "",
@@ -132,8 +146,10 @@ function buildMarketRow(player = {}, buyer = "") {
         0,
     ),
     marketValue: Number(candidate.marketValue || player.market_value_eur || 0),
+    marketValueLabel: ratingOnly ? "Sem cotacao TM" : "",
     weeklySalary: Number(salaryReference.weeklySalary || candidate.weeklySalary || 0),
     contracted: Boolean(App.transfers?.isMarketPlayerContracted?.(player)),
+    ratingOnly,
     fit,
   };
 }
@@ -520,7 +536,9 @@ function TransferMarketTable({ onSelectPlayer } = {}) {
     return next.slice(0, 600);
   }, [baseRows, filters]);
 
-  const hasRowsWithPendingMarket = rows.some((row) => !row.marketValue);
+  const hasRowsWithPendingMarket = rows.some(
+    (row) => !row.marketValue && !row.ratingOnly,
+  );
 
   const selectPlayer = (row) => {
     if (row.contracted) return;
@@ -591,7 +609,7 @@ function TransferMarketTable({ onSelectPlayer } = {}) {
         cell: ({ row }) =>
           row.original.marketValue
             ? formatMoney(row.original.marketValue)
-            : "TM pendente",
+            : row.original.marketValueLabel || "TM pendente",
       },
       {
         accessorKey: "weeklySalary",
@@ -599,7 +617,9 @@ function TransferMarketTable({ onSelectPlayer } = {}) {
         cell: ({ row }) =>
           row.original.weeklySalary
             ? `${formatMoney(row.original.weeklySalary)}/sem`
-            : "Pendente",
+            : row.original.ratingOnly
+              ? "Sem referencia"
+              : "Pendente",
       },
       {
         id: "fit",
