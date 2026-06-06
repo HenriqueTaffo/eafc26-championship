@@ -685,6 +685,27 @@ App.transfers = {
     return shorter.length >= 2;
   },
 
+  getMarketPlayerNameComparableKeys(value = "") {
+    const key = App.transfers.normalizePlayerRatingKey(value);
+    if (!key) return [];
+
+    const variants = new Set([key]);
+    const tokens = key.split(" ").filter(Boolean);
+    const suffixes = new Set(["jr", "junior"]);
+
+    if (tokens.length > 1 && suffixes.has(tokens[tokens.length - 1])) {
+      variants.add(tokens.slice(0, -1).join(" "));
+    }
+
+    return [...variants].filter(Boolean);
+  },
+
+  isMarketPlayerNameVariantMatch(left = "", right = "") {
+    const leftKeys = App.transfers.getMarketPlayerNameComparableKeys(left);
+    const rightKeys = App.transfers.getMarketPlayerNameComparableKeys(right);
+    return leftKeys.some((leftKey) => rightKeys.includes(leftKey));
+  },
+
   getMarketPlayerValue(player) {
     const key = App.transfers.normalizePlayerRatingKey(player?.name);
     const override = App.transfers.manualMarketValues[key];
@@ -4840,6 +4861,34 @@ App.transfers = {
       );
       return [playerName, playerClub].filter(Boolean).join("|") || "";
     };
+    const getClubKeys = (player = {}) =>
+      [
+        player.club,
+        player.original_club,
+        player.originalClub,
+        player.fromClub,
+        player.ClubeOrigem,
+      ]
+        .map((value) => App.transfers.normalizePlayerRatingKey(value || ""))
+        .filter(Boolean);
+    const hasClubOverlap = (left = {}, right = {}) => {
+      const leftClubs = getClubKeys(left);
+      const rightClubs = getClubKeys(right);
+      if (!leftClubs.length || !rightClubs.length) return false;
+      return leftClubs.some((clubKey) => rightClubs.includes(clubKey));
+    };
+    const isRatingDuplicateOfReal = (ratingOnly = {}, real = {}) =>
+      Boolean(
+        ratingOnly?.isRatingOnly &&
+          real &&
+          !real.isRatingOnly &&
+          App.transfers.getMarketPlayerSourcePriority(real) >= 50 &&
+          App.transfers.isMarketPlayerNameVariantMatch(
+            ratingOnly.name || "",
+            real.name || "",
+          ) &&
+          hasClubOverlap(ratingOnly, real),
+      );
 
     [...(players || [])].forEach((player) => {
       const key = buildConsolidationKey(player);
@@ -4871,7 +4920,14 @@ App.transfers = {
       preferred.push(App.transfers.alignMarketPlayerCurrentClub(bestReal));
     });
 
-    return App.transfers.rankMarketSearchPlayers(query, preferred);
+    const realPreferred = preferred.filter((item) => !item.isRatingOnly);
+    const deduped = preferred.filter(
+      (item) =>
+        !item.isRatingOnly ||
+        !realPreferred.some((real) => isRatingDuplicateOfReal(item, real)),
+    );
+
+    return App.transfers.rankMarketSearchPlayers(query, deduped);
   },
 
   getMarketSearchRelevance(query = "", player = {}) {
@@ -5280,6 +5336,9 @@ App.transfers = {
           if (rows.length) return rows;
           throw new Error("empty-market-source");
         });
+      const isRatingOnlyResultSet = (rows = []) =>
+        rows.length > 0 &&
+        rows.every((item) => App.transfers.isRatingOnlyMarketPlayer(item));
       const waitForMarketSource = () =>
         new Promise((resolve) => {
           const timeout = Math.max(
@@ -5295,17 +5354,40 @@ App.transfers = {
               : setTimeout;
           timer(() => resolve([]), timeout);
         });
+      const waitForPreferredMarketRows = (timeoutMs = 0) =>
+        Promise.race([
+          preferredMarketRowsPromise,
+          scheduleDelay(timeoutMs).then(() => []),
+        ]).catch(() => []);
+      let preferredMarketSettled = false;
       const preferredMarketRowsPromise = Promise.any(
         [directRowsPromise, fallbackRowsPromise].map(requireRows),
-      ).catch(() => []);
+      )
+        .catch(() => [])
+        .finally(() => {
+          preferredMarketSettled = true;
+        });
       const preferredMarketRows = await Promise.race([
         preferredMarketRowsPromise,
         waitForMarketSource(),
       ]);
-      const ratingFallbackPromise = ratingFallbackRowsPromise.then((rows) =>
-        publishProgress(rows, "rating"),
+      const ratingMarketGraceMs = Math.max(
+        0,
+        Number(searchOptions.ratingMarketGraceMs ?? 2600),
       );
-      const firstRows = preferredMarketRows.length
+      const mergeWithPreferredMarketRows = async (rows = []) => {
+        if (!isRatingOnlyResultSet(rows)) return rows;
+        const marketRows = await waitForPreferredMarketRows(
+          preferredMarketSettled ? 0 : ratingMarketGraceMs,
+        );
+        return marketRows.length
+          ? App.api.mergeMarketSearchRows(marketRows, rows, resultLimit)
+          : rows;
+      };
+      const ratingFallbackPromise = ratingFallbackRowsPromise
+        .then(mergeWithPreferredMarketRows)
+        .then((rows) => publishProgress(rows, "rating"));
+      let firstRows = preferredMarketRows.length
         ? preferredMarketRows
         : await Promise.any([
             preferredMarketRowsPromise.then((rows) => {
@@ -5314,6 +5396,7 @@ App.transfers = {
             }),
             requireRows(ratingFallbackPromise),
           ]).catch(() => []);
+      firstRows = await mergeWithPreferredMarketRows(firstRows);
       scheduleFullMarketRefresh();
       const groups = firstRows.length
         ? firstRows
