@@ -751,6 +751,440 @@ App.transfers = {
       : App.transfers.formatMarketValueDisplay(marketValue);
   },
 
+  parseTransfermarktMarketValue(raw = "") {
+    const text = String(raw || "")
+      .replace(/&nbsp;/g, " ")
+      .replace(/\s+/g, "")
+      .toLowerCase();
+    const match = text.match(/\u20ac([\d.,]+)(bn|m|k|th\.)?/i);
+    if (!match) return 0;
+
+    const normalizedNumber =
+      match[1].includes(",") && match[1].includes(".")
+        ? match[1].replace(/,/g, "")
+        : match[1].replace(",", ".");
+    const amount = Number(normalizedNumber);
+    if (!Number.isFinite(amount)) return 0;
+
+    const suffix = match[2] || "";
+    if (suffix === "bn") return Math.round(amount * 1000000000);
+    if (suffix === "m") return Math.round(amount * 1000000);
+    if (suffix === "k" || suffix === "th.") return Math.round(amount * 1000);
+    return Math.round(amount);
+  },
+
+  stripTransfermarktMarkdown(value = "") {
+    return String(value || "")
+      .replace(/!\[[^\]]*\]\([^)]+\)/g, "")
+      .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
+      .replace(/\s+/g, " ")
+      .trim();
+  },
+
+  getTransfermarktReaderUrl(url = "") {
+    return `https://r.jina.ai/http://${String(url || "").trim()}`;
+  },
+
+  getTransfermarktSearchUrl(query = "") {
+    return `https://www.transfermarkt.com/schnellsuche/ergebnis/schnellsuche?query=${encodeURIComponent(String(query || "").trim())}`;
+  },
+
+  getTransfermarktCandidateScore(player = {}, candidate = {}) {
+    const playerKey = App.transfers.normalizePlayerRatingKey(player.name || "");
+    const candidateKey = App.transfers.normalizePlayerRatingKey(
+      candidate.name || "",
+    );
+    if (!playerKey || !candidateKey) return 0;
+
+    let score = 0;
+    if (playerKey === candidateKey) {
+      score += 100;
+    } else if (
+      App.transfers.isTrustedPlayerNameMatch(playerKey, candidateKey) ||
+      App.transfers.isTrustedPlayerNameMatch(candidateKey, playerKey)
+    ) {
+      score += 72;
+    } else if (
+      candidateKey.includes(playerKey) ||
+      playerKey.includes(candidateKey)
+    ) {
+      score += 55;
+    }
+
+    const playerClub = App.utils.normalizeText(player.club || "");
+    const candidateClub = App.utils.normalizeText(candidate.club || "");
+    if (playerClub && candidateClub) {
+      if (playerClub === candidateClub) score += 35;
+      else if (
+        candidateClub.includes(playerClub) ||
+        playerClub.includes(candidateClub)
+      ) {
+        score += 24;
+      }
+    }
+
+    if (candidate.marketValue > 0) score += 10;
+    if (candidate.transfermarktUrl) score += 8;
+    return score;
+  },
+
+  extractTransfermarktSearchCandidates(markdown = "") {
+    const rows = String(markdown || "")
+      .split(/\r?\n/)
+      .filter(
+        (line) =>
+          line.includes("/profil/spieler/") &&
+          line.includes("|") &&
+          !line.includes("Search results for agents"),
+      );
+
+    return rows
+      .map((line) => {
+        const playerLinks = [
+          ...line.matchAll(
+            /\[([^\]]+)\]\((https:\/\/www\.transfermarkt\.com\/[^)\s"]+\/profil\/spieler\/(\d+))[^)]*\)/g,
+          ),
+        ].filter((match) => !/^image\s/i.test(match[1]));
+        const playerLink = playerLinks[0];
+        if (!playerLink) return null;
+
+        const clubLinks = [
+          ...line.matchAll(
+            /\[([^\]]+)\]\((https:\/\/www\.transfermarkt\.com\/[^)\s"]+\/startseite\/verein\/\d+)[^)]*\)/g,
+          ),
+        ].filter((match) => !/^image\s/i.test(match[1]));
+        const cells = line
+          .split("|")
+          .map((cell) => App.transfers.stripTransfermarktMarkdown(cell));
+        const valueCell = cells.find((cell) => /\u20ac/.test(cell)) || "";
+        const ageCell = cells.find((cell) => /^\d{2}$/.test(cell)) || "";
+
+        return {
+          name: App.transfers.stripTransfermarktMarkdown(playerLink[1]),
+          transfermarktUrl: playerLink[2],
+          transfermarktId: playerLink[3],
+          club: clubLinks[0]?.[1] || "",
+          position: cells.find((cell) => /^[A-Z]{1,4}$/.test(cell)) || "",
+          age: Number(ageCell || 0),
+          marketValue: App.transfers.parseTransfermarktMarketValue(valueCell),
+        };
+      })
+      .filter(Boolean);
+  },
+
+  extractTransfermarktProfileValue(markdownOrHtml = "") {
+    const text = String(markdownOrHtml || "");
+    const focused =
+      text.match(/(?:Current market value|Market value|Last update)[\s\S]{0,300}?(\u20ac\s*[\d.,]+\s*(?:bn|m|k|th\.)?)/i)?.[1] ||
+      text.match(/(\u20ac\s*[\d.,]+\s*(?:bn|m|k|th\.)?)\s*Last update/i)?.[1] ||
+      "";
+    const focusedValue = App.transfers.parseTransfermarktMarketValue(focused);
+    if (focusedValue > 0) return focusedValue;
+
+    const firstValue = text.match(/\u20ac\s*[\d.,]+\s*(?:bn|m|k|th\.)?/i)?.[0] || "";
+    return App.transfers.parseTransfermarktMarketValue(firstValue);
+  },
+
+  async fetchTextWithTimeout(url = "", timeoutMs = 12000) {
+    const headers = { "accept-language": "en-US,en;q=0.9,pt-BR;q=0.8" };
+    const apiFetcher = App.api?.fetchWithTimeout;
+    const response =
+      typeof apiFetcher === "function"
+        ? await apiFetcher(url, { headers }, timeoutMs)
+        : await new Promise((resolve, reject) => {
+            if (typeof fetch !== "function") {
+              reject(new Error("Fetch indisponivel para consulta Transfermarkt"));
+              return;
+            }
+            const controller =
+              typeof AbortController === "function"
+                ? new AbortController()
+                : null;
+            const timer =
+              controller && typeof setTimeout === "function"
+                ? setTimeout(
+                    () => controller.abort(),
+                    Math.max(1000, Number(timeoutMs || 12000)),
+                  )
+                : null;
+            fetch(url, {
+              headers,
+              signal: controller?.signal,
+            })
+              .then(resolve)
+              .catch(reject)
+              .finally(() => {
+                if (timer) clearTimeout(timer);
+              });
+          });
+    if (!response.ok) {
+      throw new Error(`Transfermarkt respondeu ${response.status}`);
+    }
+    return await response.text();
+  },
+
+  async resolveTransfermarktMarketPlayer(player = {}) {
+    const name = String(player.name || "").trim();
+    if (!name) return null;
+
+    const existingValue = App.transfers.getMarketPlayerValue(player);
+    const existingUrl = String(
+      player.transfermarkt_url || player.transfermarktUrl || "",
+    ).trim();
+    if (existingValue > 0 && existingUrl) return player;
+
+    const cacheKey = [
+      App.transfers.normalizePlayerRatingKey(name),
+      App.utils.normalizeText(player.club || ""),
+    ].join("|");
+    App.transfers.transfermarktLookupCache =
+      App.transfers.transfermarktLookupCache || {};
+    const cached = App.transfers.transfermarktLookupCache[cacheKey];
+    if (cached && Date.now() - cached.at < 24 * 60 * 60000) {
+      return cached.player;
+    }
+
+    try {
+      const buildResolved = (transfermarktData = {}, marketValue = 0) => ({
+        ...player,
+        id: player.id || `tm-live:${transfermarktData.transfermarktId || name}`,
+        isRatingOnly: false,
+        syntheticSource: "",
+        market_value_eur: marketValue,
+        marketValue: marketValue,
+        marketValueSource: "transfermarkt_live_lookup",
+        transfermarkt_url: transfermarktData.transfermarktUrl || existingUrl,
+        transfermarktId:
+          transfermarktData.transfermarktId || player.transfermarktId || "",
+        club: player.club || transfermarktData.club || "",
+        original_club:
+          player.original_club || player.club || transfermarktData.club || "",
+        position: player.position || transfermarktData.position || "",
+        age: Number(player.age || transfermarktData.age || 0),
+        source: "transfermarkt_live_lookup",
+        source_name: "Transfermarkt live lookup",
+        source_url: transfermarktData.transfermarktUrl || existingUrl,
+        last_synced_at: new Date().toISOString(),
+      });
+
+      if (existingUrl.includes("transfermarkt")) {
+        const profileText = await App.transfers.fetchTextWithTimeout(
+          App.transfers.getTransfermarktReaderUrl(existingUrl),
+          10000,
+        );
+        const marketValue =
+          App.transfers.extractTransfermarktProfileValue(profileText);
+        if (marketValue > 0) {
+          const resolved = buildResolved(
+            {
+              transfermarktUrl: existingUrl,
+              transfermarktId:
+                existingUrl.match(/\/spieler\/(\d+)/)?.[1] ||
+                player.transfermarktId ||
+                "",
+            },
+            marketValue,
+          );
+          App.transfers.transfermarktLookupCache[cacheKey] = {
+            at: Date.now(),
+            player: resolved,
+          };
+          return resolved;
+        }
+      }
+
+      const searchUrl = App.transfers.getTransfermarktSearchUrl(name);
+      const searchText = await App.transfers.fetchTextWithTimeout(
+        App.transfers.getTransfermarktReaderUrl(searchUrl),
+        14000,
+      );
+      const candidates =
+        App.transfers.extractTransfermarktSearchCandidates(searchText);
+      const best = candidates
+        .map((candidate) => ({
+          candidate,
+          score: App.transfers.getTransfermarktCandidateScore(
+            player,
+            candidate,
+          ),
+        }))
+        .filter((entry) => entry.score >= 82)
+        .sort(
+          (left, right) =>
+            right.score - left.score ||
+            Number(right.candidate.marketValue || 0) -
+              Number(left.candidate.marketValue || 0),
+        )[0]?.candidate;
+
+      if (!best?.transfermarktUrl) {
+        App.transfers.transfermarktLookupCache[cacheKey] = {
+          at: Date.now(),
+          player: null,
+        };
+        return null;
+      }
+
+      let marketValue = Number(best.marketValue || 0);
+      if (marketValue <= 0) {
+        const profileText = await App.transfers.fetchTextWithTimeout(
+          App.transfers.getTransfermarktReaderUrl(best.transfermarktUrl),
+          12000,
+        );
+        marketValue = App.transfers.extractTransfermarktProfileValue(profileText);
+      }
+      if (marketValue <= 0) return null;
+
+      const resolved = buildResolved(best, marketValue);
+      App.transfers.transfermarktLookupCache[cacheKey] = {
+        at: Date.now(),
+        player: resolved,
+      };
+      return resolved;
+    } catch (error) {
+      console.warn("Lookup Transfermarkt indisponivel:", error);
+      App.transfers.transfermarktLookupCache[cacheKey] = {
+        at: Date.now(),
+        player: null,
+      };
+      return null;
+    }
+  },
+
+  async hydrateMissingTransfermarktMarketPlayers(players = [], options = {}) {
+    const rows = Array.isArray(players) ? players : [];
+    if (!rows.length) return rows;
+
+    let remainingLookups = Math.max(
+      0,
+      Number(options.maxLookups ?? rows.length),
+    );
+    const onlyRatingOnly = Boolean(options.onlyRatingOnly);
+
+    return await Promise.all(
+      rows.map(async (player) => {
+        if (!player || App.transfers.hasVerifiedTransfermarktValue(player)) {
+          return player;
+        }
+        if (
+          onlyRatingOnly &&
+          !App.transfers.isRatingOnlyMarketPlayer(player)
+        ) {
+          return player;
+        }
+        if (remainingLookups <= 0) return player;
+        remainingLookups -= 1;
+        return (await App.transfers.resolveTransfermarktMarketPlayer(player)) || player;
+      }),
+    );
+  },
+
+  async hydrateRatingOnlyMarketPlayersWithTransfermarkt(players = []) {
+    return await App.transfers.hydrateMissingTransfermarktMarketPlayers(players, {
+      onlyRatingOnly: true,
+      maxLookups: Array.isArray(players) ? players.length : 0,
+    });
+  },
+
+  getMarketTransfermarktLookupLimit(isSpecificNameSearch = false) {
+    if (App.api?.isRateLimitedMarketQuery?.()) return 0;
+    return isSpecificNameSearch ? 8 : 2;
+  },
+
+  getMarketSalaryLookupLimit(isSpecificNameSearch = false) {
+    if (App.api?.isRpcBackoffActive?.("app_get_player_salary_quote")) return 0;
+    return isSpecificNameSearch ? 8 : 2;
+  },
+
+  hasMarketSearchSalaryReference(player = {}) {
+    const weeklySalary = Number(
+      player.weeklySalary ||
+        player.salaryWeekly ||
+        player.SalarioSemanal ||
+        player.weekly_salary_eur ||
+        0,
+    );
+    const salarySourceName = String(
+      player.salarySourceName ||
+        player.FonteSalario ||
+        player.salary_source_name ||
+        "",
+    ).trim();
+
+    return weeklySalary > 0 && Boolean(salarySourceName);
+  },
+
+  async hydrateMarketSearchRowsWithSalary(
+    rows = [],
+    isSpecificNameSearch = false,
+  ) {
+    const players = Array.isArray(rows) ? rows : [];
+    if (!players.length || typeof App.api?.getPlayerSalaryQuote !== "function") {
+      return players;
+    }
+
+    let remainingLookups = Math.max(
+      0,
+      Number(App.transfers.getMarketSalaryLookupLimit(isSpecificNameSearch)),
+    );
+
+    return await Promise.all(
+      players.map(async (player) => {
+        if (!player || App.transfers.hasMarketSearchSalaryReference(player)) {
+          return player;
+        }
+        if (remainingLookups <= 0) return player;
+        remainingLookups -= 1;
+
+        try {
+          const marketValue = App.transfers.getMarketPlayerValue(player);
+          const overall = App.transfers.getResolvedOverall({
+            ...player,
+            marketValue,
+          });
+          const quote = await App.api.getPlayerSalaryQuote({
+            ...player,
+            marketValue,
+            overall,
+          });
+          if (!quote?.ok || Number(quote.weeklySalary || 0) <= 0) {
+            return player;
+          }
+          return {
+            ...player,
+            weeklySalary: Number(quote.weeklySalary || 0),
+            salarySourceName: quote.salarySourceName || "",
+            salarySourceUrl: quote.salarySourceUrl || "",
+            salaryReferenceType: quote.referenceType || "",
+            referenceType: quote.referenceType || player.referenceType || "",
+            salaryCheckedAt: quote.salaryCheckedAt || player.salaryCheckedAt || "",
+            eligibilityMode: quote.eligibilityMode || player.eligibilityMode || "",
+            salaryEligibilityMode:
+              quote.eligibilityMode || player.salaryEligibilityMode || "",
+          };
+        } catch (error) {
+          console.warn("Cotacao salarial indisponivel:", error);
+          return player;
+        }
+      }),
+    );
+  },
+
+  async hydrateMarketSearchRowsWithTransfermarkt(
+    rows = [],
+    isSpecificNameSearch = false,
+  ) {
+    const marketRows =
+      await App.transfers.hydrateMissingTransfermarktMarketPlayers(rows, {
+        maxLookups: App.transfers.getMarketTransfermarktLookupLimit(
+          isSpecificNameSearch,
+        ),
+      });
+    return await App.transfers.hydrateMarketSearchRowsWithSalary(
+      marketRows,
+      isSpecificNameSearch,
+    );
+  },
+
   renderMarketPlayerName(name = "", query = "") {
     const rawName = String(name || "-");
     const terms = [
@@ -2191,6 +2625,29 @@ App.transfers = {
     );
   },
 
+  isEstimatedSalaryReference(item = {}) {
+    const type = App.utils.normalizeText(
+      item.referenceType ||
+        item.salaryReferenceType ||
+        item.salary_reference_type ||
+        "",
+    );
+    const sourceName = App.utils.normalizeText(
+      item.salarySourceName || item.sourceName || item.FonteSalario || "",
+    );
+    const sourceUrl = App.transfers.normalizeSalaryUrl(
+      item.salarySourceUrl || item.sourceUrl || item.UrlFonteSalario || "",
+    );
+
+    return (
+      type === "league_smart_estimate" ||
+      App.transfers.isRegulatorySalaryReference(item) ||
+      sourceName.includes("estimativa inteligente") ||
+      sourceName.includes("estimativa da liga") ||
+      sourceUrl.includes("#salary-smart-estimate")
+    );
+  },
+
   getRegulatoryOverallEstimate(item = {}) {
     const playerName =
       item.player || item.Jogador || item.name || item.playerName || "";
@@ -2581,6 +3038,151 @@ App.transfers = {
     };
   },
 
+  getComparableOverallSalaryEstimate(item = {}) {
+    const playerName =
+      item.player || item.Jogador || item.name || item.playerName || "";
+    if (!String(playerName).trim()) return null;
+
+    const targetOverall = Number(App.transfers.getResolvedOverall(item) || 0);
+    if (targetOverall <= 0) return App.transfers.getRegulatorySalaryEstimate(item);
+
+    const targetPosition = String(item.position || "").trim().toUpperCase();
+    const targetLeague = App.transfers.normalizeSalaryLookup(item.league || "");
+    const regulatory = App.transfers.getRegulatorySalaryEstimate(item);
+    const samplesByKey = new Map();
+    const addSample = (sample = {}) => {
+      const weeklySalary = Number(
+        sample.weeklySalary ||
+          sample.weekly_salary_eur ||
+          sample.SalarioSemanal ||
+          0,
+      );
+      if (weeklySalary <= 0) return;
+      const sampleName =
+        sample.player ||
+        sample.playerName ||
+        sample.player_name ||
+        sample.name ||
+        sample.Jogador ||
+        "";
+      const sampleClub =
+        sample.club ||
+        sample.clubName ||
+        sample.club_name ||
+        sample.fromClub ||
+        sample.ClubeOrigem ||
+        "";
+      const key = [
+        App.transfers.normalizeSalaryLookup(sampleName),
+        App.transfers.normalizeSalaryLookup(sampleClub),
+      ].join("|");
+      if (!key.trim() || samplesByKey.has(key)) return;
+
+      const marketPlayer =
+        App.transfers.findMarketPlayerByName(sampleName, {
+          club: sampleClub,
+        }) || {};
+      const rating =
+        App.transfers.getRatingForPlayerName(sampleName, {
+          club: sampleClub,
+        }) || {};
+      const overall = Number(
+        sample.overall ||
+          sample.Overall ||
+          rating.overall ||
+          App.transfers.getResolvedOverall({
+            ...marketPlayer,
+            ...sample,
+            name: sampleName,
+            club: sampleClub,
+          }) ||
+          0,
+      );
+      if (overall <= 0) return;
+
+      samplesByKey.set(key, {
+        weeklySalary,
+        overall,
+        position: String(
+          sample.position || rating.position || marketPlayer.position || "",
+        )
+          .trim()
+          .toUpperCase(),
+        league: App.transfers.normalizeSalaryLookup(
+          sample.league || marketPlayer.league || "",
+        ),
+      });
+    };
+
+    (App.state.apiSalaryReferences || []).forEach((reference) =>
+      addSample(reference),
+    );
+    (App.state.apiMarketPlayers || []).forEach((marketPlayer) =>
+      addSample(marketPlayer),
+    );
+    (App.state.apiTransfers || []).forEach((transfer) => addSample(transfer));
+
+    const samples = [...samplesByKey.values()];
+    if (!samples.length) return regulatory;
+
+    const pickSamples = (maxOverallDiff, requirePosition = false) =>
+      samples.filter((sample) => {
+        if (Math.abs(Number(sample.overall || 0) - targetOverall) > maxOverallDiff) {
+          return false;
+        }
+        if (
+          requirePosition &&
+          targetPosition &&
+          sample.position &&
+          targetPosition !== sample.position
+        ) {
+          return false;
+        }
+        return true;
+      });
+
+    let peers =
+      pickSamples(1, true).length >= 3
+        ? pickSamples(1, true)
+        : pickSamples(2, true).length >= 3
+          ? pickSamples(2, true)
+          : pickSamples(2, false).length >= 3
+            ? pickSamples(2, false)
+            : pickSamples(4, false).length
+              ? pickSamples(4, false)
+              : samples;
+
+    const sorted = peers
+      .map((sample) => {
+        const diff = targetOverall - Number(sample.overall || targetOverall);
+        let adjusted = Number(sample.weeklySalary || 0) * Math.pow(1.08, diff);
+        if (targetLeague && sample.league && targetLeague !== sample.league) {
+          adjusted *= targetLeague === "championship" ? 0.9 : 1;
+        }
+        return adjusted;
+      })
+      .filter((value) => Number.isFinite(value) && value > 0)
+      .sort((left, right) => left - right);
+    if (!sorted.length) return regulatory;
+
+    const middle = Math.floor(sorted.length / 2);
+    const median =
+      sorted.length % 2
+        ? sorted[middle]
+        : (sorted[middle - 1] + sorted[middle]) / 2;
+    const regulatoryFloor = Number(regulatory?.weeklySalary || 0);
+    const weeklySalary = Math.round(Math.max(median, regulatoryFloor, 1500) / 500) * 500;
+
+    return {
+      ok: true,
+      weeklySalary,
+      salarySourceName: "Estimativa por OVR da liga",
+      salarySourceUrl: App.transfers.getRegulatorySalaryModelUrl(),
+      referenceType: "league_smart_estimate",
+      comparableCount: peers.length,
+    };
+  },
+
   buildPublicSalaryReferenceIndex() {
     const refs = Array.isArray(App.state.apiSalaryReferences)
       ? App.state.apiSalaryReferences
@@ -2706,11 +3308,13 @@ App.transfers = {
       item.salaryReferenceType ||
       item.salary_reference_type ||
       "";
+    const normalizedSalarySourceUrl =
+      App.transfers.normalizeSalaryUrl(salarySourceUrl);
     const shouldTrustStoredSalary =
       weeklySalary > 0 &&
       String(salarySourceName).trim() &&
-      App.transfers.isPublicSalaryUrl(salarySourceUrl) &&
-      !App.transfers.isRegulatorySalaryReference(item);
+      (App.transfers.isPublicSalaryUrl(normalizedSalarySourceUrl) ||
+        App.transfers.isEstimatedSalaryReference(item));
 
     if (!shouldTrustStoredSalary) return null;
 
@@ -2718,7 +3322,7 @@ App.transfers = {
       ok: true,
       weeklySalary,
       salarySourceName: String(salarySourceName).trim(),
-      salarySourceUrl: App.transfers.normalizeSalaryUrl(salarySourceUrl),
+      salarySourceUrl: normalizedSalarySourceUrl,
       referenceType,
     };
   },
@@ -2742,12 +3346,14 @@ App.transfers = {
       };
     }
 
-    return {
-      ok: false,
-      weeklySalary: 0,
-      salarySourceName: "",
-      salarySourceUrl: "",
-    };
+    return (
+      App.transfers.getComparableOverallSalaryEstimate(item) || {
+        ok: false,
+        weeklySalary: 0,
+        salarySourceName: "",
+        salarySourceUrl: "",
+      }
+    );
   },
 
   getVerifiedWeeklySalary(item = {}) {
@@ -4548,6 +5154,12 @@ App.transfers = {
               rpcTimeoutMs: 3800,
               directTimeoutMs: 2600,
             })
+            .then((rows) =>
+              App.transfers.hydrateMarketSearchRowsWithTransfermarkt(
+                rows,
+                isSpecificNameSearch,
+              ),
+            )
             .then(refreshFromRows)
             .catch(() => {});
         };
@@ -4583,6 +5195,12 @@ App.transfers = {
         .fetchMarketPlayersDirect(primaryAlias, resultLimit, {
           timeoutMs: Number(searchOptions.directTimeoutMs || 4200),
         })
+        .then((rows) =>
+          App.transfers.hydrateMarketSearchRowsWithTransfermarkt(
+            rows,
+            isSpecificNameSearch,
+          ),
+        )
         .then((rows) => publishProgress(rows, "direct"))
         .catch(() => []);
       const fallbackRowsPromise = scheduleDelay(fallbackSourceDelayMs)
@@ -4590,6 +5208,12 @@ App.transfers = {
           App.api.searchRegionalFallbackPlayers(primaryAlias, resultLimit, {
             showContracted,
           }),
+        )
+        .then((rows) =>
+          App.transfers.hydrateMarketSearchRowsWithTransfermarkt(
+            rows,
+            isSpecificNameSearch,
+          ),
         )
         .then((rows) => publishProgress(rows, "fallback"))
         .catch(() => []);
@@ -4608,6 +5232,11 @@ App.transfers = {
                   query,
                   ratings,
                   resultLimit,
+                ),
+              )
+              .then((rows) =>
+                App.transfers.hydrateRatingOnlyMarketPlayersWithTransfermarkt(
+                  rows,
                 ),
               )
               .catch(() => []);
@@ -4668,9 +5297,14 @@ App.transfers = {
               resultLimit,
             ),
           );
+      const hydratedGroups =
+        await App.transfers.hydrateMarketSearchRowsWithTransfermarkt(
+          groups,
+          isSpecificNameSearch,
+        );
       let ranked = App.transfers.consolidateMarketSearchPlayers(
         query,
-        App.api.applyMarketPlayerOverrides(groups, { showContracted }),
+        App.api.applyMarketPlayerOverrides(hydratedGroups, { showContracted }),
       );
 
       if (
@@ -4682,33 +5316,42 @@ App.transfers = {
       ) {
         const secondaryGroups = await Promise.all(
           aliases.slice(1, 3).map((alias) =>
-            Promise.any([
-              App.api.fetchMarketPlayersDirect(
-                alias,
-                Math.min(resultLimit, 18),
-                {
-                  timeoutMs: 2200,
-                },
+            Promise.any(
+              [
+                App.api.fetchMarketPlayersDirect(
+                  alias,
+                  Math.min(resultLimit, 18),
+                  {
+                    timeoutMs: 2200,
+                  },
+                ),
+                App.api.searchRegionalFallbackPlayers(
+                  alias,
+                  Math.min(resultLimit, 18),
+                  {
+                    showContracted,
+                  },
+                ),
+              ].map((source) =>
+                source.then((rows) => {
+                  if (rows.length) return rows;
+                  throw new Error("empty-market-source");
+                }),
               ),
-              App.api.searchRegionalFallbackPlayers(
-                alias,
-                Math.min(resultLimit, 18),
-                {
-                  showContracted,
-                },
+            )
+              .catch(() => [])
+              .then((rows) =>
+                App.transfers.hydrateMarketSearchRowsWithTransfermarkt(
+                  rows,
+                  isSpecificNameSearch,
+                ),
               ),
-            ].map((source) =>
-              source.then((rows) => {
-                if (rows.length) return rows;
-                throw new Error("empty-market-source");
-              }),
-            )).catch(() => []),
           ),
         );
         ranked = App.transfers.consolidateMarketSearchPlayers(
           query,
           App.api.applyMarketPlayerOverrides(
-            [...groups, ...secondaryGroups.flat()],
+            [...hydratedGroups, ...secondaryGroups.flat()],
             { showContracted },
           ),
         );
