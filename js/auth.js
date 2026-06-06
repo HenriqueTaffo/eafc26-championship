@@ -2139,6 +2139,304 @@ App.auth = {
     return result;
   },
 
+  getActionCenterStorageKey() {
+    const session = App.auth.getSession();
+    return `mistura_action_center_v1:${session?.managerId || "anon"}`;
+  },
+
+  loadActionCenterState() {
+    try {
+      const raw = localStorage.getItem(App.auth.getActionCenterStorageKey());
+      const parsed = raw ? JSON.parse(raw) : {};
+      return parsed && typeof parsed === "object"
+        ? {
+            snoozedUntil:
+              parsed.snoozedUntil && typeof parsed.snoozedUntil === "object"
+                ? parsed.snoozedUntil
+                : {},
+            muted:
+              parsed.muted && typeof parsed.muted === "object"
+                ? parsed.muted
+                : {},
+            resolved:
+              parsed.resolved && typeof parsed.resolved === "object"
+                ? parsed.resolved
+                : {},
+            filter: parsed.filter || "focus",
+          }
+        : {
+            snoozedUntil: {},
+            muted: {},
+            resolved: {},
+            filter: "focus",
+          };
+    } catch (error) {
+      return { snoozedUntil: {}, muted: {}, resolved: {}, filter: "focus" };
+    }
+  },
+
+  saveActionCenterState(state = {}) {
+    try {
+      localStorage.setItem(
+        App.auth.getActionCenterStorageKey(),
+        JSON.stringify({
+          snoozedUntil: state.snoozedUntil || {},
+          muted: state.muted || {},
+          resolved: state.resolved || {},
+          filter: state.filter || "focus",
+        }),
+      );
+    } catch (error) {
+      console.warn("Nao consegui salvar central de acoes local:", error);
+    }
+  },
+
+  patchActionCenterState(patch = {}) {
+    const current = App.auth.loadActionCenterState();
+    const next = {
+      ...current,
+      ...patch,
+      snoozedUntil: {
+        ...(current.snoozedUntil || {}),
+        ...(patch.snoozedUntil || {}),
+      },
+      muted: {
+        ...(current.muted || {}),
+        ...(patch.muted || {}),
+      },
+      resolved: {
+        ...(current.resolved || {}),
+        ...(patch.resolved || {}),
+      },
+    };
+    App.auth.saveActionCenterState(next);
+    return next;
+  },
+
+  getActionPriorityScore(item = {}) {
+    const priority = App.utils.normalizeText(item.priority || "");
+    if (priority === "critical") return 100;
+    if (priority === "high") return 82;
+    if (priority === "medium") return 62;
+    if (priority === "low") return 38;
+    return 50;
+  },
+
+  isActionCenterItemSuppressed(item = {}, state = null) {
+    const prefs = state || App.auth.loadActionCenterState();
+    const key = item.key || "";
+    const now = Date.now();
+    if (!key) return false;
+    if (prefs.muted?.[key]) return true;
+    if (prefs.resolved?.[key]) return true;
+    if (Number(prefs.snoozedUntil?.[key] || 0) > now) return true;
+    return false;
+  },
+
+  buildManagerActionItems() {
+    const session = App.auth.getSession();
+    if (!session || session.isCommissioner) return [];
+
+    const owner = session.managerName || "";
+    const notifications = App.auth.dedupeNotifications(
+      App.auth.myNotifications || [],
+    );
+    const offers = App.auth.getSponsorshipInboxOffers(owner);
+    const transferProposals = Array.isArray(App.auth.myTransferProposals)
+      ? App.auth.myTransferProposals
+      : [];
+    const pendingDecisions = (App.auth.myDecisions || []).filter(
+      (item) => item.status === "pending",
+    );
+    const medicalCases = App.players?.getActiveInjuriesForCoach
+      ? App.players.getActiveInjuriesForCoach(owner)
+      : [];
+    const context = App.auth.getCommercialClubContext(owner);
+    const items = [];
+
+    notifications.forEach((item, index) => {
+      const tone = App.utils.normalizeText(item.tone || "info");
+      const priority =
+        tone.includes("critical") || tone.includes("danger")
+          ? "critical"
+          : tone.includes("warn")
+            ? "high"
+            : item.is_read
+              ? "low"
+              : "medium";
+      items.push({
+        key: `notification:${item.unique_key || item.id || index}:${App.utils.normalizeText(item.title || "")}`,
+        source: "Aviso",
+        category: "Operacao",
+        title: item.title || "Aviso privado",
+        detail: item.body || "Sem detalhe adicional.",
+        priority,
+        unread: !item.is_read,
+        target: "notifications",
+        actionLabel: "Ler contexto",
+        createdAt: item.created_at || item.createdAt || "",
+      });
+    });
+
+    offers.forEach((offer) => {
+      const analysis = App.auth.analyzeSponsorshipOffer(offer, offers, context);
+      const negotiation = App.auth.getSponsorshipNegotiationSummary(offer.id);
+      items.push({
+        key: `sponsor:${offer.id}`,
+        source: "Comercial",
+        category: "Patrocinio",
+        title: `${offer.sponsorName || "Marca"} quer ${offer.category || "patrocinio"}`,
+        detail: `${analysis.recommendation}. Esperado ${App.utils.formatCurrency(analysis.projection.expected)} e risco ${analysis.riskScore}/100.`,
+        priority:
+          analysis.score >= 82 || offer.isReplacement
+            ? "high"
+            : analysis.score >= 64
+              ? "medium"
+              : "low",
+        score: analysis.score,
+        unread: negotiation.count === 0,
+        target: "email",
+        targetKey: App.auth.getEmailKey("sponsor", offer.id),
+        actionLabel: negotiation.accepted ? "Assinar termos" : "Negociar",
+      });
+    });
+
+    transferProposals
+      .filter((item) => App.auth.isOpenTransferProposal(item))
+      .slice(0, 8)
+      .forEach((item) => {
+        const value = Number(item.proposed_value || item.cash_offer_value || 0);
+        const statusLabel = App.auth.getTransferProposalStatusLabel(item);
+        items.push({
+          key: `transfer:${item.id}`,
+          source: "Mercado",
+          category: "Transferencias",
+          title: `${statusLabel}: ${item.player || "jogador"}`,
+          detail: `${App.auth.getTransferProposalSourceLabel(item)} movimentou ${App.utils.formatCurrency(value)}.`,
+          priority:
+            item.proposal_role !== "sent" || item.status === "player_terms"
+              ? "high"
+              : "medium",
+          unread: true,
+          target: "email",
+          targetKey: App.auth.getEmailKey("transfer", item.id),
+          actionLabel: "Abrir mesa",
+        });
+      });
+
+    pendingDecisions.slice(0, 6).forEach((item) => {
+      const meta = App.auth.getDecisionEmailMeta(item);
+      items.push({
+        key: `decision:${item.id}`,
+        source: meta.sender || "Diretoria",
+        category: meta.folder || "Diretoria",
+        title: item.title || "Decisao pendente",
+        detail: item.description || "Aguardando resposta do tecnico.",
+        priority: meta.tone === "high" ? "high" : "medium",
+        unread: !App.auth.isEmailRead(App.auth.getEmailKey("decision", item.id)),
+        target: "email",
+        targetKey: App.auth.getEmailKey("decision", item.id),
+        actionLabel: "Responder",
+      });
+    });
+
+    medicalCases.slice(0, 5).forEach((event) => {
+      const playerName = event.JogadorAfetado || event.Titulo || "Jogador";
+      const meta = App.players.getMedicalCaseMeta
+        ? App.players.getMedicalCaseMeta(
+            event,
+            App.players.getMedicalPlanForCoach?.(owner),
+          )
+        : {};
+      items.push({
+        key: `medical:${event.Id || event.id || playerName}`,
+        source: "DM",
+        category: "Medico",
+        title: `Caso clinico: ${playerName}`,
+        detail:
+          meta.recommendation ||
+          `${meta.stageLabel || "Monitoramento"} com risco ${Math.round(Number(meta.relapseRisk || 0) * 100)}%.`,
+        priority:
+          meta.riskTone === "danger" || meta.tone === "danger"
+            ? "high"
+            : "medium",
+        unread: true,
+        target: "medical",
+        actionLabel: "Abrir DM",
+      });
+    });
+
+    if (context.cashPressure !== "normal") {
+      items.push({
+        key: `finance:${session.managerId}:cash-pressure`,
+        source: "Financeiro",
+        category: "Caixa",
+        title:
+          context.cashPressure === "critical"
+            ? "Caixa em zona critica"
+            : "Caixa curto para mercado",
+        detail: `Saldo operacional estimado em ${App.utils.formatCurrency(context.cashBalance)}. Mesa comercial pode priorizar luva e receita recorrente.`,
+        priority: context.cashPressure === "critical" ? "critical" : "high",
+        unread: true,
+        target: "commercial",
+        actionLabel: "Ver comercial",
+      });
+    }
+
+    const seen = new Set();
+    return items
+      .filter((item) => {
+        if (!item.key || seen.has(item.key)) return false;
+        seen.add(item.key);
+        return true;
+      })
+      .sort((a, b) => {
+        const priorityDiff =
+          App.auth.getActionPriorityScore(b) - App.auth.getActionPriorityScore(a);
+        if (priorityDiff !== 0) return priorityDiff;
+        return Number(Boolean(b.unread)) - Number(Boolean(a.unread));
+      });
+  },
+
+  renderActionCenterItem(item = {}) {
+    const score =
+      item.score !== undefined
+        ? `<span class="action-center-score">${Number(item.score || 0)}</span>`
+        : "";
+    return `
+      <article class="action-center-item priority-${App.utils.escapeHtml(item.priority || "medium")}" data-action-center-key="${App.utils.escapeHtml(item.key)}">
+        <div class="action-center-item-main">
+          <div class="action-center-source">
+            <span>${App.utils.escapeDisplay(item.source || "Central")}</span>
+            <b>${App.utils.escapeDisplay(item.category || "Acao")}</b>
+            ${item.unread ? "<em>Novo</em>" : ""}
+          </div>
+          <strong>${App.utils.escapeDisplay(item.title || "Acao pendente")}</strong>
+          <p>${App.utils.escapeDisplay(item.detail || "Sem detalhe adicional.")}</p>
+        </div>
+        ${score}
+        <div class="action-center-item-actions">
+          <button type="button" data-action-center-open="${App.utils.escapeHtml(item.key)}">${App.utils.escapeDisplay(item.actionLabel || "Abrir")}</button>
+          <button type="button" data-action-center-action="snooze" data-action-center-key="${App.utils.escapeHtml(item.key)}">Adiar</button>
+          <button type="button" data-action-center-action="resolve" data-action-center-key="${App.utils.escapeHtml(item.key)}">Concluir</button>
+          <button type="button" data-action-center-action="mute" data-action-center-key="${App.utils.escapeHtml(item.key)}">Silenciar</button>
+        </div>
+      </article>
+    `;
+  },
+
+  getSponsorshipOfferById(offerId) {
+    const offers = Array.isArray(App.auth.mySponsorships?.offers)
+      ? App.auth.mySponsorships.offers
+      : [];
+    return offers.find((item) => String(item.id) === String(offerId)) || null;
+  },
+
+  getAcceptedSponsorshipCounter(offerId) {
+    const history = App.auth.getSponsorshipNegotiationHistory(offerId);
+    return history.find((item) => item.outcome === "accepted")?.counter || null;
+  },
+
   async acceptSponsorship(offerId) {
     const signingLocked = App.auth.isSponsorshipSigningLocked();
     if (signingLocked)
@@ -2149,15 +2447,49 @@ App.auth = {
         "FaÃƒÂ§a login como tÃƒÂ©cnico antes de assinar patrocÃƒÂ­nio.",
       );
 
-    const result = await App.api.rpc(
-      "app_accept_sponsorship",
-      {
-        p_manager_id: session.managerId,
-        p_access_code: session.accessCode,
-        p_offer_id: offerId,
-      },
-      45000,
-    );
+    const acceptedCounter = App.auth.getAcceptedSponsorshipCounter(offerId);
+    let result = null;
+
+    if (acceptedCounter) {
+      try {
+        result = await App.api.rpc(
+          "app_accept_sponsorship_negotiated",
+          {
+            p_manager_id: session.managerId,
+            p_access_code: session.accessCode,
+            p_offer_id: offerId,
+            p_negotiated_terms: acceptedCounter,
+          },
+          45000,
+        );
+        if (result?.ok === false) {
+          throw new Error(
+            result.message || "Termos negociados recusados pelo backend.",
+          );
+        }
+      } catch (error) {
+        const unavailable = App.utils
+          .normalizeText(error?.message || "")
+          .includes("app_accept_sponsorship_negotiated");
+        const schemaUnavailable = App.utils
+          .normalizeText(error?.message || "")
+          .includes("schema cache");
+        if (!unavailable && !schemaUnavailable) throw error;
+        console.info("Aceite negociado indisponivel, usando aceite padrao:", error);
+      }
+    }
+
+    if (!result) {
+      result = await App.api.rpc(
+        "app_accept_sponsorship",
+        {
+          p_manager_id: session.managerId,
+          p_access_code: session.accessCode,
+          p_offer_id: offerId,
+        },
+        45000,
+      );
+    }
 
     if (!result.ok)
       throw new Error(
@@ -2839,6 +3171,759 @@ App.auth = {
     };
   },
 
+  getCommercialDeskStorageKey() {
+    const session = App.auth.getSession();
+    return `mistura_commercial_desk_v1:${session?.managerId || "anon"}`;
+  },
+
+  loadCommercialDeskState() {
+    try {
+      const raw = localStorage.getItem(App.auth.getCommercialDeskStorageKey());
+      const parsed = raw ? JSON.parse(raw) : {};
+      return parsed && typeof parsed === "object"
+        ? {
+            negotiations:
+              parsed.negotiations && typeof parsed.negotiations === "object"
+                ? parsed.negotiations
+                : {},
+            watchlist:
+              parsed.watchlist && typeof parsed.watchlist === "object"
+                ? parsed.watchlist
+                : {},
+          }
+        : { negotiations: {}, watchlist: {} };
+    } catch (error) {
+      return { negotiations: {}, watchlist: {} };
+    }
+  },
+
+  saveCommercialDeskState(state = {}) {
+    try {
+      localStorage.setItem(
+        App.auth.getCommercialDeskStorageKey(),
+        JSON.stringify({
+          negotiations: state.negotiations || {},
+          watchlist: state.watchlist || {},
+        }),
+      );
+    } catch (error) {
+      console.warn("Nao consegui salvar mesa comercial local:", error);
+    }
+  },
+
+  getSponsorshipNegotiationHistory(offerId) {
+    const state = App.auth.loadCommercialDeskState();
+    const rows = state.negotiations?.[String(offerId)] || [];
+    return Array.isArray(rows) ? rows : [];
+  },
+
+  recordSponsorshipNegotiation(offerId, record = {}) {
+    const state = App.auth.loadCommercialDeskState();
+    const key = String(offerId || "");
+    if (!key) return [];
+
+    const current = Array.isArray(state.negotiations?.[key])
+      ? state.negotiations[key]
+      : [];
+    state.negotiations = {
+      ...(state.negotiations || {}),
+      [key]: [
+        {
+          id: `commercial-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+          createdAt: new Date().toISOString(),
+          ...record,
+        },
+        ...current,
+      ].slice(0, 8),
+    };
+    App.auth.saveCommercialDeskState(state);
+    return state.negotiations[key];
+  },
+
+  getSponsorshipNegotiationSummary(offerId) {
+    const history = App.auth.getSponsorshipNegotiationHistory(offerId);
+    const latest = history[0] || null;
+    const accepted = history.some((item) => item.outcome === "accepted");
+    const rejected = history.some((item) => item.outcome === "rejected");
+    const countered = history.some((item) => item.outcome === "countered");
+
+    return {
+      history,
+      latest,
+      count: history.length,
+      accepted,
+      rejected,
+      countered,
+      label: !history.length
+        ? "Sem rodada"
+        : accepted
+          ? "Marca topou"
+          : rejected
+            ? "Marca esfriou"
+            : countered
+              ? "Marca contrapropôs"
+              : "Rodada enviada",
+    };
+  },
+
+  getCommercialClubContext(ownerName = "") {
+    const session = App.auth.getSession();
+    const managerName = ownerName || session?.managerName || "";
+    const team = (App.data?.teams || []).find(
+      (item) =>
+        App.utils.normalizeText(item.owner || "") ===
+        App.utils.normalizeText(managerName),
+    );
+    const clubName = team?.team || session?.clubName || "";
+    const standings =
+      App.standings?.getStandings?.() || App.state?.apiStandings || [];
+    const standing = standings.find((item) =>
+      App.utils.sameTeamName?.(item.team || item.club || "", clubName),
+    );
+    const finance = (App.state.apiFinanceForecast || []).find((item) => {
+      const label = item.manager_name || item.managerName || item.owner || "";
+      return (
+        App.utils.normalizeText(label) === App.utils.normalizeText(managerName)
+      );
+    });
+    const active = Array.isArray(App.auth.mySponsorships?.active)
+      ? App.auth.mySponsorships.active
+      : [];
+    const offers = Array.isArray(App.auth.mySponsorships?.offers)
+      ? App.auth.mySponsorships.offers
+      : [];
+    const position = Number(
+      standing?.position || standing?.rank || standing?.Pos || 12,
+    );
+    const points = Number(standing?.points || standing?.pts || 0);
+    const wins = Number(standing?.wins || standing?.vitorias || 0);
+    const losses = Number(standing?.losses || standing?.derrotas || 0);
+    const matches = Math.max(
+      1,
+      wins + Number(standing?.draws || standing?.empates || 0) + losses,
+    );
+    const formPower = Math.max(
+      0.28,
+      Math.min(1.2, 0.48 + wins / matches - losses / (matches * 2)),
+    );
+    const leaguePull = Math.max(0.35, Math.min(1.15, 1.12 - position * 0.035));
+    const cashBalance = Number(
+      finance?.available_budget ||
+        finance?.availableBudget ||
+        finance?.remaining_budget ||
+        finance?.remainingBudget ||
+        finance?.saldo ||
+        0,
+    );
+    const cashPressure =
+      cashBalance < 0 ? "critical" : cashBalance < 2500000 ? "high" : "normal";
+
+    return {
+      managerName,
+      clubName,
+      position,
+      points,
+      wins,
+      losses,
+      matches,
+      formPower,
+      leaguePull,
+      cashBalance,
+      cashPressure,
+      activeCount: active.length,
+      offersCount: offers.length,
+      categoryExposure: active.reduce((map, item) => {
+        const category = item.category || "Patrocinio";
+        map[category] = (map[category] || 0) + 1;
+        return map;
+      }, {}),
+    };
+  },
+
+  getSponsorProfile(offer = {}) {
+    const name = App.utils.normalizeText(offer.sponsorName || offer.sponsor_name);
+    const category = App.utils.normalizeText(offer.category || "");
+    const seed = Array.from(`${name}|${category}`).reduce(
+      (sum, char) => sum + char.charCodeAt(0),
+      0,
+    );
+    const archetypes = [
+      {
+        key: "growth",
+        label: "Marca agressiva",
+        posture: "aceita upside alto, mas pressiona por performance",
+        patience: 0.62,
+        premiumTolerance: 0.16,
+        riskTolerance: 0.78,
+      },
+      {
+        key: "premium",
+        label: "Marca premium",
+        posture: "paga por estabilidade e narrativa de clube organizado",
+        patience: 0.82,
+        premiumTolerance: 0.12,
+        riskTolerance: 0.52,
+      },
+      {
+        key: "local",
+        label: "Parceiro regional",
+        posture: "valoriza relacionamento e previsibilidade de caixa",
+        patience: 0.9,
+        premiumTolerance: 0.09,
+        riskTolerance: 0.46,
+      },
+      {
+        key: "data",
+        label: "Marca analitica",
+        posture: "reage bem a metas graduais e gatilhos objetivos",
+        patience: 0.72,
+        premiumTolerance: 0.11,
+        riskTolerance: 0.64,
+      },
+    ];
+    const profile = archetypes[seed % archetypes.length];
+    const normalizedRisk = App.utils.normalizeText(
+      offer.riskLevel || offer.risk_level || offer.dealStyle || "",
+    );
+    const riskBoost = normalizedRisk.includes("alta")
+      ? 0.08
+      : normalizedRisk.includes("baixa")
+        ? -0.06
+        : 0;
+
+    return {
+      ...profile,
+      patience: Math.max(0.25, Math.min(0.98, profile.patience - riskBoost)),
+      riskTolerance: Math.max(
+        0.2,
+        Math.min(0.95, profile.riskTolerance + riskBoost),
+      ),
+    };
+  },
+
+  getSponsorshipProjection(offer = {}, context = null) {
+    const clubContext = context || App.auth.getCommercialClubContext();
+    const cadence = App.auth.getSponsorshipCadence(offer);
+    const rewardValue = Number(offer.rewardValue || offer.reward_value || 0);
+    const maxClaims = Math.max(0, Number(offer.maxClaims || offer.max_claims || 0));
+    const signingBonus = Number(offer.signingBonus || offer.signing_bonus || 0);
+    const terminationFee = Number(
+      offer.terminationFee || offer.termination_fee || 0,
+    );
+    const guaranteedClaims =
+      cadence === "monthly"
+        ? Math.min(maxClaims, 3)
+        : cadence === "weekly"
+          ? Math.min(maxClaims, 6)
+          : Math.round(maxClaims * Math.max(0.18, clubContext.formPower * 0.28));
+    const expectedClaims =
+      cadence === "monthly"
+        ? Math.min(maxClaims, Math.max(guaranteedClaims, Math.round(maxClaims * 0.74)))
+        : cadence === "weekly"
+          ? Math.min(maxClaims, Math.max(guaranteedClaims, Math.round(maxClaims * 0.66)))
+          : Math.min(maxClaims, Math.max(1, Math.round(maxClaims * clubContext.formPower * clubContext.leaguePull)));
+    const upsideClaims = Math.min(
+      maxClaims,
+      Math.max(expectedClaims, Math.ceil(maxClaims * Math.min(0.95, clubContext.formPower + 0.18))),
+    );
+    const guaranteed = signingBonus + rewardValue * guaranteedClaims - terminationFee;
+    const expected = signingBonus + rewardValue * expectedClaims - terminationFee;
+    const upside = signingBonus + rewardValue * upsideClaims - terminationFee;
+    const total = App.auth.getSponsorshipTotalValue(offer) - terminationFee;
+
+    return {
+      guaranteed: Math.max(0, guaranteed),
+      expected: Math.max(0, expected),
+      upside: Math.max(0, upside),
+      total: Math.max(0, total),
+      guaranteedClaims,
+      expectedClaims,
+      upsideClaims,
+      maxClaims,
+    };
+  },
+
+  analyzeSponsorshipOffer(offer = {}, offers = [], context = null) {
+    const clubContext = context || App.auth.getCommercialClubContext();
+    const profile = App.auth.getSponsorProfile(offer);
+    const competition = App.auth.getSponsorshipCompetitionMeta(offer, offers);
+    const projection = App.auth.getSponsorshipProjection(offer, clubContext);
+    const totalValue = App.auth.getSponsorshipTotalValue(offer);
+    const signingBonus = Number(offer.signingBonus || offer.signing_bonus || 0);
+    const rewardValue = Number(offer.rewardValue || offer.reward_value || 0);
+    const maxClaims = Number(offer.maxClaims || offer.max_claims || 0);
+    const terminationFee = Number(
+      offer.terminationFee || offer.termination_fee || 0,
+    );
+    const cadence = App.auth.getSponsorshipCadence(offer);
+    const guaranteedRatio = totalValue
+      ? Math.min(1, projection.guaranteed / totalValue)
+      : 0;
+    const expectedRatio = totalValue
+      ? Math.min(1.15, projection.expected / totalValue)
+      : 0;
+    const competitionBoost =
+      competition.count > 1 ? Math.max(0, (competition.count - competition.rank) * 6) : 0;
+    const fitScore =
+      42 +
+      expectedRatio * 32 +
+      guaranteedRatio * 18 +
+      competitionBoost +
+      (cadence ? 6 : -3) -
+      (offer.isReplacement ? Math.min(14, terminationFee / 250000) : 0) +
+      clubContext.leaguePull * 8;
+    const riskScore =
+      100 -
+      Math.min(82, guaranteedRatio * 52 + (cadence ? 22 : 6)) +
+      (offer.isReplacement ? 12 : 0) +
+      (maxClaims > 8 ? 6 : 0);
+    const leverage =
+      competition.rank === 1
+        ? "alta"
+        : competition.count > 1
+          ? "media"
+          : clubContext.position <= 6
+            ? "media"
+            : "baixa";
+    const score = Math.max(0, Math.min(100, Math.round(fitScore - riskScore * 0.12)));
+    const recommendation =
+      score >= 82
+        ? "Assinar se a categoria estiver livre"
+        : score >= 68
+          ? "Negociar luva ou multa antes de assinar"
+          : score >= 54
+            ? "Usar como base para contraproposta"
+            : "Segurar e buscar termos melhores";
+    const bestLever =
+      guaranteedRatio < 0.28
+        ? "signing"
+        : offer.isReplacement && terminationFee > 0
+          ? "fee"
+          : cadence
+            ? "reward"
+            : "term";
+
+    return {
+      score,
+      riskScore: Math.max(0, Math.min(100, Math.round(riskScore))),
+      leverage,
+      recommendation,
+      bestLever,
+      profile,
+      competition,
+      projection,
+      totalValue,
+      signingBonus,
+      rewardValue,
+      maxClaims,
+      terminationFee,
+      cadence,
+      badges: [
+        profile.label,
+        leverage === "alta" ? "Boa alavanca" : "Alavanca " + leverage,
+        cadence ? "Receita recorrente" : "Receita por meta",
+        offer.isReplacement ? "Troca com multa" : "Vaga limpa",
+      ],
+    };
+  },
+
+  buildSponsorshipCounterOffer(offer = {}, mode = "balanced") {
+    const totalValue = App.auth.getSponsorshipTotalValue(offer);
+    const signingBonus = Number(offer.signingBonus || offer.signing_bonus || 0);
+    const rewardValue = Number(offer.rewardValue || offer.reward_value || 0);
+    const maxClaims = Math.max(1, Number(offer.maxClaims || offer.max_claims || 1));
+    const terminationFee = Number(
+      offer.terminationFee || offer.termination_fee || 0,
+    );
+    const cadence = App.auth.getSponsorshipCadence(offer);
+    const templates = {
+      signing: {
+        label: "Aumentar luva",
+        signingBonus: Math.round(Math.max(signingBonus * 1.22, signingBonus + totalValue * 0.08)),
+        rewardValue,
+        maxClaims,
+        terminationFee,
+        ask: "mais caixa imediato para aceitar a exposição",
+      },
+      reward: {
+        label: "Subir parcela",
+        signingBonus,
+        rewardValue: Math.round(Math.max(rewardValue * 1.18, rewardValue + totalValue / maxClaims * 0.1)),
+        maxClaims,
+        terminationFee,
+        ask: cadence ? "parcela recorrente mais forte" : "bonus maior por meta entregue",
+      },
+      fee: {
+        label: "Dividir multa",
+        signingBonus: Math.round(signingBonus * 1.08),
+        rewardValue,
+        maxClaims,
+        terminationFee: Math.round(terminationFee * 0.45),
+        ask: "marca absorver parte da rescisao anterior",
+      },
+      term: {
+        label: "Prazo curto",
+        signingBonus: Math.round(signingBonus * 1.08),
+        rewardValue,
+        maxClaims: Math.max(2, Math.round(maxClaims * 0.72)),
+        terminationFee,
+        ask: "menor compromisso com chance de renovacao",
+      },
+      balanced: {
+        label: "Equilibrar pacote",
+        signingBonus: Math.round(signingBonus * 1.12),
+        rewardValue: Math.round(rewardValue * 1.1),
+        maxClaims,
+        terminationFee: offer.isReplacement
+          ? Math.round(terminationFee * 0.7)
+          : terminationFee,
+        ask: "ajuste moderado sem travar a mesa",
+      },
+    };
+    const counter = templates[mode] || templates.balanced;
+    const counterTotal =
+      counter.signingBonus +
+      counter.rewardValue * counter.maxClaims -
+      Math.max(0, counter.terminationFee);
+
+    return {
+      mode,
+      ...counter,
+      total: Math.max(0, counterTotal),
+      delta: Math.max(0, counterTotal - totalValue + terminationFee),
+    };
+  },
+
+  evaluateSponsorshipCounter(offer = {}, counter = {}, context = null) {
+    const profile = App.auth.getSponsorProfile(offer);
+    const clubContext = context || App.auth.getCommercialClubContext();
+    const originalTotal = App.auth.getSponsorshipTotalValue(offer);
+    const requestedLift = originalTotal
+      ? Math.max(0, Number(counter.delta || 0)) / originalTotal
+      : 0;
+    const leverageBonus =
+      clubContext.position <= 4 ? 0.08 : clubContext.position <= 8 ? 0.04 : 0;
+    const askPenalty = Math.max(0, requestedLift - profile.premiumTolerance);
+    const acceptance =
+      profile.patience * 0.46 +
+      profile.riskTolerance * 0.28 +
+      clubContext.leaguePull * 0.18 +
+      leverageBonus -
+      askPenalty * 1.25;
+    const outcome =
+      acceptance >= 0.66
+        ? "accepted"
+        : acceptance >= 0.48
+          ? "countered"
+          : "rejected";
+    const sponsorResponse =
+      outcome === "accepted"
+        ? "A marca aceitou os novos termos como pacote final."
+        : outcome === "countered"
+          ? "A marca aceitou parte do pedido e devolveu uma proposta intermediaria."
+          : "A marca recusou o salto pedido e pediu termos mais proximos da oferta original.";
+
+    return {
+      outcome,
+      acceptance: Math.max(0, Math.min(100, Math.round(acceptance * 100))),
+      sponsorResponse,
+      sponsorCounter:
+        outcome === "countered"
+          ? {
+              signingBonus: Math.round(
+                (Number(counter.signingBonus || 0) +
+                  Number(offer.signingBonus || offer.signing_bonus || 0)) /
+                  2,
+              ),
+              rewardValue: Math.round(
+                (Number(counter.rewardValue || 0) +
+                  Number(offer.rewardValue || offer.reward_value || 0)) /
+                  2,
+              ),
+              terminationFee: Math.round(
+                (Number(counter.terminationFee || 0) +
+                  Number(offer.terminationFee || offer.termination_fee || 0)) /
+                  2,
+              ),
+            }
+          : null,
+    };
+  },
+
+  renderSponsorshipIntelligenceStrip(offer = {}, offers = []) {
+    const context = App.auth.getCommercialClubContext();
+    const analysis = App.auth.analyzeSponsorshipOffer(offer, offers, context);
+    const negotiation = App.auth.getSponsorshipNegotiationSummary(offer.id);
+
+    return `
+      <div class="commercial-intelligence-strip">
+        <div class="commercial-score-ring" style="--score:${analysis.score}%">
+          <strong>${analysis.score}</strong>
+          <span>fit</span>
+        </div>
+        <div class="commercial-intelligence-copy">
+          <span>${App.utils.escapeDisplay(analysis.profile.label)} · ${App.utils.escapeDisplay(analysis.profile.posture)}</span>
+          <strong>${App.utils.escapeDisplay(analysis.recommendation)}</strong>
+          <small>Valor esperado ${App.utils.formatCurrency(analysis.projection.expected)} · risco ${analysis.riskScore}/100 · ${App.utils.escapeDisplay(negotiation.label)}</small>
+        </div>
+        <div class="commercial-chip-row">
+          ${analysis.badges
+            .slice(0, 4)
+            .map(
+              (badge) =>
+                `<b>${App.utils.escapeDisplay(badge)}</b>`,
+            )
+            .join("")}
+        </div>
+      </div>
+    `;
+  },
+
+  renderSponsorshipNegotiationTimeline(offerId) {
+    const history = App.auth.getSponsorshipNegotiationHistory(offerId).slice(
+      0,
+      3,
+    );
+    if (!history.length) {
+      return `
+        <div class="commercial-negotiation-empty">
+          <strong>Sem rodada enviada</strong>
+          <span>Use uma alavanca para testar reação da marca antes de assinar.</span>
+        </div>
+      `;
+    }
+
+    return `
+      <div class="commercial-negotiation-timeline">
+        ${history
+          .map(
+            (item) => `
+          <span class="commercial-negotiation-step is-${App.utils.escapeHtml(item.outcome || "sent")}">
+            <b>${App.utils.escapeDisplay(item.label || "Contraproposta")}</b>
+            <small>${App.utils.escapeDisplay(item.response || "Rodada enviada.")}</small>
+            <em>${App.utils.formatCurrency(item.counter?.total || 0)} · ${Number(item.acceptance || 0)}% aderência</em>
+          </span>
+        `,
+          )
+          .join("")}
+      </div>
+    `;
+  },
+
+  renderCommercialOfferDeskCard(offer = {}, offers = [], context = null) {
+    const analysis = App.auth.analyzeSponsorshipOffer(offer, offers, context);
+    const cadenceLabel = App.auth.getSponsorshipCadenceLabel(offer);
+    const totalValue = App.auth.getSponsorshipTotalValue(offer);
+    const bestCounter = App.auth.buildSponsorshipCounterOffer(
+      offer,
+      analysis.bestLever,
+    );
+    const category = offer.category || "Patrocinio";
+    const cadenceClass = App.auth.getSponsorshipCadenceClass(offer);
+    const negotiation = App.auth.getSponsorshipNegotiationSummary(offer.id);
+
+    return `
+      <article class="commercial-offer-desk-card priority-${analysis.score >= 76 ? "high" : "normal"}" data-commercial-offer-id="${App.utils.escapeHtml(offer.id)}">
+        <div class="commercial-offer-top">
+          ${App.auth.renderSponsorBrandMark(offer.sponsorName)}
+          <div>
+            <span>${App.utils.escapeDisplay(category)} · ${App.utils.escapeDisplay(analysis.profile.label)}</span>
+            <strong>${App.utils.escapeDisplay(offer.sponsorName || "Marca")}</strong>
+            <small>${App.utils.escapeDisplay(analysis.recommendation)}</small>
+          </div>
+          <b class="sponsor-cadence-badge ${cadenceClass}">${App.utils.escapeHtml(cadenceLabel)}</b>
+        </div>
+
+        <div class="commercial-desk-metrics">
+          <span>
+            <b>Score</b>
+            <strong>${analysis.score}</strong>
+            <small>fit comercial</small>
+          </span>
+          <span>
+            <b>Esperado</b>
+            <strong>${App.utils.formatCurrency(analysis.projection.expected)}</strong>
+            <small>${analysis.projection.expectedClaims}/${analysis.maxClaims} gatilhos</small>
+          </span>
+          <span>
+            <b>Total</b>
+            <strong>${App.utils.formatCurrency(totalValue)}</strong>
+            <small>${App.utils.escapeDisplay(analysis.competition.label)}</small>
+          </span>
+          <span>
+            <b>Risco</b>
+            <strong>${analysis.riskScore}</strong>
+            <small>${offer.isReplacement ? "troca de marca" : "vaga limpa"}</small>
+          </span>
+        </div>
+
+        <div class="commercial-scenario-grid">
+          <span><b>Conservador</b><strong>${App.utils.formatCurrency(analysis.projection.guaranteed)}</strong></span>
+          <span><b>Realista</b><strong>${App.utils.formatCurrency(analysis.projection.expected)}</strong></span>
+          <span><b>Agressivo</b><strong>${App.utils.formatCurrency(analysis.projection.upside)}</strong></span>
+        </div>
+
+        <div class="commercial-counter-preview">
+          <div>
+            <span>Melhor alavanca</span>
+            <strong>${App.utils.escapeDisplay(bestCounter.label)}</strong>
+            <small>${App.utils.escapeDisplay(bestCounter.ask)} · +${App.utils.formatCurrency(bestCounter.delta)}</small>
+          </div>
+          <div>
+            <span>Rodadas</span>
+            <strong>${negotiation.count}</strong>
+            <small>${App.utils.escapeDisplay(negotiation.label)}</small>
+          </div>
+        </div>
+
+        ${App.auth.renderSponsorshipNegotiationTimeline(offer.id)}
+
+        <div class="commercial-desk-actions">
+          <button type="button" data-sponsor-negotiate="${App.utils.escapeHtml(offer.id)}" data-sponsor-negotiate-mode="${App.utils.escapeHtml(analysis.bestLever)}">
+            <strong>Negociar recomendado</strong>
+            <small>${App.utils.escapeDisplay(bestCounter.label)}</small>
+          </button>
+          <button type="button" data-sponsor-negotiate="${App.utils.escapeHtml(offer.id)}" data-sponsor-negotiate-mode="balanced">
+            <strong>Ajuste moderado</strong>
+            <small>Menor risco de recusa.</small>
+          </button>
+          <button
+            type="button"
+            data-sponsor-offer="${App.utils.escapeHtml(offer.id)}"
+            data-sponsor-fee="${Number(offer.terminationFee || offer.termination_fee || 0)}"
+            data-sponsor-replacement="${offer.isReplacement ? "true" : "false"}"
+            data-sponsor-signing="${Number(offer.signingBonus || offer.signing_bonus || 0)}"
+            data-sponsor-reward="${Number(offer.rewardValue || offer.reward_value || 0)}"
+            data-sponsor-cadence="${App.utils.escapeHtml(analysis.cadence || "goal")}"
+          >
+            <strong>Assinar</strong>
+            <small>Fechar e arquivar concorrentes.</small>
+          </button>
+        </div>
+      </article>
+    `;
+  },
+
+  renderCommercialDesk(ownerName = "", offers = [], active = []) {
+    const context = App.auth.getCommercialClubContext(ownerName);
+    const hasOffers = Array.isArray(offers) && offers.length > 0;
+    const categories = hasOffers
+      ? offers.reduce((groups, offer) => {
+          const category = offer.category || "Patrocinio";
+          groups[category] = groups[category] || [];
+          groups[category].push(offer);
+          return groups;
+        }, {})
+      : {};
+    const rankedOffers = hasOffers
+      ? offers
+          .map((offer) => ({
+            offer,
+            analysis: App.auth.analyzeSponsorshipOffer(offer, offers, context),
+          }))
+          .sort((a, b) => b.analysis.score - a.analysis.score)
+      : [];
+    const best = rankedOffers[0];
+    const expectedTotal = rankedOffers.reduce(
+      (sum, item) => sum + Number(item.analysis.projection.expected || 0),
+      0,
+    );
+    const recurringCount = rankedOffers.filter((item) =>
+      Boolean(item.analysis.cadence),
+    ).length;
+    const replacementCount = rankedOffers.filter(
+      (item) => item.offer.isReplacement,
+    ).length;
+    const activeCategories = active.reduce((set, item) => {
+      set.add(App.utils.normalizeText(item.category || "Patrocinio"));
+      return set;
+    }, new Set());
+
+    return `
+      <section class="commercial-desk-panel">
+        <div class="commercial-desk-header">
+          <div>
+            <span>Mesa comercial</span>
+            <strong>${hasOffers ? `${offers.length} proposta(s) em negociação` : "Sem mesa aberta"}</strong>
+            <p>${App.utils.escapeDisplay(context.clubName || ownerName)} · ${context.position}º na liga · ${context.cashPressure === "critical" ? "caixa pressionado" : context.cashPressure === "high" ? "caixa curto" : "caixa controlado"}</p>
+          </div>
+          <div class="commercial-desk-kpis">
+            <span><b>${active.length}</b><small>ativos</small></span>
+            <span><b>${Object.keys(categories).length}</b><small>categorias</small></span>
+            <span><b>${recurringCount}</b><small>recorrentes</small></span>
+            <span><b>${replacementCount}</b><small>trocas</small></span>
+          </div>
+        </div>
+
+        <div class="commercial-desk-summary">
+          <article>
+            <span>Melhor proposta</span>
+            <strong>${best ? App.utils.escapeDisplay(best.offer.sponsorName || "Marca") : "Nenhuma"}</strong>
+            <small>${best ? `${best.analysis.score}/100 · ${App.utils.formatCurrency(best.analysis.projection.expected)}` : "Aguardando e-mail comercial"}</small>
+          </article>
+          <article>
+            <span>Pipeline esperado</span>
+            <strong>${App.utils.formatCurrency(expectedTotal)}</strong>
+            <small>somatório realista das ofertas abertas</small>
+          </article>
+          <article>
+            <span>Exclusividade</span>
+            <strong>${activeCategories.size}/${Math.max(1, active.length)}</strong>
+            <small>categorias ocupadas por contratos atuais</small>
+          </article>
+        </div>
+
+        ${
+          hasOffers
+            ? `
+          <div class="commercial-category-board">
+            ${Object.entries(categories)
+              .map(([category, categoryOffers]) => {
+                const sorted = categoryOffers
+                  .map((offer) => ({
+                    offer,
+                    score: App.auth.analyzeSponsorshipOffer(
+                      offer,
+                      offers,
+                      context,
+                    ).score,
+                  }))
+                  .sort((a, b) => b.score - a.score)
+                  .map((item) => item.offer);
+                return `
+                <section class="commercial-category-lane">
+                  <div class="commercial-category-title">
+                    <strong>${App.utils.escapeDisplay(category)}</strong>
+                    <span>${categoryOffers.length} marca(s)</span>
+                  </div>
+                  <div class="commercial-offer-desk-grid">
+                    ${sorted
+                      .map((offer) =>
+                        App.auth.renderCommercialOfferDeskCard(
+                          offer,
+                          offers,
+                          context,
+                        ),
+                      )
+                      .join("")}
+                  </div>
+                </section>
+              `;
+              })
+              .join("")}
+          </div>
+        `
+            : `
+          <div class="commercial-desk-empty">
+            <strong>Nenhuma proposta comercial aberta</strong>
+            <p>Quando uma marca entrar no inbox, a mesa calcula fit, cenários, risco, alavanca e a melhor rodada antes da assinatura.</p>
+          </div>
+        `
+        }
+      </section>
+    `;
+  },
+
   renderSponsorshipEmailCard(offer = {}, offers = []) {
     const cadence = App.auth.getSponsorshipCadence(offer);
     const totalValue = App.auth.getSponsorshipTotalValue(offer);
@@ -2867,6 +3952,10 @@ App.auth = {
           : competition.count > 1
             ? "Esta e a melhor proposta financeira da categoria."
             : "Sem concorrente direto nesta categoria.";
+    const intelligenceHtml = App.auth.renderSponsorshipIntelligenceStrip(
+      offer,
+      offers,
+    );
 
     return `
       <article class="decision-card decision-email-message sponsor-email-message priority-normal">
@@ -2909,7 +3998,47 @@ App.auth = {
               : `<span>Vaga: livre para nova marca nesta categoria.</span>`
           }
         </div>
+        ${intelligenceHtml}
         <div class="decision-options email-response-actions">
+          <button
+            type="button"
+            data-sponsor-negotiate="${App.utils.escapeHtml(offer.id)}"
+            data-sponsor-negotiate-mode="signing"
+          >
+            <strong>Pedir mais luva</strong>
+            <small>Testa caixa imediato sem mudar a meta principal.</small>
+          </button>
+          <button
+            type="button"
+            data-sponsor-negotiate="${App.utils.escapeHtml(offer.id)}"
+            data-sponsor-negotiate-mode="reward"
+          >
+            <strong>Subir bônus/parcela</strong>
+            <small>Negocia upside quando a marca aceita performance.</small>
+          </button>
+          ${
+            offer.isReplacement
+              ? `
+          <button
+            type="button"
+            data-sponsor-negotiate="${App.utils.escapeHtml(offer.id)}"
+            data-sponsor-negotiate-mode="fee"
+          >
+            <strong>Dividir multa</strong>
+            <small>Faz a marca absorver parte da troca.</small>
+          </button>
+        `
+              : `
+          <button
+            type="button"
+            data-sponsor-negotiate="${App.utils.escapeHtml(offer.id)}"
+            data-sponsor-negotiate-mode="term"
+          >
+            <strong>Prazo curto</strong>
+            <small>Reduz risco e preserva categoria para próxima rodada.</small>
+          </button>
+        `
+          }
           <button
             type="button"
             data-sponsor-offer="${App.utils.escapeHtml(offer.id)}"
@@ -3807,6 +4936,12 @@ App.auth = {
         }
 
         ${
+          hasLoadedPortfolio
+            ? App.auth.renderCommercialDesk(ownerName, offers, active)
+            : ""
+        }
+
+        ${
           active.length
             ? `
           <div class="sponsor-active-list sponsor-portfolio-list">
@@ -4442,6 +5577,70 @@ App.auth = {
     );
   },
 
+  async negotiateSponsorshipOffer(offer = {}, counter = {}, evaluation = {}) {
+    const session = App.auth.getSession();
+    if (!session || session.isCommissioner)
+      throw new Error("Faca login como tecnico para negociar patrocinio.");
+
+    let result = null;
+    try {
+      result = await App.api.rpc(
+        "app_negotiate_sponsorship_offer",
+        {
+          p_manager_id: session.managerId,
+          p_access_code: session.accessCode,
+          p_offer_id: offer.id,
+          p_counter_terms: counter,
+        },
+        30000,
+      );
+      if (result?.ok === false) {
+        throw new Error(result.message || "Negociacao recusada pelo backend.");
+      }
+    } catch (error) {
+      const errorText = App.utils.normalizeText(error?.message || "");
+      const unavailable =
+        errorText.includes("app_negotiate_sponsorship_offer") ||
+        errorText.includes("function") ||
+        errorText.includes("schema cache");
+      if (!unavailable) throw error;
+      console.info(
+        "Negociacao de patrocinio via Supabase indisponivel, usando simulacao local:",
+        error,
+      );
+      result = {
+        ok: true,
+        localOnly: true,
+        outcome: evaluation.outcome,
+        acceptance: evaluation.acceptance,
+        response: evaluation.sponsorResponse,
+        sponsorCounter: evaluation.sponsorCounter,
+      };
+    }
+
+    App.auth.recordSponsorshipNegotiation(offer.id, {
+      offerId: offer.id,
+      sponsorName: offer.sponsorName || offer.sponsor_name || "Marca",
+      label: counter.label || "Contraproposta",
+      counter,
+      outcome: result.outcome || evaluation.outcome || "sent",
+      acceptance: Number(result.acceptance || evaluation.acceptance || 0),
+      response:
+        result.response ||
+        result.message ||
+        evaluation.sponsorResponse ||
+        "Rodada registrada.",
+      sponsorCounter: result.sponsorCounter || evaluation.sponsorCounter || null,
+      localOnly: Boolean(result.localOnly),
+    });
+
+    if (result.outcome === "accepted" || evaluation.outcome === "accepted") {
+      App.auth.setEmailsRead(App.auth.getEmailKey("sponsor", offer.id), false);
+    }
+
+    return result;
+  },
+
   bindEmailOfficeControls(root = document) {
     const office = root.querySelector?.(".email-office-card") || root;
     if (!office || office.dataset.emailOfficeBound === "true") return;
@@ -4771,6 +5970,124 @@ App.auth = {
   },
 
   bindSponsorshipButtons(root = document) {
+    root.querySelectorAll("[data-sponsor-negotiate]").forEach((button) => {
+      if (button.dataset.negotiationBound === "true") return;
+      button.dataset.negotiationBound = "true";
+
+      button.addEventListener("click", async (event) => {
+        const target = event.currentTarget;
+        const offerId = target.dataset.sponsorNegotiate;
+        const mode = target.dataset.sponsorNegotiateMode || "balanced";
+        const offer = App.auth.getSponsorshipOfferById(offerId);
+        if (!offer) return;
+
+        const context = App.auth.getCommercialClubContext();
+        const counter = App.auth.buildSponsorshipCounterOffer(offer, mode);
+        const evaluation = App.auth.evaluateSponsorshipCounter(
+          offer,
+          counter,
+          context,
+        );
+        const modalResult = await App.ui.openActionModal({
+          kicker: "Mesa comercial",
+          title: `Negociar com ${offer.sponsorName || "marca"}`,
+          message: `${counter.label}: ${counter.ask}. A mesa estima ${evaluation.acceptance}% de aderencia da marca.`,
+          detail:
+            "A resposta registra a rodada no historico do escritorio. Se a marca aceitar, a assinatura tenta usar os termos negociados no backend.",
+          tone: "market",
+          summary: [
+            {
+              label: "Luva",
+              value: App.utils.formatCurrency(counter.signingBonus),
+              detail: "entrada proposta",
+            },
+            {
+              label: "Parcela/bonus",
+              value: App.utils.formatCurrency(counter.rewardValue),
+              detail: `${counter.maxClaims} gatilho(s)`,
+            },
+            {
+              label: "Multa",
+              value: App.utils.formatCurrency(counter.terminationFee),
+              detail: offer.isReplacement ? "rescisao proposta" : "sem troca",
+            },
+            {
+              label: "Total",
+              value: App.utils.formatCurrency(counter.total),
+              detail: `+${App.utils.formatCurrency(counter.delta)}`,
+              variant: evaluation.outcome === "accepted" ? "success" : "",
+            },
+          ],
+          actions: [
+            { id: "cancel", label: "Cancelar", variant: "secondary" },
+            {
+              id: "confirm",
+              label: "Enviar rodada",
+              variant: "primary",
+              autofocus: true,
+            },
+          ],
+        });
+        if (modalResult.action !== "confirm") return;
+
+        try {
+          App.ui.setButtonLoading(target, "Negociando");
+          const response = await App.auth.negotiateSponsorshipOffer(
+            offer,
+            counter,
+            evaluation,
+          );
+          const outcome = response.outcome || evaluation.outcome;
+          await App.ui.openActionModal({
+            kicker: "Resposta da marca",
+            title:
+              outcome === "accepted"
+                ? "Termos aceitos"
+                : outcome === "countered"
+                  ? "Marca contrapropôs"
+                  : "Marca recusou",
+            message:
+              response.response ||
+              evaluation.sponsorResponse ||
+              "Rodada registrada na mesa comercial.",
+            tone:
+              outcome === "accepted"
+                ? "success"
+                : outcome === "countered"
+                  ? "warning"
+                  : "danger",
+            actions: [
+              {
+                id: "confirm",
+                label: "Voltar para mesa",
+                variant: "primary",
+                autofocus: true,
+              },
+            ],
+          });
+          App.auth.renderAll();
+          App.main?.renderCurrentView?.();
+        } catch (error) {
+          await App.ui.openActionModal({
+            kicker: "Mesa comercial",
+            title: "Rodada nao enviada",
+            message: error.message || "Nao consegui registrar a negociacao.",
+            tone: "danger",
+            actions: [
+              {
+                id: "confirm",
+                label: "Entendi",
+                variant: "primary",
+                autofocus: true,
+              },
+            ],
+          });
+        } finally {
+          if (target.isConnected) App.ui.clearButtonLoading(target);
+        }
+      });
+    });
+
     root.querySelectorAll("[data-sponsor-offer]").forEach((button) => {
       if (button.dataset.bound === "true") return;
       button.dataset.bound = "true";
@@ -5424,55 +6741,142 @@ App.auth = {
     const target = document.getElementById("managerNotificationCenter");
     if (!target) return;
 
-    const notifications = App.auth.dedupeNotifications(
-      App.auth.myNotifications,
+    const state = App.auth.loadActionCenterState();
+    const allItems = App.auth.buildManagerActionItems();
+    const visibleItems = allItems.filter(
+      (item) => !App.auth.isActionCenterItemSuppressed(item, state),
     );
-    const unread = notifications.filter((item) => !item.is_read);
+    const unread = visibleItems.filter((item) => item.unread);
+    const critical = visibleItems.filter(
+      (item) => item.priority === "critical" || item.priority === "high",
+    );
+    const categories = visibleItems.reduce((map, item) => {
+      const category = item.category || "Acao";
+      map[category] = (map[category] || 0) + 1;
+      return map;
+    }, {});
+    const selectedFilter = state.filter || "focus";
+    const filterOptions = [
+      { key: "focus", label: "Foco", count: critical.length || visibleItems.length },
+      { key: "all", label: "Tudo", count: visibleItems.length },
+      ...Object.entries(categories).map(([key, count]) => ({
+        key,
+        label: key,
+        count,
+      })),
+    ];
+    const filteredItems =
+      selectedFilter === "all"
+        ? visibleItems
+        : selectedFilter === "focus"
+          ? critical.length
+            ? critical
+            : visibleItems.slice(0, 4)
+          : visibleItems.filter((item) => item.category === selectedFilter);
     const favorites = App.auth.myFavorites || [];
-    const unreadLabel =
-      unread.length === 1 ? "1 aviso novo" : `${unread.length} avisos novos`;
+    const leadItem = filteredItems[0] || visibleItems[0] || null;
 
     App.dom.setHtml(
       target,
       `
-      <section class="manager-qol-card">
-        <div class="manager-qol-header">
+      <section class="manager-qol-card action-center-card">
+        <div class="manager-qol-header action-center-header">
           <div>
-            <span>Central privada</span>
-            <strong>${unreadLabel}</strong>
+            <span>Central de ações</span>
+            <strong>${visibleItems.length ? `${visibleItems.length} pendência(s)` : "Tudo limpo"}</strong>
+            <p>${critical.length ? `${critical.length} item(ns) exigem decisão.` : "Sem urgência operacional agora."}</p>
           </div>
-          ${unread.length ? `<button type="button" class="ghost-button" data-mark-notifications-read>Marcar lidos</button>` : ""}
+          <div class="action-center-header-actions">
+            ${unread.length ? `<button type="button" class="ghost-button" data-mark-notifications-read>Marcar lidos</button>` : ""}
+            ${visibleItems.length ? `<button type="button" class="ghost-button" data-action-center-clear-resolved>Restaurar concluídos</button>` : ""}
+          </div>
         </div>
-        <div class="manager-qol-grid">
-          <div class="manager-qol-column">
+
+        <div class="action-center-overview">
+          <article>
+            <span>Alta prioridade</span>
+            <strong>${critical.length}</strong>
+            <small>decisão ou risco aberto</small>
+          </article>
+          <article>
+            <span>Não lidos</span>
+            <strong>${unread.length}</strong>
+            <small>inclui inbox e avisos</small>
+          </article>
+          <article>
+            <span>Silenciados</span>
+            <strong>${Object.keys(state.muted || {}).length}</strong>
+            <small>locais neste técnico</small>
+          </article>
+          <article>
+            <span>Favoritos</span>
+            <strong>${favorites.length}</strong>
+            <small>atalhos fixados</small>
+          </article>
+        </div>
+
+        ${
+          leadItem
+            ? `
+          <div class="action-center-lead priority-${App.utils.escapeHtml(leadItem.priority || "medium")}">
+            <span>${App.utils.escapeDisplay(leadItem.source)} · ${App.utils.escapeDisplay(leadItem.category)}</span>
+            <strong>${App.utils.escapeDisplay(leadItem.title)}</strong>
+            <p>${App.utils.escapeDisplay(leadItem.detail)}</p>
+            <button type="button" data-action-center-open="${App.utils.escapeHtml(leadItem.key)}">${App.utils.escapeDisplay(leadItem.actionLabel || "Abrir")}</button>
+          </div>
+        `
+            : `
+          <div class="action-center-empty">
+            <strong>Nenhuma ação pendente</strong>
+            <p>Alertas repetidos ficam fora da tela principal; novas decisões entram aqui quando exigirem resposta.</p>
+          </div>
+        `
+        }
+
+        ${
+          filterOptions.length > 1
+            ? `
+          <div class="action-center-filters" role="list" aria-label="Filtros da central de ações">
+            ${filterOptions
+              .map(
+                (option) => `
+              <button type="button" class="${selectedFilter === option.key ? "is-active" : ""}" data-action-center-filter="${App.utils.escapeHtml(option.key)}">
+                <strong>${App.utils.escapeDisplay(option.label)}</strong>
+                <span>${option.count}</span>
+              </button>
+            `,
+              )
+              .join("")}
+          </div>
+        `
+            : ""
+        }
+
+        <div class="manager-qol-grid action-center-grid">
+          <div class="manager-qol-column action-center-column action-center-column-main">
             <div class="manager-qol-column-head">
-              <strong>Notificações</strong>
-              <b>${notifications.length}</b>
+              <strong>Fila limpa</strong>
+              <b>${filteredItems.length}</b>
             </div>
             ${
-              notifications.length
-                ? notifications
-                    .slice(0, 3)
-                    .map(
-                      (item) => `
-              <span class="manager-qol-pill ${App.utils.escapeHtml(item.tone || "info")} ${item.is_read ? "is-read" : ""}">
-                <strong>${App.utils.escapeDisplay(item.title)}</strong>
-                <small>${App.utils.escapeDisplay(item.body || "Sem detalhe adicional.")}</small>
-              </span>
-            `,
-                    )
-                    .join("")
+              filteredItems.length
+                ? `<div class="action-center-list">
+                    ${filteredItems
+                      .slice(0, 6)
+                      .map((item) => App.auth.renderActionCenterItem(item))
+                      .join("")}
+                  </div>`
                 : `
                   <div class="manager-qol-empty">
-                    <strong>Nada urgente agora</strong>
-                    <p>Sua caixa privada está limpa neste momento.</p>
+                    <strong>Filtro sem pendências</strong>
+                    <p>Troque o filtro ou aguarde novas atualizações da liga.</p>
                   </div>
                 `
             }
           </div>
-          <div class="manager-qol-column">
+          <div class="manager-qol-column action-center-column">
             <div class="manager-qol-column-head">
-              <strong>Favoritos</strong>
+              <strong>Atalhos fixados</strong>
               <b>${favorites.length}</b>
             </div>
             ${
@@ -5501,6 +6905,8 @@ App.auth = {
     `,
     );
 
+    const itemByKey = new Map(allItems.map((item) => [item.key, item]));
+
     target
       .querySelector("[data-mark-notifications-read]")
       ?.addEventListener("click", async () => {
@@ -5510,6 +6916,101 @@ App.auth = {
             console.warn("Não consegui marcar notificações:", error),
           );
       });
+
+    target
+      .querySelector("[data-action-center-clear-resolved]")
+      ?.addEventListener("click", () => {
+        const nextState = App.auth.loadActionCenterState();
+        nextState.resolved = {};
+        nextState.snoozedUntil = {};
+        nextState.muted = {};
+        App.auth.saveActionCenterState(nextState);
+        App.auth.renderNotificationCenter();
+      });
+
+    target.querySelectorAll("[data-action-center-filter]").forEach((button) => {
+      button.addEventListener("click", () => {
+        App.auth.patchActionCenterState({
+          filter: button.dataset.actionCenterFilter || "focus",
+        });
+        App.auth.renderNotificationCenter();
+      });
+    });
+
+    target.querySelectorAll("[data-action-center-action]").forEach((button) => {
+      button.addEventListener("click", () => {
+        const key = button.dataset.actionCenterKey;
+        const action = button.dataset.actionCenterAction;
+        if (!key) return;
+        if (action === "snooze") {
+          App.auth.patchActionCenterState({
+            snoozedUntil: {
+              [key]: Date.now() + 1000 * 60 * 60 * 4,
+            },
+          });
+        }
+        if (action === "resolve") {
+          App.auth.patchActionCenterState({
+            resolved: {
+              [key]: Date.now(),
+            },
+          });
+        }
+        if (action === "mute") {
+          App.auth.patchActionCenterState({
+            muted: {
+              [key]: Date.now(),
+            },
+          });
+        }
+        App.auth.renderNotificationCenter();
+      });
+    });
+
+    target.querySelectorAll("[data-action-center-open]").forEach((button) => {
+      button.addEventListener("click", () => {
+        const item = itemByKey.get(button.dataset.actionCenterOpen || "");
+        if (!item) return;
+
+        if (item.target === "email" && item.targetKey) {
+          App.auth.setEmailsRead(item.targetKey, true);
+          App.auth.setEmailMailboxFilters({
+            view: "action",
+            selectedKey: item.targetKey,
+            folder: "all",
+          });
+          App.main?.switchToView?.("playersView", { syncRoute: true });
+          window.setTimeout(() => {
+            document
+              .querySelector("#playersView .email-office-card")
+              ?.scrollIntoView({ behavior: "smooth", block: "start" });
+          }, 120);
+          return;
+        }
+
+        if (item.target === "commercial") {
+          App.main?.switchToView?.("playersView", { syncRoute: true });
+          window.setTimeout(() => {
+            document
+              .querySelector("#playersView .commercial-desk-panel")
+              ?.scrollIntoView({ behavior: "smooth", block: "start" });
+          }, 120);
+          return;
+        }
+
+        if (item.target === "medical") {
+          App.main?.switchToView?.("playersView", { syncRoute: true });
+          window.setTimeout(() => {
+            document
+              .querySelector("#playersView .coach-medical-card")
+              ?.scrollIntoView({ behavior: "smooth", block: "start" });
+          }, 120);
+          return;
+        }
+
+        App.main?.switchToView?.("playersView", { syncRoute: true });
+      });
+    });
   },
 
   getLeagueNewsTone(item = {}) {

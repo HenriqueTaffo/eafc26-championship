@@ -124,6 +124,20 @@ function getRealtimeCopy(table = "") {
   }
   if (normalized === "manager_notifications") {
     return {
+      title: "Central de acoes atualizada",
+      description: "Ha novos itens privados na fila do tecnico.",
+      tone: "info",
+    };
+  }
+  if (normalized === "sponsorship_contracts") {
+    return {
+      title: "Mesa comercial atualizada",
+      description: "Patrocinios e termos comerciais foram revistos.",
+      tone: "success",
+    };
+  }
+  if (normalized === "manager_notifications") {
+    return {
       title: "Inbox privado atualizado",
       description: "Novos avisos chegaram ao técnico.",
       tone: "info",
@@ -198,15 +212,32 @@ function useRealtimeLeagueBridge() {
       lastAnnouncedAtRef.current.set(toastKey, now);
 
       if (tables.length === 1) {
+        const isPrivateNoise = [
+          "manager_notifications",
+          "sponsorship_contracts",
+        ].includes(tables[0]);
         pushToast({
           ...getRealtimeCopy(tables[0]),
-          duration: 5600,
-          dedupeWindowMs: 9000,
+          duration: isPrivateNoise ? 3200 : 5600,
+          dedupeWindowMs: isPrivateNoise ? 14000 : 9000,
         });
         return;
       }
 
       const labels = tables.map((table) => getRealtimeCopy(table).title);
+      const onlyPrivate = tables.every((table) =>
+        ["manager_notifications", "sponsorship_contracts"].includes(table),
+      );
+      if (onlyPrivate) {
+        pushToast({
+          title: "Central privada atualizada",
+          description: "A fila de acoes recebeu mudancas agrupadas.",
+          tone: "success",
+          duration: 3400,
+          dedupeWindowMs: 14000,
+        });
+        return;
+      }
       pushToast({
         title: "Atualizações recentes",
         description: `${labels.slice(0, 3).join(", ")}${labels.length > 3 ? " e outras áreas" : ""} acabaram de receber dados novos.`,

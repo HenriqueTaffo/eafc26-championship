@@ -191,6 +191,8 @@ App.motion = App.motion || {
     ".email-thread-item",
     ".sponsor-email-message",
     ".sponsor-active-item",
+    ".commercial-offer-desk-card",
+    ".action-center-item",
     ".submit-card",
     ".commissioner-card",
     ".experience-card",
