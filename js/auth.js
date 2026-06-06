@@ -1129,6 +1129,7 @@ App.auth = {
       return App.clubs.getTeamBadgeHtml(
         session.clubName,
         "login-success-club-badge",
+        { loading: "eager" },
       );
     }
 
@@ -1151,19 +1152,10 @@ App.auth = {
       ? "GovernanÃƒÂ§a da Liga"
       : session.clubName || "Clube vinculado";
 
-    const transitionGhost = App.auth.loginTransitionSnapshotHtml
-      ? `
-      <div class="manager-login-transition-ghost" aria-hidden="true">
-        ${App.auth.loginTransitionSnapshotHtml}
-      </div>
-    `
-      : "";
-
     App.dom.setHtml(
       panel,
       `
       <div class="manager-login-transition-shell">
-        ${transitionGhost}
       <section class="manager-login-success-card manager-login-shell" aria-live="polite">
         <div class="manager-login-success-stage">
           <span class="manager-login-mascot-stage manager-login-avatar-large manager-login-brand-mark manager-login-success-mark" aria-hidden="true">
@@ -1189,9 +1181,7 @@ App.auth = {
   },
 
   startLoginSuccessTransition(session = {}) {
-    const panel = document.getElementById("managerLoginPanel");
-    App.auth.loginTransitionSnapshotHtml =
-      panel?.querySelector(".manager-login-shell")?.outerHTML || "";
+    App.auth.loginTransitionSnapshotHtml = "";
     App.auth.loginTransitionSession = session;
     App.auth.syncAuthGate();
     App.auth.renderLoginSuccessPanel(session);

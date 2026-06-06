@@ -67,7 +67,7 @@ App.clubs = {
     "Brighton": "https://en.wikipedia.org/wiki/Special:FilePath/Brighton_%26_Hove_Albion_logo.svg?width=160",
     "Burnley": "https://en.wikipedia.org/wiki/Special:FilePath/Burnley_FC_Logo.svg?width=160",
     "Chelsea": "https://en.wikipedia.org/wiki/Special:FilePath/Chelsea_FC.svg?width=160",
-    "Coventry City": "https://en.wikipedia.org/wiki/Special:FilePath/Coventry_City_FC_crest.svg?width=160",
+    "Coventry City": "https://upload.wikimedia.org/wikipedia/en/thumb/7/7b/Coventry_City_FC_crest.svg/250px-Coventry_City_FC_crest.svg.png",
     "Crystal Palace": "https://en.wikipedia.org/wiki/Special:FilePath/Crystal_Palace_FC_logo_(2022).svg?width=160",
     "Everton": "https://en.wikipedia.org/wiki/Special:FilePath/Everton_FC_logo.svg?width=160",
     "Fulham": "https://en.wikipedia.org/wiki/Special:FilePath/Fulham_FC_(shield).svg?width=160",
@@ -187,11 +187,14 @@ App.clubs = {
       .toUpperCase();
   },
 
-  getTeamBadgeHtml(teamName, extraClass = "") {
+  getTeamBadgeHtml(teamName, extraClass = "", options = {}) {
     const club = App.clubs.getClubByTeamName(teamName);
     const primary = club.CorPrimaria || "#64748b";
     const secondary = club.CorSecundaria || "#ffffff";
     const logo = String(club.LogoUrl || "").trim();
+    const loading = options.loading === "eager" ? "eager" : "lazy";
+    const fetchPriority =
+      loading === "eager" ? ' fetchpriority="high"' : "";
 
     if (
       logo &&
@@ -202,7 +205,7 @@ App.clubs = {
       return `
         <span class="club-badge has-logo ${extraClass}" style="--club-primary:${primary}; --club-secondary:${secondary}">
           <span class="logo-fallback">${App.clubs.getInitials(teamName)}</span>
-          <img src="${App.utils.escapeHtml(logo)}" alt="${App.utils.escapeHtml(teamName)}" loading="lazy" referrerpolicy="no-referrer" onload="App.clubs.handleLogoLoad(this)" onerror="App.clubs.handleLogoError(this)" />
+          <img src="${App.utils.escapeHtml(logo)}" alt="${App.utils.escapeHtml(teamName)}" loading="${loading}" decoding="async"${fetchPriority} referrerpolicy="no-referrer" onload="App.clubs.handleLogoLoad(this)" onerror="App.clubs.handleLogoError(this)" />
         </span>
       `;
     }

@@ -279,7 +279,7 @@ body.auth-login-success .manager-login-success-card.manager-login-shell {
   z-index: 1;
   opacity: 0;
   transform: translateY(22px) scale(0.96);
-  filter: blur(14px);
+  filter: none;
   animation: login-success-card-in 0.82s cubic-bezier(0.22, 1, 0.36, 1) 0.12s
     forwards;
 }
@@ -320,13 +320,13 @@ body.auth-login-success .manager-login-success-copy {
   0% {
     opacity: 0;
     transform: translateY(22px) scale(0.96);
-    filter: blur(14px);
+    filter: none;
   }
 
   100% {
     opacity: 1;
     transform: translateY(0) scale(1);
-    filter: blur(0);
+    filter: none;
   }
 }
 
@@ -7199,7 +7199,7 @@ body.auth-login-success .manager-login-transition-ghost {
 
 body.auth-login-success .manager-login-success-card.manager-login-shell {
   transform: translateY(18px) scale(0.98);
-  filter: blur(10px);
+  filter: none;
   animation: login-success-card-in 1.04s cubic-bezier(0.22, 1, 0.36, 1) 0.16s
     forwards;
 }

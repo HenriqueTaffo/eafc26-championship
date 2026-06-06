@@ -146,16 +146,13 @@ App.dom = App.dom || {
   fragmentFromHtml(html = "") {
     const documentRef = window.document;
     const rawHtml = String(html);
-    const normalizedHtml = App.utils?.polishUiText
-      ? App.utils.polishUiText(rawHtml)
-      : rawHtml;
     const parsed = new window.DOMParser().parseFromString(
-      `<body>${normalizedHtml}</body>`,
+      `<body>${rawHtml}</body>`,
       "text/html",
     );
     const fragment = documentRef.createDocumentFragment();
     fragment.append(...parsed.body.childNodes);
-    return fragment;
+    return App.dom.sanitizeTree(fragment);
   },
 
   setHtml(target, html = "") {
