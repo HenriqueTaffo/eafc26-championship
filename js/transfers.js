@@ -4342,61 +4342,6 @@ App.transfers = {
       .map((entry) => entry.player);
   },
 
-  buildSyntheticMarketPlayersFromRatings(query = "", ratings = [], limit = 8) {
-    const normalizedQuery = App.transfers.normalizePlayerRatingKey(query);
-    const prepared = [...(ratings || [])]
-      .filter(App.transfers.isPlayableRating)
-      .map(
-        (player) =>
-          App.transfers.applyManualRatingFallback(player, query) || player,
-      )
-      .sort(
-        (a, b) =>
-          App.transfers.getRatingSourcePriority(b) -
-            App.transfers.getRatingSourcePriority(a) ||
-          Number(b.overall || 0) - Number(a.overall || 0) ||
-          String(a.name || "").localeCompare(String(b.name || "")),
-      );
-
-    const byIdentity = new Map();
-    prepared.forEach((rating) => {
-      const safeName = App.transfers.sanitizePlayerSearchText(rating.name || "");
-      const player = {
-        id:
-          rating.id ||
-          rating.ea_id ||
-          `ea-rating:${App.transfers.normalizePlayerRatingKey(safeName)}|${App.utils.normalizeText(rating.club || "")}`,
-        syntheticSource: "ea_rating",
-        isRatingOnly: true,
-        name: safeName,
-        normalized_name: App.utils.normalizeText(safeName),
-        club: rating.club || "",
-        original_club: rating.club || "",
-        league: rating.league || "",
-        country: rating.nation || rating.country || "",
-        position: rating.position || "",
-        age: Number(rating.age || 0),
-        overall: Number(rating.overall || 0),
-        market_value_eur: 0,
-        marketValueSource: "ea_rating_only",
-        avatar_url: rating.avatar_url || "",
-        source_name: rating.source_name || "",
-        source_url: rating.source_url || "",
-      };
-      const key = App.api.getMarketPlayerIdentityKey(player);
-      if (!key || byIdentity.has(key)) return;
-      if (
-        normalizedQuery &&
-        App.transfers.getMarketSearchRelevance(query, player) <= 0
-      ) {
-        return;
-      }
-      byIdentity.set(key, player);
-    });
-
-    return [...byIdentity.values()].slice(0, Math.max(1, Number(limit || 8)));
-  },
-
   getMarketSearchShowContracted(options = {}) {
     const searchOptions = options || {};
     if (Object.prototype.hasOwnProperty.call(searchOptions, "showContracted")) {
@@ -4512,23 +4457,23 @@ App.transfers = {
           App.transfers.renderMarketPlayerResults();
         }
       };
-    const scheduleFullMarketRefresh = () => {
-      if (App.api?.isRateLimitedMarketQuery?.()) return;
-      const runRefresh = () => {
-        App.api
-          .loadMarketPlayers(primaryAlias, showContracted, resultLimit, {
-            rpcTimeoutMs: 3800,
-            directTimeoutMs: 2600,
-          })
-          .then(refreshFromRows)
-          .catch(() => {});
+      const scheduleFullMarketRefresh = () => {
+        if (App.api?.isRateLimitedMarketQuery?.()) return;
+        const runRefresh = () => {
+          App.api
+            .loadMarketPlayers(primaryAlias, showContracted, resultLimit, {
+              rpcTimeoutMs: 3800,
+              directTimeoutMs: 2600,
+            })
+            .then(refreshFromRows)
+            .catch(() => {});
+        };
+        if ("requestIdleCallback" in window) {
+          window.requestIdleCallback(runRefresh, { timeout: 1800 });
+        } else {
+          window.setTimeout(runRefresh, 750);
+        }
       };
-      if ("requestIdleCallback" in window) {
-        window.requestIdleCallback(runRefresh, { timeout: 1800 });
-      } else {
-        window.setTimeout(runRefresh, 750);
-      }
-    };
       const scheduleDelay = (delayMs = 0) =>
         new Promise((resolve) => {
           const timer =
@@ -4544,14 +4489,6 @@ App.transfers = {
             (isSpecificNameSearch ? 3600 : 1200),
         ),
       );
-      const ratingSourceDelayMs = Math.max(
-        0,
-        Number(
-          searchOptions.ratingSourceDelayMs ??
-            (isSpecificNameSearch ? 900 : 1600),
-        ),
-      );
-
       const directRowsPromise = App.api
         .fetchMarketPlayersDirect(primaryAlias, resultLimit, {
           timeoutMs: Number(searchOptions.directTimeoutMs || 4200),
@@ -4565,21 +4502,6 @@ App.transfers = {
           }),
         )
         .then((rows) => publishProgress(rows, "fallback"))
-        .catch(() => []);
-      const ratingFallbackRowsPromise = scheduleDelay(ratingSourceDelayMs)
-        .then(() =>
-          App.transfers.searchEaRatingsCached(
-            primaryAlias,
-            Math.min(resultLimit, 8),
-          ),
-        )
-        .then((ratings) =>
-          App.transfers.buildSyntheticMarketPlayersFromRatings(
-            query,
-            ratings,
-            resultLimit,
-          ),
-        )
         .catch(() => []);
       const requireRows = (source) =>
         source.then((rows) => {
@@ -4608,33 +4530,22 @@ App.transfers = {
         preferredMarketRowsPromise,
         waitForMarketSource(),
       ]);
-      const ratingFallbackPromise = ratingFallbackRowsPromise.then((rows) =>
-        publishProgress(rows, "rating"),
-      );
       const firstRows = preferredMarketRows.length
         ? preferredMarketRows
-        : await Promise.any([
-            preferredMarketRowsPromise.then((rows) => {
-              if (rows.length) return rows;
-              throw new Error("empty-market-source");
-            }),
-            requireRows(ratingFallbackPromise),
-          ]).catch(() => []);
+        : await preferredMarketRowsPromise.then((rows) => {
+            if (rows.length) return rows;
+            throw new Error("empty-market-source");
+          }).catch(() => []);
       scheduleFullMarketRefresh();
       const groups = firstRows.length
         ? firstRows
         : await Promise.all([
             directRowsPromise,
             fallbackRowsPromise,
-            ratingFallbackPromise,
-          ]).then(([directRows, fallbackRows, ratingRows]) =>
+          ]).then(([directRows, fallbackRows]) =>
             App.api.mergeMarketSearchRows(
-              App.api.mergeMarketSearchRows(
-                directRows,
-                fallbackRows,
-                resultLimit,
-              ),
-              ratingRows,
+              directRows,
+              fallbackRows,
               resultLimit,
             ),
           );

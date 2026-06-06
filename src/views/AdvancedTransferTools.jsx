@@ -443,7 +443,6 @@ function TransferMarketTable({ onSelectPlayer } = {}) {
           limit: resultLimit,
           directTimeoutMs: 5000,
           fallbackSourceDelayMs: isSpecificNameSearch ? 3600 : 1200,
-          ratingSourceDelayMs: isSpecificNameSearch ? 900 : 1700,
           marketSourceGraceMs: isSpecificNameSearch
             ? 1500
             : immediateRows.length
