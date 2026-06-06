@@ -342,7 +342,7 @@ App.auth = {
   },
 
   isOpenTransferProposal(item = {}) {
-    return ["pending", "buyer_review", "signature_pending"].includes(
+    return ["pending", "buyer_review", "player_terms", "signature_pending"].includes(
       App.utils.normalizeText(item.status || "pending"),
     );
   },
@@ -379,6 +379,7 @@ App.auth = {
     const status = App.utils.normalizeText(item.status || "pending");
     if (status === "accepted") return "Aceita";
     if (status === "signature_pending") return "Aguardando assinatura";
+    if (status === "player_terms") return "Termos do jogador";
     if (status === "rejected") return "Recusada";
     if (status === "cancelled") return "Cancelada";
     if (status === "expired") return "Expirada";
@@ -398,6 +399,9 @@ App.auth = {
       return signatureDeadline
         ? `Assinatura em andamento. Prazo: ${App.utils.formatDateTime(signatureDeadline)}`
         : "Assinatura em andamento no escrit\u00f3rio da liga.";
+    }
+    if (status === "player_terms") {
+      return item.player_terms_message || "Clube vendedor aceitou a venda. Negocie salario e termos pessoais com o jogador.";
     }
     if (status === "rejected") {
       return "NegociaÃƒÂ§ÃƒÂ£o encerrada sem assinatura.";
@@ -505,6 +509,9 @@ App.auth = {
 
   getTransferProposalSourceLabel(item = {}) {
     if (App.auth.isExternalMarketProposal(item)) {
+      if (App.utils.normalizeText(item.status || "") === "player_terms") {
+        return `Agente de ${item.player || "jogador"}`;
+      }
       return item.seller || item.from_club || "clube vendedor";
     }
     if (!App.auth.isCpuProposal(item)) return item.buyer || "outro tÃƒÂ©cnico";
@@ -2348,11 +2355,15 @@ App.auth = {
           : decision === "accepted"
             ? result.status === "signature_pending"
               ? "Contrato em assinatura"
+              : result.status === "player_terms"
+                ? "Termos do jogador"
               : "Contrato fechado"
             : "Negociacao encerrada",
       message:
         decision === "accepted" && result.status === "signature_pending"
           ? "Transferencia aceita, aguarde assinatura da liga para registro."
+          : result.status === "player_terms"
+            ? "Clube vendedor aceitou. Agora a mesa segue com jogador e agente."
           : "Atualizando propostas, mercado, orçamentos e painel dos técnicos...",
     });
 
@@ -4529,6 +4540,11 @@ App.auth = {
           const proposalId = target.dataset.proposalId;
           const decision = target.dataset.decision;
           const isExternal = target.dataset.proposalType === "external_market";
+          const proposalStatus = App.utils.normalizeText(
+            target.dataset.proposalStatus || "",
+          );
+          const isPlayerTerms =
+            isExternal && proposalStatus === "player_terms";
           const currentOffer = Number(target.dataset.proposalCounterValue || 0);
           let counterValue = null;
           const sourceLabel =
@@ -4541,25 +4557,39 @@ App.auth = {
           const offerLabel = App.utils.formatCurrency(currentOffer);
 
           if (decision === "counter") {
-            const suggestion = Math.max(currentOffer, 1000000);
+            const suggestion = isPlayerTerms
+              ? Math.max(currentOffer, 1500)
+              : Math.max(currentOffer, 1000000);
             const modalResult = await App.ui.openActionModal({
               kicker: isExternal
-                ? "Contrato de transferencia"
+                ? isPlayerTerms
+                  ? "Termos do jogador"
+                  : "Contrato de transferencia"
                 : "Negociacao externa",
-              title: isExternal ? "Renegociar termos" : "Enviar contraoferta",
+              title: isPlayerTerms
+                ? "Propor salario"
+                : isExternal
+                  ? "Renegociar termos"
+                  : "Enviar contraoferta",
               message: isExternal
-                ? `${sourceLabel} pediu ${offerLabel} por ${playerLabel}. Informe o novo valor para responder por e-mail.`
+                ? isPlayerTerms
+                  ? `${sourceLabel} pediu ${offerLabel}/sem para ${playerLabel}. Informe sua oferta salarial semanal.`
+                  : `${sourceLabel} pediu ${offerLabel} por ${playerLabel}. Informe o novo valor para responder por e-mail.`
                 : `${sourceLabel} ofereceu ${offerLabel} por ${playerLabel}. Informe o novo valor para a CPU avaliar.`,
               detail:
-                "A resposta volta para a mesa. Se ficar distante do pedido, o clube pode encerrar a negociacao.",
+                isPlayerTerms
+                  ? "Se a proposta ficar distante do pedido, o jogador pode responder com novo valor ou encerrar a negociacao."
+                  : "A resposta volta para a mesa. Se ficar distante do pedido, o clube pode encerrar a negociacao.",
               tone: "market",
               fields: [
                 {
                   name: "counterValue",
-                  label: "Valor da contraoferta",
+                  label: isPlayerTerms
+                    ? "Salario semanal oferecido"
+                    : "Valor da contraoferta",
                   value: String(suggestion),
                   inputMode: "decimal",
-                  placeholder: "Ex.: 2500000",
+                  placeholder: isPlayerTerms ? "Ex.: 45000" : "Ex.: 2500000",
                   prefix: "EUR",
                 },
               ],
@@ -4567,7 +4597,9 @@ App.auth = {
                 { id: "cancel", label: "Cancelar", variant: "secondary" },
                 {
                   id: "confirm",
-                  label: "Enviar contraoferta",
+                  label: isPlayerTerms
+                    ? "Enviar proposta salarial"
+                    : "Enviar contraoferta",
                   variant: "primary",
                 },
               ],
@@ -4578,7 +4610,9 @@ App.auth = {
                   .replace(/,/g, ".");
                 const parsed = Number(normalized);
                 if (!Number.isFinite(parsed) || parsed <= 0) {
-                  return "Informe um valor numerico maior que zero para a contraoferta.";
+                  return isPlayerTerms
+                    ? "Informe um salario semanal maior que zero."
+                    : "Informe um valor numerico maior que zero para a contraoferta.";
                 }
                 return "";
               },
@@ -4597,27 +4631,35 @@ App.auth = {
               kicker: isExternal ? "Mercado externo" : "Oferta externa",
               title: isAccepted
                 ? isExternal
-                  ? "Assinar contrato"
+                  ? isPlayerTerms
+                    ? "Aceitar termos do jogador"
+                    : "Assinar contrato"
                   : "Aceitar proposta"
                 : isExternal
                   ? "Encerrar mesa"
                   : "Recusar proposta",
               message: isAccepted
                 ? isExternal
-                  ? `Assinar os termos enviados por ${sourceLabel} para ${playerLabel} por ${offerLabel}?`
+                  ? isPlayerTerms
+                    ? `Aceitar o salario de ${offerLabel}/sem pedido por ${sourceLabel} para ${playerLabel}?`
+                    : `Assinar os termos enviados por ${sourceLabel} para ${playerLabel} por ${offerLabel}?`
                   : `Vender ${playerLabel} para ${sourceLabel} por ${offerLabel}?`
                 : isExternal
                   ? `Encerrar a negociacao com ${sourceLabel} por ${playerLabel}?`
                   : `Recusar a proposta de ${sourceLabel} por ${playerLabel}?`,
               detail: isAccepted
                 ? isExternal
-                  ? "Depois da assinatura, a liga registra a transferencia, atualiza caixa, folha e elenco."
+                  ? isPlayerTerms
+                    ? "Se a folha e o caixa passarem nas travas finais, a proposta segue para assinatura."
+                    : "Depois da assinatura, a liga registra a transferencia, atualiza caixa, folha e elenco."
                   : "A transferencia sera aplicada e o orcamento sera atualizado."
                 : "A proposta sera encerrada sem movimentacao.",
               tone: isAccepted ? "success" : "danger",
               confirmLabel: isAccepted
                 ? isExternal
-                  ? "Assinar contrato"
+                  ? isPlayerTerms
+                    ? "Aceitar termos"
+                    : "Assinar contrato"
                   : "Aceitar proposta"
                 : isExternal
                   ? "Encerrar mesa"
@@ -4896,6 +4938,7 @@ App.auth = {
       status === "accepted" || status === "rejected" ? status : "";
     const statusLabel = App.auth.getTransferProposalStatusLabel(item);
     const isSignaturePending = status === "signature_pending";
+    const isPlayerTerms = status === "player_terms";
     const isClosed = App.auth.isTransferProposalClosed(item);
     const proposedValue = Number(item.proposed_value || 0);
     const referenceValue = Number(item.reference_value || 0);
@@ -4921,6 +4964,8 @@ App.auth = {
       ? statusLabel
       : isSignaturePending
         ? "Aguardando assinatura no escritório"
+        : isPlayerTerms
+          ? "Termos pessoais do jogador"
         : status === "buyer_review"
           ? isCounter
             ? "Contraproposta recebida"
@@ -4938,9 +4983,9 @@ App.auth = {
 
         <div class="transfer-contract-header">
           <div>
-            <small>Assunto: confirmacao de proposta</small>
+            <small>Assunto: ${isPlayerTerms ? "termos pessoais" : "confirmacao de proposta"}</small>
             <h3>${playerLabel}</h3>
-            <p>${sourceLabelEscaped} respondeu à mesa aberta por ${App.utils.escapeDisplay(item.buyer || "seu clube")}. Revise os termos antes de assinar.</p>
+            <p>${sourceLabelEscaped} respondeu à mesa aberta por ${App.utils.escapeDisplay(item.buyer || "seu clube")}. ${isPlayerTerms ? "O clube aceitou vender; revise a pedida salarial antes de seguir." : "Revise os termos antes de assinar."}</p>
           </div>
           <span>${App.utils.escapeDisplay(actionKicker)}</span>
         </div>
@@ -4974,7 +5019,7 @@ App.auth = {
 
         <div class="transfer-contract-clause">
           <span>Clausula de mesa</span>
-          <p>${App.utils.escapeDisplay(item.response_message || "O clube vendedor respondeu e aguarda sua decisão.")}</p>
+          <p>${App.utils.escapeDisplay(item.response_message || (isPlayerTerms ? "O agente do jogador aguarda sua decisao salarial." : "O clube vendedor respondeu e aguarda sua decisão."))}</p>
           <small>Prazo interno: ${App.utils.escapeDisplay(expiresLabel)}</small>
         </div>
         ${App.auth.getTransferProposalTimeline(item, { maxItems: 4 })}
@@ -4993,32 +5038,35 @@ App.auth = {
                 type="button"
                 data-transfer-proposal-answer
                 data-proposal-type="external_market"
+                data-proposal-status="${App.utils.escapeHtml(status)}"
                 data-proposal-id="${App.utils.escapeHtml(item.id)}"
                 data-decision="accepted"
                 data-proposal-source-label="${sourceLabelEscaped}"
                 data-proposal-player="${playerLabel}"
-                data-proposal-counter-value="${proposedValue}"
+                data-proposal-counter-value="${isPlayerTerms ? weeklySalary : proposedValue}"
               >
-                <strong>Assinar contrato</strong>
-                <small>Registra ${App.utils.formatCurrency(cashValue)} no caixa.</small>
+                <strong>${isPlayerTerms ? "Aceitar termos" : "Assinar contrato"}</strong>
+                <small>${isPlayerTerms ? `${App.utils.formatCurrency(weeklySalary)}/sem e segue para assinatura.` : `Registra ${App.utils.formatCurrency(cashValue)} no caixa.`}</small>
               </button>
               <button
                 type="button"
                 data-transfer-proposal-answer
                 data-proposal-type="external_market"
+                data-proposal-status="${App.utils.escapeHtml(status)}"
                 data-proposal-id="${App.utils.escapeHtml(item.id)}"
                 data-decision="counter"
                 data-proposal-source-label="${sourceLabelEscaped}"
                 data-proposal-player="${playerLabel}"
-                data-proposal-counter-value="${proposedValue || buyerOffer}"
+                data-proposal-counter-value="${isPlayerTerms ? weeklySalary : proposedValue || buyerOffer}"
               >
-                <strong>Renegociar</strong>
-                <small>Envia novo valor ao vendedor.</small>
+                <strong>${isPlayerTerms ? "Propor salario" : "Renegociar"}</strong>
+                <small>${isPlayerTerms ? "Envia nova proposta ao agente." : "Envia novo valor ao vendedor."}</small>
               </button>
               <button
                 type="button"
                 data-transfer-proposal-answer
                 data-proposal-type="external_market"
+                data-proposal-status="${App.utils.escapeHtml(status)}"
                 data-proposal-id="${App.utils.escapeHtml(item.id)}"
                 data-decision="rejected"
                 data-proposal-source-label="${sourceLabelEscaped}"
@@ -5051,7 +5099,9 @@ App.auth = {
       const tradeLabel = item.trade_in_player
         ? `${item.trade_in_player} abate ${App.utils.formatCurrency(Number(item.trade_in_credit || 0))}`
         : "Sem jogador na troca";
-      const isActionable = status === "buyer_review" || status === "pending";
+      const isPlayerTerms = status === "player_terms";
+      const isActionable =
+        status === "buyer_review" || status === "pending" || isPlayerTerms;
       const sourceLabelEscaped = App.utils.escapeDisplay(sourceLabel);
       const weeklySalaryLabel =
         Number(displayMeta.weeklySalary || 0) > 0
@@ -5099,32 +5149,35 @@ App.auth = {
               type="button"
               data-transfer-proposal-answer
               data-proposal-type="external_market"
+              data-proposal-status="${App.utils.escapeHtml(status)}"
               data-proposal-id="${App.utils.escapeHtml(item.id)}"
               data-decision="accepted"
               data-proposal-source-label="${sourceLabelEscaped}"
               data-proposal-player="${App.utils.escapeDisplay(item.player)}"
-              data-proposal-counter-value="${proposedValue}"
+              data-proposal-counter-value="${isPlayerTerms ? Number(displayMeta.weeklySalary || 0) : proposedValue}"
             >
-              <strong>Fechar contrato</strong>
-              <small>Registra por ${App.utils.formatCurrency(cashValue)} no caixa.</small>
+              <strong>${isPlayerTerms ? "Aceitar termos" : "Fechar contrato"}</strong>
+              <small>${isPlayerTerms ? `Salario ${weeklySalaryLabel}.` : `Registra por ${App.utils.formatCurrency(cashValue)} no caixa.`}</small>
             </button>
             <button
               type="button"
               data-transfer-proposal-answer
               data-proposal-type="external_market"
+              data-proposal-status="${App.utils.escapeHtml(status)}"
               data-proposal-id="${App.utils.escapeHtml(item.id)}"
               data-decision="counter"
               data-proposal-source-label="${sourceLabelEscaped}"
               data-proposal-player="${App.utils.escapeDisplay(item.player)}"
-              data-proposal-counter-value="${proposedValue || buyerOffer}"
+              data-proposal-counter-value="${isPlayerTerms ? Number(displayMeta.weeklySalary || 0) : proposedValue || buyerOffer}"
             >
-              <strong>Contraoferta</strong>
-              <small>Envia novo valor ao clube vendedor.</small>
+              <strong>${isPlayerTerms ? "Propor salario" : "Contraoferta"}</strong>
+              <small>${isPlayerTerms ? "Envia novo salario ao agente." : "Envia novo valor ao clube vendedor."}</small>
             </button>
             <button
               type="button"
               data-transfer-proposal-answer
               data-proposal-type="external_market"
+              data-proposal-status="${App.utils.escapeHtml(status)}"
               data-proposal-id="${App.utils.escapeHtml(item.id)}"
               data-decision="rejected"
               data-proposal-source-label="${sourceLabelEscaped}"

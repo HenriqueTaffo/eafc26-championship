@@ -3926,11 +3926,10 @@ App.transfers = {
       (duplicateBlock ||
         sameBuyerAndSeller ||
         exchangeSamePlayer ||
-        salaryReferenceMissing ||
         marketEmbargo ||
         limitReached ||
         overBudget ||
-        payrollBlocked),
+        (isInternal && payrollBlocked)),
     );
 
     return {
@@ -4058,7 +4057,7 @@ App.transfers = {
 
     if (preview.salaryReferenceMissing) {
       messages.push(
-        "Salario publico pendente. Confira o nome do jogador e sincronize Capology ou SalarySport antes de enviar.",
+        "Salario publico pendente. A mesa com o clube pode abrir, mas os termos pessoais serao negociados depois da aprovacao do vendedor.",
       );
     }
 
@@ -4097,7 +4096,7 @@ App.transfers = {
 
     if (preview.payrollBlocked) {
       messages.push(
-        `Folha acima do teto financeiro: limite recomendado ${App.utils.formatCurrency(preview.payrollCeiling)}/sem.`,
+        `Folha projetada acima do teto financeiro: limite recomendado ${App.utils.formatCurrency(preview.payrollCeiling)}/sem. A assinatura final pode exigir renegociar salario.`,
       );
     }
 
