@@ -2623,6 +2623,7 @@ App.transfers = {
     );
     if (type === "regulatory_estimate") return "Estimativa regulatoria";
     if (type === "league_smart_estimate") return "Estimativa da liga";
+    if (type === "loaded_salary") return "Salario carregado";
     if (type === "public_capology") return "Capology";
     if (type === "public_mlspa") return "MLSPA";
     if (type === "public_salarysport") return "SalarySport";
@@ -3078,19 +3079,33 @@ App.transfers = {
     };
   },
 
-  getComparableOverallSalaryEstimate(item = {}) {
-    const playerName =
-      item.player || item.Jogador || item.name || item.playerName || "";
-    if (!String(playerName).trim()) return null;
+  getComparableSalarySamples() {
+    const salaryReferences = Array.isArray(App.state.apiSalaryReferences)
+      ? App.state.apiSalaryReferences
+      : [];
+    const marketPlayers = Array.isArray(App.state.apiMarketPlayers)
+      ? App.state.apiMarketPlayers
+      : [];
+    const transfers = Array.isArray(App.state.apiTransfers)
+      ? App.state.apiTransfers
+      : [];
+    const ratings = Array.isArray(App.state.apiRatings)
+      ? App.state.apiRatings
+      : [];
+    const cached = App.transfers.comparableSalarySampleCache;
 
-    const targetOverall = Number(App.transfers.getResolvedOverall(item) || 0);
-    if (targetOverall <= 0) return App.transfers.getRegulatorySalaryEstimate(item);
+    if (
+      cached &&
+      cached.salaryReferences === salaryReferences &&
+      cached.marketPlayers === marketPlayers &&
+      cached.transfers === transfers &&
+      cached.ratings === ratings
+    ) {
+      return cached.samples;
+    }
 
-    const targetPosition = String(item.position || "").trim().toUpperCase();
-    const targetLeague = App.transfers.normalizeSalaryLookup(item.league || "");
-    const regulatory = App.transfers.getRegulatorySalaryEstimate(item);
     const samplesByKey = new Map();
-    const addSample = (sample = {}) => {
+    const addSample = (sample = {}, options = {}) => {
       const weeklySalary = Number(
         sample.weeklySalary ||
           sample.weekly_salary_eur ||
@@ -3098,6 +3113,7 @@ App.transfers = {
           0,
       );
       if (weeklySalary <= 0) return;
+
       const sampleName =
         sample.player ||
         sample.playerName ||
@@ -3118,52 +3134,118 @@ App.transfers = {
       ].join("|");
       if (!key.trim() || samplesByKey.has(key)) return;
 
-      const marketPlayer =
-        App.transfers.findMarketPlayerByName(sampleName, {
-          club: sampleClub,
-        }) || {};
-      const rating =
-        App.transfers.getRatingForPlayerName(sampleName, {
-          club: sampleClub,
-        }) || {};
-      const overall = Number(
-        sample.overall ||
-          sample.Overall ||
-          rating.overall ||
-          App.transfers.getResolvedOverall({
-            ...marketPlayer,
-            ...sample,
-            name: sampleName,
+      let overall = Number(sample.overall || sample.Overall || 0);
+      let position = String(sample.position || sample.Position || "")
+        .trim()
+        .toUpperCase();
+      let league = App.transfers.normalizeSalaryLookup(sample.league || "");
+      let marketPlayer = null;
+      let rating = null;
+
+      if (
+        options.allowLookup !== false &&
+        (!overall || !position || !league)
+      ) {
+        marketPlayer =
+          App.transfers.findMarketPlayerByName(sampleName, {
             club: sampleClub,
-          }) ||
-          0,
-      );
+          }) || {};
+        rating =
+          App.transfers.findEaRatingForMarketPlayer(
+            marketPlayer?.name
+              ? marketPlayer
+              : { name: sampleName, club: sampleClub },
+          ) || {};
+        overall = Number(overall || rating.overall || 0);
+        position = String(position || rating.position || marketPlayer.position || "")
+          .trim()
+          .toUpperCase();
+        league = App.transfers.normalizeSalaryLookup(
+          league || marketPlayer.league || "",
+        );
+      }
+
       if (overall <= 0) return;
 
       samplesByKey.set(key, {
         weeklySalary,
         overall,
-        position: String(
-          sample.position || rating.position || marketPlayer.position || "",
-        )
-          .trim()
-          .toUpperCase(),
-        league: App.transfers.normalizeSalaryLookup(
-          sample.league || marketPlayer.league || "",
-        ),
+        position,
+        league,
       });
     };
 
-    (App.state.apiSalaryReferences || []).forEach((reference) =>
-      addSample(reference),
+    salaryReferences.forEach((reference) =>
+      addSample(reference, { allowLookup: false }),
     );
-    (App.state.apiMarketPlayers || []).forEach((marketPlayer) =>
-      addSample(marketPlayer),
+    marketPlayers.forEach((marketPlayer) =>
+      addSample(marketPlayer, { allowLookup: true }),
     );
-    (App.state.apiTransfers || []).forEach((transfer) => addSample(transfer));
+    transfers.forEach((transfer) =>
+      addSample(transfer, { allowLookup: true }),
+    );
 
     const samples = [...samplesByKey.values()];
-    if (!samples.length) return regulatory;
+    App.transfers.comparableSalarySampleCache = {
+      salaryReferences,
+      marketPlayers,
+      transfers,
+      ratings,
+      samples,
+    };
+    App.transfers.comparableSalaryEstimateCache = new Map();
+    return samples;
+  },
+
+  getComparableSalaryEstimateCacheKey(item = {}, targetOverall = 0) {
+    return [
+      App.transfers.normalizeSalaryLookup(
+        item.player || item.Jogador || item.name || item.playerName || "",
+      ),
+      App.transfers.normalizeSalaryLookup(
+        item.fromClub || item.ClubeOrigem || item.club || item.clubName || "",
+      ),
+      Number(targetOverall || 0),
+      String(item.position || "").trim().toUpperCase(),
+      App.transfers.normalizeSalaryLookup(item.league || ""),
+      Math.round(
+        Number(
+          item.marketValue ||
+            item.market_value_eur ||
+            item.ValorTransfermarkt ||
+            0,
+        ) || 0,
+      ),
+    ].join("|");
+  },
+
+  getComparableOverallSalaryEstimate(item = {}) {
+    const playerName =
+      item.player || item.Jogador || item.name || item.playerName || "";
+    if (!String(playerName).trim()) return null;
+
+    const targetOverall = Number(App.transfers.getResolvedOverall(item) || 0);
+    if (targetOverall <= 0) return App.transfers.getRegulatorySalaryEstimate(item);
+
+    const cacheKey = App.transfers.getComparableSalaryEstimateCacheKey(
+      item,
+      targetOverall,
+    );
+    if (
+      App.transfers.comparableSalaryEstimateCache &&
+      App.transfers.comparableSalaryEstimateCache.has(cacheKey)
+    ) {
+      return App.transfers.comparableSalaryEstimateCache.get(cacheKey);
+    }
+
+    const targetPosition = String(item.position || "").trim().toUpperCase();
+    const targetLeague = App.transfers.normalizeSalaryLookup(item.league || "");
+    const regulatory = App.transfers.getRegulatorySalaryEstimate(item);
+    const samples = App.transfers.getComparableSalarySamples();
+    if (!samples.length) {
+      App.transfers.comparableSalaryEstimateCache?.set(cacheKey, regulatory);
+      return regulatory;
+    }
 
     const pickSamples = (maxOverallDiff, requirePosition = false) =>
       samples.filter((sample) => {
@@ -3203,7 +3285,10 @@ App.transfers = {
       })
       .filter((value) => Number.isFinite(value) && value > 0)
       .sort((left, right) => left - right);
-    if (!sorted.length) return regulatory;
+    if (!sorted.length) {
+      App.transfers.comparableSalaryEstimateCache?.set(cacheKey, regulatory);
+      return regulatory;
+    }
 
     const middle = Math.floor(sorted.length / 2);
     const median =
@@ -3213,7 +3298,7 @@ App.transfers = {
     const regulatoryFloor = Number(regulatory?.weeklySalary || 0);
     const weeklySalary = Math.round(Math.max(median, regulatoryFloor, 1500) / 500) * 500;
 
-    return {
+    const estimate = {
       ok: true,
       weeklySalary,
       salarySourceName: "Estimativa por OVR da liga",
@@ -3221,6 +3306,8 @@ App.transfers = {
       referenceType: "league_smart_estimate",
       comparableCount: peers.length,
     };
+    App.transfers.comparableSalaryEstimateCache?.set(cacheKey, estimate);
+    return estimate;
   },
 
   buildPublicSalaryReferenceIndex() {
@@ -3325,7 +3412,7 @@ App.transfers = {
     );
   },
 
-  getStoredPublicSalaryReference(item = {}) {
+  getStoredPublicSalaryReference(item = {}, options = {}) {
     const weeklySalary = Number(
       item.weeklySalary ??
         item.salaryWeekly ??
@@ -3350,25 +3437,37 @@ App.transfers = {
       "";
     const normalizedSalarySourceUrl =
       App.transfers.normalizeSalaryUrl(salarySourceUrl);
+    const allowBareStoredSalary = options.allowBareStoredSalary === true;
+    const hasStoredSalaryField =
+      item.weeklySalary !== undefined ||
+      item.salaryWeekly !== undefined ||
+      item.SalarioSemanal !== undefined ||
+      item.weekly_salary_eur !== undefined;
     const shouldTrustStoredSalary =
       weeklySalary > 0 &&
-      String(salarySourceName).trim() &&
-      (App.transfers.isPublicSalaryUrl(normalizedSalarySourceUrl) ||
-        App.transfers.isEstimatedSalaryReference(item));
+      ((String(salarySourceName).trim() &&
+        (App.transfers.isPublicSalaryUrl(normalizedSalarySourceUrl) ||
+          App.transfers.isEstimatedSalaryReference(item))) ||
+        (allowBareStoredSalary && hasStoredSalaryField));
 
     if (!shouldTrustStoredSalary) return null;
 
     return {
       ok: true,
       weeklySalary,
-      salarySourceName: String(salarySourceName).trim(),
+      salarySourceName: String(
+        salarySourceName || (allowBareStoredSalary ? "Salario ja carregado" : ""),
+      ).trim(),
       salarySourceUrl: normalizedSalarySourceUrl,
-      referenceType,
+      referenceType: referenceType || (allowBareStoredSalary ? "loaded_salary" : ""),
     };
   },
 
-  getSalaryReferenceFromItem(item = {}) {
-    const storedReference = App.transfers.getStoredPublicSalaryReference(item);
+  getSalaryReferenceFromItem(item = {}, options = {}) {
+    const storedReference = App.transfers.getStoredPublicSalaryReference(
+      item,
+      options,
+    );
     if (storedReference) return storedReference;
 
     const publicRef = App.transfers.findPublicSalaryReference(
@@ -3386,14 +3485,33 @@ App.transfers = {
       };
     }
 
-    return (
-      App.transfers.getComparableOverallSalaryEstimate(item) || {
-        ok: false,
-        weeklySalary: 0,
-        salarySourceName: "",
-        salarySourceUrl: "",
-      }
-    );
+    if (options.allowComparableEstimate === false) {
+      return (
+        App.transfers.getRegulatorySalaryEstimate(item) || {
+          ok: false,
+          weeklySalary: 0,
+          salarySourceName: "",
+          salarySourceUrl: "",
+        }
+      );
+    }
+
+    const comparable = App.transfers.getComparableOverallSalaryEstimate(item);
+    if (comparable) {
+      const cacheKey = App.transfers.getComparableSalaryEstimateCacheKey(
+        item,
+        App.transfers.getResolvedOverall(item),
+      );
+      App.transfers.comparableSalaryEstimateCache?.set(cacheKey, comparable);
+      return comparable;
+    }
+
+    return {
+      ok: false,
+      weeklySalary: 0,
+      salarySourceName: "",
+      salarySourceUrl: "",
+    };
   },
 
   getVerifiedWeeklySalary(item = {}) {
@@ -3694,7 +3812,8 @@ App.transfers = {
       fromClub: resolvedClub,
       marketValue,
     });
-    const salaryReference = App.transfers.getSalaryReferenceFromItem({
+    const salaryReference = App.transfers.getSalaryReferenceFromItem(
+      {
       ...marketPlayer,
       ...item,
       player: name,
@@ -3703,9 +3822,23 @@ App.transfers = {
       fromClub: resolvedClub,
       overall,
       marketValue,
-    });
-    const storedSalaryReference =
-      App.transfers.getStoredPublicSalaryReference(item);
+      },
+      {
+        allowBareStoredSalary:
+          context.allowBareStoredSalary === true ||
+          Boolean(context.owner || context.managerName),
+        allowComparableEstimate:
+          context.allowComparableSalaryEstimate !== false,
+      },
+    );
+    const storedSalaryReference = App.transfers.getStoredPublicSalaryReference(
+      item,
+      {
+        allowBareStoredSalary:
+          context.allowBareStoredSalary === true ||
+          Boolean(context.owner || context.managerName),
+      },
+    );
 
     return {
       ...item,
@@ -3739,6 +3872,8 @@ App.transfers = {
   normalizeRosterPoolPlayer(item = {}, owner = "") {
     const base = App.transfers.hydrateRosterPlayer(item, {
       owner,
+      allowBareStoredSalary: true,
+      allowComparableSalaryEstimate: false,
       club:
         item.fromClub || item.from_club || item.club || item.clubName || owner,
     });

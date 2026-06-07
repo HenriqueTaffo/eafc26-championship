@@ -161,6 +161,19 @@ App.cups = {
   },
 
   getCupEvents() {
+    const approvedResults = App.standings.getApprovedApiResults();
+    const dbMatches = Array.isArray(App.state.apiMatches)
+      ? App.state.apiMatches
+      : [];
+    const cached = App.cups.cupEventsCache;
+
+    if (
+      cached?.approvedResults === approvedResults &&
+      cached?.dbMatches === dbMatches
+    ) {
+      return cached.events;
+    }
+
     const allEvents = [];
 
     App.cups.getCupDefinitions().forEach(cup => {
@@ -263,6 +276,11 @@ App.cups = {
       }
     });
 
+    App.cups.cupEventsCache = {
+      approvedResults,
+      dbMatches,
+      events: allEvents,
+    };
     return allEvents;
   },
 

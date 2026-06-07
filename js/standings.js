@@ -2,48 +2,121 @@ import App from "./app.js";
 
 App.standings = {
   getApprovedApiResults() {
-    return App.state.apiResults.filter(
+    const source = Array.isArray(App.state.apiResults)
+      ? App.state.apiResults
+      : [];
+    if (App.standings.approvedResultsCache?.source === source) {
+      return App.standings.approvedResultsCache.rows;
+    }
+
+    const rows = source.filter(
       (row) => App.utils.normalizeText(row.Status) === "aprovado",
     );
+    App.standings.approvedResultsCache = { source, rows };
+    return rows;
+  },
+
+  getChampionshipApiResults() {
+    const approved = App.standings.getApprovedApiResults();
+    if (App.standings.championshipResultsCache?.approved === approved) {
+      return App.standings.championshipResultsCache.rows;
+    }
+
+    const rows = approved.filter(
+      (row) => App.utils.normalizeText(row.Competicao) === "championship",
+    );
+    App.standings.championshipResultsCache = { approved, rows };
+    return rows;
+  },
+
+  getResultStatsByTeam() {
+    const championshipResults = App.standings.getChampionshipApiResults();
+    const teams = App.data.teams || [];
+    const cached = App.standings.resultStatsByTeamCache;
+
+    if (
+      cached &&
+      cached.results === championshipResults &&
+      cached.teams === teams
+    ) {
+      return cached.statsByTeam;
+    }
+
+    const statsByTeam = new Map();
+    teams.forEach((team) => {
+      statsByTeam.set(App.utils.normalizeTeamName(team.team), {
+        wins: 0,
+        draws: 0,
+        losses: 0,
+        goalsFor: 0,
+        goalsAgainst: 0,
+      });
+    });
+
+    championshipResults.forEach((row) => {
+      const homeScore = Number(row.GolsMandante);
+      const awayScore = Number(row.GolsVisitante);
+      if (Number.isNaN(homeScore) || Number.isNaN(awayScore)) return;
+
+      const homeKey = App.utils.normalizeTeamName(row.Mandante);
+      const awayKey = App.utils.normalizeTeamName(row.Visitante);
+      const homeStats = statsByTeam.get(homeKey);
+      const awayStats = statsByTeam.get(awayKey);
+
+      if (homeStats) {
+        homeStats.goalsFor += homeScore;
+        homeStats.goalsAgainst += awayScore;
+        if (homeScore > awayScore) homeStats.wins += 1;
+        else if (homeScore === awayScore) homeStats.draws += 1;
+        else homeStats.losses += 1;
+      }
+
+      if (awayStats) {
+        awayStats.goalsFor += awayScore;
+        awayStats.goalsAgainst += homeScore;
+        if (awayScore > homeScore) awayStats.wins += 1;
+        else if (awayScore === homeScore) awayStats.draws += 1;
+        else awayStats.losses += 1;
+      }
+    });
+
+    App.standings.resultStatsByTeamCache = {
+      results: championshipResults,
+      teams,
+      statsByTeam,
+    };
+    return statsByTeam;
   },
 
   getResultStatsForTeam(teamName) {
-    const stats = {
+    const stats = App.standings
+      .getResultStatsByTeam()
+      .get(App.utils.normalizeTeamName(teamName));
+
+    return stats
+      ? { ...stats }
+      : {
       wins: 0,
       draws: 0,
       losses: 0,
       goalsFor: 0,
       goalsAgainst: 0,
     };
-
-    App.standings
-      .getApprovedApiResults()
-      .filter(
-        (row) => App.utils.normalizeText(row.Competicao) === "championship",
-      )
-      .forEach((row) => {
-        const isHome = App.utils.sameTeamName(row.Mandante, teamName);
-        const isAway = App.utils.sameTeamName(row.Visitante, teamName);
-        if (!isHome && !isAway) return;
-
-        const homeScore = Number(row.GolsMandante);
-        const awayScore = Number(row.GolsVisitante);
-        if (Number.isNaN(homeScore) || Number.isNaN(awayScore)) return;
-
-        const goalsFor = isHome ? homeScore : awayScore;
-        const goalsAgainst = isHome ? awayScore : homeScore;
-
-        stats.goalsFor += goalsFor;
-        stats.goalsAgainst += goalsAgainst;
-        if (goalsFor > goalsAgainst) stats.wins += 1;
-        else if (goalsFor === goalsAgainst) stats.draws += 1;
-        else stats.losses += 1;
-      });
-
-    return stats;
   },
 
   getStandings() {
+    const teams = App.data.teams || [];
+    const statsByTeam = App.standings.getResultStatsByTeam();
+    const cached = App.standings.standingsCache;
+
+    if (
+      cached &&
+      cached.teams === teams &&
+      cached.statsByTeam === statsByTeam
+    ) {
+      return cached.rows;
+    }
+
     const rows = App.data.teams
       .map((team, originalIndex) => {
         const stats = App.standings.getResultStatsForTeam(team.team);
@@ -68,7 +141,9 @@ App.standings = {
           a.team.localeCompare(b.team),
       );
 
-    return rows.map((row, index) => ({ ...row, position: index + 1 }));
+    const standings = rows.map((row, index) => ({ ...row, position: index + 1 }));
+    App.standings.standingsCache = { teams, statsByTeam, rows: standings };
+    return standings;
   },
 
   getPositionClass(position) {

@@ -1880,6 +1880,8 @@ Object.assign(App.transfers, {
           .map((item) =>
             App.transfers.hydrateRosterPlayer?.(item, {
               owner: buyer,
+              allowBareStoredSalary: true,
+              allowComparableSalaryEstimate: false,
               club: item.clubName || item.club || buyer,
             }) || item,
           )
@@ -1900,6 +1902,8 @@ Object.assign(App.transfers, {
       (item, index) => {
         const hydrated = App.transfers.hydrateRosterPlayer?.(item, {
           owner: buyer,
+          allowBareStoredSalary: true,
+          allowComparableSalaryEstimate: false,
           club: item.fromClub,
         });
         const rating = App.transfers.getRatingForPlayerName(item.player, {

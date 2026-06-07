@@ -30,22 +30,63 @@ App.calendar = {
 
   getChampionshipResult(roundNumber, home, away) {
     const phase = `Rodada ${roundNumber}`;
-    const row = App.standings
-      .getApprovedApiResults()
-      .find(
-        (result) =>
-          App.utils.normalizeText(result.Competicao) === "championship" &&
-          App.utils.normalizeText(result.RodadaFase) ===
-            App.utils.normalizeText(phase) &&
-          App.utils.sameTeamName(result.Mandante, home) &&
-          App.utils.sameTeamName(result.Visitante, away),
-      );
+    const row = App.calendar
+      .getChampionshipResultMap()
+      .get(App.calendar.getChampionshipResultKey(phase, home, away));
 
     if (!row) return null;
     return [Number(row.GolsMandante), Number(row.GolsVisitante)];
   },
 
+  getChampionshipResultKey(phase, home, away) {
+    return [
+      App.utils.normalizeText(phase),
+      App.utils.normalizeTeamName(home),
+      App.utils.normalizeTeamName(away),
+    ].join("|");
+  },
+
+  getChampionshipResultMap() {
+    const results = App.standings.getChampionshipApiResults
+      ? App.standings.getChampionshipApiResults()
+      : App.standings
+          .getApprovedApiResults()
+          .filter(
+            (row) => App.utils.normalizeText(row.Competicao) === "championship",
+          );
+    const cached = App.calendar.championshipResultMapCache;
+
+    if (cached?.results === results) {
+      return cached.map;
+    }
+
+    const map = new Map();
+    results.forEach((row) => {
+      map.set(
+        App.calendar.getChampionshipResultKey(
+          row.RodadaFase || "",
+          row.Mandante || "",
+          row.Visitante || "",
+        ),
+        row,
+      );
+    });
+
+    App.calendar.championshipResultMapCache = { results, map };
+    return map;
+  },
+
   getChampionshipEvents() {
+    const results = App.standings.getChampionshipApiResults
+      ? App.standings.getChampionshipApiResults()
+      : App.standings.getApprovedApiResults();
+    const teams = App.data.teams || [];
+    const cached = App.calendar.championshipEventsCache;
+
+    if (cached?.results === results && cached?.teams === teams) {
+      return cached.events;
+    }
+
     const rounds = App.calendar.generateChampionshipRounds();
     const events = [];
 
@@ -77,21 +118,39 @@ App.calendar = {
       });
     });
 
+    App.calendar.championshipEventsCache = { results, teams, events };
     return events;
   },
 
   getCalendarEvents() {
+    const championshipEvents = App.calendar.getChampionshipEvents();
+    const cupEvents = App.cups.getCupEvents();
+    const cached = App.calendar.eventsCache;
+
+    if (
+      cached?.championshipEvents === championshipEvents &&
+      cached?.cupEvents === cupEvents
+    ) {
+      return cached.events;
+    }
+
     const events = [
-      ...App.calendar.getChampionshipEvents(),
-      ...App.cups.getCupEvents(),
+      ...championshipEvents,
+      ...cupEvents,
     ];
     const order = { Championship: 1, "Copa da Liga": 2, "FA Cup": 3 };
-    return events.sort(
+    const sorted = events.sort(
       (a, b) =>
         a.date - b.date ||
         (order[a.competition] || 99) - (order[b.competition] || 99) ||
         a.phase.localeCompare(b.phase),
     );
+    App.calendar.eventsCache = {
+      championshipEvents,
+      cupEvents,
+      events: sorted,
+    };
+    return sorted;
   },
 
   getEventById(eventId) {
