@@ -20,6 +20,7 @@ App.auth = {
   myNotifications: [],
   autoDecisionRunning: false,
   autoCpuOfferRunning: false,
+  actionCenterTrayOpen: false,
   loginTransitionSession: null,
   loginTransitionSnapshotHtml: "",
   loginTransitionRenderedAt: 0,
@@ -474,7 +475,7 @@ App.auth = {
     return "Aguardando resposta inicial do contraparte.";
   },
 
-  getTransferProposalTimeline(item = {}, options = {}) {
+  getTransferProposalTimelineEntries(item = {}, options = {}) {
     const isInternal =
       options.forceInternal || !App.auth.isExternalMarketProposal(item);
     const auditTimeline = Array.isArray(item.operation_audit_timeline)
@@ -523,6 +524,15 @@ App.auth = {
       : syntheticStages.length
         ? syntheticStages
         : fallback;
+
+    return normalizedItems;
+  },
+
+  getTransferProposalTimeline(item = {}, options = {}) {
+    const normalizedItems = App.auth.getTransferProposalTimelineEntries(
+      item,
+      options,
+    );
 
     const maxItems = Number(options.maxItems || 3);
     const compact = options.compact
@@ -3103,8 +3113,8 @@ App.auth = {
                 <strong>Historico recente</strong>
                 <span>${closed.length} fechamento(s)</span>
               </div>
-              <div class="proposal-sent-list proposal-history-list">
-                ${closed.map((item) => App.auth.renderTransferProposalSummary(item, { compact: true })).join("")}
+              <div class="proposal-history-list">
+                ${closed.map((item) => App.auth.renderTransferProposalHistoryRow(item)).join("")}
               </div>
             </section>
           `
@@ -3116,6 +3126,44 @@ App.auth = {
     );
 
     App.auth.bindTransferProposalButtons(panel);
+  },
+
+  renderTransferProposalHistoryRow(item) {
+    const status = App.utils.normalizeText(item.status || "pending");
+    const statusLabel = App.auth.getTransferProposalStatusLabel(item);
+    const sourceLabel = App.auth.getTransferProposalSourceLabel(item);
+    const proposedValue = Number(item.proposed_value || 0);
+    const timeline = App.auth.getTransferProposalTimelineEntries(item);
+    const lastStage = timeline[timeline.length - 1] || {};
+    const closedAt =
+      lastStage.when ||
+      item.responded_at ||
+      item.updated_at ||
+      item.created_at ||
+      item.expires_at ||
+      "";
+    const lastStageLabel =
+      lastStage.label ||
+      (status === "accepted"
+        ? "Negociação aceita"
+        : status === "rejected"
+          ? "Negociação recusada"
+          : statusLabel);
+    const metaParts = [
+      item.seller || item.from_club || "Clube vendedor",
+      sourceLabel,
+      App.utils.formatCurrency(proposedValue),
+    ].filter(Boolean);
+
+    return `
+      <article class="proposal-history-row proposal-status-${App.utils.escapeHtml(status)}">
+        <span class="proposal-history-status">${App.utils.escapeDisplay(statusLabel)}</span>
+        <strong>${App.utils.escapeDisplay(item.player || "Jogador")}</strong>
+        <small>${App.utils.escapeDisplay(metaParts.join(" · "))}</small>
+        <em>${App.utils.escapeDisplay(lastStageLabel)}</em>
+        <time>${closedAt ? App.utils.escapeDisplay(App.utils.formatDateTime(closedAt)) : "sem data"}</time>
+      </article>
+    `;
   },
 
   getSponsorshipInboxOffers(ownerName = "") {
@@ -6739,7 +6787,11 @@ App.auth = {
 
   renderNotificationCenter() {
     const target = document.getElementById("managerNotificationCenter");
-    if (!target) return;
+    let floatingRoot = document.getElementById("actionCenterFloatingRoot");
+    if (!target) {
+      floatingRoot?.remove();
+      return;
+    }
 
     const state = App.auth.loadActionCenterState();
     const allItems = App.auth.buildManagerActionItems();
@@ -6779,16 +6831,16 @@ App.auth = {
     App.dom.setHtml(
       target,
       `
-      <section class="manager-qol-card action-center-card">
-        <div class="manager-qol-header action-center-header">
+      <section class="manager-qol-card action-center-summary-card">
+        <div class="manager-qol-header action-center-header action-center-summary-header">
           <div>
             <span>Central de ações</span>
             <strong>${visibleItems.length ? `${visibleItems.length} pendência(s)` : "Tudo limpo"}</strong>
             <p>${critical.length ? `${critical.length} item(ns) exigem decisão.` : "Sem urgência operacional agora."}</p>
           </div>
           <div class="action-center-header-actions">
+            <button type="button" class="ghost-button" data-action-center-toggle="open">Abrir painel</button>
             ${unread.length ? `<button type="button" class="ghost-button" data-mark-notifications-read>Marcar lidos</button>` : ""}
-            ${visibleItems.length ? `<button type="button" class="ghost-button" data-action-center-clear-resolved>Restaurar concluídos</button>` : ""}
           </div>
         </div>
 
@@ -6815,24 +6867,48 @@ App.auth = {
           </article>
         </div>
 
-        ${
-          leadItem
-            ? `
-          <div class="action-center-lead priority-${App.utils.escapeHtml(leadItem.priority || "medium")}">
-            <span>${App.utils.escapeDisplay(leadItem.source)} · ${App.utils.escapeDisplay(leadItem.category)}</span>
-            <strong>${App.utils.escapeDisplay(leadItem.title)}</strong>
-            <p>${App.utils.escapeDisplay(leadItem.detail)}</p>
-            <button type="button" data-action-center-open="${App.utils.escapeHtml(leadItem.key)}">${App.utils.escapeDisplay(leadItem.actionLabel || "Abrir")}</button>
-          </div>
-        `
-            : `
-          <div class="action-center-empty">
-            <strong>Nenhuma ação pendente</strong>
-            <p>Alertas repetidos ficam fora da tela principal; novas decisões entram aqui quando exigirem resposta.</p>
-          </div>
-        `
-        }
+        <div class="action-center-summary-next">
+          <span>${leadItem ? "Próxima ação" : "Fila limpa"}</span>
+          <strong>${App.utils.escapeDisplay(leadItem?.title || "Nenhuma ação pendente")}</strong>
+        </div>
+      </section>
 
+    `,
+    );
+
+    if (!floatingRoot) {
+      floatingRoot = document.createElement("div");
+      floatingRoot.id = "actionCenterFloatingRoot";
+      document.body.appendChild(floatingRoot);
+    }
+
+    App.dom.setHtml(
+      floatingRoot,
+      `
+      <div class="action-center-floating ${App.auth.actionCenterTrayOpen ? "is-open" : ""}">
+        <button
+          type="button"
+          class="action-center-fab"
+          data-action-center-toggle="toggle"
+          aria-expanded="${App.auth.actionCenterTrayOpen ? "true" : "false"}"
+          aria-label="Abrir central de ações"
+        >
+          <span>ações</span>
+          <strong>${visibleItems.length}</strong>
+        </button>
+        <section class="action-center-drawer action-center-card" role="dialog" aria-label="Central de ações" aria-hidden="${App.auth.actionCenterTrayOpen ? "false" : "true"}">
+          <div class="manager-qol-header action-center-header">
+            <div>
+              <span>Central de ações</span>
+              <strong>${visibleItems.length ? `${visibleItems.length} pendência(s)` : "Tudo limpo"}</strong>
+              <p>${critical.length ? `${critical.length} item(ns) exigem decisão.` : "Sem urgência operacional agora."}</p>
+            </div>
+            <div class="action-center-header-actions">
+              ${unread.length ? `<button type="button" class="ghost-button" data-mark-notifications-read>Marcar lidos</button>` : ""}
+              ${visibleItems.length ? `<button type="button" class="ghost-button" data-action-center-clear-resolved>Restaurar concluídos</button>` : ""}
+              <button type="button" class="ghost-button" data-action-center-close>Fechar</button>
+            </div>
+          </div>
         ${
           filterOptions.length > 1
             ? `
@@ -6862,7 +6938,7 @@ App.auth = {
               filteredItems.length
                 ? `<div class="action-center-list">
                     ${filteredItems
-                      .slice(0, 6)
+                      .slice(0, 12)
                       .map((item) => App.auth.renderActionCenterItem(item))
                       .join("")}
                   </div>`
@@ -6898,28 +6974,49 @@ App.auth = {
                     <p>Use a estrela no escritório para fixar alvos e rotinas.</p>
                   </div>
                 `
-            }
+              }
           </div>
         </div>
-      </section>
+        </section>
+      </div>
     `,
     );
 
     const itemByKey = new Map(allItems.map((item) => [item.key, item]));
+    const actionCenterScopes = [target, floatingRoot].filter(Boolean);
 
-    target
-      .querySelector("[data-mark-notifications-read]")
-      ?.addEventListener("click", async () => {
-        await App.auth
-          .markNotificationsRead()
-          .catch((error) =>
-            console.warn("Não consegui marcar notificações:", error),
-          );
+    actionCenterScopes.forEach((scope) => {
+      scope.querySelectorAll("[data-action-center-toggle]").forEach((button) => {
+        button.addEventListener("click", () => {
+          const mode = button.dataset.actionCenterToggle || "toggle";
+          App.auth.actionCenterTrayOpen =
+            mode === "open" ? true : !App.auth.actionCenterTrayOpen;
+          App.auth.renderNotificationCenter();
+        });
       });
+    });
 
-    target
-      .querySelector("[data-action-center-clear-resolved]")
-      ?.addEventListener("click", () => {
+    actionCenterScopes.forEach((scope) => {
+      scope.querySelector("[data-action-center-close]")?.addEventListener("click", () => {
+        App.auth.actionCenterTrayOpen = false;
+        App.auth.renderNotificationCenter();
+      });
+    });
+
+    actionCenterScopes.forEach((scope) => {
+      scope.querySelectorAll("[data-mark-notifications-read]").forEach((button) => {
+        button.addEventListener("click", async () => {
+          await App.auth
+            .markNotificationsRead()
+            .catch((error) =>
+              console.warn("Não consegui marcar notificações:", error),
+            );
+        });
+      });
+    });
+
+    actionCenterScopes.forEach((scope) => {
+      scope.querySelector("[data-action-center-clear-resolved]")?.addEventListener("click", () => {
         const nextState = App.auth.loadActionCenterState();
         nextState.resolved = {};
         nextState.snoozedUntil = {};
@@ -6927,88 +7024,101 @@ App.auth = {
         App.auth.saveActionCenterState(nextState);
         App.auth.renderNotificationCenter();
       });
+    });
 
-    target.querySelectorAll("[data-action-center-filter]").forEach((button) => {
-      button.addEventListener("click", () => {
-        App.auth.patchActionCenterState({
-          filter: button.dataset.actionCenterFilter || "focus",
+    actionCenterScopes.forEach((scope) => {
+      scope.querySelectorAll("[data-action-center-filter]").forEach((button) => {
+        button.addEventListener("click", () => {
+          App.auth.actionCenterTrayOpen = true;
+          App.auth.patchActionCenterState({
+            filter: button.dataset.actionCenterFilter || "focus",
+          });
+          App.auth.renderNotificationCenter();
         });
-        App.auth.renderNotificationCenter();
       });
     });
 
-    target.querySelectorAll("[data-action-center-action]").forEach((button) => {
-      button.addEventListener("click", () => {
-        const key = button.dataset.actionCenterKey;
-        const action = button.dataset.actionCenterAction;
-        if (!key) return;
-        if (action === "snooze") {
-          App.auth.patchActionCenterState({
-            snoozedUntil: {
-              [key]: Date.now() + 1000 * 60 * 60 * 4,
-            },
-          });
-        }
-        if (action === "resolve") {
-          App.auth.patchActionCenterState({
-            resolved: {
-              [key]: Date.now(),
-            },
-          });
-        }
-        if (action === "mute") {
-          App.auth.patchActionCenterState({
-            muted: {
-              [key]: Date.now(),
-            },
-          });
-        }
-        App.auth.renderNotificationCenter();
+    actionCenterScopes.forEach((scope) => {
+      scope.querySelectorAll("[data-action-center-action]").forEach((button) => {
+        button.addEventListener("click", () => {
+          const key = button.dataset.actionCenterKey;
+          const action = button.dataset.actionCenterAction;
+          if (!key) return;
+          App.auth.actionCenterTrayOpen = true;
+          if (action === "snooze") {
+            App.auth.patchActionCenterState({
+              snoozedUntil: {
+                [key]: Date.now() + 1000 * 60 * 60 * 4,
+              },
+            });
+          }
+          if (action === "resolve") {
+            App.auth.patchActionCenterState({
+              resolved: {
+                [key]: Date.now(),
+              },
+            });
+          }
+          if (action === "mute") {
+            App.auth.patchActionCenterState({
+              muted: {
+                [key]: Date.now(),
+              },
+            });
+          }
+          App.auth.renderNotificationCenter();
+        });
       });
     });
 
-    target.querySelectorAll("[data-action-center-open]").forEach((button) => {
-      button.addEventListener("click", () => {
-        const item = itemByKey.get(button.dataset.actionCenterOpen || "");
-        if (!item) return;
+    actionCenterScopes.forEach((scope) => {
+      scope.querySelectorAll("[data-action-center-open]").forEach((button) => {
+        button.addEventListener("click", () => {
+          const item = itemByKey.get(button.dataset.actionCenterOpen || "");
+          if (!item) return;
 
-        if (item.target === "email" && item.targetKey) {
-          App.auth.setEmailsRead(item.targetKey, true);
-          App.auth.setEmailMailboxFilters({
-            view: "action",
-            selectedKey: item.targetKey,
-            folder: "all",
-          });
+          if (item.target === "email" && item.targetKey) {
+            App.auth.actionCenterTrayOpen = false;
+            App.auth.setEmailsRead(item.targetKey, true);
+            App.auth.setEmailMailboxFilters({
+              view: "action",
+              selectedKey: item.targetKey,
+              folder: "all",
+            });
+            App.main?.switchToView?.("playersView", { syncRoute: true });
+            window.setTimeout(() => {
+              document
+                .querySelector("#playersView .email-office-card")
+                ?.scrollIntoView({ behavior: "smooth", block: "start" });
+            }, 120);
+            return;
+          }
+
+          if (item.target === "commercial") {
+            App.auth.actionCenterTrayOpen = false;
+            App.main?.switchToView?.("playersView", { syncRoute: true });
+            window.setTimeout(() => {
+              document
+                .querySelector("#playersView .commercial-desk-panel")
+                ?.scrollIntoView({ behavior: "smooth", block: "start" });
+            }, 120);
+            return;
+          }
+
+          if (item.target === "medical") {
+            App.auth.actionCenterTrayOpen = false;
+            App.main?.switchToView?.("playersView", { syncRoute: true });
+            window.setTimeout(() => {
+              document
+                .querySelector("#playersView .coach-medical-card")
+                ?.scrollIntoView({ behavior: "smooth", block: "start" });
+            }, 120);
+            return;
+          }
+
+          App.auth.actionCenterTrayOpen = false;
           App.main?.switchToView?.("playersView", { syncRoute: true });
-          window.setTimeout(() => {
-            document
-              .querySelector("#playersView .email-office-card")
-              ?.scrollIntoView({ behavior: "smooth", block: "start" });
-          }, 120);
-          return;
-        }
-
-        if (item.target === "commercial") {
-          App.main?.switchToView?.("playersView", { syncRoute: true });
-          window.setTimeout(() => {
-            document
-              .querySelector("#playersView .commercial-desk-panel")
-              ?.scrollIntoView({ behavior: "smooth", block: "start" });
-          }, 120);
-          return;
-        }
-
-        if (item.target === "medical") {
-          App.main?.switchToView?.("playersView", { syncRoute: true });
-          window.setTimeout(() => {
-            document
-              .querySelector("#playersView .coach-medical-card")
-              ?.scrollIntoView({ behavior: "smooth", block: "start" });
-          }, 120);
-          return;
-        }
-
-        App.main?.switchToView?.("playersView", { syncRoute: true });
+        });
       });
     });
   },
